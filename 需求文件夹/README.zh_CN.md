@@ -2,7 +2,7 @@
 
 # HeygoAI 与 AI Passport：需求文件夹
 
-版本：0.1。日期：2026-10-16。状态：评审草案。
+版本：0.2。日期：2026-10-16。状态：评审草案。
 本文件夹包含产品定义、拟定架构、Scrum 待办列表和验证计划。
 本文件夹不包含固件实现。
 目前没有证据证明 HeygoAI 联动功能可用。
@@ -15,6 +15,8 @@
 | [系统架构](02-architecture.zh_CN.md) | 组件、按键、报告数据、弯型几何、语音流程和设备限制。 |
 | [Scrum 待办列表](03-scrum-backlog.zh_CN.md) | 用户故事、四个拟定 Sprint、角色、活动和完成标准。 |
 | [验证与决策](04-validation-and-decisions.zh_CN.md) | 20 项测试、假设、待确认问题、风险和决策记录。 |
+| [决策修订](05-decision-amendments.zh_CN.md) | 八项决策：传输、编解码、手势、音频流式传输和首版范围。 |
+| [Sprint 0 两天计划](06-sprint-0-two-day-plan.zh_CN.md) | 两天能做完的工作，以及排除项及其原因。 |
 
 ## 核心体验
 
@@ -32,10 +34,12 @@ Agent 通过语音回答。
 用户提出了核心功能和 Scrum 开发要求。
 架构、优先级、四个 Sprint 的预测、时间参数和容量限制均属于提案。
 目前没有人员接受角色分配或交付日期。
+用户已确认 D-08 至 D-14。D-15 仍是提议。
+手机应用已经存在，由另一个团队开发。
 
 AI Passport 硬件事实来自现有的本地源码仓库。
 架构文档列出了来源，并区分本地修改与已发布能力。
-HeygoAI 接口、真实滑雪数据、手机平台和传输方式仍待决策。
+D-08 已选定传输方式。HeygoAI 接口、真实滑雪数据、手机应用接口和手机平台仍待决策。
 
 ## 术语
 
@@ -65,6 +69,8 @@ HeygoAI 接口、真实滑雪数据、手机平台和传输方式仍待决策。
 | TLS | 传输层安全协议，用于保护网络连接中的数据。 |
 | UX | 用户体验，描述用户如何与产品交互。 |
 | 数据来源及处理历史 | 对应英文 data provenance，记录数据来自哪里、经过哪些处理。 |
+| IMA ADPCM | 一种简单的音频压缩格式，每个采样用 4 bit 存储。 |
+| 延后 | 需求仍保留在记录中，但移出首版范围。 |
 
 ## 文档维护
 
@@ -83,11 +89,13 @@ HeygoAI 接口、真实滑雪数据、手机平台和传输方式仍待决策。
 人工检查中文文本。
 
 ```bash
-python3 ~/.codex/skills/asd-ste100/scripts/ste-lint.py \
+STE_SKILL="${STE_SKILL:-$HOME/.claude/skills/asd-ste100}"
+python3 "${STE_SKILL}/scripts/ste-lint.py" \
   README.md 01-product-requirements.md 02-architecture.md \
-  03-scrum-backlog.md 04-validation-and-decisions.md
+  03-scrum-backlog.md 04-validation-and-decisions.md \
+  05-decision-amendments.md 06-sprint-0-two-day-plan.md
 ```
 
-在本文件夹内运行该命令。
+在本文件夹内运行该命令。技能装在别处时，设置 `STE_SKILL` 环境变量。
 参数只包含英文文档。
 自动工具不能证明中文符合标准，也不能证明用词符合 STE 官方词典。

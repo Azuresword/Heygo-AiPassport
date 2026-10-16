@@ -2,7 +2,7 @@
 
 # HeygoAI and AI Passport: product requirements
 
-Version: 0.1. Date: 2026-10-16. Status: Draft for review.
+Version: 0.2. Date: 2026-10-16. Status: Draft for review.
 The Product Owner role has no assigned person.
 This document defines a concept. It does not describe a working integration.
 
@@ -16,6 +16,9 @@ During a rest break, help the skier with these actions:
 
 HeygoAI supplies available analysis and coaching through interfaces that still need source evidence.
 AI Passport provides a small screen, physical controls, microphone input, and speaker output.
+
+The phone stays in a pocket during use. The device reaches the network through the phone.
+The device therefore removes the need to take the phone out. It does not remove the need for the phone.
 
 The smallest complete experience includes these features:
 
@@ -34,7 +37,7 @@ The project must demonstrate each feature with the same ski session context.
 | Recreational skier | Understand a result without reading a large phone report. | A rest break after a run. |
 | Skier who practices a skill | Choose one achievable goal for the next run. | Before the next run. |
 | Human coach or companion | Discuss a selected turn with the skier. | A shared rest break. |
-| Project tester | Reproduce a failed exchange without exposing recordings. | An indoor test session. |
+| Project tester | Reproduce a failed exchange. | An indoor test session. |
 
 The pilot assumes adult users and a small private group.
 The device form factor stays unchanged.
@@ -43,7 +46,7 @@ The pilot does not require a new circuit board or enclosure.
 
 ## 3. Product journey
 
-1. The user connects the device to an account through the proposed phone companion.
+1. The user connects the device to the existing phone application.
 2. The user manually enters Rest mode.
 3. The user selects a ski session.
 4. The device shows a summary and the data source.
@@ -75,7 +78,7 @@ All six requested capabilities remain in P0:
 - Human intercom.
 - Data and turn visualization.
 
-Offline reports, privacy, device limits, and distinct modes support those capabilities.
+Offline reports, device limits, and distinct modes support those capabilities.
 
 Suggested P1 features include these capabilities:
 
@@ -97,6 +100,8 @@ Badges must reward practice or review. They must not reward speed, dangerous ter
 - Simultaneous Agent speech and human intercom audio.
 - A phone-free radio intercom or offline delivery of live speech.
 - New hardware, commercial manufacturing, payments, or a public social network.
+- BLE encryption, a pairing passkey, or a binding check.
+- Privacy and authorization features, including access control and data deletion.
 
 ## 5. Capability boundary
 
@@ -104,46 +109,47 @@ Badges must reward practice or review. They must not reward speed, dangerous ter
 | --- | --- | --- |
 | AI Passport screen | Source evidence establishes a 240 × 320 screen. The sources do not establish a touch interface. | Use cards, selection, and small charts. |
 | AI Passport buttons | UP, DOWN, and OK share an ADC input. | Use one button at a time. |
-| AI Passport audio | Microphone, speaker, and PCM APIs exist. | Limit audio streams to available capacity. Do not assume echo cancellation. |
+| AI Passport audio | Microphone, speaker, and PCM APIs exist. | Stream audio to the phone in small frames. Do not assume echo cancellation. |
 | AI Passport resources | ESP32-C3, 8 MB Flash, no PSRAM. | Keep inference and large reports outside the device. |
 | AI Passport power | The specification lists a 500 mAh battery. | Measure runtime. Do not claim full-day operation. |
 | Motion and location | Source evidence does not establish an IMU, GNSS, or barometer interface. | Obtain ski measurements from another source that passed checks. |
 | HeygoAI services | The project lacks a repository link, API contract, and sample report. | Check report, coaching, identity, and data contracts. |
-| Phone companion | Proposed component. This repository contains no phone application. | Test permissions, transport, and background behavior. |
+| Phone application | An existing application. Another team develops it. This repository contains no phone code. | Device requirements depend on its capabilities. Its BLE interface remains unknown. |
 | Network intercom | A separate workspace contains an uncommitted BLE reference. | Evaluate reuse. Do not treat it as a released service. |
 
 The [architecture](02-architecture.md) records source references and component boundaries.
 The [validation plan](04-validation-and-decisions.md) records assumptions, owners, and unresolved decisions.
+The [decision amendments](05-decision-amendments.md) record the transport, codec, gesture, and scope decisions.
 
 ## 6. Requirements matrix
 
-All rows have status Proposed and test stage Prototype.
+All rows except REQ-14 have status Proposed and test stage Prototype. REQ-14 has status Deferred.
 Owners below are roles with no assigned person.
 The validation plan defines the full test conditions for each matching TC identifier.
 Each row gives the user value, required behavior, acceptance target, and main dependency.
 
 | ID | Value and required behavior | Priority and owner | Acceptance target | Dependency or risk |
 | --- | --- | --- | --- | --- |
-| REQ-01 | Connect the correct user and device. Support account binding. Support account unlinking. | P0. Service and phone. | TC-01: complete 9 of 10 setup attempts within 180 seconds. Reject every cross-account test. | Identity API and phone platform remain open. |
+| REQ-01 | Let the phone find and connect to the device. The device advertises its name. The phone application connects without a passkey. | P0. Phone and firmware. | TC-01: complete 9 of 10 connection attempts within 180 seconds. | The BLE interface of the phone application remains unknown. |
 | REQ-02 | Keep the report consistent. Synchronize the ski session identifier, report version, and time. | P0. Service and firmware. | TC-02: 30 updates retain the correct ski session and newest accepted version. | HeygoAI report identifiers remain unresolved. |
 | REQ-03 | Show a report without requiring the full phone view. Include summary, available metrics, and one supported finding. | P0. Firmware and design. | TC-03: cached cards open within one second at the 95th percentile across 30 trials. | Actual report fields remain open. |
 | REQ-04 | Show trends with units, axes, source, and missing-data states. | P0. Firmware and data. | TC-04: all 12 chart fixtures retain units and data gaps. Missing values never become zero. | The source must supply valid units. |
 | REQ-05 | Show turns. Allow turn selection. Distinguish measured paths, estimates, and illustrative curves. | P0. Data and firmware. | TC-05: all 12 turn fixtures preserve direction, coordinate meaning, gaps, and source. | Turn data and its accuracy remain open. |
-| REQ-06 | Capture a voice question that the user starts. Show capture status and transcript errors. | P0. Firmware and speech service. | TC-06: release stops capture within 100 ms in 100 trials. Capture ends by 20 seconds. | Speech recognition and language support remain unresolved. |
-| REQ-07 | Read the answer aloud. Allow the user to interrupt playback. | P0. Firmware and speech service. | TC-07: interruption stops playback within 200 ms in 30 trials. No canceled answer resumes. | Speech synthesis remains an integration requirement. |
+| REQ-06 | Capture a voice question that the user starts. Stream each frame to the phone while the user speaks. Show capture status and recognition failures. | P0. Firmware and phone. | TC-06: release stops capture within 100 ms in 100 trials. Capture ends by 20 seconds. | The phone application must accept streamed audio and run speech recognition. |
+| REQ-07 | Read the answer aloud. Play each frame as it arrives from the phone. Allow the user to interrupt playback. | P0. Firmware and phone. | TC-07: interruption stops playback within 200 ms in 30 trials. No canceled answer resumes. | The phone application must supply synthesized speech. |
 | REQ-08 | Use buttons to ask the Agent about the selected ski session or turn. | P0. Agent and firmware. | TC-08: all 20 context tests use the correct ski session. The Agent identifies conclusions that lack evidence. | HeygoAI coaching tools remain unresolved. |
-| REQ-09 | Hold a button to speak with a human participant in a private room. | P0. Service, phone, and firmware. | TC-09: 20 trials with competing speakers allow one sender. No expired speech plays after the connection returns. | The feature needs a transport and a second endpoint. |
+| REQ-09 | Hold a button to speak with a human participant in a shared room. The phone manages the room and the speaking permission. | P0. Phone, service, and firmware. | TC-09: 20 trials with competing speakers allow one sender. No expired speech plays after the connection returns. | The phone application must support intercom. The feature needs a room service and a second endpoint. |
 | REQ-10 | Offer one practice goal based on available evidence. | P1. Product and Agent. | TC-10: all 10 examples include the goal, evidence, and limits. | A qualified reviewer must check coaching content. |
 | REQ-11 | Offer a small quest or badge for practice and review. | P1. Product and service. | TC-11: repeated completion events create one reward. No reward depends on maximum speed. | Define reward conditions from events that passed checks. |
 | REQ-12 | Save a short reflection linked to a ski session. Allow edits. Allow deletion. | P1. Phone and service. | TC-12: 10 save-and-retry trials create one reflection each. Cancellation creates no reflection. Edits and deletions persist. | Obtain consent before saving transcripts. |
 | REQ-13 | Keep the last report available during a network failure. Show its generation time and age. | P0. Firmware and service. | TC-13: 10 outage trials retain one valid report. The device never queues live intercom audio. | Limit storage use. Limit Flash writes. |
-| REQ-14 | Show microphone state and recipient. Enforce access control. Enforce data deletion. | P0. Service and firmware. | TC-14: unauthorized access always fails in the test matrix. The device deletes local private data when the user unlinks it. | Token handling and deletion APIs need design. |
+| REQ-14 | Deferred. The first version builds no privacy or authorization feature. See D-13 in the decision amendments. | Deferred. | No test in the first version. | None. |
 | REQ-15 | Support three buttons, gloves, and readable Chinese labels. | P0. Design and firmware. | TC-15: all required glyphs render. At least 4 of 5 users complete each core task. | Test button use with gloves on hardware. Test screen readability on hardware. |
 | REQ-16 | Keep audio, reports, and power use within measured device limits. | P0. Firmware. | TC-16: a 60-minute mixed workload has no reset or allocation failure. State when battery data is unavailable. | Battery runtime and low-temperature limits are unknown. |
 | REQ-17 | Keep Coach mode, Team mode, and report states distinct. Require the user to enter Rest mode manually before interaction. | P0. Firmware and design. | TC-17: all 50 transition trials preserve mode identity. No gesture starts capture for both the Agent and Team mode. | The design does not assume automatic motion classification. |
 | REQ-18 | Compare two ski sessions. Show differences in conditions or source. | P1. Data and design. | TC-18: all 10 comparisons disclose incompatible units, missing fields, and source differences. | Comparable ski session metadata may be absent. |
 | REQ-19 | Share a selected report through the phone with explicit consent. | P1. Phone and service. | TC-19: revocation blocks all tested attempts to open the shared report again. | Share links require a service that passed checks. |
-| REQ-20 | Explain connection failures. Support recovery with limited diagnostic data. | P0. Firmware and service. | TC-20: 10 reconnect trials avoid duplicate requests. Logs contain no token, audio, or full transcript. | Test transport errors and clock changes. |
+| REQ-20 | Explain connection failures. Support recovery with limited diagnostic data. | P0. Firmware and service. | TC-20: 10 reconnect trials avoid duplicate requests. No expired answer plays. | Test transport errors and clock changes. |
 
 ## 7. Experience details
 
@@ -185,27 +191,40 @@ Team mode sends speech to the named human room.
 The screen must show the destination before capture starts.
 The same hold gesture must never start both flows.
 
-The proposed gesture starts with an OK hold of 500 ms.
-The user releases OK to stop capture.
+The device acts as a microphone and a speaker for the phone.
+The phone application runs speech recognition, speech synthesis, gateway requests, and retries.
+
+In Coach mode, an OK hold of 500 ms starts capture.
+The device streams each audio frame to the phone at once.
+The device does not store the whole question, and it does not wait for the gateway.
+The phone decides when to forward the audio.
+When the user releases OK, the device stops capture and tells the phone that the question ended.
+
+In Team mode, an OK hold of 500 ms sends a speaking request to the phone.
+The microphone stays off.
+The phone obtains speaking permission and returns a start message.
+If the user still holds OK, the device starts capture and plays a short cue.
+If the user already released OK, the device ignores the start message.
+
 The application must suppress the short-click action after a hold.
 Capture has a proposed 20-second limit.
-Human intercom requires speaking permission before the device captures or sends audio.
-
-The server must accept the Agent request before the device starts capture.
-The device shows a waiting state until the server accepts the request.
-The device rejects server acceptance after OK release or exchange cancellation.
 
 An UP hold of 500 ms produces the cancellation command.
-The device must stop playback within 200 ms after it recognizes that command.
+A DOWN hold of 500 ms returns to the previous page.
+The device must stop playback within 200 ms after it recognizes the cancellation command.
 This limit equals 700 ms from the initial UP press.
 The device must stop capture within 100 ms after it recognizes the cancellation command.
+The device tells the phone about each cancellation.
 The normal capture stop limit starts when the user releases OK.
+
+The phone streams the answer audio to the device frame by frame.
+The device plays each frame as it arrives.
 
 The MVP uses one audio owner at a time.
 It does not depend on acoustic echo cancellation.
-If the network fails, the device stops live capture.
-The device shows the network failure.
-It must not send old human speech after the connection returns.
+If the link fails, the device stops live capture.
+The device shows the link failure.
+It must not queue or play old human speech after the link returns.
 
 ## 8. Proposed success targets
 
@@ -241,4 +260,6 @@ If the scope changes to sales, the Product Owner must add separate requirements 
 - [System architecture](02-architecture.md).
 - [Scrum backlog](03-scrum-backlog.md).
 - [Validation and decisions](04-validation-and-decisions.md).
+- [Decision amendments](05-decision-amendments.md).
+- [Sprint 0 two-day plan](06-sprint-0-two-day-plan.md).
 - [Document index](README.md).

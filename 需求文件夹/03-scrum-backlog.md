@@ -2,11 +2,11 @@
 
 # Scrum backlog and delivery plan
 
-Date: 2026-10-16. Version: 0.1.
+Date: 2026-10-16. Version: 0.2.
 
 Status: Proposed. This document defines a draft plan. No story, Sprint, or test is complete.
 
-Related documents: [Requirements](01-product-requirements.md), [Architecture](02-architecture.md), and [Validation and decisions](04-validation-and-decisions.md).
+Related documents: [Requirements](01-product-requirements.md), [Architecture](02-architecture.md), [Validation and decisions](04-validation-and-decisions.md), and [Decision amendments](05-decision-amendments.md).
 
 ## 1. Product Goal
 
@@ -35,11 +35,11 @@ The product does not provide emergency communication, route guidance, or medical
 | Scrum accountabilities | One Product Owner and one Scrum Master support the Developers. | Assign accountabilities before Sprint Planning. |
 | Hardware | The minimum demonstration uses two authenticated endpoints, including at least one AI Passport. A phone client can serve as the peer. | Check available hardware before Sprint 1. The team prefers two AI Passports for expanded tests. A second AI Passport remains optional. |
 | Device limits | ESP32-C3, 8 MB Flash, no PSRAM, 240 × 320 screen, three buttons, and a 500 mAh battery. | Check memory, storage, rendering, and controls on hardware. |
-| Connections | Phone Wi-Fi hotspots and a gateway are candidate choices. | Test connection stability, power use, and deployment limits. |
-| Existing software | The baseline scans Wi-Fi and advertises through BLE. | Implement any required connection or provisioning functions. Test those functions. |
+| Connections | D-08 selects a BLE phone bridge. The device does not use Wi-Fi. | Test link stability, power use, and phone background behavior. |
+| Existing software | The baseline advertises through BLE. A phone application exists, and another team develops it. | Implement the device side of the phone application interface. Test it with that application. |
 | HeygoAI | Interfaces, account rules, report formats, and voice services remain unknown. | Obtain permitted access and sample data. |
 | Measurements | The project has no documented device IMU or GNSS. | Identify each source before promising a turn view. |
-| Voice reference | A separate AI-passport workspace contains uncommitted BLE intercom reference code. | Test its transport assumptions. No phone application or device test evidence exists. |
+| Voice reference | A separate AI-passport workspace contains uncommitted BLE intercom reference code. | Test its frame format with the phone application. No device test evidence exists. |
 
 Story points compare uncertainty and effort. They do not represent days.
 Point ranges remain provisional until Developers refine each story.
@@ -74,12 +74,12 @@ An internal prototype or a simulated service does not prove actual integration.
 P0 means the proposed first release needs the capability.
 P1 means a later increment may add the capability.
 These priorities do not represent user approval.
-Every story below has status **Proposed**.
+Every story below has status **Proposed**, except US-14. US-14 has status **Deferred**.
 Each story maps to the matching requirement and test in the related documents.
 
 | Story | Requirement | Priority | Points | Proposed owner | First target |
 |---|---|---|---|---|---|
-| US-01 Account and device binding | REQ-01 | P0 | 5–8 | Service Developer | Sprint 1 |
+| US-01 Device connection | REQ-01 | P0 | Re-estimate | Firmware and Phone Developers | Sprint 1 |
 | US-02 Session and report sync | REQ-02 | P0 | 5–8 | Service Developer | Sprint 1 |
 | US-03 Report cards | REQ-03 | P0 | 3–5 | Firmware Developer | Sprint 1 |
 | US-04 Metric charts | REQ-04 | P0 | 3–5 | Firmware Developer | Sprint 2 |
@@ -92,7 +92,7 @@ Each story maps to the matching requirement and test in the related documents.
 | US-11 Quests and badges | REQ-11 | P1 | 3–5 | Product Developer | Later |
 | US-12 Reflection journal | REQ-12 | P1 | 3–5 | Product Developer | Later |
 | US-13 Cached reports | REQ-13 | P0 | 5–8 | Firmware Developer | Sprint 1–4 |
-| US-14 Privacy and authorization | REQ-14 | P0 | 5–8 | Service Developer | Sprint 1–4 |
+| US-14 Privacy and authorization | REQ-14 | Deferred | None | None | Not in the first version |
 | US-15 Gloves and readability | REQ-15 | P0 | 3–5 | Firmware Developer | Sprint 1–4 |
 | US-16 Resource limits | REQ-16 | P0 | 5–8 | Firmware Developer | Sprint 1–4 |
 | US-17 Explicit modes | REQ-17 | P0 | 3–5 | Firmware Developer | Sprint 1–4 |
@@ -103,15 +103,16 @@ Each story maps to the matching requirement and test in the related documents.
 Owners describe skill responsibilities. They do not assign people or create separate Scrum teams.
 The initial Sprint targets show ordering. They do not commit the whole story to that Sprint.
 
-### US-01: Account and device binding
+### US-01: Device connection
 
-As a skier, I want my device to show only my account data.
+As a skier, I want my phone to find and connect to my device, so that the device can use the phone link.
 
-- Acceptance: The authorized account can bind the device and obtain its reports.
-- Acceptance: Another account cannot obtain those reports. Unbinding ends the device's access.
-- Dependencies: An agreed identity method, device identity, and REQ-14.
-- Risk: HeygoAI may not permit device access through the proposed method.
-- Verification: TC-01, including unauthorized access and unbinding tests.
+- Acceptance: The device advertises its name after start-up. The existing phone application finds it and connects.
+- Acceptance: The device accepts one phone at a time.
+- Acceptance: The link uses no encryption, passkey, or binding check, as D-12 states.
+- Dependencies: The BLE interface of the phone application (Q-13).
+- Risk: Any nearby BLE client can connect. The first version accepts this risk.
+- Verification: TC-01 with repeated connection attempts.
 
 ### US-02: Session and report sync
 
@@ -156,28 +157,26 @@ As a skier, I want to check individual turns and understand the evidence behind 
 
 ### US-06: Voice capture
 
-As a skier, I want a deliberate button action to capture a question.
+As a skier, I want a deliberate button action to capture my question, so that the Agent hears the first word.
 
-- Acceptance: In Coach mode, the device requests capture for the current Agent exchange after a 500 ms OK hold.
-- Acceptance: The screen shows a waiting state before acceptance. Capture starts only after the server accepts that exchange and while OK remains held.
-- Acceptance: The screen shows microphone activity during capture.
-- Acceptance: Releasing OK stops microphone capture within 100 ms. Each clip lasts at most 20 seconds.
-- Acceptance: The device recognizes cancellation when the user holds UP for 500 ms. Capture then stops within 100 ms. The system discards unsent audio.
-- Acceptance: The user sees the transcript or an explicit recognition failure.
-- Acceptance: The system does not send cancelled audio as a new Agent question. Late acceptance cannot restart cancelled capture.
-- Dependencies: US-14, US-17, device audio, and a documented transcription service.
-- Risk: Wind, gloves, network loss, and memory limits can affect capture.
-- Verification: TC-06 with capture, cancellation, recognition failure, and connection loss.
+- Acceptance: On the Coach page, a 500 ms OK hold starts the microphone. The screen shows microphone activity from the same moment.
+- Acceptance: The device streams each 20 ms frame to the phone at once. It does not wait for the gateway.
+- Acceptance: Releasing OK stops capture within 100 ms. The device tells the phone that the input ended. Each question lasts at most 20 seconds.
+- Acceptance: A 500 ms UP hold cancels the question. Capture then stops within 100 ms. The device tells the phone to drop the audio.
+- Acceptance: When the phone reports a recognition failure, the screen shows a short retry message.
+- Dependencies: US-17, device audio, and a phone application that accepts streamed audio and runs speech recognition.
+- Risk: Wind, gloves, and link loss can affect capture.
+- Verification: TC-06 with capture, release, cancellation, recognition failure, and link loss.
 
 ### US-07: Speech playback
 
-As a skier, I want to hear an answer and stop playback immediately through the defined control.
+As a skier, I want to hear an answer and stop it at once, so that I control the device.
 
-- Acceptance: The device plays the selected response and shows playback state.
-- Acceptance: The device recognizes cancellation when the user holds UP for 500 ms. Playback then stops within 200 ms.
+- Acceptance: The phone streams the answer frame by frame. The device plays each frame as it arrives and shows playback state.
+- Acceptance: The device recognizes cancellation when the user holds UP for 500 ms. Playback then stops within 200 ms. The device tells the phone.
 - Acceptance: The proposed playback budget is 700 ms from the initial UP press to silence.
-- Acceptance: Cancelled playback does not resume after a delayed response or reconnect.
-- Dependencies: US-17, device audio, and a documented speech source.
+- Acceptance: Cancelled playback does not resume after a delayed frame or a reconnect.
+- Dependencies: US-17, device audio, and a phone application that supplies synthesized speech.
 - Risk: Speaker output can enter the microphone or conflict with human push-to-talk.
 - Verification: TC-07, including interruption and audio priority tests.
 
@@ -185,7 +184,7 @@ As a skier, I want to hear an answer and stop playback immediately through the d
 
 As a skier, I want to ask the Agent about the report or turn currently on screen.
 
-- Acceptance: The request includes the selected ski session, report version, and optional turn identifier.
+- Acceptance: The device tells the phone which report and turn the user selected. The request includes the ski session, report version, and optional turn identifier.
 - Acceptance: The answer identifies its source context and states when evidence is insufficient.
 - Acceptance: A late answer cannot replace a newer request or speak during human push-to-talk.
 - Dependencies: US-03, US-05, US-06, US-07, and a documented Agent interface.
@@ -195,20 +194,21 @@ As a skier, I want to ask the Agent about the report or turn currently on screen
 ### US-09: Human push-to-talk
 
 As a skier, I want a button to speak with my selected partner through a shared voice channel.
+The button lets me keep my gloves on and my phone in my pocket.
 
-- Acceptance: Two authorized participants can join the same session and hear each other in turn.
-- Acceptance: Only one participant receives speaking permission at a time. Each permission lease lasts at most 25 seconds.
-- Acceptance: In Team mode, the device requests speaking permission when the user holds OK for 500 ms.
-- Acceptance: Capture starts only after the current speaking permission arrives and while OK remains held.
-- Acceptance: The device rejects speaking permission for cancelled, expired, or superseded requests.
-- Acceptance: Releasing OK stops microphone capture within 100 ms. Each captured utterance lasts at most 20 seconds.
+- Acceptance: Two participants can join the same room and hear each other in turn.
+- Acceptance: In Team mode, a 500 ms OK hold sends a speaking request to the phone. The microphone stays closed.
+- Acceptance: Capture starts only after the phone returns a start message and while OK remains held. The device plays a short cue at that moment.
+- Acceptance: The device ignores a start message that arrives after OK release.
+- Acceptance: The phone and the room service allow one speaker at a time. Each lease lasts at most 25 seconds.
+- Acceptance: Releasing OK stops capture within 100 ms. Each utterance lasts at most 20 seconds.
 - Acceptance: The screen distinguishes waiting, speaking, listening, and unavailable states.
-- Acceptance: Button release, timeout, or connection loss ends speaking permission and capture.
+- Acceptance: Button release, timeout, or link loss ends capture.
 - Acceptance: Human voice and Agent speech follow the audio priority rules in the architecture.
-- Dependencies: US-01, US-14, US-17, documented transport, and two authenticated endpoints. At least one endpoint must be an AI Passport.
+- Dependencies: US-01, US-17, a phone application with intercom support, a room service, and two endpoints. At least one endpoint must be an AI Passport.
 - Dependencies: A phone client can serve as the peer. Two AI Passports remain the preferred expanded test.
-- Risk: Network delay, competing button requests, and resource limits can prevent usable conversation.
-- Verification: TC-09 with simultaneous requests, alternating speakers, connection loss, and reconnection.
+- Risk: Each utterance crosses two BLE links. The 500 ms audio target lacks a measurement.
+- Verification: TC-09 with simultaneous requests, alternating speakers, link loss, and reconnection.
 
 ### US-10: Focused practice
 
@@ -246,20 +246,16 @@ As a skier, I want to read downloaded reports without a network connection.
 
 - Acceptance: A complete cached report remains readable after disconnection and restart.
 - Acceptance: The screen shows the report generation time and elapsed age. Interrupted downloads preserve the last complete report.
-- Dependencies: US-02, US-14, and a measured storage budget.
+- Dependencies: US-02 and a measured storage budget.
 - Risk: Flash limits and interrupted writes can damage cached data.
 - Verification: TC-13 with power interruption, full storage, and reconnection.
 
 ### US-14: Privacy and authorization
 
-As a skier, I want control over microphone use and access to my data.
+Status: Deferred. D-13 excludes privacy and authorization features from the first version.
 
-- Acceptance: The microphone is inactive outside explicit capture or speaking states.
-- Acceptance: The system rejects requests with invalid authorization. Stored credentials never appear in ordinary logs.
-- Acceptance: The defined deletion flow deletes local data and reports the actual status of any remote deletion.
-- Dependencies: Checked identity, retention rules, and service deletion capabilities.
-- Risk: External services may retain audio or lack immediate deletion.
-- Verification: TC-14 with denied access, microphone checks, deletion, and sanitized logs.
+The first version still shows microphone activity, because US-06 and US-17 require it.
+A later version needs a separate decision before this story returns to the backlog.
 
 ### US-15: Gloves and readability
 
@@ -319,7 +315,6 @@ As a skier, I want a clear recovery action when a connection or service fails.
 
 - Acceptance: Each defined failure shows a useful state and a recovery action.
 - Acceptance: Reconnection does not duplicate ski sessions, questions, or speaking permission.
-- Acceptance: Diagnostic records exclude credentials, raw audio, and unnecessary personal data.
 - Dependencies: All network operations and a documented error model.
 - Risk: Blind retries can repeat actions or consume battery.
 - Verification: TC-20 with service errors, network changes, expired access, and repeated reconnects.
@@ -336,12 +331,12 @@ Cancellation budgets start when the 500 ms UP hold completes. Release budgets st
 
 | Sprint | Sprint Goal | Selected story slices | User-visible Increment | Review evidence |
 |---|---|---|---|---|
-| 1 | Read a synthetic ski session report. Test connection feasibility. | US-01–03 prototypes, US-13–17 and US-20 foundations, plus a US-09 transport experiment. | Read clearly labeled synthetic cards on hardware. Disconnect. Reopen the cached report. | Synthetic source labels, device demonstration, cache recovery, and Wi-Fi versus BLE feasibility findings. |
-| 2 | Obtain an authorized report. Explain its available measurements. | Actual US-01–05 paths, plus applicable US-13–17 and US-20 slices. | Read a real report. Select available turns. Check values. Replay the supported representation. | Actual source and access evidence, reference geometry, data provenance, missing-data cases, and glove checks. |
+| 1 | Read a synthetic ski session report. Test connection feasibility. | US-01–03 prototypes, US-13, US-15–17, and US-20 foundations, plus a US-09 link experiment. | Read clearly labeled synthetic cards on hardware. Disconnect. Reopen the cached report. | Synthetic source labels, device demonstration, cache recovery, and BLE link findings with the phone application. |
+| 2 | Obtain an authorized report. Explain its available measurements. | Actual US-01–05 paths, plus applicable US-13, US-15–17, and US-20 slices. | Read a real report. Select available turns. Check values. Replay the supported representation. | Actual source and access evidence, reference geometry, data provenance, missing-data cases, and glove checks. |
 | 3 | Ask the Agent about the visible report through a button. | US-06–08, applicable shared controls, and a US-09 integration check. | Record a question. Check its transcript. Hear an answer about the report. Stop playback. | Real audio and service paths, cancellation cases, latency measurements, and human voice integration findings. |
 | 4 | Speak with one partner. Recover from interrupted connections. | US-09 and remaining first-release acceptance across all P0 stories. | Two authenticated endpoints alternate human voice, with at least one AI Passport. Reports, Agent controls, and recovery states remain consistent. | Two-participant tests, complete P0 evidence, resource profiles, and a controlled pilot. |
 
-The Sprint 1 transport experiment compares Wi-Fi streaming with a BLE phone bridge.
+The Sprint 1 link experiment checks BLE streaming with the existing phone application.
 It checks the uncommitted reference code without assuming that the code works on the device.
 The Sprint 3 integration check reduces remaining risk for human push-to-talk.
 An experiment alone does not complete US-09.
@@ -362,11 +357,11 @@ Every task below has status **Proposed**.
 |---|---|---|---|
 | S1-01 Discover permitted HeygoAI access. | US-01–02 | Service Developer | Record known identity and source options. Mark unknown access limits. Request a permitted sample. |
 | S1-02 Define one candidate report contract. | US-02–03 | Service and Firmware Developers | Create labeled synthetic examples, version cases, missing states, and payload limits. Keep actual HeygoAI fields unknown. |
-| S1-03 Test candidate connection routes. | US-09, US-20 | Firmware and Phone Developers | Compare Wi-Fi streaming and the BLE phone bridge. Record phone work, audio limits, and device evidence. |
-| S1-04 Integrate one synthetic report path. | US-01–02 prototypes, US-14 | Service Developer | Connect the test service to hardware. Show synthetic labels. Reject unauthorized test access. |
+| S1-03 Test the BLE link with the phone application. | US-09, US-20 | Firmware and Phone Developers | Stream ADPCM frames in both directions. Record frame loss, latency, phone background behavior, and device evidence. |
+| S1-04 Integrate one synthetic report path. | US-01–02 prototypes | Service Developer | Connect the test service to hardware through the phone. Show synthetic labels. |
 | S1-05 Implement the first report cards. | US-03, US-15, US-17 | Firmware Developer | Show readable cards, Chinese glyphs, manual Rest mode, and all button actions on hardware. |
 | S1-06 Preserve one cached report. | US-13 | Firmware Developer | Read the cached report after disconnection and restart. Preserve it during an interrupted transfer. |
-| S1-07 Add privacy and failure states. | US-14, US-20 | Developers | Show access failure and retry states. Check that the microphone is inactive. Check that diagnostics exclude sensitive data. |
+| S1-07 Add failure states. | US-20 | Developers | Show link failure and retry states. Check that the microphone is inactive outside capture. |
 | S1-08 Measure the first resource profile. | US-16 | Firmware Developer | Record firmware size, free memory, storage use, current draw, and measurement conditions. |
 | S1-09 Run the complete user flow. | All selected slices | Developers | Record requirement links, actual results, known gaps, and the usable Increment. |
 | S1-10 Review the Increment. Adapt the Product Backlog. | Product Backlog | Scrum Team | Record user feedback, new work, changed assumptions, and the next ordering decision. |
@@ -420,7 +415,7 @@ Every selected product slice must meet all applicable checks below.
 - Applicable device tests pass under recorded conditions.
 - The screen shows correct Chinese glyphs and necessary units, sources, and failure states.
 - Button actions, mode transitions, and audio cancellation pass their tests.
-- Authorization, microphone behavior, data deletion, and sanitized diagnostics meet the slice's privacy criteria.
+- Microphone behavior matches the capture states in the slice.
 - Memory, storage, power, and timing measurements meet the agreed slice limits.
 - The team resolves defects that prevent the selected action or violate a P0 constraint.
 - English and Chinese documents describe the same behavior.

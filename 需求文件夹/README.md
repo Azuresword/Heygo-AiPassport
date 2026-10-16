@@ -2,7 +2,7 @@
 
 # HeygoAI and AI Passport: requirements workspace
 
-Version: 0.1. Date: 2026-10-16. Status: Draft for review.
+Version: 0.2. Date: 2026-10-16. Status: Draft for review.
 This folder contains the product definition, proposed architecture, Scrum backlog, and validation plan.
 It contains no firmware implementation.
 No evidence establishes a working HeygoAI integration.
@@ -15,6 +15,8 @@ No evidence establishes a working HeygoAI integration.
 | [System architecture](02-architecture.md) | Components, buttons, report data, turn geometry, voice flows, and device limits. |
 | [Scrum backlog](03-scrum-backlog.md) | User stories, four proposed Sprints, roles, events, and completion criteria. |
 | [Validation and decisions](04-validation-and-decisions.md) | 20 test cases, assumptions, open questions, risks, and decision records. |
+| [Decision amendments](05-decision-amendments.md) | Eight decisions on transport, codec, gestures, audio streaming, and first-version scope. |
+| [Sprint 0 two-day plan](06-sprint-0-two-day-plan.md) | The work that two days can finish, plus the excluded work and its reason. |
 
 ## Core experience
 
@@ -32,10 +34,12 @@ Practice goals, quests, reflection notes, historical comparisons, and sharing re
 The user requested the core features and Scrum development.
 The architecture, priorities, four-Sprint forecast, timings, and capacity limits remain proposals.
 No person accepted a role or a delivery date.
+The user accepted D-08 to D-14. D-15 remains a proposal.
+A phone application already exists. Another team develops it.
 
 AI Passport hardware facts come from the existing local source repository.
 The architecture lists those sources and distinguishes local changes from released capabilities.
-HeygoAI interfaces, real ski data, the phone platform, and the transport remain open decisions.
+D-08 selected the transport. HeygoAI interfaces, real ski data, the phone application interface, and the phone platform remain open.
 
 ## Terms
 
@@ -65,6 +69,8 @@ HeygoAI interfaces, real ski data, the phone platform, and the transport remain 
 | TLS | Transport Layer Security. It protects data during a network connection. |
 | UX | User experience. It describes how users interact with the product. |
 | Data provenance | Information about the data source and processing history. |
+| IMA ADPCM | A simple audio compression format. It stores each sample in 4 bits. |
+| Deferred | A requirement that stays in the record but leaves the first version. |
 
 ## Document maintenance
 
@@ -83,9 +89,11 @@ Check that each rewrite preserves the meaning.
 Check Chinese text manually.
 
 ```bash
-python3 ~/.codex/skills/asd-ste100/scripts/ste-lint.py \
+STE_SKILL="${STE_SKILL:-$HOME/.claude/skills/asd-ste100}"
+python3 "${STE_SKILL}/scripts/ste-lint.py" \
   README.md 01-product-requirements.md 02-architecture.md \
-  03-scrum-backlog.md 04-validation-and-decisions.md
+  03-scrum-backlog.md 04-validation-and-decisions.md \
+  05-decision-amendments.md 06-sprint-0-two-day-plan.md
 ```
 
 Run that command from this folder.

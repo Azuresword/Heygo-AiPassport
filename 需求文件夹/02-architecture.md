@@ -2,7 +2,7 @@
 
 # HeygoAI × AI Passport: proposed architecture
 
-Version: 0.1
+Version: 0.2
 
 Date: 2026-10-16
 
@@ -12,6 +12,7 @@ This document proposes a design. It does not describe an implemented integration
 Requirement IDs refer to [product requirements](01-product-requirements.md).
 Delivery order appears in the [Scrum backlog](03-scrum-backlog.md).
 Open decisions and checks appear in [validation and decisions](04-validation-and-decisions.md).
+Accepted decisions appear in [decision amendments](05-decision-amendments.md).
 
 ## 1. Evidence and limits
 
@@ -24,8 +25,10 @@ Open decisions and checks appear in [validation and decisions](04-validation-and
 | BSP source evidence | ES8311 microphone and speaker APIs support mono PCM at 16 kHz and 16 bits | Test voice under actual snow conditions. |
 | Product source evidence | Battery capacity: 500 mAh | Measure runtime. Do not derive runtime from capacity alone. |
 | Conditional | A battery gauge may be absent or return `-1` | Show an unknown state instead of a false percentage. |
-| Baseline behavior evidence | Wi-Fi scanning and BLE advertising | Connection, provisioning, and application protocols need further work. |
+| Baseline behavior evidence | BLE advertising | The device link to the phone application needs further work. The device does not use Wi-Fi (D-08). |
 | Local reference only | Uncommitted BLE intercom work exists | Review this work before reuse. Test this work before reuse. |
+| Team statement | A phone application exists. Another team develops it. | Follow its BLE interface. Q-13 tracks that interface. |
+| Measured build | A build without Wi-Fi left 180,840 bytes of static D/IRAM free. | Use this figure as the starting budget. Measure the run-time heap separately. |
 | Unverified | HeygoAI APIs, report fields, permissions, and voice contracts | Use an adapter. Keep integration blocked until contracts exist. |
 | Unverified | IMU, GNSS, barometer, motion sensing, or touch interface on the inspected board | Use verified sources and button controls. |
 | Unverified | Water resistance, cold limits, wind audio, gloves, sunlight, radio range, and runtime | Keep these items in pilot acceptance tests. |
@@ -56,45 +59,29 @@ These paths belong to `/Users/dylan/AI-passport`. They are not files in this new
 ```mermaid
 flowchart LR
     S[Phone or verified external sensors] --> H[HeygoAI services]
-    U[Phone companion app] -->|Pairing, account, consent, room| G[Proposed gateway and adapter]
+    P[AI Passport] <-->|BLE: buttons, audio frames, reports, status| U[Existing phone application]
+    U <-->|Internet| G[Gateway and adapter]
     H <-->|Verified contracts only| G
-    P[AI Passport] <-->|TLS control, reports, audio| W[Phone Wi-Fi hotspot]
-    W <-->|Internet connection| G
-    G <-->|Room audio and speaking permission| R[Authorized team members]
-    P -.->|Alternative BLE control or audio bridge| U
-    U -.->|Alternative phone relay| G
+    G <-->|Room audio and speaking permission| R[Team members]
 ```
 
-Solid lines show the first transport candidate. They do not show existing services.
-Dotted lines show the BLE alternative.
-The hotspot supplies network access. The phone application does not automatically receive hotspot traffic.
+D-08 selects a BLE phone bridge.
+The device acts as a BLE peripheral. The existing phone application acts as the central.
+The device does not join Wi-Fi. It needs no provisioning screen.
 
-Start the design investigation with a Wi-Fi hotspot.
-Establish an outbound TLS connection from Passport to the gateway.
-Use a 2.4 GHz hotspot for the hardware investigation.
-This candidate avoids dependence on continuous phone relay execution.
-This candidate still depends on these conditions:
+D-12 keeps the first-version link open.
+The link uses no encryption, no passkey, and no binding check.
+Any nearby BLE client can connect. The first version accepts that risk.
+The device accepts one phone connection at a time. The baseline configuration already sets this limit.
 
-- A stable hotspot.
-- Internet access.
-- Provisioning.
-- Memory for TLS.
-- Battery use.
-- Server support.
+The existing phone application belongs to another team. Its BLE interface remains unknown.
+Q-13 tracks that interface.
+The device protocol must follow that interface. This document therefore defines device behavior, not a wire format.
 
-A gateway adapts HeygoAI contracts and controls device sessions.
-The gateway can also host the team room service.
-The gateway becomes optional only if verified HeygoAI services provide every required contract and security control.
-
-The BLE candidate uses a phone application as a relay.
-Test phone permissions, audio routing, background limits, and reconnection before selecting this candidate.
-The local intercom reference makes BLE a reuse candidate. It does not replace these tests.
-Do not switch transports automatically during an audio exchange.
-
-Team PTT means network voice between authorized people.
+Team PTT means network voice between team members.
 Team PTT requires these conditions:
 
-- An available transport.
+- An available phone link.
 - A reachable room service.
 - Valid room membership.
 
@@ -102,12 +89,19 @@ It is not an offline radio walkie-talkie.
 
 ### Responsibility map
 
+D-14 limits the device to four tasks:
+
+1. Tell the phone about button events.
+2. Stream microphone frames to the phone.
+3. Play the audio frames that the phone streams.
+4. Show the status, text, and reports that the phone supplies.
+
 | Component | Owns | Does not claim |
 |---|---|---|
 | HeygoAI | Existing account, ski analysis, reports, and coaching capabilities after contract checks | Undocumented APIs or available raw sensor data |
-| Phone companion | Account consent, device binding, hotspot guidance, room selection, and optional sensor capture | Guaranteed background execution or automatic hotspot control |
-| Gateway and adapter | Contract conversion, scoped tokens, device session routing, room permissions, expiry, and telemetry | New ski measurements without a verified source |
-| Passport application | New UI, button state, bounded cache, audio ownership, report rendering, and connection state | Local speech recognition, local language models, or verified motion sensing |
+| Phone application | Device connection, account, speech recognition, speech synthesis, gateway requests, retries, room selection, and speaking permission | Guaranteed background execution |
+| Gateway and adapter | Contract conversion, device session routing, room service, and expiry | New ski measurements without a verified source |
+| Passport application | The four device tasks, pages, button state, the bounded cache, and audio ownership | Local speech recognition, local language models, or verified motion sensing |
 | Passport BSP | Screen, buttons, audio format, volume, buses, and other board operations | Product pages or coaching logic |
 | External data source | Timestamped samples and declared measurement quality | Trust without source identity and validation |
 
@@ -119,10 +113,19 @@ Test the adapter with synthetic fixtures before a real account connection.
 
 ### Explicit modes
 
-The user manually selects Ski or Rest mode.
-The pilot permits report browsing and voice interactions only in Rest mode.
+The device starts in Ski mode.
 Ski mode shows a small status page with no detailed chart or voice interaction.
+The pilot permits report browsing and voice interactions only in Rest mode.
 The device cannot check whether the user stopped moving.
+
+D-15 proposes the Rest mode gestures. They stay proposals until the user accepts them.
+
+- An OK hold in Ski mode enters Rest mode.
+- Rest mode opens on the Reports page.
+- A DOWN hold on the top Rest page opens a confirmation. A short OK then returns to Ski mode.
+
+A hold enters Rest mode because a gloved hand can press a button by accident while skiing.
+The Reports page ignores an OK hold. The OK hold that entered Rest mode therefore cannot start capture.
 
 Rest mode offers Reports, Coach, and Team pages.
 The Coach page sends voice to the AI Agent.
@@ -132,18 +135,21 @@ Use text and icons. Do not use color alone.
 
 | Input | Proposed behavior |
 |---|---|
+| Hold OK for at least 500 ms in Ski mode | Enter Rest mode. This gesture is a D-15 proposal. |
 | Short UP or DOWN | Move focus, change pages, or select a report. |
 | Short OK | Select the focused item. |
-| Hold OK for at least 500 ms in Rest → Coach | Request microphone ownership. Start a new Agent exchange. |
-| Hold OK for at least 500 ms in Rest → Team | Request exclusive speaking permission. Do not capture audio before permission. |
-| Release OK after capture | Stop capture. End transmission after any bounded final frame. |
+| Hold OK for at least 500 ms on the Coach page | Start capture. Stream each frame to the phone. |
+| Hold OK for at least 500 ms on the Team page | Send a speaking request to the phone. Start capture only after the phone returns a start message. |
+| Hold OK on the Reports page | Do not capture audio. |
+| Release OK after capture | Stop capture. Tell the phone that the input ended. |
 | Continue a capture for 20 seconds | Stop capture. Show the limit. |
-| Hold UP for at least 500 ms | Cancel the current exchange or return to the preceding page. |
-| Hold OK on other pages | Do not capture audio. |
+| Hold UP for at least 500 ms | Cancel the active audio owner. Do nothing when no audio owner is active. |
+| Hold DOWN for at least 500 ms | Return to the preceding page. On the top Rest page, open the exit confirmation. |
 
 This proposal uses these timings as initial acceptance values.
 A long OK press must suppress the short OK event on release.
 A long UP event must suppress the short UP event.
+A long DOWN event must suppress the short DOWN event.
 The application recognizes cancellation when the UP hold reaches 500 ms.
 
 The 200 ms playback stop budget starts at that threshold.
@@ -152,7 +158,7 @@ Capture must stop within 100 ms after recognized cancellation.
 For a regular OK release, the 100 ms capture stop budget starts at release.
 
 Button callbacks emit events and return immediately.
-A task handles networking, storage, and audio work.
+A task handles the link, storage, and audio work.
 
 ### Proposed 240 × 320 report page
 
@@ -284,6 +290,10 @@ Do not trust a message's room or account fields without server authorization.
 Reject expired content. Reject content from an old device session or epoch.
 A sequence gap produces a visible quality state or an audio loss event.
 
+D-13 defers authorization in the first version.
+The first version still uses `session_id`, `epoch`, and `expires_at`, because these fields reject stale messages.
+The first two rules above apply to a later version that adds authorization.
+
 Add optional fields in a minor version.
 Use a new major version when field meaning or required fields change.
 Negotiate supported versions before the first report or audio frame.
@@ -367,10 +377,10 @@ The cache still follows account access and retention rules.
 |---|---|---|
 | Control message | 1 KiB | Reject excess content with a typed error. |
 | Report page | 8 KiB encoded | Request another page. Do not allocate an unbounded document. |
-| Reports in cache | 3 summaries and one selected detail page, within 64 KiB total | Delete the oldest authorized content from the cache. |
+| Reports in cache | 3 summaries and one selected detail page, within 64 KiB total | Delete the oldest report from the cache. |
 | Turn path | 128 points per selected turn | Request simplified segments with preserved gaps. |
 | Concurrent Agent exchanges | 1 | Cancel or finish the previous exchange first. |
-| Concurrent Team transmitters | 1 per room | Reject conflicting speaking requests. |
+| Concurrent Team transmitters | 1 per room | The phone and the room service enforce this limit. |
 | Audio capture | 20 seconds per hold | Stop capture. Release audio ownership. |
 
 These limits need heap measurements and real report samples.
@@ -380,8 +390,12 @@ Do not split one oversized message into an unbounded reassembly buffer.
 
 The application has one audio owner: None, AgentCapture, AgentPlayback, TeamCapture, or TeamPlayback.
 An owner holds permission for one audio direction.
-Before a mode change, the application cancels the current audio owner.
+Before a page change or a mode change, the application cancels the current audio owner.
 Capture and playback never run together in the pilot.
+
+D-11 makes the device a streaming microphone and speaker for the phone.
+The device holds a few frames at most. It never holds a whole question or a whole answer.
+D-09 sets the frame format: IMA ADPCM at 16 kHz, mono, with 20 ms frames.
 
 ### Coach flow
 
@@ -389,48 +403,42 @@ Capture and playback never run together in the pilot.
 sequenceDiagram
     participant U as User
     participant P as Passport
-    participant G as Gateway and adapter
-    participant H as HeygoAI Agent
+    participant A as Phone application
+    participant G as Gateway and Agent
     U->>P: Select Rest and Coach
     U->>P: Hold OK for 500 ms
-    P->>P: Allocate exchange ID and audio owner
-    P->>G: Begin exchange with report context
-    G->>H: Authorized Agent request
-    G-->>P: Accept current exchange
-    P->>P: Check held button and current exchange
+    P->>P: Take audio owner AgentCapture
+    P->>A: Start input with report context
     loop While held, up to 20 seconds
-        P->>G: Audio frame with exchange ID and sequence
-        G->>H: Stream or adapt supported input
+        P->>A: Audio frame with sequence number
     end
+    A->>G: Forward input after the gateway accepts
     U->>P: Release OK
-    P->>G: End input
-    G->>H: Complete input
-    H-->>G: Text or speech response
-    G-->>P: Current exchange response
-    P->>P: Check session, epoch, and exchange ID
-    P-->>U: Show answer and play authorized speech
-    opt User cancels or changes mode
-        P->>G: Cancel exchange
-        P->>P: Stop capture and clear pending playback
+    P->>A: End input
+    G-->>A: Text and speech answer
+    A-->>P: Answer frames and status
+    P->>P: Take audio owner AgentPlayback
+    P-->>U: Show status and play each frame
+    opt User cancels or changes page
+        P->>A: Cancel exchange
+        P->>P: Stop capture and drop pending frames
     end
 ```
 
-Keep the microphone inactive until the gateway accepts the current exchange.
-Show a waiting state until the gateway accepts the current exchange.
-Reject late acceptance after release, cancellation, expiry, or a mode change.
-The adapter may stream input while the user holds OK.
-If HeygoAI requires complete audio, the gateway buffers within a server limit.
-Passport must not store a full 20-second PCM clip in RAM.
+The microphone starts when the OK hold reaches 500 ms.
+The device streams each frame to the phone at once.
+The device does not wait for the gateway.
+The phone holds the input until the gateway accepts it.
+This rule keeps the first words of the question.
 
-If speech output does not exist, the design needs a verified speech service.
-A text-only mode supports diagnostics only. It does not satisfy REQ-07 or P0 acceptance.
-The MVP remains blocked until real speech output passes complete connection tests.
+The phone runs speech recognition and speech synthesis.
+If recognition fails, the phone reports the failure. The device shows a short retry message.
+The device shows no transcript editor. Three buttons cannot edit text.
 
-The user can cancel during capture, waiting, or playback.
-Cancellation invalidates the exchange ID. It also clears the playback queue.
-A late response from an old exchange must not play.
-A reconnect creates a new epoch and cancels the previous exchange.
-Send only the report context that the user permits.
+The user can cancel during capture or playback.
+Cancellation ends the exchange. The device drops any frame that arrives later.
+A late answer from an old exchange must not play.
+A reconnect cancels the previous exchange.
 
 ### Team PTT flow
 
@@ -438,57 +446,49 @@ Send only the report context that the user permits.
 sequenceDiagram
     participant U as User
     participant P as Passport
+    participant A as Phone application
     participant R as Room service
-    participant T as Team receivers
     U->>P: Select Rest and Team room
     U->>P: Hold OK for 500 ms
-    P->>R: Request speaking permission
+    P->>A: Speaking request
     Note over P: Microphone remains closed
-    alt Permission arrives for current held request
-        R-->>P: Lease with ID and expiry
-        P->>P: Show live microphone state
-        loop While held, up to 20 seconds and before expiry
-            P->>R: Audio with session, epoch, room, and lease
-            R->>T: Authorized current speaker audio
+    A->>R: Request speaking permission
+    alt Permission arrives and OK is still held
+        R-->>A: Lease with expiry
+        A-->>P: Start message
+        P->>P: Play cue and start microphone
+        loop While held, up to 20 seconds
+            P->>A: Audio frame with sequence number
+            A->>R: Current speaker audio
         end
         U->>P: Release OK
-        P->>P: Stop microphone
-        P->>R: End speech and release lease
-    else Busy, timeout, release, or disconnect
-        P->>P: Cancel request and keep microphone closed
+        P->>A: End speech
+        A->>R: Release lease
+    else Busy, timeout, release, or link loss
+        P->>P: Keep microphone closed
     end
 ```
 
-The server grants one speaker a time-limited lease.
-A lease gives exclusive speaking permission. It does not create permanent room access.
+The Team page does not start capture early.
+Early capture makes the listener hear every word late.
+A grant can take 800 ms at the 95th percentile. That delay alone exceeds the 500 ms audio target.
+The user therefore waits for the cue before speaking.
+
+The phone and the room service own the room, the speaking lease, the current speaker, and reconnection.
 The proposed lease expires within 25 seconds of grant.
-Stop capture when any of these conditions occurs:
+The device stops capture when any of these conditions occurs:
 
 - Capture reaches 20 seconds.
 - The user releases OK.
 - Cancellation occurs.
-- The lease expires.
-- The connection fails.
+- The phone reports that the lease ended.
+- The BLE link fails.
 
-Use a monotonic local deadline that cannot exceed the server expiry.
-Reject a lease if clock uncertainty prevents a safe local deadline.
-The room service also rejects audio after expiry.
+If the user already released OK when the start message arrives, the device ignores the message.
+The device tells the phone. The phone releases the lease.
 
-If the user no longer holds OK when permission arrives:
-
-1. Reject that speaking permission.
-2. Release that speaking permission.
-
-Use request IDs to reject late grants.
-After reconnection, require these items:
-
-- New room authorization.
-- A new epoch.
-- A new lease.
-
-Never resume an interrupted transmission automatically.
 Never queue Team voice for later delivery.
-Discard late audio frames. Do not replay old speech.
+Drop late audio frames. Do not replay old speech.
 
 Team playback requires all these conditions:
 
@@ -497,14 +497,15 @@ Team playback requires all these conditions:
 - The audio belongs to the current room.
 - Audio ownership is idle.
 
+While another member speaks, the device plays the received frames and keeps its microphone closed.
 Do not mix Team voice with Agent input or replies.
-Stop capture before room changes or account changes.
-A lost release event must not bypass the capture limit or lease expiry.
+Stop capture before a room change.
+A lost release event must not bypass the 20-second capture limit.
 
 ## 7. Device boundaries and resources
 
 Use the existing BSP for hardware operations.
-Keep pages, protocol state, sessions, and application tasks in the application layer.
+Keep pages, protocol state, and application tasks in the application layer.
 Code outside the LVGL task must hold `bsp_lvgl_lock()` before it accesses LVGL objects.
 Before deleting a page, stop every task, timer, callback, and handler that can access the page.
 
@@ -517,34 +518,51 @@ Measure audio behavior before changing the existing hardware configuration.
 PCM at 16 kHz, mono, and 16 bits uses 32,000 bytes per second.
 A 20-second clip uses 640,000 bytes before protocol overhead.
 The device has no PSRAM. A complete clip does not belong in RAM.
+Streaming makes a complete clip unnecessary.
+
+A real build measured the static RAM. The build excluded Wi-Fi, as D-08 requires.
+The result left 180,840 bytes of static D/IRAM free.
+That figure excludes the heap that the BLE stack allocates at run time.
 
 | Allocation | Initial design | Evidence or limit |
 |---|---|---|
 | LVGL draw buffer | One 40-line RGB565 buffer | Current source uses 19,200 bytes. |
 | LVGL memory pool | 24 KiB | Current `sdkconfig.defaults` value. |
-| Audio rings | 8 KiB input plus 8 KiB output | Proposal. Avoid simultaneous active capture and playback. |
+| Audio frames | At most 8 frames of 20 ms in each direction | Proposal. Eight PCM frames use 5,120 bytes. Eight ADPCM frames use about 1,300 bytes. |
 | Control queue | 8 entries of at most 1 KiB | Proposal. Reject excess messages. |
 | Report parsing | One page of at most 8 KiB | Proposal. Include parser overhead in measurement. |
 | Turn points | At most 128 points | Proposal. Use constant bounds for segments and points. |
-| TLS, Wi-Fi, stacks, fonts, and firmware | Measure with the selected transport | Do not claim that the remaining memory is sufficient. |
+| BLE stack, task stacks, fonts, and firmware | Measure on hardware | Do not claim that the remaining memory is sufficient. |
 
-Eight KiB holds about 256 ms of candidate PCM.
-Each ring needs a defined overflow policy.
-Audio overflow stops the exchange or drops obsolete frames according to the channel contract.
-Never grow a queue because the network is slow.
+Each frame queue needs a defined overflow policy.
+Audio overflow drops obsolete frames or stops the exchange according to the channel rule.
+Never grow a queue because the link is slow.
 
 The source uses an SPI clock of 80 MHz.
-This value does not establish screen frame rate or available network throughput.
+This value does not establish screen frame rate or available link throughput.
 An older guide mentions a 20-line buffer. Use the current implementation for this design.
 
-Start the investigation with PCM or a codec that the tested endpoints support.
-The local BLE reference uses 20 ms IMA ADPCM frames and requires ATT MTU of at least 172.
-It also describes an eight-frame playback queue and a 1,500 ms request timeout.
-These are reference values, not accepted production limits.
+### Audio frame format
+
+D-09 selects IMA ADPCM at 16 kHz, mono.
+Each frame carries 20 ms of audio.
+The device encodes microphone frames. The device decodes the frames that it receives.
+
+| Format | Bytes per second | Device cost |
+|---|---|---|
+| Raw PCM | 32,000 | No codec work. Four times the ADPCM link load. |
+| IMA ADPCM | 8,000 | A few integer steps per sample. A few bytes of state. |
+| Opus | About 3,000 | A new library. An Opus reference on this board used a 24 KB encoder task stack. |
+
+One 20 ms ADPCM frame carries about 164 bytes of audio data.
+The local BLE reference uses the same format. It requires an ATT MTU of at least 172.
+The exact frame header must follow the phone application interface.
+
+The protocol keeps a raw PCM frame type as a fallback.
+Opus stays a later upgrade. The team considers it only after ADPCM works and the team measures its CPU and RAM cost.
 
 Current audio configuration uses six DMA descriptors with 240 frames each.
 This capacity does not establish total voice latency.
-Check the phone implementation, codec agreement, authentication, and measured loss before reuse.
 
 ### Flash and stored data
 
@@ -556,51 +574,41 @@ OTA needs a separate capacity decision and a recovery test.
 A persistent report cache needs an explicit storage decision.
 Do not add a cache partition as an implicit template requirement.
 Limit the cache size.
-Define account ownership, retention, and data deletion.
-REQ-13 blocks pilot acceptance until the storage design preserves one complete authorized report across network loss and restart.
+REQ-13 blocks pilot acceptance until the storage design preserves one complete report across network loss and restart.
 
 Commit a new cached snapshot atomically. Preserve the previous complete snapshot if an update fails.
 The 64 KiB cache limit does not reserve space in the current partition table.
 The selected layout may use a smaller cache if it still satisfies REQ-13.
 
-## 8. Trust, access, and failure behavior
+## 8. Access and failure behavior
 
-The phone handles account login and user consent.
-The gateway keeps HeygoAI credentials and provider keys outside Passport.
-Passport receives a short-lived token scoped to one device, account binding, and permitted service.
-Room access needs a separate room authorization check.
+D-12 and D-13 exclude security and privacy work from the first version.
+The BLE link has no encryption, passkey, or binding check.
+The device builds no access control and no data deletion flow.
+The phone application handles accounts.
+The device stores no account credential and no gateway token.
 
-Check TLS certificates. Do not bypass validation to solve a clock or connection problem.
-The provisioning design must establish trustworthy time and device binding.
-Do not send account credentials through an unauthenticated BLE characteristic.
-A BLE design needs an approved pairing and bonding method with a visible device association step.
+These decisions carry known limits:
 
-Use server-side identity checks for every report, Agent exchange, and room request.
-A client-supplied account identifier must not select another user's data.
-Bind room events to the current account, room, device session, and epoch.
-After revocation, the server rejects new requests.
-The device deletes unauthorized cached content after a revocation notice or local access expiry.
+- Any nearby BLE client can connect to the device.
+- Any connected client can read reports and audio frames.
+- The device cannot delete cached reports on remote request.
 
-An offline device cannot receive immediate remote revocation.
-Offline cache access needs a separate expiring grant and a defined retention policy.
+A later version needs a separate decision before it adds pairing, encryption, or deletion.
 
-Do not retain voice by default after processing or delivery.
-An explicit recording feature needs separate consent, a retention period, and deletion controls.
-Redact tokens, voice content, and personal ski data from diagnostics.
-The user can unlink the device. The user can delete authorized local data from that device.
-
-| Failure | Device behavior | Server behavior |
+| Failure | Device behavior | Phone or server behavior |
 |---|---|---|
-| Network loss | Stop capture. Show offline state and cached report time. | Expire requests and speaking leases. |
+| Link loss | Stop capture. Show offline state and cached report time. | Expire requests and speaking leases. |
 | Agent timeout | End the exchange. Offer a new user action. | Reject late or canceled output. |
+| Recognition failure | Show a short retry message. | Report the failure to the device. |
 | Team room busy | Keep the microphone inactive. Show the current speaker. | Keep one valid speaker. |
-| Invalid report | Preserve the last valid authorized view. Show unavailable fields. | Return a typed error without private data. |
-| Audio queue overflow | Stop or discard obsolete audio within the channel rule. | Report bounded loss without replay. |
+| Invalid report | Preserve the last valid view. Show unavailable fields. | Return a typed error. |
+| Audio queue overflow | Drop obsolete frames or stop within the channel rule. | Report bounded loss without replay. |
 | Low memory | Stop audio before allocation failure. Show a recoverable error. | Stop streaming to the failed exchange. |
 | Unknown battery | Show an unknown battery state. | Do not derive a percentage. |
-| Account or room change | Stop audio. Invalidate the old context. | Reject old tokens and room permissions. |
+| Room change | Stop audio. End the old context. | Reject old room permissions. |
 
-Offline mode supports only locally available, authorized report content and basic UI.
+Offline mode supports only locally available report content and basic UI.
 Offline mode does not imply offline AI inference, speech recognition, or Team PTT.
 
 ## 9. Review gates and requirement trace
@@ -608,28 +616,30 @@ Offline mode does not imply offline AI inference, speech recognition, or Team PT
 | Area | Requirements | Evidence required before pilot acceptance |
 |---|---|---|
 | Reports, charts, and turns | REQ-03, REQ-04, REQ-05 | Real contract samples, source definitions, and synthetic UI review |
-| Microphone and speech | REQ-06, REQ-07 | Tested endpoint formats, latency, noise, and resource measurements |
+| Microphone and speech | REQ-06, REQ-07 | Streaming tests with the phone application, latency, noise, and resource measurements |
 | Coach interaction | REQ-08 | Exchange cancellation and stale-response tests |
-| Team PTT | REQ-09 | Phone/server prototype, exclusive lease tests, and reconnect tests |
-| Offline and privacy | REQ-13, REQ-14 | Cache design, access boundaries, deletion, and retention tests |
-| Buttons and fonts | REQ-15 | Hold/release tests, glyph checks, and glove tests |
+| Team PTT | REQ-09 | Phone and room service prototype, exclusive lease tests, and reconnect tests |
+| Offline reports | REQ-13 | Cache design and power-loss tests |
+| Buttons and fonts | REQ-15 | Hold and release tests, glyph checks, and glove tests |
 | Device resources | REQ-16 | Peak heap, largest free block, stack, Flash, and runtime measurements |
 | Explicit modes | REQ-17 | Rest-mode gating and visible recipient tests |
-| Diagnostics | REQ-20 | Sanitized events linked to device sessions, without private payloads |
+| Diagnostics | REQ-20 | Failure states and reconnect tests |
 
-The first architecture gate selects a tested transport.
-The second gate approves HeygoAI contracts and report semantics.
-The third gate approves the device resource budget and safety limits.
-The fourth gate accepts the complete Rest-mode pilot on real hardware.
+The architecture gates follow this order:
+
+1. Select a transport. D-08 closed this gate.
+2. Document the BLE interface of the phone application.
+3. Approve HeygoAI contracts and report semantics.
+4. Approve the device resource budget and safety limits.
+5. Accept the complete Rest-mode pilot on real hardware.
 
 These decisions remain open:
 
+- The BLE interface of the phone application.
 - Phone platform.
 - Provider APIs.
 - Gateway ownership.
-- Transport.
 - Speech services.
-- Codec.
 - Cache storage.
 - Authorized sensor source.
 
