@@ -4,12 +4,16 @@
 
 # Heygo AI Passport
 
-Project repository for Heygo AI Passport.
+This is the repository for Heygo AI Passport.
 
 ## Project status
 
-The project is in its initial setup stage. Firmware source code and build
-instructions will be added as development progresses.
+The project contains draft requirements, a proposed architecture, and a Scrum backlog.
+We will add firmware source code and build instructions as development progresses.
+
+## Project documents
+
+Read the [requirements and architecture](%E9%9C%80%E6%B1%82%E6%96%87%E4%BB%B6%E5%A4%B9/README.md).
 
 ## Get the repository
 
