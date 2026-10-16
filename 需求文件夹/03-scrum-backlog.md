@@ -2,11 +2,11 @@
 
 # Scrum backlog and delivery plan
 
-Date: 2026-10-16. Version: 0.2.
+Date: 2026-10-16. Version: 0.3.
 
 Status: Proposed. This document defines a draft plan. No story, Sprint, or test is complete.
 
-Related documents: [Requirements](01-product-requirements.md), [Architecture](02-architecture.md), [Validation and decisions](04-validation-and-decisions.md), and [Decision amendments](05-decision-amendments.md).
+Related documents: [Requirements](01-product-requirements.md), [Architecture](02-architecture.md), [Validation and decisions](04-validation-and-decisions.md), [Decision amendments](05-decision-amendments.md), and [BLE protocol draft](07-ble-protocol-draft.md).
 
 ## 1. Product Goal
 
@@ -36,7 +36,7 @@ The product does not provide emergency communication, route guidance, or medical
 | Hardware | The minimum demonstration uses two authenticated endpoints, including at least one AI Passport. A phone client can serve as the peer. | Check available hardware before Sprint 1. The team prefers two AI Passports for expanded tests. A second AI Passport remains optional. |
 | Device limits | ESP32-C3, 8 MB Flash, no PSRAM, 240 × 320 screen, three buttons, and a 500 mAh battery. | Check memory, storage, rendering, and controls on hardware. |
 | Connections | D-08 selects a BLE phone bridge. The device does not use Wi-Fi. | Test link stability, power use, and phone background behavior. |
-| Existing software | The baseline advertises through BLE. A phone application exists, and another team develops it. | Implement the device side of the phone application interface. Test it with that application. |
+| Existing software | The baseline advertises through BLE. A phone application exists, and another team develops it. | Implement the device side of the BLE protocol draft. Test it with that application. |
 | HeygoAI | Interfaces, account rules, report formats, and voice services remain unknown. | Obtain permitted access and sample data. |
 | Measurements | The project has no documented device IMU or GNSS. | Identify each source before promising a turn view. |
 | Voice reference | A separate AI-passport workspace contains uncommitted BLE intercom reference code. | Test its frame format with the phone application. No device test evidence exists. |
@@ -110,7 +110,7 @@ As a skier, I want my phone to find and connect to my device, so that the device
 - Acceptance: The device advertises its name after start-up. The existing phone application finds it and connects.
 - Acceptance: The device accepts one phone at a time.
 - Acceptance: The link uses no encryption, passkey, or binding check, as D-12 states.
-- Dependencies: The BLE interface of the phone application (Q-13).
+- Dependencies: The phone application accepts the BLE protocol draft (Q-13).
 - Risk: Any nearby BLE client can connect. The first version accepts this risk.
 - Verification: TC-01 with repeated connection attempts.
 

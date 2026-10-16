@@ -2,7 +2,7 @@
 
 # Sprint 0: Two-Day Plan
 
-Version: 0.2. Date: 2026-10-16. Status: proposed.
+Version: 0.3. Date: 2026-10-16. Status: proposed.
 
 This document selects the work that two days can finish.
 It applies the decisions in [Decision Amendments](05-decision-amendments.md).
@@ -17,12 +17,13 @@ Four dependencies block the stories that need an external party. The team cannot
 
 | Block | Open question | Consequence |
 | --- | --- | --- |
-| No BLE interface from the existing phone application | Q-13 | No real device link, no real streaming test |
+| The phone application has not accepted the BLE protocol draft | Q-13 | No real streaming test. Device-side work follows doc 07. |
 | No HeygoAI API or report fields | Q-01, Q-02 | No real report integration |
 | No known speech recognition or synthesis service | Q-05, Q-13 | No real voice answer |
 | No room service and no second endpoint | Q-06, Q-13 | No team push-to-talk test |
 
 Q-13 matters most. D-14 makes most device requirements depend on the phone application.
+D-16 offers a draft protocol, so device-side work can start before Q-13 has an answer.
 
 One further limit applies. The AI Passport board is not at hand. Every device test therefore reports NOT RUN.
 
@@ -44,8 +45,9 @@ Synthetic data replaces the real report source. A local stub replaces the phone 
 | T-05 Implement the Rest mode gate | US-17 | REQ-17 | Host tests prove that Ski mode blocks voice |
 | T-06 Implement the turn geometry contract | US-05 | REQ-05 | Host tests cover left, right, straight, gap and invalid input |
 | T-09 Implement the IMA ADPCM encoder and decoder | US-06, US-07 | REQ-06, REQ-07, REQ-16 | Host tests cover frame size, round trip, frame loss and full scale |
+| T-10 Implement the packet layer of the BLE protocol draft | US-01, US-06, US-09 | REQ-01, REQ-06, REQ-09 | Host tests cover packet build, packet parse, `xid` rules, and report fragments |
 
-T-01 is complete. Version 0.2 of these documents records D-08 to D-15, and every English document passes the structure check.
+T-01 is complete. Version 0.3 of these documents records D-08 to D-16, and every English document passes the structure check.
 
 ### Stretch
 
@@ -58,8 +60,9 @@ These two tasks carry tool risk. The team starts them only after the core passes
 
 ## 3. Day split
 
-**Day 1 covers T-02 to T-06 and T-09.** Every item is plain C. None of them touches LVGL.
+**Day 1 covers T-02 to T-06, T-09, and T-10.** Every item is plain C. None of them touches LVGL.
 None of them needs the board or the phone application. Confidence stays high.
+If Day 1 runs short, T-10 moves to the start of Day 2, before the stretch tasks.
 
 **Day 2 covers T-07 and T-08.** Both items touch LVGL or a new tool. Confidence stays low.
 The plan keeps Day 2 separate, so a Day 2 failure leaves Day 1 intact.
@@ -129,11 +132,11 @@ The generated test must cover every transition. It must also cover these paths:
 6. The user holds OK during Agent playback. Playback stops before the microphone starts.
 
 A local stub plays the phone role in these tests. The stub does not prove the real phone interface.
+The state machine uses the message names in the BLE protocol draft.
 
 ### T-05: implement the Rest mode gate
 
-The gate follows the D-15 proposal. D-15 still waits for the user.
-If the user changes D-15, the tests change with it.
+The gate follows D-15.
 
 The host tests must prove these rules:
 
@@ -161,13 +164,29 @@ A lost frame therefore does not corrupt the next frame.
 
 The host tests must prove these rules:
 
-- One 320-sample frame encodes to about 164 bytes, and the size stays the same for every frame.
+- One 320-sample block encodes to exactly 164 bytes in the layout of doc 07.
 - A decoded 1 kHz sine wave keeps a signal-to-noise ratio above 20 dB. This threshold is an initial value.
 - The decoder reads the frame after a lost frame without error.
 - Full-scale input produces no integer overflow.
 
 The codec is plain C. It has no dependency on ESP-IDF or LVGL.
-The exact frame header outside the audio data must follow the phone application interface. Q-13 decides it.
+The BLE protocol draft defines the block layout and the packet header.
+
+### T-10: implement the packet layer of the BLE protocol draft
+
+The packet layer builds and parses the packets in the [BLE protocol draft](07-ble-protocol-draft.md).
+It is plain C. It has no dependency on NimBLE, ESP-IDF, or LVGL.
+
+The host tests must prove these rules:
+
+- Each message type builds, and parses back to the same fields.
+- The parser rejects a packet with a wrong length, and names error code 2.
+- The parser answers an unknown type with error code 1.
+- The parser ignores extra bytes at the end of a payload.
+- The device drops an audio packet or a state packet with a stale `xid`.
+- Report fragments reassemble into one page. A skipped fragment index gives result 2. A total above 8,192 bytes gives result 1.
+
+The packet layer does not prove the real phone link. Q-13 stays open.
 
 ### T-08: generate a Chinese font subset
 
@@ -184,7 +203,7 @@ A successful build proves nothing about glyph coverage. The upstream baseline wa
 
 | Excluded work | Reason |
 | --- | --- |
-| US-01 device connection | Q-13 blocks the BLE interface |
+| US-01 device connection | The phone application has not accepted the BLE protocol draft. T-10 builds the device side only. |
 | US-09 team push-to-talk | Q-13 and Q-06 block the phone side and the room service |
 | US-13 cache commit under power loss | The check needs the board |
 | US-14 privacy and authorization | D-13 defers the story |
@@ -224,7 +243,7 @@ No task in this plan closes a P0 story. Section 5 and section 1 name the missing
 
 | Risk | Effect | Mitigation |
 | --- | --- | --- |
-| The phone application uses a different frame header | T-04 and T-09 need rework | Keep the codec separate from the frame header |
+| The phone application team changes the BLE protocol draft | T-10 needs rework | Keep the packet layer separate from the codec and the state machine |
 | The phone application cannot stream audio | D-11 fails | Resolve Q-13 first. Keep a raw PCM fallback |
 | The generator needs new widget types | T-07 slips | Keep T-07 in the stretch set |
 | The font generator emits a wrong glyph table | Chinese text breaks | Check coverage against the vocabulary, not the build result |
@@ -238,4 +257,5 @@ No task in this plan closes a P0 story. Section 5 and section 1 name the missing
 - [Scrum Backlog](03-scrum-backlog.md).
 - [Validation and Decisions](04-validation-and-decisions.md).
 - [Decision Amendments](05-decision-amendments.md).
+- [BLE Protocol Draft](07-ble-protocol-draft.md).
 - [Folder Index](README.md).

@@ -2,7 +2,7 @@
 
 # HeygoAI and AI Passport: requirements workspace
 
-Version: 0.2. Date: 2026-10-16. Status: Draft for review.
+Version: 0.3. Date: 2026-10-16. Status: Draft for review.
 This folder contains the product definition, proposed architecture, Scrum backlog, and validation plan.
 It contains no firmware implementation.
 No evidence establishes a working HeygoAI integration.
@@ -17,6 +17,7 @@ No evidence establishes a working HeygoAI integration.
 | [Validation and decisions](04-validation-and-decisions.md) | 20 test cases, assumptions, open questions, risks, and decision records. |
 | [Decision amendments](05-decision-amendments.md) | Eight decisions on transport, codec, gestures, audio streaming, and first-version scope. |
 | [Sprint 0 two-day plan](06-sprint-0-two-day-plan.md) | The work that two days can finish, plus the excluded work and its reason. |
+| [BLE protocol draft](07-ble-protocol-draft.md) | The device-side draft of the BLE link: GATT layout, packets, audio blocks, and timing. |
 
 ## Core experience
 
@@ -34,12 +35,12 @@ Practice goals, quests, reflection notes, historical comparisons, and sharing re
 The user requested the core features and Scrum development.
 The architecture, priorities, four-Sprint forecast, timings, and capacity limits remain proposals.
 No person accepted a role or a delivery date.
-The user accepted D-08 to D-14. D-15 remains a proposal.
+The user accepted D-08 to D-15. D-16 waits for the phone application team.
 A phone application already exists. Another team develops it.
 
 AI Passport hardware facts come from the existing local source repository.
 The architecture lists those sources and distinguishes local changes from released capabilities.
-D-08 selected the transport. HeygoAI interfaces, real ski data, the phone application interface, and the phone platform remain open.
+D-08 selected the transport. D-16 proposes the BLE protocol. HeygoAI interfaces, real ski data, the review of the BLE protocol, and the phone platform remain open.
 
 ## Terms
 
@@ -71,6 +72,8 @@ D-08 selected the transport. HeygoAI interfaces, real ski data, the phone applic
 | Data provenance | Information about the data source and processing history. |
 | IMA ADPCM | A simple audio compression format. It stores each sample in 4 bits. |
 | Deferred | A requirement that stays in the record but leaves the first version. |
+| GATT | The BLE rule set for services and characteristics. |
+| ATT MTU | The largest BLE attribute packet that both sides accept. |
 
 ## Document maintenance
 
@@ -93,7 +96,8 @@ STE_SKILL="${STE_SKILL:-$HOME/.claude/skills/asd-ste100}"
 python3 "${STE_SKILL}/scripts/ste-lint.py" \
   README.md 01-product-requirements.md 02-architecture.md \
   03-scrum-backlog.md 04-validation-and-decisions.md \
-  05-decision-amendments.md 06-sprint-0-two-day-plan.md
+  05-decision-amendments.md 06-sprint-0-two-day-plan.md \
+  07-ble-protocol-draft.md
 ```
 
 Run that command from this folder.

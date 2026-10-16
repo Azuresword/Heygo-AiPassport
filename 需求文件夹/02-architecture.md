@@ -2,7 +2,7 @@
 
 # HeygoAI × AI Passport: proposed architecture
 
-Version: 0.2
+Version: 0.3
 
 Date: 2026-10-16
 
@@ -13,6 +13,7 @@ Requirement IDs refer to [product requirements](01-product-requirements.md).
 Delivery order appears in the [Scrum backlog](03-scrum-backlog.md).
 Open decisions and checks appear in [validation and decisions](04-validation-and-decisions.md).
 Accepted decisions appear in [decision amendments](05-decision-amendments.md).
+The [BLE protocol draft](07-ble-protocol-draft.md) proposes the device link.
 
 ## 1. Evidence and limits
 
@@ -27,7 +28,7 @@ Accepted decisions appear in [decision amendments](05-decision-amendments.md).
 | Conditional | A battery gauge may be absent or return `-1` | Show an unknown state instead of a false percentage. |
 | Baseline behavior evidence | BLE advertising | The device link to the phone application needs further work. The device does not use Wi-Fi (D-08). |
 | Local reference only | Uncommitted BLE intercom work exists | Review this work before reuse. Test this work before reuse. |
-| Team statement | A phone application exists. Another team develops it. | Follow its BLE interface. Q-13 tracks that interface. |
+| Team statement | A phone application exists. Another team develops it. | Doc 07 proposes the BLE protocol. Q-13 tracks its review. |
 | Measured build | A build without Wi-Fi left 180,840 bytes of static D/IRAM free. | Use this figure as the starting budget. Measure the run-time heap separately. |
 | Unverified | HeygoAI APIs, report fields, permissions, and voice contracts | Use an adapter. Keep integration blocked until contracts exist. |
 | Unverified | IMU, GNSS, barometer, motion sensing, or touch interface on the inspected board | Use verified sources and button controls. |
@@ -74,9 +75,9 @@ The link uses no encryption, no passkey, and no binding check.
 Any nearby BLE client can connect. The first version accepts that risk.
 The device accepts one phone connection at a time. The baseline configuration already sets this limit.
 
-The existing phone application belongs to another team. Its BLE interface remains unknown.
-Q-13 tracks that interface.
-The device protocol must follow that interface. This document therefore defines device behavior, not a wire format.
+The existing phone application belongs to another team.
+The [BLE protocol draft](07-ble-protocol-draft.md) proposes the wire format. That team must accept or replace it.
+Q-13 tracks the review. This document defines device behavior. Doc 07 defines the packets.
 
 Team PTT means network voice between team members.
 Team PTT requires these conditions:
@@ -118,7 +119,7 @@ Ski mode shows a small status page with no detailed chart or voice interaction.
 The pilot permits report browsing and voice interactions only in Rest mode.
 The device cannot check whether the user stopped moving.
 
-D-15 proposes the Rest mode gestures. They stay proposals until the user accepts them.
+D-15 sets the Rest mode gestures.
 
 - An OK hold in Ski mode enters Rest mode.
 - Rest mode opens on the Reports page.
@@ -135,7 +136,7 @@ Use text and icons. Do not use color alone.
 
 | Input | Proposed behavior |
 |---|---|
-| Hold OK for at least 500 ms in Ski mode | Enter Rest mode. This gesture is a D-15 proposal. |
+| Hold OK for at least 500 ms in Ski mode | Enter Rest mode. |
 | Short UP or DOWN | Move focus, change pages, or select a report. |
 | Short OK | Select the focused item. |
 | Hold OK for at least 500 ms on the Coach page | Start capture. Stream each frame to the phone. |
@@ -554,9 +555,9 @@ The device encodes microphone frames. The device decodes the frames that it rece
 | IMA ADPCM | 8,000 | A few integer steps per sample. A few bytes of state. |
 | Opus | About 3,000 | A new library. An Opus reference on this board used a 24 KB encoder task stack. |
 
-One 20 ms ADPCM frame carries about 164 bytes of audio data.
+One 20 ms ADPCM block uses 164 bytes.
 The local BLE reference uses the same format. It requires an ATT MTU of at least 172.
-The exact frame header must follow the phone application interface.
+Doc 07 defines the packet header and the exact ADPCM block layout.
 
 The protocol keeps a raw PCM frame type as a fallback.
 Opus stays a later upgrade. The team considers it only after ADPCM works and the team measures its CPU and RAM cost.
@@ -628,14 +629,14 @@ Offline mode does not imply offline AI inference, speech recognition, or Team PT
 The architecture gates follow this order:
 
 1. Select a transport. D-08 closed this gate.
-2. Document the BLE interface of the phone application.
+2. Agree the BLE protocol with the phone application team. Doc 07 holds the device draft.
 3. Approve HeygoAI contracts and report semantics.
 4. Approve the device resource budget and safety limits.
 5. Accept the complete Rest-mode pilot on real hardware.
 
 These decisions remain open:
 
-- The BLE interface of the phone application.
+- Review of the BLE protocol draft by the phone application team.
 - Phone platform.
 - Provider APIs.
 - Gateway ownership.

@@ -2,7 +2,7 @@
 
 # HeygoAI and AI Passport: product requirements
 
-Version: 0.2. Date: 2026-10-16. Status: Draft for review.
+Version: 0.3. Date: 2026-10-16. Status: Draft for review.
 The Product Owner role has no assigned person.
 This document defines a concept. It does not describe a working integration.
 
@@ -47,7 +47,7 @@ The pilot does not require a new circuit board or enclosure.
 ## 3. Product journey
 
 1. The user connects the device to the existing phone application.
-2. The user manually enters Rest mode.
+2. The user manually enters Rest mode with an OK hold.
 3. The user selects a ski session.
 4. The device shows a summary and the data source.
 5. The user selects a metric or a turn.
@@ -114,12 +114,13 @@ Badges must reward practice or review. They must not reward speed, dangerous ter
 | AI Passport power | The specification lists a 500 mAh battery. | Measure runtime. Do not claim full-day operation. |
 | Motion and location | Source evidence does not establish an IMU, GNSS, or barometer interface. | Obtain ski measurements from another source that passed checks. |
 | HeygoAI services | The project lacks a repository link, API contract, and sample report. | Check report, coaching, identity, and data contracts. |
-| Phone application | An existing application. Another team develops it. This repository contains no phone code. | Device requirements depend on its capabilities. Its BLE interface remains unknown. |
+| Phone application | An existing application. Another team develops it. This repository contains no phone code. | Device requirements depend on its capabilities. The BLE protocol draft proposes the link. That team must review it. |
 | Network intercom | A separate workspace contains an uncommitted BLE reference. | Evaluate reuse. Do not treat it as a released service. |
 
 The [architecture](02-architecture.md) records source references and component boundaries.
 The [validation plan](04-validation-and-decisions.md) records assumptions, owners, and unresolved decisions.
 The [decision amendments](05-decision-amendments.md) record the transport, codec, gesture, and scope decisions.
+The [BLE protocol draft](07-ble-protocol-draft.md) proposes the device link.
 
 ## 6. Requirements matrix
 
@@ -130,7 +131,7 @@ Each row gives the user value, required behavior, acceptance target, and main de
 
 | ID | Value and required behavior | Priority and owner | Acceptance target | Dependency or risk |
 | --- | --- | --- | --- | --- |
-| REQ-01 | Let the phone find and connect to the device. The device advertises its name. The phone application connects without a passkey. | P0. Phone and firmware. | TC-01: complete 9 of 10 connection attempts within 180 seconds. | The BLE interface of the phone application remains unknown. |
+| REQ-01 | Let the phone find and connect to the device. The device advertises its name. The phone application connects without a passkey. | P0. Phone and firmware. | TC-01: complete 9 of 10 connection attempts within 180 seconds. | The phone application must accept the BLE protocol draft. |
 | REQ-02 | Keep the report consistent. Synchronize the ski session identifier, report version, and time. | P0. Service and firmware. | TC-02: 30 updates retain the correct ski session and newest accepted version. | HeygoAI report identifiers remain unresolved. |
 | REQ-03 | Show a report without requiring the full phone view. Include summary, available metrics, and one supported finding. | P0. Firmware and design. | TC-03: cached cards open within one second at the 95th percentile across 30 trials. | Actual report fields remain open. |
 | REQ-04 | Show trends with units, axes, source, and missing-data states. | P0. Firmware and data. | TC-04: all 12 chart fixtures retain units and data gaps. Missing values never become zero. | The source must supply valid units. |
@@ -262,4 +263,5 @@ If the scope changes to sales, the Product Owner must add separate requirements 
 - [Validation and decisions](04-validation-and-decisions.md).
 - [Decision amendments](05-decision-amendments.md).
 - [Sprint 0 two-day plan](06-sprint-0-two-day-plan.md).
+- [BLE protocol draft](07-ble-protocol-draft.md).
 - [Document index](README.md).

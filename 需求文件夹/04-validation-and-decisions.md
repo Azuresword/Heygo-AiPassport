@@ -2,7 +2,7 @@
 
 # Validation, assumptions, and decisions
 
-Version: 0.2. Date: 2026-10-16. Status: Draft for review.
+Version: 0.3. Date: 2026-10-16. Status: Draft for review.
 All product tests below have status NOT RUN.
 Document checks do not count as firmware or device tests.
 
@@ -172,7 +172,7 @@ The target Sprint is a decision deadline proposal, not a calendar commitment.
 | Q-10 | Which firmware baseline, licenses, and reusable intercom components will the project adopt? | Firmware and service. | Sprint 1. | Open. D-09 selected the frame format. The local intercom reference lacks a commit and test evidence. |
 | Q-11 | What report size, point limit, audio queue, and memory reserve survive the combined workload? | Firmware and data. | Run a technical experiment in Sprint 1. Establish final limits in Sprint 4. | Open. Architecture limits are provisional until TC-16 passes. |
 | Q-12 | What known conditions make two ski sessions comparable? | Data and product. | Before REQ-18 enters a Sprint. | Open. Show differences instead of a misleading rank. |
-| Q-13 | Which BLE interface does the existing phone application offer? Can it stream audio in both directions, run speech recognition and synthesis, and support intercom? | Phone application team and firmware. | Before Sprint 1 device integration. | Open. Most device requirements depend on the answer. |
+| Q-13 | Which BLE interface does the existing phone application offer? Can it stream audio in both directions, run speech recognition and synthesis, and support intercom? | Phone application team and firmware. | Before Sprint 1 device integration. | Open. Doc 07 offers a device-side draft. The phone application team must accept or replace it. |
 
 ## 6. Initial decision record
 
@@ -192,7 +192,8 @@ The target Sprint is a decision deadline proposal, not a calendar commitment.
 | D-12 | The first-version BLE link has no encryption, passkey, or binding check. | Accepted by the user. | The MVP needs the shortest path. Any nearby BLE client can connect. |
 | D-13 | The first version builds no privacy or authorization feature. REQ-14 moves to Deferred. | Accepted by the user. | The MVP needs the shortest path. A later version needs a new decision. |
 | D-14 | The device does four tasks. The existing phone application does the rest. | Accepted by the user. | Another team develops that application. Device requirements follow its capabilities. |
-| D-15 | An OK hold in Ski mode enters Rest mode. A DOWN hold on the top Rest page and then a short OK exit. | Proposed. | The journey requires manual entry and exit. A hold avoids accidental entry with gloves. |
+| D-15 | An OK hold in Ski mode enters Rest mode. A DOWN hold on the top Rest page and then a short OK exit. | Accepted by the user. | The journey requires manual entry and exit. A hold avoids accidental entry with gloves. |
+| D-16 | The device team proposes BLE protocol draft 0.1. | Proposed. Waits for the phone application team. | Q-13 has no answer. The draft lets device work continue. See [BLE protocol draft](07-ble-protocol-draft.md). |
 
 ## 7. Risk register
 
@@ -206,7 +207,7 @@ The target Sprint is a decision deadline proposal, not a calendar commitment.
 | Cold, moisture, wind, or gloves impair operation. | Indoor results do not transfer to the slope. | Establish the conditions in Q-07 before field tests. Measure actual behavior. | Hardware and product. |
 | Context arrives after the user selects another ski session. | The Agent answers about the wrong run. | Bind every request and reply to a ski session and report version. | Service and firmware. |
 | Prototype work expands into commercial hardware. | Cost and verification obligations change. | Create a separate scope review before sales or hardware changes. | Product Owner. |
-| The phone application cannot stream audio or lacks intercom. | Voice and intercom stories cannot ship as planned. | Resolve Q-13 first. Keep a raw PCM fallback. | Phone application team and firmware. |
+| The phone application cannot stream audio or lacks intercom. | Voice and intercom stories cannot ship as planned. | Review doc 07 with the phone application team first. Keep a raw PCM fallback. | Phone application team and firmware. |
 | The open BLE link lets a nearby client connect. | A stranger can read reports or audio frames. | Keep pilots indoor and in a small group. Review D-12 before any public trial. | Product Owner. |
 
 ## 8. Evidence required for delivery

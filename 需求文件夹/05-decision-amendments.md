@@ -2,11 +2,11 @@
 
 # Decision Amendments: Transport, Codec, Gestures, Streaming and Scope
 
-Version: 0.2. Date: 2026-10-16. Status: D-08 to D-14 accepted by the user. D-15 proposed.
+Version: 0.3. Date: 2026-10-16. Status: D-08 to D-15 accepted by the user. D-16 proposed.
 
-This document records eight decisions, D-08 to D-15.
+This document records nine decisions, D-08 to D-16.
 Several decisions replace earlier proposals in [System Architecture](02-architecture.md).
-The user reviewed each change. D-15 still waits for the user.
+The user reviewed each change. D-16 waits for the phone application team.
 
 Decision numbers continue the record in [Validation and Decisions](04-validation-and-decisions.md).
 Requirement numbers stay stable. REQ-14 moves to Deferred. This document deletes no requirement.
@@ -148,16 +148,16 @@ The phone application does the rest.
 That work includes speech recognition, speech synthesis, gateway requests, retries, the account, the room, and the speaking permission.
 
 **Reason.** The phone application already exists, and another team develops it.
-Device requirements therefore follow its capabilities. Q-13 tracks its BLE interface.
+Device requirements therefore follow its capabilities. Q-13 tracks its BLE interface. D-16 proposes a draft.
 
 **Cost.** The device protocol depends on an interface that this project does not own.
-The device team cannot finish the link before Q-13 has an answer.
+The link stays unverified until the phone application team accepts the draft.
 
-## 9. D-15: the Rest mode gestures (proposed)
+## 9. D-15: the Rest mode gestures
 
-**Status.** Proposed. The user has not accepted this decision.
+**Status.** Accepted by the user.
 
-**Proposal.**
+**Decision.**
 
 - The device starts in Ski mode.
 - An OK hold in Ski mode enters Rest mode. Rest mode opens on the Reports page.
@@ -167,7 +167,28 @@ The device team cannot finish the link before Q-13 has an answer.
 A hold avoids an accidental entry, because a gloved hand can press a button while skiing.
 The Reports page ignores an OK hold. The hold that enters Rest mode therefore cannot start capture.
 
-## 10. Traceability
+## 10. D-16: the device team proposes a BLE protocol draft
+
+**Status.** Proposed. The phone application team must review it.
+
+**Decision.** The device team writes the [BLE protocol draft](07-ble-protocol-draft.md).
+The device side follows that draft until the phone application team answers Q-13.
+
+**Reason.** Q-13 has no answer. Without a draft, the device link work cannot start.
+The user chose to continue without a wait.
+
+**Main content.**
+
+- The GATT layout follows the Nordic UART Service.
+- Each packet fits in one ATT packet, with a 4-byte header.
+- Voice needs an ATT MTU of at least 172.
+- Audio uses the 164-byte IMA ADPCM block in doc 07.
+
+**Cost.** The phone application team can change or replace the draft.
+Device code that follows the draft can then need rework.
+The packet layer stays separate from the codec and the state machine. This split limits the rework.
+
+## 11. Traceability
 
 | Decision | Status | Affects | Open question |
 | --- | --- | --- | --- |
@@ -178,13 +199,15 @@ The Reports page ignores an OK hold. The hold that enters Rest mode therefore ca
 | D-12 | Accepted by the user | REQ-01 | None |
 | D-13 | Accepted by the user | REQ-14, REQ-20 | Defers Q-04 |
 | D-14 | Accepted by the user | Every device requirement | Depends on Q-13 |
-| D-15 | Proposed | REQ-17 | Waits for the user |
+| D-15 | Accepted by the user | REQ-17 | None |
+| D-16 | Proposed | REQ-01, REQ-06, REQ-07, REQ-09 | Waits for Q-13 |
 
-## 11. Related documents
+## 12. Related documents
 
 - [Product Requirements](01-product-requirements.md).
 - [System Architecture](02-architecture.md).
 - [Scrum Backlog](03-scrum-backlog.md).
 - [Validation and Decisions](04-validation-and-decisions.md).
 - [Sprint 0 Two-Day Plan](06-sprint-0-two-day-plan.md).
+- [BLE Protocol Draft](07-ble-protocol-draft.md).
 - [Folder Index](README.md).
