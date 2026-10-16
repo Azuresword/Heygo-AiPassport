@@ -1,10 +1,10 @@
 [简体中文](05-decision-amendments.zh_CN.md) · **English**
 
-# Decision amendments: D-08 to D-17
+# Decision amendments: D-08 to D-18
 
-Version: 0.4. Date: 2026-10-16. Status: D-08 to D-15 and D-17 accepted by the user. D-16 proposed.
+Version: 0.5. Date: 2026-10-16. Status: D-08 to D-15, D-17, and D-18 accepted by the user. D-16 proposed.
 
-This document gives the reasons behind D-08 to D-17.
+This document gives the reasons behind D-08 to D-18.
 [Validation and decisions](04-validation-and-decisions.md) holds the short log.
 Requirement numbers stay stable. This document deletes no requirement.
 
@@ -136,11 +136,32 @@ The new-press rule replaces the protection that the Reports page gave.
 
 **Decision.** The device side follows the [BLE protocol draft](07-ble-protocol-draft.md) until Q-13 has an answer.
 Version 0.2 of the draft marks the Team and Report messages as P1.
+Document version 0.3 defines protocol version 0.1, and fixes every field value.
 
 **Cost.** A change from the phone team can force rework.
 The packet layer stays apart from the codec and the state machine. This split limits the rework.
 
-## 12. Related documents
+## 12. D-18: no power management in the first version
+
+**Decision.** The first version builds no power management.
+REQ-16, US-16, TC-16, and Q-11 move to Deferred.
+The device uses no sleep mode. It requests the best-performance BLE link settings, and keeps one fixed advertising interval.
+Doc 07, section 4, lists the link settings: the shortest interval, no peripheral latency, LE 2M, and the longest data length.
+
+**Reason.** The user wants the shortest path to a working MVP.
+
+**What stays.**
+
+- The screen still shows the battery level, or an unknown state when the gauge gives no value.
+- The queues keep their fixed sizes. That rule belongs to the design, not to power management.
+
+**Cost.**
+
+- The team makes no runtime claim. The battery can drain faster than it would with power management.
+- The 60-minute stability test leaves the first-version gate. A reset shows up only in the Sprint 1 device tests.
+- A field pilot needs a review of this decision.
+
+## 13. Related documents
 
 - [Product requirements](01-product-requirements.md).
 - [System architecture](02-architecture.md).

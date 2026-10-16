@@ -2,7 +2,7 @@
 
 # BLE Protocol Draft
 
-Version: 0.2. Date: 2026-10-16. Status: draft from the device team. The phone application team must review it.
+Version: 0.3. Date: 2026-10-16. Status: draft from the device team. The phone application team must review it.
 
 ## 1. Purpose and scope
 
@@ -13,6 +13,11 @@ Q-13 stays open until that team accepts or replaces this draft.
 
 Version 0.2 marks the Team and Report messages as P1, because D-17 moved intercom and reports out of P0.
 The first version builds only the P0 messages.
+
+Document version 0.3 defines protocol version 0.1. It fixes every field value that the phone application needs.
+
+Version 0.3 follows D-18. The first version requests the best-performance link settings and ignores their power cost.
+It also uses one fixed advertising interval.
 
 The draft follows three rules:
 
@@ -35,7 +40,7 @@ The device uses its public address. The baseline configuration disables host-bas
 The address therefore stays the same after a restart. Check this behavior on hardware.
 The phone application can therefore remember a device by its address.
 
-The proposed advertising interval is 100 ms for 30 seconds after start-up or disconnection. After that, the interval becomes 1,000 ms.
+The device advertises at a fixed interval of 100 ms. D-18 defers a slower interval that saves power.
 
 ## 3. GATT layout
 
@@ -66,16 +71,23 @@ The device disables voice features in these cases:
 The link stays up in these cases. P1 reports still work, because report pages use fragments.
 The device shows a short message that names the cause.
 
-### Connection parameters
+### Link settings
 
-| Mode | Interval | Peripheral latency | Supervision timeout |
-| --- | --- | --- | --- |
-| Rest mode | 15 ms to 30 ms | 0 | 4 seconds |
-| Ski mode | 150 ms to 300 ms | 0 | 6 seconds |
+The first version requests one best-performance setting. D-18 lets it ignore the power cost.
 
-The device requests the Rest mode values when the user enters Rest mode.
-The device requests the Ski mode values when the user leaves Rest mode.
-Each phone platform limits these values. The phone application team must check them on the target phones.
+| Setting | Device request | Reason |
+| --- | --- | --- |
+| Connection interval | 7.5 ms minimum, 15 ms maximum | A short interval gives the lowest latency and the most packets per second. 7.5 ms is the BLE minimum. |
+| Peripheral latency | 0 | The device answers in every connection event. |
+| Supervision timeout | 4 seconds | Link loss shows within a few seconds. |
+| PHY | LE 2M, with LE 1M as the fallback | LE 2M halves the air time of each packet. |
+| Link-layer data length | 251 bytes | One 168-byte audio packet fits in one link-layer packet. The default length of 27 bytes splits it into 7 parts. |
+| ATT MTU | 247 bytes | One packet carries a full audio block. |
+
+The device requests these values once, after the link setup. It keeps them in both modes.
+The phone has the final say. Each platform limits the interval, and some phones lack LE 2M.
+For example, Apple's accessory guidelines set a 15 ms minimum interval for most accessories.
+The device logs the values that the phone grants. The phone application team must check them on the target phones.
 
 ## 5. Packet format
 
@@ -104,7 +116,8 @@ The phone must obey the one-packet rule.
 - The device starts exchanges with `xid` values from 0x01 to 0x7F.
 - The phone starts exchanges with `xid` values from 0x80 to 0xFE.
 - Zero means no exchange. 0xFF stays reserved.
-- Each side increments its own `xid` for each new exchange, and wraps inside its own range.
+- After each new connection, the device uses 0x01 first, and the phone uses 0x80 first.
+- Each side adds one to its own `xid` for each new exchange. After 0x7F the device wraps to 0x01. After 0xFE the phone wraps to 0x80.
 - An Agent answer uses the `xid` of the Agent question.
 
 The device keeps one current `xid` for each audio owner.
@@ -114,15 +127,46 @@ A cancellation clears the current `xid`. The device then drops every late packet
 A new BLE connection resets every `xid`.
 Packets from an old connection cannot arrive on a new connection. The link therefore needs no epoch field.
 
-### Versions
+### Sequence numbers
 
-This draft is protocol version 0.1. Major version 0 marks a draft, and incompatible changes stay allowed.
-A receiver ignores extra bytes at the end of a payload. A minor version can therefore add fields at the end.
-A receiver answers an unknown type with ERROR, and ignores the packet.
+- The first audio block of each stream has `seq` 0. Each next block adds one. After 255, `seq` wraps to 0.
+- The first fragment of each report page has `seq` 0.
+- Every other packet uses `seq` 0.
+
+### Protocol version
+
+Document version 0.3 defines protocol version 0.1.
+HELLO and HELLO_ACK therefore carry major 0 and minor 1.
+Earlier document versions had no implementation, so they carry no protocol number.
+
+While the major version is 0, the protocol is a draft, and incompatible changes stay allowed.
+Both sides must therefore use the same major and the same minor.
+Any difference counts as an unsupported version. The device sends ERROR with code 3, and disables voice.
+
+From major version 1, a new minor only adds fields at the end of a payload.
+A receiver ignores extra bytes at the end of a payload.
+A receiver answers an unknown type with ERROR code 1, and ignores the packet.
 
 ## 6. Message types
 
 D means the device. P means the phone.
+
+### Field values
+
+| Field | Size | Values |
+| --- | --- | --- |
+| Mode | 1 byte | 0 Ski mode. 1 Rest mode. |
+| Page | 1 byte | 0 Ski status page. 1 Coach page. 2 Exit question. 3 Reports page, P1. 4 Team page, P1. |
+| Codec | 1 byte | 0 IMA ADPCM. 1 Raw PCM. |
+| Codec mask | 1 byte | Bit 0 IMA ADPCM. Bit 1 raw PCM. Bit n matches codec value n. |
+| Sample rate | 1 byte | 16, in kHz. No other value is valid. |
+| Yes or no flag | 1 byte | 0 no. 1 yes. |
+| Battery percent | 1 byte | 0 to 100. 0xFF unknown. |
+| UTC time | 4 bytes | Unix time in seconds, unsigned. |
+| Text | Rest of the payload | UTF-8, with no terminating zero. A version text uses at most 32 bytes. |
+
+A receiver treats an unknown page value as an unknown page. It sends no ERROR for it.
+A receiver answers an unknown codec value with ERROR code 7.
 
 ### Link
 
@@ -145,6 +189,7 @@ The device needs the UTC time from the phone, because it has no other clock sour
 | 4 | Content too large |
 | 5 | Sequence gap |
 | 6 | Type not valid in the current state |
+| 7 | Unknown field value |
 
 ### Context
 
@@ -175,6 +220,8 @@ AGENT_CANCEL ends the whole exchange. The phone drops the input, and stops the a
 | 4 | Answering |
 | 5 | Done |
 | 6 | Failed. The failure code gives the cause: 1 recognition, 2 timeout, 3 gateway. |
+
+For every other state, the failure code is 0.
 
 The optional text can hold a transcript or a short answer. It must fit in the packet.
 With an MTU of 172, the text holds at most 163 bytes.
@@ -287,11 +334,36 @@ The raw PCM fallback uses 16 kHz, 16-bit little-endian, mono samples.
 One block holds 5 ms, which is 80 samples or 160 bytes.
 The fallback uses four times the packet rate of ADPCM. Use it for diagnostics only.
 
+### Last block
+
+Every block has a fixed size: 164 bytes for IMA ADPCM, and 160 bytes for raw PCM.
+The last block of a stream usually holds fewer real samples.
+The sender fills the rest of that block with samples of value 0, and then encodes the full block.
+The receiver plays the fill as at most 20 ms of silence.
+
+The device sends the last uplink block, and then AGENT_END or TEAM_RELEASE.
+The phone sends the last downlink block, and then PLAY_END.
+A receiver rejects a block of another size with ERROR code 2.
+
+### Playback start
+
+The device starts the speaker at the first of these events:
+
+1. Three blocks wait in the playback queue. That gives a 60 ms jitter margin.
+2. PLAY_END arrives. The device then plays the waiting blocks, even if fewer than three wait.
+3. 60 ms pass after the first block without a third block. This rule covers a phone that stalls.
+
+If PLAY_END arrives with no block, the device plays nothing, and frees the audio owner.
+
+After the start, the device does not wait for three blocks again.
+If the queue runs empty before PLAY_END, the device plays silence until the next block arrives.
+If no block and no PLAY_END arrive for 2 seconds, the device ends playback and frees the audio owner.
+
 ### Pacing and queues
 
 - The device sends one AUDIO_UP block every 20 ms while capture runs.
 - The phone sends AUDIO_DOWN blocks at real-time pace. It never runs more than 8 blocks ahead of playback.
-- The device starts the speaker after 3 blocks arrive. That gives a 60 ms jitter margin.
+- The device starts the speaker by the rules in the section above.
 - The device TX queue holds 8 audio packets. On overflow, the device drops the oldest audio packet.
 - Control packets go before audio packets. A control packet never waits behind audio.
 - The device playback queue holds 8 packets. On overflow, the device drops the oldest packet.
@@ -309,6 +381,8 @@ The fallback uses four times the packet rate of ADPCM. Use it for diagnostics on
 | Capture stop after OK release or cancellation | At most 100 ms | Device |
 | Speaker stop after the cancellation command | At most 200 ms | Device |
 | One capture | At most 20 seconds | Device |
+| Speaker start | Three blocks, PLAY_END, or 60 ms after the first block | Device |
+| Stall during playback | 2 seconds with no block and no PLAY_END ends playback | Device |
 
 The 1,500 ms value comes from the local intercom reference.
 TC-09 targets 800 ms for a grant at the 95th percentile. The timeout covers the slow tail.
@@ -386,6 +460,8 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 9. P1: Request the floor after TEAM_REQUEST, and answer within 1,500 ms.
 10. P1: Release the floor after TEAM_RELEASE.
 11. P1: Split each report page into fragments that fit the MTU.
+12. Send major 0 and minor 1 in HELLO_ACK.
+13. Fill the last downlink block with silence to the full block size.
 
 ## 12. Open items
 
@@ -393,7 +469,8 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 - Measure the MTU, the connection interval, and the throughput on the target phones.
 - Check the background behavior of the phone application while a voice exchange runs.
 - Fix the JSON report schema with real HeygoAI data. Q-01 tracks this item.
-- Measure the battery cost of the Rest mode interval.
+- Record the interval, the PHY, and the data length that each target phone grants.
+- A later version measures the battery cost of the link settings. D-18 defers this item.
 
 ## 13. Related documents
 

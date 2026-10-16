@@ -2,7 +2,7 @@
 
 # HeygoAI and AI Passport: product requirements
 
-Version: 0.4. Date: 2026-10-16. Status: Draft for review.
+Version: 0.5. Date: 2026-10-16. Status: Draft for review.
 The Product Owner role has no assigned person.
 This document defines a concept. It does not describe a working integration.
 
@@ -45,14 +45,14 @@ The device cannot check motion. Rest mode never claims that the surroundings are
 
 ## 4. Scope and priorities
 
-D-17 sets these priorities. [Decision amendments](05-decision-amendments.md) gives the reasons.
+D-17 and D-18 set these priorities. [Decision amendments](05-decision-amendments.md) gives the reasons.
 
 | Priority | Meaning | Requirements |
 | --- | --- | --- |
-| P0 | The first version | REQ-01, REQ-06, REQ-07, REQ-08, REQ-15, REQ-16, REQ-17, REQ-20 |
+| P0 | The first version | REQ-01, REQ-06, REQ-07, REQ-08, REQ-15, REQ-17, REQ-20 |
 | P1 | The next increment | REQ-02, REQ-03, REQ-04, REQ-09, REQ-13 |
 | P2 | Later candidates | REQ-10, REQ-11, REQ-12, REQ-18, REQ-19 |
-| Deferred | No planned increment | REQ-05, REQ-14 |
+| Deferred | No planned increment | REQ-05, REQ-14, REQ-16 |
 
 P0 builds the complete voice chain once: button, BLE link, phone, Agent, phone, BLE link, speaker.
 Each P1 feature reuses that chain.
@@ -68,6 +68,7 @@ Each P1 feature reuses that chain.
 - New hardware, manufacturing, payments, or a public social network.
 - BLE encryption, a pairing passkey, or a binding check.
 - Privacy and authorization features.
+- Power management, including sleep modes and low-power link settings.
 
 ## 5. Capability boundary
 
@@ -77,7 +78,7 @@ Each P1 feature reuses that chain.
 | Buttons | UP, DOWN, and OK share one ADC input. | Use one button at a time. |
 | Audio | Microphone, speaker, and PCM APIs exist. No echo cancellation. | Stream audio to the phone in small blocks. Never record and play together. |
 | Resources | ESP32-C3, 8 MB Flash, no PSRAM. | Keep speech recognition, synthesis, and the Agent off the device. |
-| Power | 500 mAh battery. | Measure runtime. Do not claim full-day use. |
+| Power | 500 mAh battery. | D-18 defers power management. Claim no runtime. |
 | Motion and location | No evidence of an IMU, GNSS, or barometer. | Get ski data from HeygoAI through the phone. |
 | HeygoAI | No API contract and no sample data yet. | The phone application handles the integration. |
 | Phone application | It exists. Another team develops it. | Device requirements follow its capabilities. The [BLE protocol draft](07-ble-protocol-draft.md) proposes the link. |
@@ -96,7 +97,6 @@ Each row has test stage Prototype. Owners are roles with no assigned person.
 | REQ-07 | Play the spoken answer as it arrives. Allow the user to stop it. | Firmware and phone. | TC-07: playback stops within 200 ms of the cancel command in 30 trials. No canceled answer resumes. | The phone must supply synthesized speech. |
 | REQ-08 | Ask the Agent with a button. The phone attaches the current ski session. | Agent, phone, and firmware. | TC-08: the first audible answer starts within 5 seconds of release at the 95th percentile. The Agent marks claims that lack evidence. | HeygoAI coaching tools remain open. |
 | REQ-15 | Support three buttons, gloves, and readable Chinese status text. | Design and firmware. | TC-15: every required glyph shows. At least 4 of 5 users complete each core task. | Test gloves and readability on hardware. |
-| REQ-16 | Keep audio, link, and power use within measured device limits. | Firmware. | TC-16: a 60-minute workload has no reset and no allocation failure. | Battery runtime and cold limits are unknown. |
 | REQ-17 | Keep Ski mode and Rest mode distinct. Require manual entry before any voice use. | Firmware and design. | TC-17: 50 transition trials keep the mode clear. The press that enters Rest mode never starts capture. | No automatic motion detection exists. |
 | REQ-20 | Explain link failures. Support recovery. | Firmware and phone. | TC-20: 10 reconnect trials create no duplicate question. No stale answer plays. | Test link loss and phone background behavior. |
 
@@ -126,6 +126,7 @@ Each row has test stage Prototype. Owners are roles with no assigned person.
 | --- | --- | --- |
 | REQ-05 | Show and replay one turn. | It is the largest story, and Q-02 may never supply trajectory data. |
 | REQ-14 | Access control and data deletion. | D-13 excludes privacy work. |
+| REQ-16 | Keep audio, link, and power use within measured device limits. | D-18: the first version builds no power management. |
 
 ## 7. Experience details
 
@@ -170,7 +171,6 @@ These numbers are test targets, not measurements.
 | Ask and stop | At least 4 of 5 users ask a question and stop an answer with gloves, without help. |
 | Hear the answer | The first audible answer starts within 5 seconds of release at the 95th percentile. |
 | Stop quickly | Capture stops within 100 ms of release. Playback stops within 200 ms of the cancel command. |
-| Run for an hour | A 60-minute workload has no reset. |
 
 ## 9. Hardware and pilot limits
 

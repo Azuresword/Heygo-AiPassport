@@ -2,7 +2,7 @@
 
 # Scrum backlog and delivery plan
 
-Version: 0.4. Date: 2026-10-16. Status: Proposed. No story, Sprint, or test is complete.
+Version: 0.5. Date: 2026-10-16. Status: Proposed. No story, Sprint, or test is complete.
 
 Related documents: [Requirements](01-product-requirements.md), [Architecture](02-architecture.md), [Validation and decisions](04-validation-and-decisions.md), [Decision amendments](05-decision-amendments.md), [Sprint 0 plan](06-sprint-0-plan.md), and [BLE protocol draft](07-ble-protocol-draft.md).
 
@@ -44,7 +44,6 @@ The user made every scope decision so far, including D-17.
 | US-07 Speech playback | REQ-07 | P0 | 3–5 | Firmware | Sprint 0 logic, Sprint 1 hardware |
 | US-08 Button Agent exchange | REQ-08 | P0 | Re-estimate | Phone and firmware | Sprint 1 |
 | US-15 Gloves and Chinese text | REQ-15 | P0 | Re-estimate | Firmware | Sprint 1 |
-| US-16 Resource limits | REQ-16 | P0 | Re-estimate | Firmware | Sprint 1 |
 | US-17 Explicit modes | REQ-17 | P0 | Re-estimate | Firmware | Sprint 0 logic, Sprint 1 hardware |
 | US-20 Recovery | REQ-20 | P0 | Re-estimate | Firmware and phone | Sprint 1 |
 | US-02 Report sync | REQ-02 | P1 | 5–8 | Phone | Later |
@@ -59,6 +58,7 @@ The user made every scope decision so far, including D-17.
 | US-19 Share link | REQ-19 | P2 | 3–5 | Phone | Later |
 | US-05 Turn view and replay | REQ-05 | Deferred | None | None | None |
 | US-14 Privacy and authorization | REQ-14 | Deferred | None | None | None |
+| US-16 Resource limits | REQ-16 | Deferred | None | None | None |
 
 "Re-estimate" marks a P0 story whose scope shrank in version 0.4. The Developers set new points.
 
@@ -115,15 +115,6 @@ As a skier, I want to use the device with gloves and read every status in Chines
 - Acceptance: Every Chinese status string shows without a missing glyph or clipping.
 - Verification: TC-15.
 
-### US-16: Resource limits
-
-As a skier, I want the device to keep working through an hour of use.
-
-- Acceptance: A 60-minute workload of questions and reconnects has no reset and no allocation failure.
-- Acceptance: Every queue keeps its fixed size.
-- Acceptance: An unknown battery reading shows as unknown.
-- Verification: TC-16.
-
 ### US-17: Explicit modes
 
 As a skier, I want to know whether voice works now, so that I never talk to the device by accident while I ski.
@@ -166,7 +157,7 @@ Each selected P0 slice meets every applicable check:
 - Host tests, repository checks, and the firmware build pass.
 - Device tests pass under recorded conditions.
 - Chinese text, button actions, mode changes, and cancel behavior pass their tests.
-- Memory and timing measurements meet the slice limits.
+- Timing measurements meet the slice limits.
 - English and Chinese documents describe the same behavior.
 - The team records every remaining gap.
 

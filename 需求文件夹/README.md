@@ -2,7 +2,7 @@
 
 # HeygoAI and AI Passport: requirements workspace
 
-Version: 0.4. Date: 2026-10-16. Status: Draft for review.
+Version: 0.5. Date: 2026-10-16. Status: Draft for review.
 This folder holds the product definition, the architecture, and the Scrum backlog.
 It also holds the validation plan, the decision record, the Sprint 0 plan, and the BLE protocol draft.
 It holds no firmware code.
@@ -16,7 +16,7 @@ No evidence shows a working HeygoAI integration.
 | [System architecture](02-architecture.md) | Components, modes, buttons, the Coach audio flow, and device limits. |
 | [Scrum backlog](03-scrum-backlog.md) | User stories, priorities, Sprint order, and the Definition of Done. |
 | [Validation and decisions](04-validation-and-decisions.md) | Test cases, open questions, the decision log, and risks. |
-| [Decision amendments](05-decision-amendments.md) | The reasons behind D-08 to D-17. |
+| [Decision amendments](05-decision-amendments.md) | The reasons behind D-08 to D-18. |
 | [Sprint 0 plan](06-sprint-0-plan.md) | Four hours of host-only work for the first Coach question. |
 | [BLE protocol draft](07-ble-protocol-draft.md) | The device side of the BLE link. |
 
@@ -27,16 +27,16 @@ The skier holds OK and asks the AI coach a question.
 The skier hears the answer.
 The phone stays in a pocket. The skier keeps the gloves on.
 
-D-17 sets the priorities:
+D-17 and D-18 set the priorities:
 
-- **P0, the first version:** device connection, the voice question, the spoken answer, and the Agent exchange. P0 also covers the modes, gloves and Chinese text, device limits, and recovery.
+- **P0, the first version:** device connection, the voice question, the spoken answer, and the Agent exchange. P0 also covers the modes, gloves and Chinese text, and recovery.
 - **P1, the next increment:** reports, metric charts, the offline report cache, and human intercom.
 - **P2, later candidates:** practice goals, quests, a reflection journal, session comparison, and report sharing.
-- **Deferred:** turn visualization, and privacy and authorization.
+- **Deferred:** turn visualization, privacy and authorization, and power management.
 
 ## Status and evidence
 
-The user accepted D-08 to D-15 and D-17. D-16 waits for the phone application team.
+The user accepted D-08 to D-15, D-17, and D-18. D-16 waits for the phone application team.
 A phone application already exists. Another team develops it.
 No person accepted a Scrum role or a delivery date.
 

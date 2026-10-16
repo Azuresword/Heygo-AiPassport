@@ -2,7 +2,7 @@
 
 # Validation, open questions, and decisions
 
-Version: 0.4. Date: 2026-10-16. Status: Draft for review.
+Version: 0.5. Date: 2026-10-16. Status: Draft for review.
 Every product test below has status NOT RUN.
 Document checks do not count as firmware or device tests.
 
@@ -54,7 +54,6 @@ Nobody helps during an attempt.
 | TC-07 | Cancel 30 answers at different stages. Include blocks that arrive after the cancel. | Playback stops within 200 ms of the cancel command. Old audio never resumes. No capture starts during playback. | Audio timing and protocol tests. Firmware. |
 | TC-08 | 30 timed questions through the real service on N1, and 20 context cases. | The first audible answer starts within 5 seconds of release at the 95th percentile. Each answer uses the session that the phone attached. Claims without evidence carry a mark. | Device timing and service records. Agent, phone, and firmware. |
 | TC-15 | U1, and every Chinese status string. | Every required glyph shows without clipping. At least 4 of 5 users complete each task. | Usability study and glyph inspection. Design and firmware. |
-| TC-16 | A 60-minute workload with questions and reconnects. Valid and failed battery readings. | No reset and no allocation failure. Queues keep their size. A failed reading shows unknown. | Heap and power logs. Firmware. |
 | TC-17 | 50 transitions, including holds, cancels, entry, and exit. | The press that enters Rest mode never starts capture. A hold never also triggers a short press. Exit stops all audio. | State tests and device demonstration. Firmware and design. |
 | TC-20 | 10 reconnects under N2. | No duplicate question. No stale answer plays. | Fault injection. Firmware and phone. |
 
@@ -66,7 +65,7 @@ Measure the release latency from the release itself.
 
 TC-02, TC-03, TC-04, TC-09, and TC-13 belong to P1.
 TC-10, TC-11, TC-12, TC-18, and TC-19 belong to P2.
-TC-05 and TC-14 sit in Deferred.
+TC-05, TC-14, and TC-16 sit in Deferred.
 None of them gates the first version. Commit `970bb8e` holds their version 0.3 text.
 
 ## 5. Open questions
@@ -85,7 +84,7 @@ The user parked these questions. The user will share answers after a review with
 | Q-08 | Which capacity, device count, and budget apply? | P0 | Open |
 | Q-09 | Who reviews the coaching content? | P0 | Open |
 | Q-10 | Which firmware baseline and license apply? | P0 | Open. D-09 selected the audio format. |
-| Q-11 | Which final memory and queue limits apply? | P0 | Open until TC-16 passes |
+| Q-11 | Which final memory and queue limits apply? | Deferred | Deferred by D-18 |
 | Q-12 | Which conditions make two sessions comparable? | P2 | Open |
 | Q-13 | Does the phone application accept the BLE protocol draft? | P0 | Open. Doc 07 offers the device draft. |
 
@@ -108,8 +107,9 @@ The user parked these questions. The user will share answers after a review with
 | D-13 | Build no privacy or authorization feature. | Accepted by the user. |
 | D-14 | The device does four tasks. The phone application does the rest. | Accepted by the user. |
 | D-15 | Two modes. An OK hold enters Rest mode on the Coach page. A DOWN hold and a short OK exit. | Accepted by the user. Version 0.4 changed the landing page. |
-| D-16 | The device team proposes BLE protocol draft 0.2. | Proposed. Waits for the phone application team. |
+| D-16 | The device team proposes the BLE protocol draft. Document version 0.3 defines protocol version 0.1. | Proposed. Waits for the phone application team. |
 | D-17 | P0 keeps the Coach voice chain. Reports, charts, the cache, and intercom move to P1. Turn views move to Deferred. | Accepted by the user. |
+| D-18 | The first version builds no power management, and requests the best-performance link settings. REQ-16 moves to Deferred. | Accepted by the user. |
 
 ## 7. Risks
 
@@ -118,10 +118,11 @@ The user parked these questions. The user will share answers after a review with
 | The phone application cannot stream audio. | No P0 feature works. | Review doc 07 with that team first. Keep the raw PCM fallback. | Phone team and firmware. |
 | Phone background limits break the link. | Questions fail. | Test background behavior on the target phone. | Phone team. |
 | HeygoAI lacks coaching tools. | Answers lack ski context. | Resolve Q-01. | Phone team. |
-| The BLE stack, fonts, and audio exhaust RAM. | The device resets. | Keep fixed queues. Run TC-16. | Firmware. |
+| The BLE stack, fonts, and audio exhaust RAM. | The device resets. | Keep fixed queues. Watch for resets in the Sprint 1 device tests. | Firmware. |
 | The P0 screen shows little value. | Pilot users see only status and short text. | Collect U1 feedback. Bring reports back first in P1. | Product Owner. |
 | The open BLE link lets a nearby client connect. | A stranger can hear audio blocks. | Keep pilots indoor and small. Review D-12 before a public trial. | Product Owner. |
 | Cold, wind, or gloves impair use. | Indoor results do not transfer. | Define Q-07 before field tests. | Product and hardware. |
+| The first version has no power management. | The battery drains faster than expected, and a pilot session ends early. | Charge the device before each pilot session. Review D-18 before a field pilot. | Product Owner. |
 
 ## 8. Delivery evidence
 

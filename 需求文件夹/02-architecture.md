@@ -2,7 +2,7 @@
 
 # HeygoAI × AI Passport: architecture
 
-Version: 0.4. Date: 2026-10-16. Status: Draft for engineering review.
+Version: 0.5. Date: 2026-10-16. Status: Draft for engineering review.
 
 This document proposes a design for the P0 scope in [product requirements](01-product-requirements.md).
 It does not describe a working integration.
@@ -18,7 +18,7 @@ The [BLE protocol draft](07-ble-protocol-draft.md) defines the packets.
 | BSP source | UP, DOWN, and OK share one ADC input | Never require two buttons at once. |
 | BSP source | Default hold threshold of 500 ms | Use 500 ms for every hold. |
 | BSP source | ES8311 microphone and speaker at 16 kHz, 16-bit, mono | Test voice under real conditions. |
-| Product data | 500 mAh battery | Measure runtime. |
+| Product data | 500 mAh battery | D-18 defers power management. Claim no runtime. |
 | Conditional | The battery gauge can be absent or return `-1` | Show an unknown state, not a false percentage. |
 | Measured build | A build without Wi-Fi left 180,840 bytes of static D/IRAM free | Use this figure as the starting budget. |
 | Team statement | A phone application exists. Another team develops it. | Doc 07 proposes the link. Q-13 tracks the review. |
@@ -170,6 +170,11 @@ The device has no PSRAM. Streaming makes a full recording unnecessary.
 
 Each queue has a fixed size and an overflow rule. A slow link never grows a queue.
 
+### Power
+
+D-18 defers power management. The first version uses no sleep mode. It requests the best-performance BLE link settings in doc 07, section 4.
+The screen still shows the battery level, or an unknown state.
+
 ### Audio blocks
 
 | Format | Bytes per second | Device cost |
@@ -209,8 +214,8 @@ Commit `970bb8e` holds the version 0.3 design for these items.
 
 1. Select a transport. D-08 closed this gate.
 2. Agree the BLE protocol with the phone application team. Doc 07 holds the device draft.
-3. Measure the device resource budget on hardware.
-4. Accept the Rest mode pilot on real hardware.
+3. Accept the Rest mode pilot on real hardware.
 
-Open items: the review of doc 07, the phone platform, the HeygoAI coaching tools, and the cold and battery limits.
+Open items: the review of doc 07, the phone platform, the HeygoAI coaching tools, and the cold limits.
+D-18 defers every power and battery-life item.
 Do not treat a diagram or a successful build as hardware validation.
