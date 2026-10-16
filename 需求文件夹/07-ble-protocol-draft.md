@@ -1,8 +1,8 @@
-**English** · [简体中文](07-ble-protocol-draft.zh_CN.md)
+[简体中文](07-ble-protocol-draft.zh_CN.md) · **English**
 
 # BLE Protocol Draft
 
-Version: 0.1. Date: 2026-10-16. Status: draft from the device team. The phone application team must review it.
+Version: 0.2. Date: 2026-10-16. Status: draft from the device team. The phone application team must review it.
 
 ## 1. Purpose and scope
 
@@ -10,6 +10,9 @@ This draft defines the BLE link between AI Passport and the phone application.
 D-14 limits the device to four tasks. This protocol carries the data for those four tasks.
 The phone application team owns the other side of the link.
 Q-13 stays open until that team accepts or replaces this draft.
+
+Version 0.2 marks the Team and Report messages as P1, because D-17 moved intercom and reports out of P0.
+The first version builds only the P0 messages.
 
 The draft follows three rules:
 
@@ -60,7 +63,7 @@ The device disables voice features in these cases:
 - No HELLO_ACK arrives within 2 seconds.
 - The phone reports an unsupported major version.
 
-Reports still work in these cases, because report pages use fragments.
+The link stays up in these cases. P1 reports still work, because report pages use fragments.
 The device shows a short message that names the cause.
 
 ### Connection parameters
@@ -132,7 +135,7 @@ D means the device. P means the phone.
 | 0x0F | ERROR | Both | Error code (1), referenced type (1), referenced `xid` (1) | After a packet that the receiver rejects |
 
 The codec mask uses bit 0 for IMA ADPCM and bit 1 for raw PCM.
-The device needs the UTC time from the phone. It has no other clock source for the report age.
+The device needs the UTC time from the phone, because it has no other clock source.
 
 | Error code | Meaning |
 | --- | --- |
@@ -147,9 +150,10 @@ The device needs the UTC time from the phone. It has no other clock source for t
 
 | Type | Name | Direction | Payload | When |
 | --- | --- | --- | --- | --- |
-| 0x10 | CONTEXT | D to P | Mode (1), page (1), report revision (4), report ID length (1), report ID (text), turn ID (text, empty for none) | On each change of mode, page, report, or turn |
+| 0x10 | CONTEXT | D to P | Mode (1), page (1) | On each change of mode or page |
 
-The phone puts this context into each Agent request. REQ-08 needs it.
+In P0 the phone attaches the current ski session to each Agent request.
+P1 adds report fields at the end of this payload.
 
 ### Agent
 
@@ -183,7 +187,7 @@ With an MTU of 172, the text holds at most 163 bytes.
 | 0x31 | AUDIO_DOWN | P to D | One audio block | At real-time pace during playback |
 | 0x32 | PLAY_START | P to D | Channel (1): 0 Agent, 1 Team. Codec (1). Speaker name (text, Team only). | Before the first AUDIO_DOWN of an answer or a Team speech |
 | 0x33 | PLAY_END | P to D | None | After the last AUDIO_DOWN |
-| 0x34 | PLAY_STOP | D to P | None | At an UP hold during Team playback |
+| 0x34 | PLAY_STOP | D to P | None | At an UP hold during Team playback. P1. |
 
 Each audio packet carries the `xid` of its exchange. `seq` increases by one for each block.
 After PLAY_END, the device plays the frames in its queue, and then frees the audio owner.
@@ -191,7 +195,9 @@ At an UP hold during Agent playback, the device sends AGENT_CANCEL.
 At an UP hold during Team playback, the device sends PLAY_STOP.
 In both cases the device stops the speaker at once. It does not wait for the phone.
 
-### Team
+### Team (P1)
+
+The first version does not build these messages.
 
 | Type | Name | Direction | Payload | When |
 | --- | --- | --- | --- | --- |
@@ -222,7 +228,9 @@ If either condition fails, the device sends TEAM_RELEASE with reason 3, and keep
 | 3 | Late grant |
 | 4 | Link problem |
 
-### Reports
+### Reports (P1)
+
+The first version does not build these messages.
 
 | Type | Name | Direction | Payload | When |
 | --- | --- | --- | --- | --- |
@@ -296,7 +304,7 @@ The fallback uses four times the packet rate of ADPCM. Use it for diagnostics on
 | HELLO_ACK after HELLO | At most 2 seconds | Phone |
 | Interval between PHONE_STATUS packets | At most 5 seconds | Phone |
 | Silence before the device shows that the phone application does not respond | 15 seconds | Device |
-| TEAM_GRANT or TEAM_DENY after TEAM_REQUEST | At most 1,500 ms. After that, the device treats the request as a timeout. | Device |
+| P1: TEAM_GRANT or TEAM_DENY after TEAM_REQUEST | At most 1,500 ms. After that, the device treats the request as a timeout. | Device |
 | First AGENT_STATE after AGENT_END | At most 10 seconds. After that, the device shows a timeout. | Device |
 | Capture stop after OK release or cancellation | At most 100 ms | Device |
 | Speaker stop after the cancellation command | At most 200 ms | Device |
@@ -323,7 +331,7 @@ sequenceDiagram
     P-->>D: PLAY_END xid=05
 ```
 
-### Team speech, and a late grant
+### Team speech, and a late grant (P1)
 
 ```mermaid
 sequenceDiagram
@@ -340,7 +348,7 @@ sequenceDiagram
     D->>P: TEAM_RELEASE xid=07 late grant
 ```
 
-### Speech from another member
+### Speech from another member (P1)
 
 ```mermaid
 sequenceDiagram
@@ -354,13 +362,13 @@ sequenceDiagram
 
 ## 10. Device memory cost
 
-| Item | Bytes |
-| --- | --- |
-| TX control queue, 4 packets of 172 bytes | 688 |
-| TX audio queue, 8 packets of 172 bytes | 1,376 |
-| Playback queue, 8 packets of 172 bytes | 1,376 |
-| Report page buffer | 8,192 |
-| Total | 11,632 |
+| Item | P0 bytes | With P1 reports |
+| --- | --- | --- |
+| TX control queue, 4 packets of 172 bytes | 688 | 688 |
+| TX audio queue, 8 packets of 172 bytes | 1,376 | 1,376 |
+| Playback queue, 8 packets of 172 bytes | 1,376 | 1,376 |
+| Report page buffer | None | 8,192 |
+| Total | 3,440 | 11,632 |
 
 The ADPCM codec state adds a few bytes for each direction.
 The NimBLE host and controller need extra memory. Measure them on hardware.
@@ -375,9 +383,9 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 6. Send AUDIO_DOWN at real-time pace, never more than 8 blocks ahead.
 7. Decode and encode the ADPCM block layout in section 7.
 8. Drop the input and the answer after AGENT_CANCEL.
-9. Request the floor after TEAM_REQUEST, and answer within 1,500 ms.
-10. Release the floor after TEAM_RELEASE.
-11. Split each report page into fragments that fit the MTU.
+9. P1: Request the floor after TEAM_REQUEST, and answer within 1,500 ms.
+10. P1: Release the floor after TEAM_RELEASE.
+11. P1: Split each report page into fragments that fit the MTU.
 
 ## 12. Open items
 
@@ -392,5 +400,5 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 - [System Architecture](02-architecture.md).
 - [Validation and Decisions](04-validation-and-decisions.md).
 - [Decision Amendments](05-decision-amendments.md).
-- [Sprint 0 Two-Day Plan](06-sprint-0-two-day-plan.md).
+- [Sprint 0 plan](06-sprint-0-plan.md).
 - [Folder Index](README.md).
