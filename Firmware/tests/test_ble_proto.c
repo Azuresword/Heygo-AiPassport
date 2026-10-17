@@ -1,0 +1,190 @@
+// Host tests for the packet layer in Sprint 0, task T-2.
+// Every value comes from doc 07, protocol version 0.1.
+#include "protocol/ble_proto.h"
+
+#include <assert.h>
+#include <stdio.h>
+#include <string.h>
+
+#define CAP (BP_MTU_MIN - 3)   // 169 bytes: the ATT payload at the minimum MTU
+
+static uint8_t buf[256];
+
+static void roundtrip_link(void) {
+    bp_packet_t p;
+    size_t n = bp_build_hello(buf, CAP, BP_CODEC_MASK_ADPCM | BP_CODEC_MASK_PCM, 247, "0.1.0");
+    assert(n == 4 + 5 + 5);
+    assert(buf[4] == 0 && buf[5] == 1);                // protocol 0.1
+    assert(buf[7] == 0xF7 && buf[8] == 0x00);          // MTU 247, little-endian
+    assert(bp_parse(buf, n, &p) == BP_OK);
+    bp_hello_t h; assert(bp_read_hello(&p, &h) == BP_OK);
+    assert(h.major == 0 && h.minor == 1 && h.mtu == 247 && h.codec_mask == 3);
+    assert(h.fw.len == 5 && memcmp(h.fw.ptr, "0.1.0", 5) == 0);
+
+    n = bp_build_hello_ack(buf, CAP, 0, 1, 1760000000u, "app-1.0");
+    assert(bp_parse(buf, n, &p) == BP_OK);
+    bp_hello_ack_t a; assert(bp_read_hello_ack(&p, &a) == BP_OK);
+    assert(a.major == 0 && a.minor == 1 && a.utc == 1760000000u && a.app.len == 7);
+
+    n = bp_build_phone_status(buf, CAP, 42u, true, false, true);
+    assert(bp_parse(buf, n, &p) == BP_OK);
+    bp_phone_status_t ps; assert(bp_read_phone_status(&p, &ps) == BP_OK);
+    assert(ps.utc == 42u && ps.online && !ps.gateway && ps.background);
+
+    n = bp_build_device_status(buf, CAP, BP_BATTERY_UNKNOWN, BP_MODE_REST, BP_PAGE_COACH, 180);
+    assert(bp_parse(buf, n, &p) == BP_OK);
+    bp_device_status_t ds; assert(bp_read_device_status(&p, &ds) == BP_OK);
+    assert(ds.battery == 0xFF && ds.mode == 1 && ds.page == 1 && ds.free_kib == 180);
+
+    n = bp_build_error(buf, CAP, BP_ERR_FIELD, BP_AGENT_START, 5);
+    assert(bp_parse(buf, n, &p) == BP_OK);
+    bp_error_t er; assert(bp_read_error(&p, &er) == BP_OK);
+    assert(er.code == 7 && er.ref_type == 0x20 && er.ref_xid == 5);
+}
+
+static void roundtrip_agent_and_audio(void) {
+    bp_packet_t p;
+    size_t n = bp_build_context(buf, CAP, BP_MODE_REST, BP_PAGE_COACH);
+    assert(bp_parse(buf, n, &p) == BP_OK);
+    bp_context_t c; assert(bp_read_context(&p, &c) == BP_OK && c.mode == 1 && c.page == 1);
+
+    n = bp_build_agent_start(buf, CAP, 5, BP_CODEC_ADPCM);
+    assert(bp_parse(buf, n, &p) == BP_OK && p.xid == 5 && p.seq == 0);
+    bp_agent_start_t s; assert(bp_read_agent_start(&p, &s) == BP_OK && s.codec == 0 && s.rate_khz == 16);
+
+    n = bp_build_agent_end(buf, CAP, 5, BP_END_LIMIT);
+    uint8_t reason; assert(bp_parse(buf, n, &p) == BP_OK && bp_read_agent_end(&p, &reason) == BP_OK && reason == 1);
+
+    n = bp_build_agent_cancel(buf, CAP, 5);
+    assert(n == 4 && bp_parse(buf, n, &p) == BP_OK && p.type == BP_AGENT_CANCEL);
+
+    // The longest AGENT_STATE text at MTU 172 is 163 bytes.
+    char text[200]; memset(text, 'a', sizeof text);
+    text[163] = '\0';
+    n = bp_build_agent_state(buf, CAP, 5, BP_AGENT_ANSWERING, BP_FAIL_NONE, text);
+    assert(n == CAP);
+    text[163] = 'a'; text[164] = '\0';
+    assert(bp_build_agent_state(buf, CAP, 5, BP_AGENT_ANSWERING, BP_FAIL_NONE, text) == 0);
+
+    n = bp_build_agent_state(buf, CAP, 5, BP_AGENT_FAILED, BP_FAIL_RECOGNITION, "");
+    assert(bp_parse(buf, n, &p) == BP_OK);
+    bp_agent_state_t st; assert(bp_read_agent_state(&p, &st) == BP_OK && st.state == 6 && st.failure == 1);
+
+    // One ADPCM packet uses 168 bytes, and fits at MTU 172.
+    uint8_t block[BP_ADPCM_BLOCK] = {0};
+    n = bp_build_audio(buf, CAP, BP_AUDIO_UP, 5, 9, block, sizeof block);
+    assert(n == 168);
+    assert(bp_parse(buf, n, &p) == BP_OK && p.seq == 9);
+    assert(bp_check_audio_block(BP_CODEC_ADPCM, p.payload_len) == BP_OK);
+
+    n = bp_build_play_start(buf, CAP, 5, BP_CHANNEL_AGENT, BP_CODEC_ADPCM, "");
+    assert(bp_parse(buf, n, &p) == BP_OK);
+    bp_play_start_t ps; assert(bp_read_play_start(&p, &ps) == BP_OK && ps.channel == 0 && ps.codec == 0);
+
+    n = bp_build_play_end(buf, CAP, 5);
+    assert(n == 4 && bp_parse(buf, n, &p) == BP_OK && p.type == BP_PLAY_END);
+}
+
+static void error_codes(void) {
+    bp_packet_t p;
+    // Code 2: a header shorter than 4 bytes, or a payload below the minimum.
+    assert(bp_parse(buf, 3, &p) == BP_ERR_LENGTH);
+    size_t n = bp_build_context(buf, CAP, 0, 0);
+    assert(bp_parse(buf, n - 1, &p) == BP_ERR_LENGTH);
+    n = bp_build_phone_status(buf, CAP, 0, false, false, false);
+    assert(bp_parse(buf, n - 1, &p) == BP_ERR_LENGTH);
+
+    // Code 1: an unknown type, and a P1 type in the first version.
+    uint8_t unknown[4] = { 0x77, 0, 0, 0 };
+    assert(bp_parse(unknown, 4, &p) == BP_ERR_UNKNOWN_TYPE);
+    uint8_t team[4] = { 0x50, 0, 0, 0 };
+    assert(bp_parse(team, 4, &p) == BP_ERR_UNKNOWN_TYPE);
+
+    // Code 3: any version other than 0.1 while the major is 0.
+    assert(bp_check_version(0, 1) == BP_OK);
+    assert(bp_check_version(0, 2) == BP_ERR_VERSION);
+    assert(bp_check_version(1, 1) == BP_ERR_VERSION);
+
+    // Code 7: an unknown codec, a wrong sample rate, or a failure code outside "Failed".
+    uint8_t bad_codec[6] = { BP_AGENT_START, 0, 5, 0, 9, 16 };
+    assert(bp_parse(bad_codec, 6, &p) == BP_OK);
+    bp_agent_start_t s; assert(bp_read_agent_start(&p, &s) == BP_ERR_FIELD);
+    uint8_t bad_rate[6] = { BP_AGENT_START, 0, 5, 0, 0, 8 };
+    assert(bp_parse(bad_rate, 6, &p) == BP_OK && bp_read_agent_start(&p, &s) == BP_ERR_FIELD);
+    uint8_t bad_fail[6] = { BP_AGENT_STATE, 0, 5, 0, BP_AGENT_THINKING, BP_FAIL_GATEWAY };
+    bp_agent_state_t st;
+    assert(bp_parse(bad_fail, 6, &p) == BP_OK && bp_read_agent_state(&p, &st) == BP_ERR_FIELD);
+    uint8_t bad_play[6] = { BP_PLAY_START, 0, 5, 0, 0, 4 };
+    bp_play_start_t pl;
+    assert(bp_parse(bad_play, 6, &p) == BP_OK && bp_read_play_start(&p, &pl) == BP_ERR_FIELD);
+    assert(bp_check_audio_block(9, BP_ADPCM_BLOCK) == BP_ERR_FIELD);
+
+    // Code 2 for an audio block of the wrong size.
+    assert(bp_check_audio_block(BP_CODEC_ADPCM, BP_ADPCM_BLOCK - 1) == BP_ERR_LENGTH);
+    assert(bp_check_audio_block(BP_CODEC_PCM, BP_PCM_BLOCK) == BP_OK);
+}
+
+static void trailing_bytes_ignored(void) {
+    bp_packet_t p;
+    uint8_t ctx[7] = { BP_CONTEXT, 0, 0, 0, BP_MODE_REST, BP_PAGE_COACH, 0xAB };
+    assert(bp_parse(ctx, sizeof ctx, &p) == BP_OK);
+    bp_context_t c; assert(bp_read_context(&p, &c) == BP_OK && c.mode == 1 && c.page == 1);
+
+    uint8_t unknown_page[6] = { BP_CONTEXT, 0, 0, 0, BP_MODE_REST, 99 };
+    assert(bp_parse(unknown_page, 6, &p) == BP_OK && bp_read_context(&p, &c) == BP_OK);
+}
+
+static void reader_guards(void) {
+    // A packet built by hand, without bp_parse, still cannot overrun.
+    uint8_t one = 0;
+    bp_packet_t p = { BP_PHONE_STATUS, 0, 0, 0, &one, 1 };
+    bp_phone_status_t ps;
+    assert(bp_read_phone_status(&p, &ps) == BP_ERR_LENGTH);
+    p.type = BP_CONTEXT;
+    assert(bp_read_phone_status(&p, &ps) == BP_ERR_STATE);
+}
+
+static void xid_rules(void) {
+    bp_xid_gen_t d; bp_xid_init_device(&d);
+    assert(bp_xid_next(&d) == 0x01);
+    for (int i = 0; i < 0x7E - 1; i++) bp_xid_next(&d);
+    assert(bp_xid_next(&d) == 0x7F);
+    assert(bp_xid_next(&d) == 0x01);                 // wraps inside its own range
+
+    bp_xid_gen_t ph; bp_xid_init_phone(&ph);
+    assert(bp_xid_next(&ph) == 0x80);
+    for (int i = 0; i < 0xFE - 0x80 - 1; i++) bp_xid_next(&ph);
+    assert(bp_xid_next(&ph) == 0xFE);
+    assert(bp_xid_next(&ph) == 0x80);
+
+    for (int i = 0; i < 1000; i++) {                 // never 0x00, never 0xFF
+        uint8_t a = bp_xid_next(&d), b = bp_xid_next(&ph);
+        assert(a >= 0x01 && a <= 0x7F && b >= 0x80 && b <= 0xFE);
+    }
+
+    assert(bp_xid_accept(5, 5));
+    assert(!bp_xid_accept(5, 4));                    // stale exchange: drop
+    assert(!bp_xid_accept(0, 5));                    // after a cancel: drop all
+}
+
+static void seq_rules(void) {
+    bp_seq_t s; bp_seq_reset(&s);
+    assert(bp_seq_accept(&s, 0) == 0);
+    assert(bp_seq_accept(&s, 1) == 0);
+    assert(bp_seq_accept(&s, 3) == 1);               // one block missing
+    bp_seq_reset(&s); s.expect = 255;
+    assert(bp_seq_accept(&s, 255) == 0);
+    assert(bp_seq_accept(&s, 0) == 0);               // wraps after 255
+}
+
+int main(void) {
+    roundtrip_link();
+    roundtrip_agent_and_audio();
+    error_codes();
+    trailing_bytes_ignored();
+    reader_guards();
+    xid_rules();
+    seq_rules();
+    printf("ble protocol tests: PASS\n");
+    return 0;
+}

@@ -8,12 +8,16 @@ This is the repository for Heygo AI Passport.
 
 ## Project status
 
-The project contains draft requirements, a proposed architecture, and a Scrum backlog.
-We will add firmware source code and build instructions as development progresses.
+The project contains draft requirements, the firmware for Sprint 0, and the screen assets.
+Device tests have not run yet.
 
-## Project documents
+## Folders
 
-Read the [requirements and architecture](%E9%9C%80%E6%B1%82%E6%96%87%E4%BB%B6%E5%A4%B9/README.md).
+| Folder | Content |
+| --- | --- |
+| [需求文件夹](%E9%9C%80%E6%B1%82%E6%96%87%E4%BB%B6%E5%A4%B9/README.md) | Requirements, architecture, backlog, Sprint 0 plan, and the BLE protocol draft. |
+| [Firmware](Firmware/docs/heygo-changes.md) | ESP-IDF firmware, based on FoloToy/ai-passport. Start with `docs/heygo-changes.md`. |
+| [assets](assets/README.md) | Screen text, Chinese fonts, and screen mockups. |
 
 ## Get the repository
 

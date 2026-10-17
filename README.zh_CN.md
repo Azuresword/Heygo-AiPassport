@@ -8,12 +8,16 @@
 
 ## 项目状态
 
-项目已包含需求草案、拟定架构和 Scrum 待办列表。
-我们会随着开发逐步补充固件源代码和构建说明。
+项目已包含需求草案、Sprint 0 固件和屏幕资源。
+设备测试还没有运行。
 
-## 项目文档
+## 文件夹
 
-请从[需求与架构入口](需求文件夹/README.zh_CN.md)开始阅读。
+| 文件夹 | 内容 |
+| --- | --- |
+| [需求文件夹](需求文件夹/README.zh_CN.md) | 需求、架构、待办列表、Sprint 0 计划和蓝牙协议草案。 |
+| [Firmware](Firmware/docs/heygo-changes.zh_CN.md) | ESP-IDF 固件，基于 FoloToy/ai-passport。请先读 `docs/heygo-changes.zh_CN.md`。 |
+| [assets](assets/README.zh_CN.md) | 屏幕文字、中文字体和界面效果图。 |
 
 ## 获取仓库
 

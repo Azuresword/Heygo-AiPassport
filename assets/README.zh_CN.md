@@ -1,0 +1,91 @@
+**简体中文** · [English](README.md)
+
+# 设备屏幕资源
+
+本文件夹存放 P0 设备屏幕的文字、中文字体和界面效果图。
+`../Firmware` 里的固件从本文件夹编译字体。
+
+## 内容
+
+| 路径 | 内容 |
+| --- | --- |
+| `ui/strings.json` | P0 屏幕显示的 33 条文字，有中文和英文。 |
+| `fonts/heygo_sc_16.c` | 16 px 字体，用于状态、提示和手机发来的文字。3,869 个字形。 |
+| `fonts/heygo_sc_28.c` | 28 px 字体，用于状态词和标题。176 个字形。 |
+| `fonts/heygo_fonts.h` | 两个字体的声明。 |
+| `fonts/*.chars.txt` | 每个字体包含的字符。 |
+| `fonts/LICENSE-OFL.txt` | 源字体的许可证。 |
+| `tools/gen_lv_font.py` | 从源字体生成字体文件。 |
+| `tools/check_glyphs.py` | 确认每个要显示的字符都在对应字体里。 |
+| `mockups/` | 主机界面检查生成的屏幕图片。 |
+| `sim/coach-flow.html` | Coach 流程的交互模拟器。 |
+
+## 字体
+
+源字体是 Noto Sans SC Regular，许可证为 SIL Open Font License 1.1。
+`gen_lv_font.py` 只下载一次源字体，并校验它的 SHA-256 摘要。
+源字体保存在 `~/.cache/heygo-fonts`，不放进仓库。
+
+两个字体都使用 LVGL 9 的 `lv_font_fmt_txt` 格式，每像素 4 位，不压缩。
+
+| 字体 | 字符集 |
+| --- | --- |
+| `heygo_sc_16` | ASCII、中文标点、GB2312 一级字（3,755 个）和全部词汇表字符。 |
+| `heygo_sc_28` | ASCII 和全部词汇表字符。 |
+
+16 px 字体要显示手机发来的转写和回答，所以需要常用字。
+字符集以外的字符会显示成空框。
+
+要重新生成字体，在本文件夹里运行以下命令：
+
+```bash
+python3 tools/gen_lv_font.py --name heygo_sc_16 --size 16 --charset text
+python3 tools/gen_lv_font.py --name heygo_sc_28 --size 28 --charset ui
+python3 tools/check_glyphs.py
+```
+
+这些工具需要 Python 3、Pillow 和 fontTools。
+
+## 修改文字
+
+1. 在 `ui/strings.json` 里添加或修改文字。
+2. 如果文字使用大字体，把 `size` 设为 28。
+3. 如果文字里有新字符，重新生成字体。
+4. 运行 `python3 tools/check_glyphs.py`。
+
+固件门禁也会运行 `check_glyphs.py`。缺少字形时，门禁停止。
+
+## 效果图
+
+`mockups/` 里的图片由 LVGL 绘制，不是手绘稿。
+主机界面检查用设备配置和这些字体绘制生成的界面。
+要重新生成图片，在 `../Firmware` 里运行 `python3 tools/host_render/render.py`。
+
+| 图片 | 状态 |
+| --- | --- |
+| `01-ski.png` | 滑行模式 |
+| `02-ready.png` | 休息模式，就绪 |
+| `03-listening.png` | 设备正在录制问题 |
+| `04-thinking.png` | 手机已收到问题，正在等回答 |
+| `05-answering.png` | 设备正在播放回答 |
+| `06-answer-max.png` | 超过四行的回答以三个点结尾 |
+| `07-failed.png` | 语音识别失败 |
+| `08-link-lost.png` | 与手机的连接断开 |
+| `09-exit.png` | 退出确认 |
+| `contact-sheet.png` | 全部九张图，放大 2 倍 |
+
+## 模拟器
+
+用浏览器打开 `sim/coach-flow.html`，不需要服务器，也不需要联网。
+
+- 按住设备按键 500 ms 算长按。键盘的 ↑、空格、↓ 对应三个按键。
+- 流转图和触发矩阵显示当前状态和可走的转换。
+- 手机面板会自动回应每个问题。可以选场景，也可以关掉自动应答，手动发送手机事件。
+- 日志显示每次转换、对应的动作和每条蓝牙消息。
+
+浏览器用系统字体绘制屏幕。真实像素以 `mockups/` 里的图片为准。
+不要手工修改这个页面。在 `../Firmware` 里运行 `python3 tools/flow/flow_sim.py`。
+
+## 待定事项
+
+- 手机可能发来 GB2312 一级字以外的字符。设备会把这个字符显示成空框。
