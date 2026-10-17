@@ -647,22 +647,21 @@ const fmt = {
 let live, liveAt, report, reportAt, runNo, skiTimer, skiPaused, liveLine, liveCount;
 function skiView(now) {
   const stale = !live || now - liveAt >= STALE_MS;
-  const v = { unit: "KM/H" };
-  const showReport = r => Object.assign(v, { dest: "REPORT", run: `RUN ${fmt.count8(r.run_no)}  ${fmt.dist(r.distance_m)}`,
-    speed: fmt.iq(r.iq), unit: "HEYGO IQ", line1: r.problem, line2: r.tip });
-  if (!live) {
-    if (report) return showReport(report);
-    return Object.assign(v, { dest: "LIVE RUN", run: "RUN --", speed: "--", line1: S["msg.wait_data"], line2: S["msg.ski_idle"] });
+  const cells = s => ({ drop: fmt.drop(s ? s.drop_m : U16), dist: fmt.dist(s ? s.distance_m : U16),
+                        turns: fmt.count(s ? s.turns : U16), time: fmt.time(s ? s.time_s : U16) });
+  const v = Object.assign({ unit: "KM/H", report: false, problem: "", tip: "" }, cells(live));
+  const sub = (no, note) => note ? `第 ${fmt.count8(no)} 趟 · ${note}` : `第 ${fmt.count8(no)} 趟`;
+  const ended = live && live.state === RUN_ENDED;
+  if (report && (!live || (ended && report.run_no === live.run_no))) {
+    return Object.assign(v, { report: true, dest: "REPORT", sub: sub(report.run_no, S["msg.run_report"]),
+      big: fmt.iq(report.iq), unit: "HEYGO IQ", problem: report.problem, tip: report.tip });
   }
-  const ended = live.state === RUN_ENDED;
-  if (ended && report && report.run_no === live.run_no) return showReport(report);
+  if (!live) return Object.assign(v, { dest: "LIVE RUN", sub: S["msg.wait_data"], big: "--" });
   const old = stale && !ended;
-  return Object.assign(v, {
-    dest: ended ? "RUN ENDED" : "LIVE RUN", run: `RUN ${fmt.count8(live.run_no)}  ${fmt.time(live.time_s)}`,
-    speed: ended || old ? "--" : fmt.speed(live.speed_dkmh),
-    line1: `落差 ${fmt.drop(live.drop_m)} · ${fmt.dist(live.distance_m)}`,
-    line2: `${fmt.count(live.turns)} 弯` + (ended ? " · " + S["msg.report_wait"] : old ? " · " + S["msg.stale"] : ""),
-  });
+  const note = ended ? S["msg.report_wait"] : old ? S["msg.stale"]
+             : live.state === RUN_SKIING ? S["msg.skiing"] : live.state === RUN_STOPPED ? S["msg.stopped"] : "";
+  return Object.assign(v, { dest: ended ? "RUN ENDED" : "LIVE RUN", sub: sub(live.run_no, note),
+    big: ended || old ? "--" : fmt.speed(live.speed_dkmh) });
 }
 function reportView(now) {
   if (!report) return { title: S["msg.no_report"], iq: "--", age: "", problem: "", tip: "" };
@@ -674,7 +673,13 @@ function reportView(now) {
 function paintData() {
   const now = performance.now();
   for (const [scr, view] of [["ski", skiView(now)], ["report", reportView(now)]]) {
-    for (const [k, v] of Object.entries(view)) if (widgetEls[scr + "." + k]) widgetEls[scr + "." + k].textContent = v;
+    for (const [k, v] of Object.entries(view)) if (typeof v === "string" && widgetEls[scr + "." + k]) widgetEls[scr + "." + k].textContent = v;
+    // The Ski panel shows the four metric cells, or the problem and the tip of the report.
+    if (scr === "ski") {
+      for (const id of ["k_drop", "drop", "k_dist", "dist", "k_turns", "turns", "k_time", "time"])
+        widgetEls["ski." + id].style.display = view.report ? "none" : "";
+      for (const id of ["problem", "tip"]) widgetEls["ski." + id].style.display = view.report ? "" : "none";
+    }
   }
 }
 function sendLive() {

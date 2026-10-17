@@ -79,6 +79,20 @@ class ValidatorTest(unittest.TestCase):
                             "w": 10, "text": "x"})
         self.assertRejects(g, "rule 5")
 
+    def test_rule5_one_screen_at_a_time_counts_the_largest(self):
+        g = copy.deepcopy(GOOD)
+        g["one_screen_at_a_time"] = False
+        big = [{"id": f"filler{i}", "type": "label", "x": 0, "y": 0, "w": 10, "text": "x"} for i in range(25)]
+        g["screens"][0]["widgets"] += big
+        g["screens"].append({"id": "copy", "widgets": [dict(w, id=w["id"]) for w in g["screens"][0]["widgets"]]})
+        g["states"].append({"id": "COPY", "screen": "copy"})
+        g["transitions"].append({"from": g["states"][0]["id"], "on": "UP_SHORT", "to": "COPY", "actions": []})
+        g["transitions"].append({"from": "COPY", "on": "UP_SHORT", "to": g["states"][0]["id"], "actions": []})
+        g["lvgl_pool_ceiling_bytes"] = 20000
+        self.assertRejects(g, "rule 5")              # two large screens together do not fit
+        g["one_screen_at_a_time"] = True
+        flowc.validate(g, "test")                    # the largest one alone fits
+
     def test_rule6_action_missing_async_flag(self):
         g = copy.deepcopy(GOOD)
         del g["actions"][0]["async"]

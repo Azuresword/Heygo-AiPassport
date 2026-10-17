@@ -134,12 +134,13 @@ def frames(s):
                                 "body_text": s["msg.link_lost"], "icon_state": "7"}),
         ("09-exit", "exit", {}),
         # Ski data (Increment 2). A key that starts with @ sets a label, as the Coach task does.
-        ("10-ski-live", "ski", {"@run": "RUN 4  02:31", "@speed": "38", "@line1": "落差 312 m · 1.9 km",
-                                "@line2": "24 弯"}),
-        ("11-ski-stale", None, {"@speed": "--", "@line2": "24 弯 · " + s["msg.stale"]}),
-        ("12-ski-report", None, {"@dest": "REPORT", "@run": "RUN 4  1.9 km", "@speed": "82",
-                                 "@unit": "HEYGO IQ", "@line1": "重心偏后" * 3,
-                                 "@line2": "下一趟把双手放在身体前方，膝盖再多弯一点"}),
+        ("10-ski-live", "ski", {"@sub": "第 4 趟 · " + s["msg.skiing"], "@big": "38", "@drop": "312 m",
+                                "@dist": "1.9 km", "@turns": "24", "@time": "02:31"}),
+        ("11-ski-stale", None, {"@sub": "第 12 趟 · " + s["msg.stale"], "@big": "--", "@drop": "1240 m",
+                                "@dist": "12.4 km", "@turns": "136", "@time": "1:02"}),
+        ("12-ski-report", None, {"!panel": "report", "@dest": "REPORT", "@sub": "第 4 趟 · " + s["msg.run_report"],
+                                 "@big": "82", "@unit": "HEYGO IQ", "@problem": "重心偏后" * 3,
+                                 "@tip": "下一趟把双手放在身体前方，膝盖再多弯一点"}),
         ("13-report-empty", "report", {}),
         ("14-report", None, {"@title": "第 3 趟 · 1.9 km · 25 弯", "@iq": "82", "@problem": "重心偏后",
                              "@tip": "下一趟把双手放在身体前方"}),
@@ -236,7 +237,8 @@ def main():
             cmds.append(f"screen {screen}")
         if screen == "coach":
             cmds.append("mem coach_built")
-        cmds += [f"label {k[1:]} {v}" if k.startswith("@") else f"set {k} {v}" for k, v in sets.items()]
+        cmds += [f"label {k[1:]} {v}" if k.startswith("@") else f"panel {v}" if k == "!panel" else f"set {k} {v}"
+                 for k, v in sets.items()]
         cmds.append(f"snap {name}")
     # The body subject holds BODY_SIZE - 1 bytes. One ASCII byte in front of
     # 3-byte characters puts a plain cut inside a character.

@@ -26,41 +26,53 @@ static void waiting(void) {
     ski_view_t v;
     ski_view_build(&v, NULL, true, NULL);
     SAME(v.dest, "LIVE RUN");
-    SAME(v.run, "RUN --");
-    SAME(v.speed, "--");
+    SAME(v.sub, "等待手机数据");
+    SAME(v.big, "--");
     SAME(v.unit, "KM/H");
-    SAME(v.line1, "等待手机数据");
-    SAME(v.line2, "专注雪道，教练随时待命");
+    SAME(v.drop, "--");
+    SAME(v.dist, "--");
+    SAME(v.turns, "--");
+    SAME(v.time, "--");
+    if (v.report) { printf("FAIL waiting shows the metric cells\n"); s_fail++; }
 }
 
 static void skiing(void) {
     ski_view_t v;
     ski_view_build(&v, &SKIING, false, NULL);
     SAME(v.dest, "LIVE RUN");
-    SAME(v.run, "RUN 4  02:31");
-    SAME(v.speed, "38");
-    SAME(v.line1, "落差 312 m · 1.9 km");
-    SAME(v.line2, "24 弯");
+    SAME(v.sub, "第 4 趟 · 滑行中");
+    SAME(v.big, "38");
+    // Each number sits in its own labeled cell.
+    SAME(v.drop, "312 m");
+    SAME(v.dist, "1.9 km");
+    SAME(v.turns, "24");
+    SAME(v.time, "02:31");
+
+    bp_live_stats_t s = SKIING;
+    s.run_state = BP_RUN_STOPPED;
+    ski_view_build(&v, &s, false, NULL);
+    SAME(v.sub, "第 4 趟 · 静止");
 
     // Out of date: the speed shows "--". The other numbers stay.
     ski_view_build(&v, &SKIING, true, NULL);
-    SAME(v.speed, "--");
-    SAME(v.line1, "落差 312 m · 1.9 km");
-    SAME(v.line2, "24 弯 · 数据已过期");
+    SAME(v.big, "--");
+    SAME(v.sub, "第 4 趟 · 数据已过期");
+    SAME(v.drop, "312 m");
 
-    // A missing speed shows "--", never 0.
-    bp_live_stats_t s = SKIING;
+    // A missing value shows "--", never 0.
+    s = SKIING;
     s.speed_dkmh = BP_U16_UNKNOWN;
     s.turns = BP_U16_UNKNOWN;
     ski_view_build(&v, &s, false, NULL);
-    SAME(v.speed, "--");
-    SAME(v.line2, "-- 弯");
+    SAME(v.big, "--");
+    SAME(v.turns, "--");
 
     // An old report of an earlier run does not hide the live data.
     const link_report_t old = report(3);
     ski_view_build(&v, &SKIING, false, &old);
     SAME(v.dest, "LIVE RUN");
-    SAME(v.speed, "38");
+    SAME(v.big, "38");
+    if (v.report) { printf("FAIL an old report hides the live data\n"); s_fail++; }
 }
 
 static void ended(void) {
@@ -71,19 +83,20 @@ static void ended(void) {
     // The report is not here yet. Silence after the end packet is not out of date.
     ski_view_build(&v, &s, true, NULL);
     SAME(v.dest, "RUN ENDED");
-    SAME(v.run, "RUN 4  03:12");
-    SAME(v.speed, "--");
-    SAME(v.line2, "24 弯 · 报告生成中");
+    SAME(v.sub, "第 4 趟 · 报告生成中");
+    SAME(v.big, "--");
+    SAME(v.time, "03:12");
 
-    // The report of this run replaces the live data.
+    // The report of this run replaces the metric cells.
     const link_report_t r = report(4);
     ski_view_build(&v, &s, true, &r);
+    if (!v.report) { printf("FAIL the report must replace the cells\n"); s_fail++; }
     SAME(v.dest, "REPORT");
-    SAME(v.run, "RUN 4  1.9 km");
-    SAME(v.speed, "82");
+    SAME(v.sub, "第 4 趟 · 本趟报告");
+    SAME(v.big, "82");
     SAME(v.unit, "HEYGO IQ");
-    SAME(v.line1, "重心偏后");
-    SAME(v.line2, "下一趟把双手放在身体前方");
+    SAME(v.problem, "重心偏后");
+    SAME(v.tip, "下一趟把双手放在身体前方");
 
     // After a reconnect, a report with no live data still shows.
     ski_view_build(&v, NULL, true, &r);
@@ -134,7 +147,7 @@ static void longest_texts_fit(void) {
     live.run_no = 9;
     live.run_state = BP_RUN_ENDED;
     ski_view_build(&s, &live, false, &r);
-    if (strlen(s.line1) != 36 || strlen(s.line2) != 60) {
+    if (strlen(s.problem) != 36 || strlen(s.tip) != 60) {
         printf("FAIL the Ski page must hold the longest texts\n");
         s_fail++;
     }

@@ -96,23 +96,23 @@
   ok(!both, "13 capture and playback never run together");
 
   // Increment 2: the Report page and the ski data. D-25 and doc 07 section 6.
-  ok(shown("ski.line1") === "等待手机数据" && shown("ski.speed") === "--", "14 the Ski page waits for data");
+  ok(shown("ski.sub") === "等待手机数据" && shown("ski.big") === "--" && shown("ski.drop") === "--", "14 the Ski page waits for data");
   skiStart(); await sleep(2100);
-  ok(/^\d+$/.test(shown("ski.speed")) && shown("ski.dest") === "LIVE RUN", "14 LIVE_STATS shows the speed");
-  ok(shown("ski.run").startsWith("RUN 1  00:0"), "14 the run number and the run time show");
+  ok(/^\d+$/.test(shown("ski.big")) && shown("ski.dest") === "LIVE RUN", "14 LIVE_STATS shows the speed");
+  ok(shown("ski.sub").startsWith("第 1 趟") && shown("ski.time").startsWith("00:0") && /m$/.test(shown("ski.dist")), "14 each number sits in its own labeled cell");
   ok(st === "SKI", "14 data does not change the state");
   document.getElementById("noSpeed").checked = true; await sleep(1100);
-  ok(shown("ski.speed") === "--", "14 an unknown speed shows -- and never 0");
+  ok(shown("ski.big") === "--", "14 an unknown speed shows -- and never 0");
   document.getElementById("noSpeed").checked = false;
   // The screen refreshes once a second, so the mark shows between 5 s and 6 s.
   skiPaused = true; await sleep(6200);
-  ok(shown("ski.speed") === "--" && shown("ski.line2").includes("数据已过期"), "15 5 s with no packet marks the data out of date");
+  ok(shown("ski.big") === "--" && shown("ski.sub").includes("数据已过期"), "15 5 s with no packet marks the data out of date");
   skiPaused = false; await sleep(1100);
-  ok(!shown("ski.line2").includes("数据已过期"), "15 a new packet clears the mark");
+  ok(!shown("ski.sub").includes("数据已过期"), "15 a new packet clears the mark");
   skiEnd(); await sleep(100);
-  ok(shown("ski.dest") === "RUN ENDED" && shown("ski.line2").includes("报告生成中"), "16 the end packet waits for the report");
+  ok(shown("ski.dest") === "RUN ENDED" && shown("ski.sub").includes("报告生成中"), "16 the end packet waits for the report");
   await sleep(2100);
-  ok(shown("ski.dest") === "REPORT" && shown("ski.unit") === "HEYGO IQ" && shown("ski.line1") === "重心偏后", "16 the report shows on the Ski page");
+  ok(shown("ski.dest") === "REPORT" && shown("ski.unit") === "HEYGO IQ" && shown("ski.problem") === "重心偏后" && widgetEls["ski.drop"].style.display === "none", "16 the report replaces the metric cells on the Ski page");
   await hold("OK"); await tap("DOWN");
   ok(st === "REPORT" && document.querySelector(".scr.on").dataset.id === "report", "17 a short DOWN on the idle Coach page opens the Report page");
   ok(shown("report.problem") === "重心偏后" && shown("report.title").startsWith("第 1 趟"), "17 the Report page shows the run report");

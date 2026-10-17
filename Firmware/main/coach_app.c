@@ -144,6 +144,12 @@ static void put_label(lv_obj_t *label, const char *name, char *now, size_t cap, 
     ESP_LOGI("screen", "%s = \"%s\"", name, want);
 }
 
+static void set_hidden(lv_obj_t *obj, bool hidden) {
+    if (!obj) return;
+    if (hidden) lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    else lv_obj_remove_flag(obj, LV_OBJ_FLAG_HIDDEN);
+}
+
 #define PUT(screen, view, field, want, force) \
     put_label(screen.field, #view "." #field, view.field, sizeof view.field, want.field, force)
 
@@ -160,11 +166,25 @@ static void refresh_data(bool force) {
         ski_view_t v;
         ski_view_build(&v, has_live ? &live : NULL, stale, has_report ? &report : NULL);
         PUT(s_ski, s_ski_view, dest, v, force);
-        PUT(s_ski, s_ski_view, run, v, force);
-        PUT(s_ski, s_ski_view, speed, v, force);
+        PUT(s_ski, s_ski_view, sub, v, force);
+        PUT(s_ski, s_ski_view, big, v, force);
         PUT(s_ski, s_ski_view, unit, v, force);
-        PUT(s_ski, s_ski_view, line1, v, force);
-        PUT(s_ski, s_ski_view, line2, v, force);
+        PUT(s_ski, s_ski_view, drop, v, force);
+        PUT(s_ski, s_ski_view, dist, v, force);
+        PUT(s_ski, s_ski_view, turns, v, force);
+        PUT(s_ski, s_ski_view, time, v, force);
+        PUT(s_ski, s_ski_view, problem, v, force);
+        PUT(s_ski, s_ski_view, tip, v, force);
+        // The panel shows the four metric cells, or the problem and the tip of the report.
+        if (force || v.report != s_ski_view.report) {
+            s_ski_view.report = v.report;
+            lv_obj_t *cells[] = { s_ski.k_drop, s_ski.drop, s_ski.k_dist, s_ski.dist,
+                                  s_ski.k_turns, s_ski.turns, s_ski.k_time, s_ski.time };
+            for (size_t i = 0; i < sizeof cells / sizeof cells[0]; i++) set_hidden(cells[i], v.report);
+            set_hidden(s_ski.problem, !v.report);
+            set_hidden(s_ski.tip, !v.report);
+            ESP_LOGI("screen", "ski panel = %s", v.report ? "report" : "metrics");
+        }
     } else {
         report_view_t v;
         report_view_build(&v, has_report ? &report : NULL, age);

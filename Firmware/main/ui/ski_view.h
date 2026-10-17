@@ -5,7 +5,7 @@
 //
 // The Chinese texts here also appear in assets/ui/strings.json, so that the glyph
 // check covers them: msg.wait_data, msg.ski_idle, msg.stale, msg.report_wait,
-// msg.no_report, fmt.drop, fmt.turns, fmt.run.
+// msg.no_report, msg.skiing, msg.stopped, msg.run_report, fmt.run, fmt.turns.
 #pragma once
 
 #include <stdbool.h>
@@ -21,12 +21,17 @@ extern "C" {
 // The Ski page. Each field is the text of the label with the same name.
 // The sizes cover the longest result of each format, so GCC sees no possible cut.
 typedef struct {
+    bool report;        // true: show problem and tip. false: show the four metric cells.
     char dest[16];      // "LIVE RUN", "RUN ENDED", or "REPORT"
-    char run[48];       // "RUN 4  02:31", or "RUN 4  1.9 km" with the report
-    char speed[8];      // the speed, or the Heygo IQ after the report arrives
+    char sub[64];       // "第 4 趟 · 滑行中", "第 4 趟 · 数据已过期", "等待手机数据" ...
+    char big[8];        // the speed, or the Heygo IQ in a report
     char unit[12];      // "KM/H" or "HEYGO IQ"
-    char line1[64];
-    char line2[96];
+    char drop[16];      // the metric cells: 落差, 距离, 转弯, 时间
+    char dist[16];
+    char turns[16];
+    char time[16];
+    char problem[BP_PROBLEM_MAX + 1];
+    char tip[BP_TIP_MAX + 1];
 } ski_view_t;
 
 // The Report page.

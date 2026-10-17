@@ -6,6 +6,7 @@
 //   screen coach|ski|report|exit   Delete the current screen and build this one.
 //   set <subject> <value>   Call the generated setter. The value is the rest of the line.
 //   label <widget> <text>   Set a label of the Ski or Report page, as the Coach task does.
+//   panel metrics|report    Show the metric cells or the report lines of the Ski page.
 //   snap <name>             Draw the screen and write <outdir>/<name>.rgb565.
 //   drop                    Delete the current screen and load a blank screen.
 //   text body               Write the byte length and the bytes of the body label text.
@@ -70,6 +71,8 @@ static void print_mem(const char *label)
 
 static void print_box(const char *id, lv_obj_t *obj)
 {
+    // A hidden widget takes no room on the screen, so the layout check skips it.
+    if (lv_obj_has_flag(obj, LV_OBJ_FLAG_HIDDEN)) return;
     lv_area_t a;
     lv_obj_get_coords(obj, &a);
     printf("BOX %s x=%d y=%d w=%d h=%d\n", id, (int)a.x1, (int)a.y1,
@@ -133,11 +136,15 @@ static lv_obj_t *data_label(const char *id)
 {
     if (s_kind == SKI) {
         if (strcmp(id, "dest") == 0) return s_ski.dest;
-        if (strcmp(id, "run") == 0) return s_ski.run;
-        if (strcmp(id, "speed") == 0) return s_ski.speed;
+        if (strcmp(id, "sub") == 0) return s_ski.sub;
+        if (strcmp(id, "big") == 0) return s_ski.big;
         if (strcmp(id, "unit") == 0) return s_ski.unit;
-        if (strcmp(id, "line1") == 0) return s_ski.line1;
-        if (strcmp(id, "line2") == 0) return s_ski.line2;
+        if (strcmp(id, "drop") == 0) return s_ski.drop;
+        if (strcmp(id, "dist") == 0) return s_ski.dist;
+        if (strcmp(id, "turns") == 0) return s_ski.turns;
+        if (strcmp(id, "time") == 0) return s_ski.time;
+        if (strcmp(id, "problem") == 0) return s_ski.problem;
+        if (strcmp(id, "tip") == 0) return s_ski.tip;
     } else if (s_kind == REPORT) {
         if (strcmp(id, "title") == 0) return s_report.title;
         if (strcmp(id, "iq") == 0) return s_report.iq;
@@ -172,10 +179,14 @@ static void snap(const char *name)
         break;
     case SKI:
         print_box("mode", s_ski.mode); print_box("battery", s_ski.battery);
-        print_box("dest", s_ski.dest); print_box("icon", s_ski.icon);
-        print_box("run", s_ski.run); print_box("speed", s_ski.speed);
-        print_box("unit", s_ski.unit); print_box("line1", s_ski.line1);
-        print_box("line2", s_ski.line2);
+        print_box("dest", s_ski.dest);
+        print_box("sub", s_ski.sub); print_box("big", s_ski.big);
+        print_box("unit", s_ski.unit);
+        print_box("k_drop", s_ski.k_drop); print_box("drop", s_ski.drop);
+        print_box("k_dist", s_ski.k_dist); print_box("dist", s_ski.dist);
+        print_box("k_turns", s_ski.k_turns); print_box("turns", s_ski.turns);
+        print_box("k_time", s_ski.k_time); print_box("time", s_ski.time);
+        print_box("problem", s_ski.problem); print_box("tip", s_ski.tip);
         print_box("hint", s_ski.hint);
         break;
     case REPORT:
@@ -227,6 +238,17 @@ int main(int argc, char **argv)
             lv_obj_t *w = data_label(arg);
             if (w) lv_label_set_text(w, rest ? rest : "");
             else printf("ERR unknown label %s\n", arg);
+        }
+        else if (strcmp(cmd, "panel") == 0 && arg && s_kind == SKI) {
+            const bool report = strcmp(arg, "report") == 0;
+            lv_obj_t *cells[] = { s_ski.k_drop, s_ski.drop, s_ski.k_dist, s_ski.dist,
+                                  s_ski.k_turns, s_ski.turns, s_ski.k_time, s_ski.time };
+            for (size_t i = 0; i < sizeof cells / sizeof cells[0]; i++) {
+                if (report) lv_obj_add_flag(cells[i], LV_OBJ_FLAG_HIDDEN);
+                else lv_obj_remove_flag(cells[i], LV_OBJ_FLAG_HIDDEN);
+            }
+            if (report) { lv_obj_remove_flag(s_ski.problem, LV_OBJ_FLAG_HIDDEN); lv_obj_remove_flag(s_ski.tip, LV_OBJ_FLAG_HIDDEN); }
+            else { lv_obj_add_flag(s_ski.problem, LV_OBJ_FLAG_HIDDEN); lv_obj_add_flag(s_ski.tip, LV_OBJ_FLAG_HIDDEN); }
         }
         else if (strcmp(cmd, "snap") == 0 && arg) snap(arg);
         else if (strcmp(cmd, "mem") == 0 && arg) print_mem(arg);

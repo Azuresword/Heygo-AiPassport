@@ -212,11 +212,11 @@ def validate(g, path):
             )
 
     # --- rule 5: estimated LVGL pool use must fit ------------------------
-    pool = 0
-    for scr in g.get("screens", []):
-        pool += SCREEN_POOL_COST
-        for w in scr.get("widgets", []):
-            pool += WIDGET_POOL_COST.get(w["type"], 0)
+    # By default all screens live together. With "one_screen_at_a_time", the app
+    # deletes the old screen before it builds the new one, so only the largest counts.
+    costs = [SCREEN_POOL_COST + sum(WIDGET_POOL_COST.get(w["type"], 0) for w in scr.get("widgets", []))
+             for scr in g.get("screens", [])]
+    pool = (max(costs) if costs else 0) if g.get("one_screen_at_a_time") else sum(costs)
     # String subject buffers are static arrays, not LVGL pool memory.
     pool += OBSERVER_POOL_COST * len(g.get("bindings", []))
     ceiling = g.get("lvgl_pool_ceiling_bytes", 20480)
@@ -464,6 +464,9 @@ def emit_screens(g, src):
                     f"    lv_obj_set_style_text_color(out->{wid}, "
                     f"ui_color_{w.get('color', 'ink')}(), 0);"
                 )
+                # A label that starts hidden. The app shows it when its content applies.
+                if w.get("hidden"):
+                    c.append(f"    lv_obj_add_flag(out->{wid}, LV_OBJ_FLAG_HIDDEN);")
             elif wt in ("obj", "button"):
                 if wt == "obj":
                     c.append(f"    lv_obj_remove_flag(out->{wid}, LV_OBJ_FLAG_SCROLLABLE);")
