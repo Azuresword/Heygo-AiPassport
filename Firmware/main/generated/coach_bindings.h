@@ -24,6 +24,11 @@ typedef bool (*coach_lock_fn)(void);
 typedef void (*coach_unlock_fn)(void);
 void coach_bindings_set_lock(coach_lock_fn lock, coach_unlock_fn unlock);
 
+// Optional trace hook for debug logs. Each setter calls it with the subject name and
+// the new value, before it takes the lock. text is NULL for an int subject.
+typedef void (*coach_trace_fn)(const char *subject, const char *text, int32_t value);
+void coach_bindings_set_trace(coach_trace_fn fn);
+
 // Each setter takes the lock. It does nothing when the lock times out.
 void coach_set_status_text(const char *value);
 void coach_set_state_text(const char *value);

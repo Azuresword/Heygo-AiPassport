@@ -51,6 +51,9 @@ typedef struct {
     void (*play_start)(void *ctx);
     void (*audio_down)(void *ctx, const uint8_t *block, size_t len, uint8_t missing);
     void (*play_end)(void *ctx);
+    // A packet of an Agent exchange arrived with another xid, or for a closed stream.
+    // current is the xid of the open exchange, or 0. For debug logs.
+    void (*dropped)(void *ctx, uint8_t type, uint8_t xid, uint8_t current);
 } link_io_t;
 
 typedef struct {

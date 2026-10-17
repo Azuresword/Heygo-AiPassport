@@ -157,6 +157,16 @@ class GeneratorTest(unittest.TestCase):
             check(g)
         self.assertIn("unknown long_mode 'marquee'", str(ctx.exception))
 
+    def test_setters_call_the_trace_hook(self):
+        h, c = flowc.emit_bindings(copy.deepcopy(GOOD), "x.json")
+        self.assertIn("coach_bindings_set_trace", h)
+        for s in GOOD["subjects"]:
+            body = c.split(f"coach_set_{s['id']}(")[1].split("}")[0]
+            arg = "value, 0" if s["type"] == "string" else "NULL, value"
+            self.assertIn(f's_trace("{s["id"]}", {arg})', body)
+            # The trace runs before the lock, so a log line never holds the LVGL lock.
+            self.assertLess(body.index("s_trace("), body.index("take_lock()"))
+
     def test_setters_take_the_lock(self):
         h, c = flowc.emit_bindings(copy.deepcopy(GOOD), "x.json")
         self.assertNotIn("lv_async_call", h + c)

@@ -155,6 +155,19 @@ Coach 任务遵守以下规则：
 | AGENT_STATE 失败，失败码 2 | `AGENT_TIMEOUT` |
 | 语音变为不可用 | `LINK_LOST` |
 
+### 调试日志
+
+监视器日志能看到一次交流的每一步。手机团队和测试员可以看这些标签：
+
+| 标签 | 内容 |
+| --- | --- |
+| `coach` | 每次状态转换，例如 `CAPTURE --OK_RELEASE--> WAIT_ANSWER`。 |
+| `ble_link` | 设备发出（`tx`）和收到（`rx`）的每个包，带字段和文本。AUDIO_UP、AUDIO_DOWN 和 PHONE_STATUS 不逐包记录。 |
+| `ble_link` | `answer received`：收到 PLAY_END 时，这段回答的 AUDIO_DOWN 块数。 |
+| `ble_link` | `drop`：xid 过期或已取消的包。每个数据流只记一行。 |
+| `voice` | 每次录音的块数和峰值，以及每次停止的耗时。 |
+| `screen` | 每次切换界面，以及屏幕文字的每次新值，不管来源是什么。 |
+
 ### 给手机应用团队的协议说明
 
 文档 07 的 0.4 版在第 13 节写明了这些说明。手机应用团队需要逐条确认。

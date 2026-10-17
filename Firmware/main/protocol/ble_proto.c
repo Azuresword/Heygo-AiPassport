@@ -324,3 +324,23 @@ uint8_t bp_seq_accept(bp_seq_t *s, uint8_t seq) {
     s->started = true;
     return missing;
 }
+
+const char *bp_type_name(uint8_t type) {
+    switch (type) {
+    case BP_HELLO: return "HELLO";
+    case BP_HELLO_ACK: return "HELLO_ACK";
+    case BP_PHONE_STATUS: return "PHONE_STATUS";
+    case BP_DEVICE_STATUS: return "DEVICE_STATUS";
+    case BP_ERROR: return "ERROR";
+    case BP_CONTEXT: return "CONTEXT";
+    case BP_AGENT_START: return "AGENT_START";
+    case BP_AGENT_END: return "AGENT_END";
+    case BP_AGENT_CANCEL: return "AGENT_CANCEL";
+    case BP_AGENT_STATE: return "AGENT_STATE";
+    case BP_AUDIO_UP: return "AUDIO_UP";
+    case BP_AUDIO_DOWN: return "AUDIO_DOWN";
+    case BP_PLAY_START: return "PLAY_START";
+    case BP_PLAY_END: return "PLAY_END";
+    default: return "?";
+    }
+}

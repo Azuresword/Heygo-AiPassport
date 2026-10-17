@@ -177,7 +177,14 @@ static void seq_rules(void) {
     assert(bp_seq_accept(&s, 0) == 0);               // wraps after 255
 }
 
+static void type_names(void) {
+    assert(strcmp(bp_type_name(BP_AGENT_STATE), "AGENT_STATE") == 0);
+    assert(strcmp(bp_type_name(BP_PLAY_END), "PLAY_END") == 0);
+    assert(strcmp(bp_type_name(0x55), "?") == 0);
+}
+
 int main(void) {
+    type_names();
     roundtrip_link();
     roundtrip_agent_and_audio();
     error_codes();

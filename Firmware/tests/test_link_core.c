@@ -32,8 +32,11 @@ static void io_state(void *c, uint8_t st, uint8_t f, const char *t) {
 static void io_play_start(void *c) { (void)c; s_play_start++; }
 static void io_down(void *c, const uint8_t *b, size_t n, uint8_t miss) { (void)c; (void)b; (void)n; s_down++; s_missing += miss; }
 static void io_play_end(void *c) { (void)c; s_play_end++; }
+static int s_drops_rx;
+static uint8_t s_drop_type, s_drop_xid, s_drop_cur;
+static void io_dropped(void *c, uint8_t t, uint8_t x, uint8_t cur) { (void)c; s_drops_rx++; s_drop_type = t; s_drop_xid = x; s_drop_cur = cur; }
 
-static const link_io_t IO = { NULL, io_send, io_drop, io_voice, io_state, io_play_start, io_down, io_play_end };
+static const link_io_t IO = { NULL, io_send, io_drop, io_voice, io_state, io_play_start, io_down, io_play_end, io_dropped };
 
 static void clear(void) { s_nsent = 0; }
 static const sent_t *last(void) { return s_nsent ? &s_sent[s_nsent - 1] : NULL; }
@@ -130,6 +133,8 @@ static void test_exchange(void) {
     s_states = 0;
     rx(&l, p, n, t + 100);
     CHECK(s_states == 0, "AGENT_STATE with another xid is dropped");
+    CHECK(s_drops_rx == 1 && s_drop_type == BP_AGENT_STATE && s_drop_xid == 0x02 && s_drop_cur == xid,
+          "the drop is reported with both xids");
     n = bp_build_agent_state(p, sizeof p, xid, BP_AGENT_RECOGNIZING, 0, "上一趟怎么样");
     rx(&l, p, n, t + 110);
     CHECK(s_states == 1 && s_state == BP_AGENT_RECOGNIZING && strcmp(s_text, "上一趟怎么样") == 0, "AGENT_STATE text arrives");
@@ -180,6 +185,7 @@ static void test_cancel(void) {
     int before = s_play_start;
     rx(&l, p, n, t + 10);
     CHECK(s_play_start == before, "a late answer of a canceled exchange never starts");
+    CHECK(s_drop_type == BP_PLAY_START && s_drop_cur == 0, "the late PLAY_START is reported as a drop");
     uint8_t block[BP_ADPCM_BLOCK] = { 0 };
     clear();
     link_audio_up(&l, block);

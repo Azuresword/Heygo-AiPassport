@@ -108,6 +108,9 @@ size_t bp_build_audio(uint8_t *out, size_t cap, uint8_t type, uint8_t xid, uint8
 size_t bp_build_play_start(uint8_t *out, size_t cap, uint8_t xid, uint8_t channel, uint8_t codec, const char *speaker);
 size_t bp_build_play_end(uint8_t *out, size_t cap, uint8_t xid);
 
+// The name of a type, for logs. Returns "?" for an unknown type.
+const char *bp_type_name(uint8_t type);
+
 // While the major version is 0, both sides must use the same major and minor.
 bp_err_t bp_check_version(uint8_t major, uint8_t minor);
 // Returns 0 for an unknown codec.

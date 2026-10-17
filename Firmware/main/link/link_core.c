@@ -9,6 +9,10 @@ static void send(link_core_t *l, link_lane_t lane, const uint8_t *pkt, size_t le
 
 static bool can_send(const link_core_t *l) { return l->connected && l->subscribed; }
 
+static void drop(link_core_t *l, const bp_packet_t *p) {
+    if (l->io.dropped) l->io.dropped(l->io.ctx, p->type, p->xid, l->agent_xid);
+}
+
 static void send_error(link_core_t *l, uint8_t code, uint8_t ref_type, uint8_t ref_xid) {
     if (!can_send(l)) return;
     uint8_t pkt[8];
@@ -126,7 +130,11 @@ static void on_hello_ack(link_core_t *l, const bp_packet_t *p, uint32_t now_ms) 
 
 static void on_agent_state(link_core_t *l, const bp_packet_t *p) {
     bp_agent_state_t s;
-    if (bp_read_agent_state(p, &s) != BP_OK || !bp_xid_accept(l->agent_xid, p->xid)) return;
+    if (bp_read_agent_state(p, &s) != BP_OK) return;
+    if (!bp_xid_accept(l->agent_xid, p->xid)) {
+        drop(l, p);
+        return;
+    }
     char text[LINK_TEXT_MAX + 1];
     size_t n = s.text.len < LINK_TEXT_MAX ? s.text.len : LINK_TEXT_MAX;
     if (n) memcpy(text, s.text.ptr, n);
@@ -139,7 +147,10 @@ static void on_play_start(link_core_t *l, const bp_packet_t *p) {
     if (bp_read_play_start(p, &s) != BP_OK) return;
     // Team speech is P1. The first version has no Team owner, so it ignores the stream.
     if (s.channel != BP_CHANNEL_AGENT) return;
-    if (!bp_xid_accept(l->agent_xid, p->xid)) return;
+    if (!bp_xid_accept(l->agent_xid, p->xid)) {
+        drop(l, p);
+        return;
+    }
     // HELLO offers only IMA ADPCM, so any other codec value is wrong here.
     if (s.codec != BP_CODEC_ADPCM) {
         send_error(l, BP_ERR_FIELD, p->type, p->xid);
@@ -151,7 +162,10 @@ static void on_play_start(link_core_t *l, const bp_packet_t *p) {
 }
 
 static void on_audio_down(link_core_t *l, const bp_packet_t *p) {
-    if (!l->down_open || !bp_xid_accept(l->agent_xid, p->xid)) return;
+    if (!l->down_open || !bp_xid_accept(l->agent_xid, p->xid)) {
+        drop(l, p);
+        return;
+    }
     if (bp_check_audio_block(BP_CODEC_ADPCM, p->payload_len) != BP_OK) {
         send_error(l, BP_ERR_LENGTH, p->type, p->xid);
         return;
@@ -161,7 +175,10 @@ static void on_audio_down(link_core_t *l, const bp_packet_t *p) {
 }
 
 static void on_play_end(link_core_t *l, const bp_packet_t *p) {
-    if (!l->down_open || !bp_xid_accept(l->agent_xid, p->xid)) return;
+    if (!l->down_open || !bp_xid_accept(l->agent_xid, p->xid)) {
+        drop(l, p);
+        return;
+    }
     l->down_open = false;
     if (l->io.play_end) l->io.play_end(l->io.ctx);
 }

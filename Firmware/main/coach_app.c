@@ -72,6 +72,22 @@ _Static_assert((int)COACH_KEY_EV_PRESS == (int)BSP_BTN_PRESS && (int)COACH_KEY_E
                (int)COACH_KEY_EV_DOUBLE == (int)BSP_BTN_DOUBLE && (int)COACH_KEY_EV_LONG == (int)BSP_BTN_LONG &&
                (int)COACH_KEY_EV_RELEASE == (int)BSP_BTN_RELEASE, "coach_key_ev_t must match bsp_btn_ev_t");
 
+// Debug log of the screen. Every text on the Coach screen goes through a generated
+// setter, so this one hook shows what the user sees, whatever its source.
+static void trace_screen(const char *subject, const char *text, int32_t value) {
+    if (text) ESP_LOGI("screen", "%s = \"%s\"", subject, text);
+    else ESP_LOGI("screen", "%s = %ld", subject, (long)value);
+}
+
+static const char *screen_name(coach_screen_id_t id) {
+    switch (id) {
+    case COACH_SCREEN_COACH: return "coach";
+    case COACH_SCREEN_SKI: return "ski";
+    case COACH_SCREEN_EXIT: return "exit";
+    default: return "?";
+    }
+}
+
 static bool lvgl_lock(void) { return bsp_lvgl_lock(LVGL_LOCK_MS); }
 static void lvgl_unlock(void) { bsp_lvgl_unlock(); }
 
@@ -108,6 +124,7 @@ static void on_play_watch(void *arg) {
 // The caller holds the LVGL lock.
 static void show_screen(coach_screen_id_t id) {
     if (id == s_shown) return;
+    ESP_LOGI("screen", "show %s screen", screen_name(id));
     lv_screen_load(s_blank);
     switch (s_shown) {
     case COACH_SCREEN_COACH: coach_teardown(&s_coach); break;
@@ -315,6 +332,7 @@ esp_err_t coach_app_start(void) {
 
     coach_bindings_init();
     coach_bindings_set_lock(lvgl_lock, lvgl_unlock);
+    coach_bindings_set_trace(trace_screen);
     if (!lvgl_lock()) return ESP_ERR_TIMEOUT;
     s_blank = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(s_blank, ui_color_bg(), 0);

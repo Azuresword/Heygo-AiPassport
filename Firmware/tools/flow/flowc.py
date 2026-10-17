@@ -518,6 +518,11 @@ def emit_bindings(g, src):
     h.append(f"typedef void (*{app}_unlock_fn)(void);")
     h.append(f"void {app}_bindings_set_lock({app}_lock_fn lock, {app}_unlock_fn unlock);")
     h.append("")
+    h.append("// Optional trace hook for debug logs. Each setter calls it with the subject name and")
+    h.append("// the new value, before it takes the lock. text is NULL for an int subject.")
+    h.append(f"typedef void (*{app}_trace_fn)(const char *subject, const char *text, int32_t value);")
+    h.append(f"void {app}_bindings_set_trace({app}_trace_fn fn);")
+    h.append("")
     h.append("// Each setter takes the lock. It does nothing when the lock times out.")
     for s in g["subjects"]:
         sid = ident(s["id"])
@@ -531,7 +536,9 @@ def emit_bindings(g, src):
     c = [BANNER.format(src=src), f'#include "{app}_bindings.h"',
          '#include "ui_state_icon.h"', '#include "ui_theme.h"',
          "#include <string.h>", "", "static bool s_ready;",
-         f"static {app}_lock_fn s_lock;", f"static {app}_unlock_fn s_unlock;", "",
+         f"static {app}_lock_fn s_lock;", f"static {app}_unlock_fn s_unlock;",
+         f"static {app}_trace_fn s_trace;", "",
+         f"void {app}_bindings_set_trace({app}_trace_fn fn) {{ s_trace = fn; }}", "",
          f"void {app}_bindings_set_lock({app}_lock_fn lock, {app}_unlock_fn unlock) {{",
          "    s_lock = lock;", "    s_unlock = unlock;", "}", "",
          "static bool take_lock(void) { return s_lock ? s_lock() : true; }",
@@ -666,6 +673,7 @@ def emit_bindings(g, src):
         sid = ident(s["id"])
         if s["type"] == "string":
             c.append(f"void {app}_set_{sid}(const char *value) {{")
+            c.append(f'    if (s_trace && value) s_trace("{sid}", value, 0);')
             c.append("    if (!s_ready || !value || !take_lock()) return;")
             c.append(f"    lv_subject_copy_string(&s_subject_{sid}, "
                      f"fit_utf8(value, sizeof s_buf_{sid}));")
@@ -673,6 +681,7 @@ def emit_bindings(g, src):
             c.append("}")
         else:
             c.append(f"void {app}_set_{sid}(int32_t value) {{")
+            c.append(f'    if (s_trace) s_trace("{sid}", NULL, value);')
             c.append("    if (!s_ready || !take_lock()) return;")
             c.append(f"    lv_subject_set_int(&s_subject_{sid}, value);")
             c.append("    give_lock();")

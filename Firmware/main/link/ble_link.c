@@ -69,6 +69,9 @@ static uint8_t s_mode = BP_MODE_SKI;
 static uint8_t s_page = BP_PAGE_SKI;
 static uint8_t s_battery = BP_BATTERY_UNKNOWN;
 static uint32_t s_battery_ms;
+static unsigned s_down_blocks;      // AUDIO_DOWN blocks of the current answer, for the log.
+static unsigned s_down_missing;
+static uint8_t s_drop_type, s_drop_xid;   // The last logged drop. One line for each stream.
 
 static uint32_t now_ms(void) { return (uint32_t)(esp_timer_get_time() / 1000); }
 static void lock(void) { xSemaphoreTake(s_mu, portMAX_DELAY); }
@@ -79,9 +82,88 @@ static uint16_t free_kib(void) {
     return kib > UINT16_MAX ? UINT16_MAX : (uint16_t)kib;
 }
 
+// ---------------------------------------------------------------- debug log
+// One line for each packet, with its fields. dir is "tx" or "rx".
+// AUDIO_UP, AUDIO_DOWN, and PHONE_STATUS are too frequent; the caller skips them.
+static const char *agent_state_name(uint8_t st) {
+    static const char *names[] = { "?", "accepted", "recognizing", "thinking", "answering", "done", "failed" };
+    return st < sizeof names / sizeof names[0] ? names[st] : "?";
+}
+
+static void log_packet(const char *dir, const uint8_t *buf, size_t len) {
+    bp_packet_t p;
+    if (bp_parse(buf, len, &p) != BP_OK) {
+        ESP_LOGW(TAG, "%s bad packet: %u bytes, type 0x%02x", dir, (unsigned)len, len ? buf[0] : 0);
+        return;
+    }
+    const char *name = bp_type_name(p.type);
+    switch (p.type) {
+    case BP_HELLO: {
+        bp_hello_t h;
+        if (bp_read_hello(&p, &h) == BP_OK)
+            ESP_LOGI(TAG, "%s HELLO %u.%u mask=%u mtu=%u fw=\"%.*s\"", dir, h.major, h.minor,
+                     h.codec_mask, h.mtu, (int)h.fw.len, (const char *)h.fw.ptr);
+        return;
+    }
+    case BP_HELLO_ACK: {
+        bp_hello_ack_t a;
+        if (bp_read_hello_ack(&p, &a) == BP_OK)
+            ESP_LOGI(TAG, "%s HELLO_ACK %u.%u utc=%lu app=\"%.*s\"", dir, a.major, a.minor,
+                     (unsigned long)a.utc, (int)a.app.len, (const char *)a.app.ptr);
+        return;
+    }
+    case BP_ERROR: {
+        bp_error_t e;
+        if (bp_read_error(&p, &e) == BP_OK)
+            ESP_LOGW(TAG, "%s ERROR code=%u ref=%s xid=0x%02x", dir, e.code, bp_type_name(e.ref_type), e.ref_xid);
+        return;
+    }
+    case BP_CONTEXT: {
+        bp_context_t c;
+        if (bp_read_context(&p, &c) == BP_OK) ESP_LOGI(TAG, "%s CONTEXT mode=%u page=%u", dir, c.mode, c.page);
+        return;
+    }
+    case BP_DEVICE_STATUS: {
+        bp_device_status_t d;
+        if (bp_read_device_status(&p, &d) == BP_OK)
+            ESP_LOGI(TAG, "%s DEVICE_STATUS battery=%u mode=%u page=%u heap=%u KiB", dir, d.battery, d.mode, d.page, d.free_kib);
+        return;
+    }
+    case BP_AGENT_START: {
+        bp_agent_start_t a;
+        if (bp_read_agent_start(&p, &a) == BP_OK)
+            ESP_LOGI(TAG, "%s AGENT_START xid=0x%02x codec=%u rate=%u kHz", dir, p.xid, a.codec, a.rate_khz);
+        return;
+    }
+    case BP_AGENT_END: {
+        uint8_t reason = 0;
+        if (bp_read_agent_end(&p, &reason) == BP_OK)
+            ESP_LOGI(TAG, "%s AGENT_END xid=0x%02x reason=%s", dir, p.xid, reason == BP_END_LIMIT ? "20-second limit" : "release");
+        return;
+    }
+    case BP_AGENT_STATE: {
+        bp_agent_state_t a;
+        if (bp_read_agent_state(&p, &a) == BP_OK)
+            ESP_LOGI(TAG, "%s AGENT_STATE xid=0x%02x state=%s failure=%u text=\"%.*s\"", dir, p.xid,
+                     agent_state_name(a.state), a.failure, (int)a.text.len, (const char *)a.text.ptr);
+        return;
+    }
+    case BP_PLAY_START: {
+        bp_play_start_t a;
+        if (bp_read_play_start(&p, &a) == BP_OK)
+            ESP_LOGI(TAG, "%s PLAY_START xid=0x%02x channel=%u codec=%u", dir, p.xid, a.channel, a.codec);
+        return;
+    }
+    default:
+        ESP_LOGI(TAG, "%s %s xid=0x%02x seq=%u len=%u", dir, name, p.xid, p.seq, (unsigned)p.payload_len);
+        return;
+    }
+}
+
 // ---------------------------------------------------------------- link_core I/O
 static void io_send(void *ctx, link_lane_t lane, const uint8_t *pkt, size_t len) {
     (void)ctx;
+    if (len && pkt[0] != BP_AUDIO_UP) log_packet("tx", pkt, len);
     tx_item_t item = { .len = (uint16_t)len };
     memcpy(item.data, pkt, len);
     if (lane == LINK_LANE_AUDIO) {
@@ -108,13 +190,34 @@ static void io_state(void *ctx, uint8_t st, uint8_t f, const char *t) {
     (void)ctx;
     if (s_app.agent_state) s_app.agent_state(st, f, t);
 }
-static void io_play_start(void *ctx) { (void)ctx; if (s_app.play_start) s_app.play_start(); }
+static void io_play_start(void *ctx) {
+    (void)ctx;
+    s_down_blocks = 0;
+    s_down_missing = 0;
+    if (s_app.play_start) s_app.play_start();
+}
 static void io_down(void *ctx, const uint8_t *b, size_t n, uint8_t miss) {
     (void)ctx;
-    if (miss) ESP_LOGW(TAG, "AUDIO_DOWN gap: %u blocks", miss);
+    s_down_blocks++;
+    s_down_missing += miss;
+    if (miss) ESP_LOGW(TAG, "AUDIO_DOWN gap: %u blocks before block %u", miss, s_down_blocks);
     if (s_app.audio_down) s_app.audio_down(b, n, miss);
 }
-static void io_play_end(void *ctx) { (void)ctx; if (s_app.play_end) s_app.play_end(); }
+static void io_play_end(void *ctx) {
+    (void)ctx;
+    ESP_LOGI(TAG, "answer received: %u AUDIO_DOWN blocks (%u ms), %u missing",
+             s_down_blocks, s_down_blocks * 20, s_down_missing);
+    if (s_app.play_end) s_app.play_end();
+}
+static void io_dropped(void *ctx, uint8_t type, uint8_t xid, uint8_t current) {
+    (void)ctx;
+    // AUDIO_DOWN of a stale stream comes 50 times a second. Log the first one only.
+    if (type == s_drop_type && xid == s_drop_xid) return;
+    s_drop_type = type;
+    s_drop_xid = xid;
+    ESP_LOGW(TAG, "drop %s xid=0x%02x: current exchange is 0x%02x (stale or canceled)",
+             bp_type_name(type), xid, current);
+}
 
 // ---------------------------------------------------------------- TX task
 // Control packets go first. One notification carries exactly one packet.
@@ -154,6 +257,7 @@ static int rx_access(uint16_t conn, uint16_t attr, struct ble_gatt_access_ctxt *
         return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
     }
     if (ble_hs_mbuf_to_flat(ctxt->om, buf, sizeof buf, &len) != 0) return BLE_ATT_ERR_UNLIKELY;
+    if (len && buf[0] != BP_AUDIO_DOWN && buf[0] != BP_PHONE_STATUS) log_packet("rx", buf, len);
     lock();
     link_on_rx(&s_core, buf, len, now_ms());
     unlock();
@@ -336,7 +440,8 @@ esp_err_t ble_link_start(const ble_link_app_t *app) {
         return ESP_ERR_NO_MEM;
     }
 
-    const link_io_t io = { NULL, io_send, io_drop_audio, io_voice, io_state, io_play_start, io_down, io_play_end };
+    const link_io_t io = { NULL, io_send, io_drop_audio, io_voice, io_state, io_play_start, io_down,
+                           io_play_end, io_dropped };
     link_init(&s_core, &io, s_fw);
 
     esp_err_t err = demo_radio_nvs_prepare();

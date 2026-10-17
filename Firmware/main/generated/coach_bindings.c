@@ -9,6 +9,9 @@
 static bool s_ready;
 static coach_lock_fn s_lock;
 static coach_unlock_fn s_unlock;
+static coach_trace_fn s_trace;
+
+void coach_bindings_set_trace(coach_trace_fn fn) { s_trace = fn; }
 
 void coach_bindings_set_lock(coach_lock_fn lock, coach_unlock_fn unlock) {
     s_lock = lock;
@@ -163,42 +166,49 @@ void coach_teardown(coach_screen_coach_t *screen) {
 }
 
 void coach_set_status_text(const char *value) {
+    if (s_trace && value) s_trace("status_text", value, 0);
     if (!s_ready || !value || !take_lock()) return;
     lv_subject_copy_string(&s_subject_status_text, fit_utf8(value, sizeof s_buf_status_text));
     give_lock();
 }
 
 void coach_set_state_text(const char *value) {
+    if (s_trace && value) s_trace("state_text", value, 0);
     if (!s_ready || !value || !take_lock()) return;
     lv_subject_copy_string(&s_subject_state_text, fit_utf8(value, sizeof s_buf_state_text));
     give_lock();
 }
 
 void coach_set_body_text(const char *value) {
+    if (s_trace && value) s_trace("body_text", value, 0);
     if (!s_ready || !value || !take_lock()) return;
     lv_subject_copy_string(&s_subject_body_text, fit_utf8(value, sizeof s_buf_body_text));
     give_lock();
 }
 
 void coach_set_hint_text(const char *value) {
+    if (s_trace && value) s_trace("hint_text", value, 0);
     if (!s_ready || !value || !take_lock()) return;
     lv_subject_copy_string(&s_subject_hint_text, fit_utf8(value, sizeof s_buf_hint_text));
     give_lock();
 }
 
 void coach_set_battery_text(const char *value) {
+    if (s_trace && value) s_trace("battery_text", value, 0);
     if (!s_ready || !value || !take_lock()) return;
     lv_subject_copy_string(&s_subject_battery_text, fit_utf8(value, sizeof s_buf_battery_text));
     give_lock();
 }
 
 void coach_set_link_state(int32_t value) {
+    if (s_trace) s_trace("link_state", NULL, value);
     if (!s_ready || !take_lock()) return;
     lv_subject_set_int(&s_subject_link_state, value);
     give_lock();
 }
 
 void coach_set_icon_state(int32_t value) {
+    if (s_trace) s_trace("icon_state", NULL, value);
     if (!s_ready || !take_lock()) return;
     lv_subject_set_int(&s_subject_icon_state, value);
     give_lock();

@@ -155,6 +155,19 @@ The phone events map to flow events as follows:
 | AGENT_STATE failed, code 2 | `AGENT_TIMEOUT` |
 | Voice becomes unavailable | `LINK_LOST` |
 
+### Debug log
+
+The monitor log shows each step of an exchange. These tags help the phone team and the testers:
+
+| Tag | Content |
+| --- | --- |
+| `coach` | Each flow transition, for example `CAPTURE --OK_RELEASE--> WAIT_ANSWER`. |
+| `ble_link` | Each packet that the device sends (`tx`) or receives (`rx`), with its fields and text. AUDIO_UP, AUDIO_DOWN, and PHONE_STATUS are not logged one by one. |
+| `ble_link` | `answer received`: the AUDIO_DOWN block count of an answer, at PLAY_END. |
+| `ble_link` | `drop`: a packet with a stale or canceled xid. One line for each stream. |
+| `voice` | The block count and the peak level of each capture, and each stop time. |
+| `screen` | Each screen switch, and each new value of a screen text, from any source. |
+
 ### Protocol notes for the phone application team
 
 Doc 07 version 0.4 states these notes in its section 13. The phone application team must check each note.
