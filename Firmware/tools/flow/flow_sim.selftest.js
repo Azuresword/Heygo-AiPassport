@@ -126,6 +126,7 @@
   ok(st === "REPORT" && shown("report.problem") === "重心偏后" && shown("report.title").startsWith("第 1 趟"), "17 the Report page shows the run report");
 
   // D-30: the Turns page between the Report page and the Coach page. The device asks for groups of 8 turns.
+  await sleep(1700);   // The App sends TURN_SHAPE 1.5 s after RUN_REPORT.
   ok(/TURN_SHAPE run=1/.test(bleLog()) && /TURN_REQUEST run=1 第 1–1 组/.test(bleLog()) && /TURN_GROUP run=1 第 1 组/.test(bleLog()),
      "19 the shape follows the report, and the device asks for the first group");
   const nTurns = dev.n_turns, nPts = dev.slots.get(0).points.length;
@@ -182,6 +183,18 @@
   ok(turnSel === 0 && shown("turns.msg") === "蓝牙断开" && bleLog().length === before, "20 the DOWN hold wraps to page 1. With no link, it names the link and asks for nothing");
   setLink(true); await sleep(400);
   ok(/TURN_REQUEST run=1 第 1–3 组/.test(bleLog().slice(before)) && shown("turns.msg") === "", "20 after the reconnect, the device asks again");
+  // The App team request of 2026-10-17: the Turns page shows the run of the last report.
+  deviceOnReport(9); await sleep(50);
+  ok(shown("turns.title") === "第 9 趟" && shown("turns.msg") === "加载中" && widgetEls["turns.path"].style.display === "none",
+     "21 a report of a new run clears the old shape, and the page waits for the new one");
+  ok(keys() === "▲报告||▼教练" && shown("turns.key_hold") === "长按●问教练", "21 while it waits, OK and the holds have no turn action");
+  setLink(false); await sleep(50);
+  ok(shown("turns.msg") === "蓝牙断开", "21 with no link, the page names the link");
+  setLink(true); await sleep(50);
+  phoneSendShape(9, 0, 0); await sleep(50);
+  ok(shown("turns.title") === "第 9 趟" && shown("turns.msg") === "暂无弯型数据", "21 a shape of 0 turns: no turn data, never 0 弯");
+  phoneSendShape(9, 12, 0); await sleep(600);
+  ok(shown("turns.title") === "第 9 趟 · 12 弯" && shown("turns.msg") === "", "21 a later shape of the same run gives the turns");
   await tap("UP");
   ok(st === "REPORT", "20 a short UP on the Turns page returns to the Report page");
 

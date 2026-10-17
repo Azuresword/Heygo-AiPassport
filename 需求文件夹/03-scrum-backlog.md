@@ -214,6 +214,7 @@ As a skier, I want to see the shape of my last run and each turn in it. Then I c
 - Acceptance: inside the page, an UP hold selects the previous turn, and a DOWN hold goes to the next page of 8 turns.
 - Acceptance: the key bar shows the short presses in row 1, and the holds that work now in row 2.
 - Acceptance: a run of 255 turns works. The device keeps at most 3 groups and asks the phone for the others.
+- Acceptance: the Turns page shows the run of the last RUN_REPORT. It shows "加载中" until the TURN_SHAPE of that run arrives, and "暂无弯型数据" for a run with no turn data.
 - Acceptance: a short OK press selects the next turn. After the last turn, it selects the first turn.
 - Acceptance: each turn shows its side, speed, edge angle, and radius. An unknown value shows "--" and never 0.
 - Acceptance: a shape with source 1 shows "示意". Before the first shape arrives, the page shows "暂无弯型数据".

@@ -58,6 +58,9 @@ typedef struct {
 // for each group that it lacks (TURN_REQUEST), and asks once again after LINK_TURN_RETRY_MS.
 #define LINK_TURN_SLOTS    3
 #define LINK_TURN_RETRY_MS 1000
+// A RUN_REPORT of a new run clears the turn cache and waits for its TURN_SHAPE.
+// The phone sends it within 60 s. After LINK_TURN_WAIT_MS, the run counts as a run with no turn data.
+#define LINK_TURN_WAIT_MS  90000
 
 typedef struct {
     bool used;
@@ -73,6 +76,7 @@ typedef struct {
     uint8_t source;          // BP_TURN_SRC_*.
     uint8_t n_turns;         // The turn count of the whole run.
     uint8_t n_groups;        // (n_turns + 7) / 8.
+    bool waiting;            // A RUN_REPORT set run_no. Its TURN_SHAPE did not arrive yet.
     uint8_t focus;           // The group on the screen.
     link_turn_group_t slot[LINK_TURN_SLOTS];
 } link_turns_t;
@@ -135,6 +139,7 @@ typedef struct {
     uint32_t report_ms;    // Local receive time of report.
     link_turns_t turns;
     bool has_turns;
+    uint32_t turn_wait_ms; // Local time when the turn cache began to wait for TURN_SHAPE.
     bool turn_req_open;    // A TURN_REQUEST waits for its groups.
     uint8_t turn_req_tries;
     uint32_t turn_req_ms;

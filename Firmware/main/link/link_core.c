@@ -221,7 +221,19 @@ static void on_run_report(link_core_t *l, const bp_packet_t *p, uint32_t now_ms)
     copy_text(l->report.tip, &r.tip);
     l->has_report = true;
     l->report_ms = now_ms;
+    // The Turns page shows the run of the last report. A report of a new run clears the turn
+    // cache, and the cache waits for the TURN_SHAPE of that run. It sends no TURN_REQUEST.
+    const bool new_run = !l->has_turns || l->turns.run_no != r.run_no;
+    if (new_run) {
+        memset(&l->turns, 0, sizeof l->turns);
+        l->turns.run_no = r.run_no;
+        l->turns.waiting = true;
+        l->turn_wait_ms = now_ms;
+        l->turn_req_open = false;
+        l->has_turns = true;
+    }
     if (l->io.run_report) l->io.run_report(l->io.ctx, &l->report);
+    if (new_run && l->io.turn_shape) l->io.turn_shape(l->io.ctx, &l->turns);
 }
 
 const link_turn_group_t *link_turns_group(const link_turns_t *t, uint8_t group) {
@@ -378,6 +390,11 @@ void link_on_rx(link_core_t *l, const uint8_t *buf, size_t len, uint32_t now_ms)
 
 void link_tick(link_core_t *l, uint32_t now_ms) {
     update_voice(l, now_ms);
+    // No TURN_SHAPE for the run of the last report: show the run as a run with no turn data.
+    if (l->has_turns && l->turns.waiting && (uint32_t)(now_ms - l->turn_wait_ms) >= LINK_TURN_WAIT_MS) {
+        l->turns.waiting = false;
+        if (l->io.turn_shape) l->io.turn_shape(l->io.ctx, &l->turns);
+    }
     // One more TURN_REQUEST when the groups do not arrive in time.
     if (l->turn_req_open && l->turn_req_tries < 1 && (uint32_t)(now_ms - l->turn_req_ms) >= LINK_TURN_RETRY_MS) {
         l->turn_req_tries++;

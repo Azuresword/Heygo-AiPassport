@@ -377,6 +377,8 @@ The device asks the phone for each missing group in TURN_REQUEST (0x65). The pho
 
 **Status.** The user accepted the page, the pages of 8 turns, the requests from the device, and the key hints on 2026-10-17. On the same day, the user chose the place of the page: the fourth page in the loop of D-29. The phone application team must accept the three turn messages.
 
+**Change on 2026-10-17.** The phone application team asked that the Turns page shows the same run as the Report page. The firmware team accepted it. A RUN_REPORT of a new run clears the turn cache, and the page shows "加载中" (loading) until the TURN_SHAPE of that run arrives. A run with no turn data shows "暂无弯型数据" (no turn data), not "0 弯". The wait ends after 90 seconds. Doc 07 version 0.10 gives the rules.
+
 ## 25. Related documents
 
 - [Product requirements](01-product-requirements.md).

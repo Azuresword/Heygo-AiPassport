@@ -280,6 +280,8 @@ The top left of each page shows the page name in Chinese: live data, run report,
 | `tools/phone_sim/`, `tools/flow/flow_sim.*` | Both send a demo shape after each report, and answer each TURN_REQUEST. `--turns N` and the simulator field set a long run. Run 3 sends a schematic shape. |
 | `tools/host_render/` | Add the `shape` command and screen images 16 to 21. `turns_gif.py` makes the animation `../assets/sim/turns-demo.gif`. |
 
+A RUN_REPORT of a new run clears the turn cache, so the Turns page shows the same run as the Report page. It shows a load text until the TURN_SHAPE of that run arrives, for at most 90 s. A run with no turn data shows a text for no data, not "0" turns.
+
 The Turns page uses 16,824 bytes of the LVGL pool. The page and the data use about 4.0 KB of static RAM.
 
 ## 12. Open items

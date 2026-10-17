@@ -52,7 +52,7 @@ python3 tools/phone_sim/phone_sim.py --runs 3 --run-s 30
 5. After 2 seconds, it sends one RUN_REPORT.
 6. Then it sends one TURN_SHAPE with the turn count of the run (D-30). Run 3 sends a schematic shape.
    It answers each TURN_REQUEST of the device with one TURN_GROUP for each asked group.
-   Add `--turns 44` to give each run 44 turns, so that the device has 6 groups.
+   Add `--turns 44` to give each run 44 turns, so that the device has 6 groups. Add `--turns 0` to send a run with no turn data.
 7. It then sends nothing for 10 seconds, as on a lift. The device marks the data out of date after 5 seconds.
 
 Add `--jump` to send SHOW_PAGE after each report. The device opens the Report page from the Ski page or the idle Coach page (D-28).

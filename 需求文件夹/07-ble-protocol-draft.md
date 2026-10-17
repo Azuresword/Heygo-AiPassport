@@ -2,7 +2,7 @@
 
 # BLE Protocol Draft
 
-Version: 0.9. Date: 2026-10-17. Status: the phone application team accepted protocol 0.2. That team must accept SHOW_PAGE from version 0.7, the field meanings from version 0.8, and the three turn messages from version 0.9.
+Version: 0.10. Date: 2026-10-17. Status: the phone application team accepted protocol 0.2. That team must accept SHOW_PAGE from version 0.7, the field meanings from version 0.8, and the three turn messages from version 0.9. Version 0.10 adds the device rules that the phone application team asked for.
 
 ## 1. Purpose and scope
 
@@ -428,6 +428,19 @@ The y axis goes down the slope. The x axis goes across the slope.
 The points of each group use their own scale. The device maps 0 to 255 on each axis to the full box on the screen.
 The phone therefore sets the scale of each group. Each group fills the box.
 
+The drawing area is 200 x 76 pixels: the box of 220 x 96 pixels with a margin of 10 pixels.
+The device places a point at these box pixels, with integer division:
+
+- Screen x = 10 + (y x 200 + 127) / 255. Down the slope goes to the right.
+- Screen y = 10 + (x x 76 + 127) / 255. Across the slope goes down.
+
+The phone can use one scale k, in pixels for each meter, on both axes. Then it sends these values:
+
+- y = d x k x 255 / 200
+- x = s x k x 255 / 76
+
+Here d is the distance down the slope and s is the distance across the slope, in meters from the corner of the group.
+
 TURN_GROUP holds at most 122 bytes with its header. It fits in the MTU of 172 that voice needs.
 
 The phone follows these rules:
@@ -457,6 +470,12 @@ The device follows these rules:
 - A group past the end of the run, or a turn count that does not match the run, gets code 7.
 - After each ERROR, the device keeps the old shape and the old groups.
 - The device accepts these messages only after a HELLO_ACK with the same protocol version.
+- A RUN_REPORT of a new run clears the turn cache. The Turns page then shows the run of that RUN_REPORT, and "加载中" (loading) until its TURN_SHAPE arrives. The device sends no TURN_REQUEST for this run before its TURN_SHAPE.
+- A RUN_REPORT of the run of the turn cache keeps the cache.
+- A TURN_SHAPE with 0 turns shows "暂无弯型数据" (no turn data) for that run. The title shows the run and no turn count.
+- If no TURN_SHAPE arrives within 90 seconds of the RUN_REPORT, the page also shows "暂无弯型数据". A later TURN_SHAPE of that run still arrives.
+- While the page waits and the link is down, it shows "蓝牙断开" (Bluetooth is off).
+- With no turn to show, the OK key and the two holds have no action on the Turns page.
 
 ## 7. Audio blocks
 
@@ -706,7 +725,21 @@ D-30 adds the Turns page and three turn messages for Increment 3.
 The turn messages add messages and change no current packet, so the protocol version stays 0.2.
 Firmware at commit `bedcf1a` or older answers TURN_SHAPE and TURN_GROUP with ERROR code 1. A phone application that does not know page 5 treats it as an unknown page.
 
-## 18. Related documents
+## 18. Changes in version 0.10
+
+The phone application team asked for these device rules on 2026-10-17, so that the Turns page shows the same run as the Report page.
+No packet format changes. The protocol version stays 0.2.
+
+| No. | Change | Section |
+| --- | --- | --- |
+| 1 | A RUN_REPORT of a new run clears the turn cache. The page shows "加载中" until TURN_SHAPE arrives. | 6 |
+| 2 | A TURN_SHAPE with 0 turns shows "暂无弯型数据". The title never shows "0 弯". | 6 |
+| 3 | The wait for TURN_SHAPE ends after 90 seconds, with "暂无弯型数据". | 6 |
+| 4 | The drawing area of 200 x 76 pixels, and the formula that places each point. | 6 |
+
+Firmware at commit `98f80ef` or older keeps the shape of the previous run until the new TURN_SHAPE arrives. It shows "0 弯" for a shape of 0 turns.
+
+## 19. Related documents
 
 - [System Architecture](02-architecture.md).
 - [Validation and Decisions](04-validation-and-decisions.md).

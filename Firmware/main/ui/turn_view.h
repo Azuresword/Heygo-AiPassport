@@ -56,7 +56,8 @@ typedef struct {
     char side[16];        // "TOE SIDE", "HEEL SIDE", or "SIDE --"
     char metrics[40];     // "58 KM/H  56°  R 10 M". An unknown value shows "--".
     char source[16];      // "示意" for a schematic shape, else ""
-    char msg[48];         // In the box: "加载中" or "蓝牙断开" while the group is missing, else ""
+    char msg[48];         // In the box: "加载中" or "蓝牙断开" while the shape or the group is missing,
+                          // "暂无弯型数据" for a run with no turn data, else ""
     char key_up[24];      // The short presses: "▲报告"
     char key_ok[24];      // "●下一弯", "●跳过", or ""
     char key_down[24];    // "▼教练"
