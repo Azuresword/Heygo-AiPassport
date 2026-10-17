@@ -157,10 +157,15 @@ static bool stop_mode(voice_mode_t m) {
         s_stop = false;
         return true;
     }
+    const int64_t t0 = esp_timer_get_time();
     if (xSemaphoreTake(s_stopped, pdMS_TO_TICKS(STOP_WAIT_MS)) != pdTRUE) {
         ESP_LOGW(TAG, "stop took more than %d ms", STOP_WAIT_MS);
         return false;
     }
+    // TC-06 and TC-07 measure this time. For playback, the I2S DMA still holds up to
+    // 90 ms of sound after the task stops, so the speaker goes quiet up to 90 ms later.
+    ESP_LOGI(TAG, "%s stop: %d ms", m == MODE_CAPTURE ? "capture" : "playback",
+             (int)((esp_timer_get_time() - t0) / 1000));
     return true;
 }
 

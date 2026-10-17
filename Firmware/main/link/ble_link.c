@@ -341,6 +341,9 @@ esp_err_t ble_link_start(const ble_link_app_t *app) {
 
     esp_err_t err = demo_radio_nvs_prepare();
     if (err != ESP_OK) return err;
+    // NimBLE logs 3 lines for each notification at INFO level: 150 lines a second during
+    // capture. That fills about a third of the 115200-baud console and hides the app log.
+    esp_log_level_set("NimBLE", ESP_LOG_WARN);
     err = nimble_port_init();
     if (err != ESP_OK) return err;
 

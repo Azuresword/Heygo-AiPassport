@@ -50,6 +50,19 @@ Record the phone, the log, and the result of each step.
 | 5 | Stop `phone_sim.py` during a question. | The device stops capture and shows the failure. | TC-20 |
 | 6 | Use `fail` mode, then `silent` mode. | The device shows the retry text, and then the timeout text. | TC-06 |
 
+## Log analysis
+
+Keep the monitor log, and then analyze it:
+
+```bash
+idf.py -p <port> monitor | tee /tmp/monitor.log
+python3 tools/phone_sim/analyze_log.py /tmp/monitor.log --csv /tmp/questions.csv
+```
+
+The tool prints one row for each question: hold time, blocks, peak level, stop times, and the outcome.
+The summary checks two limits: 100 ms for the capture stop (TC-06), and 200 ms for the playback stop (TC-07).
+The playback figure adds 90 ms, because the I2S DMA still holds that much sound after the stop.
+
 ## Limits
 
 - The macOS BLE stack picks the MTU. `phone_sim.py` cannot request 247.

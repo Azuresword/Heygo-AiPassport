@@ -50,6 +50,19 @@ python3 tools/phone_sim/phone_sim.py --mode wav --wav /tmp/a.wav
 | 5 | 提问过程中停止 `phone_sim.py`。 | 设备停止录音，并显示失败。 | TC-20 |
 | 6 | 先用 `fail` 模式，再用 `silent` 模式。 | 设备先显示重说提示，再显示超时提示。 | TC-06 |
 
+## 日志分析
+
+保存监视器日志，然后分析：
+
+```bash
+idf.py -p <端口> monitor | tee /tmp/monitor.log
+python3 tools/phone_sim/analyze_log.py /tmp/monitor.log --csv /tmp/questions.csv
+```
+
+工具为每次提问输出一行：按住时长、块数、峰值、停止耗时和结果。
+汇总部分检查两个上限：录音停止 100 ms（TC-06），播放停止 200 ms（TC-07）。
+播放停止时间会加上 90 ms，因为停止后 I2S DMA 里还留有这么长的声音。
+
 ## 限制
 
 - macOS 的 BLE 协议栈自己决定 MTU，`phone_sim.py` 无法请求 247。
