@@ -24,6 +24,7 @@
 **在浏览器里直接试用：[https://azuresword.github.io/Heygo-AiPassport/](https://azuresword.github.io/Heygo-AiPassport/)**
 
 这个链接通过 GitHub Pages 打开 `assets/sim/coach-flow.html`，可以在网页上直接按设备的按键。
+如果打不开，用这个备用入口：[htmlpreview](https://htmlpreview.github.io/?https://github.com/Azuresword/Heygo-AiPassport/blob/main/assets/sim/coach-flow.html)。它运行的是 `main` 分支上的同一个页面。
 
 [![交互模拟器](assets/sim/preview.png)](https://azuresword.github.io/Heygo-AiPassport/)
 
