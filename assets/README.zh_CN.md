@@ -18,6 +18,8 @@
 | `fonts/LICENSE-OFL.txt`、`fonts/LICENSE-OFL-Staatliches.txt` | 源字体的许可证。 |
 | `tools/gen_lv_font.py` | 从源字体生成字体文件。 |
 | `tools/check_glyphs.py` | 确认每个要显示的字符都在对应字体里。 |
+| `sprites/heygo_board_sprite.c`、`sprites/heygo_sprites.h` | 弯型页的小精灵图：16 帧，每帧 20 × 20 px，ARGB8888。`heygo_board_sprite.png` 是预览图。 |
+| `tools/gen_sprite.py` | 生成小精灵图。 |
 | `mockups/` | 主机界面检查生成的屏幕图片。`compare-A-B.png` 是两个设计方案的对比，目前采用 B 版。 |
 | `sim/coach-flow.html` | Coach 流程的交互模拟器。 |
 
@@ -87,7 +89,13 @@ python3 tools/check_glyphs.py
 | `13-report-empty.png` | 还没有报告时的报告页 |
 | `14-report.png` | 有报告的报告页 |
 | `15-report-max.png` | 最长文本和报告时间的报告页 |
-| `contact-sheet.png` | 全部十四张图，放大 2 倍 |
+| `16-turns-empty.png` | 还没有弯型时的弯型页 |
+| `17-turns-drawing.png` | 打开时第一页正在画：小精灵在线头 |
+| `18-turns-heel.png` | 弯型页：一个 HEEL SIDE 弯，小精灵在弯的中段 |
+| `19-turns-schematic.png` | 弯型页：255 个弯的示意弯型的最后一组，显示"示意" |
+| `20-turns-loading.png` | 弯型页：某一页还在从手机传来的路上 |
+| `21-turns-short.png` | 只有一页的一趟，停在第 2 弯：第二行提示长按 UP |
+| `contact-sheet.png` | 全部 20 张图，放大 2 倍 |
 
 ## 模拟器
 

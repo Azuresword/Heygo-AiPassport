@@ -99,6 +99,38 @@ class PacketTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             hl.show_page(1)
 
+    def test_turn_shape(self):
+        class Turn(ctypes.Structure):
+            _fields_ = [(n, ctypes.c_uint8) for n in ("first", "last", "side", "speed", "edge", "radius")]
+        for n_turns, src in [(255, hl.SRC_MEASURED), (5, hl.SRC_SCHEMATIC), (0, hl.SRC_MEASURED)]:
+            c = c_build("bp_build_turn_shape", ctypes.c_uint8(4), ctypes.c_uint8(src), ctypes.c_uint8(n_turns))
+            self.assertEqual(hl.turn_shape(4, src, n_turns), c)
+        # Each group of a 44-turn run, and of the largest run.
+        for n_turns in (44, 255, 3):
+            for g in range((n_turns + 7) // 8):
+                turns, pts = hl.demo_turn_group(n_turns, g)
+                self.assertEqual(len(turns), min(8, n_turns - 8 * g))
+                ctr = (Turn * len(turns))(*[Turn(*t) for t in turns])
+                flat = (ctypes.c_uint8 * (2 * len(pts)))(*[v for p in pts for v in p])
+                c = c_build("bp_build_turn_group", ctypes.c_uint8(4), ctypes.c_uint8(g), ctypes.c_uint8(len(turns)),
+                            ctr, ctypes.c_uint8(len(pts)), flat)
+                self.assertTrue(c, "the C builder accepts the demo group")
+                self.assertEqual(hl.turn_group(4, g, turns, pts), c)
+                self.assertLessEqual(len(c) + 3, 172, "a group fits the MTU of voice")
+        turns, pts = hl.demo_turn_group(44, 1)
+        self.assertEqual(turns[0][2], hl.SIDE_TOE)
+        self.assertTrue(min(x for x, _ in pts) < 5 and max(x for x, _ in pts) > 250, "a group fills the side axis")
+        self.assertEqual((pts[0][1], pts[-1][1]), (0, 255), "a group fills the downhill axis")
+        c = c_build("bp_build_turn_request", ctypes.c_uint8(4), ctypes.c_uint8(2), ctypes.c_uint8(3))
+        self.assertEqual(hl.turn_request(4, 2, 3), c)
+        self.assertEqual(hl.read_turn_request(hl.parse(c)[4]), (4, 2, 3))
+        with self.assertRaises(ValueError):
+            hl.turn_shape(1, 0, 256)
+        with self.assertRaises(ValueError):
+            hl.turn_group(1, 0, [(0, 1, 0, 1, 91, 1)], [(0, 0), (1, 1)])
+        with self.assertRaises(ValueError):
+            hl.demo_turn_group(8, 1)
+
     def test_short_packet(self):
         with self.assertRaises(ValueError):
             hl.parse(b"\x01\x00")

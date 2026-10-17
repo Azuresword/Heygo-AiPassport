@@ -101,7 +101,9 @@ static void error_codes(void) {
     assert(bp_parse(team, 4, &p) == BP_ERR_UNKNOWN_TYPE);
 
     // Code 3: any version other than 0.2 while the major is 0.
+    // TURN_SHAPE adds one message and changes no current packet, so the version stays 0.2.
     assert(bp_check_version(0, 2) == BP_OK);
+    assert(bp_check_version(0, 3) == BP_ERR_VERSION);
     assert(bp_check_version(0, 1) == BP_ERR_VERSION);
     assert(bp_check_version(1, 2) == BP_ERR_VERSION);
 
@@ -288,8 +290,92 @@ static void type_names(void) {
     assert(strcmp(bp_type_name(0x55), "?") == 0);
 }
 
+static void turn_shape(void) {
+    uint8_t buf[64];
+    bp_packet_t p;
+    bp_turn_shape_t r;
+    size_t n = bp_build_turn_shape(buf, sizeof buf, 4, BP_TURN_SRC_SCHEMATIC, 255);
+    assert(n == 4 + 3 && buf[0] == BP_TURN_SHAPE && buf[2] == 0);
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_turn_shape(&p, &r) == BP_OK);
+    assert(r.run_no == 4 && r.source == BP_TURN_SRC_SCHEMATIC && r.n_turns == 255);
+    assert(bp_build_turn_shape(buf, sizeof buf, 4, 2, 10) == 0);                        // source 2
+    buf[5] = 2;
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_turn_shape(&p, &r) == BP_ERR_FIELD);
+    const uint8_t short_pkt[] = { BP_TURN_SHAPE, 0, 0, 0, 1, 0 };
+    assert(bp_parse(short_pkt, sizeof short_pkt, &p) == BP_ERR_LENGTH);                 // below 3 bytes
+    assert(strcmp(bp_type_name(BP_TURN_SHAPE), "TURN_SHAPE") == 0);
+}
+
+static void turn_group(void) {
+    uint8_t buf[256], pts[2 * BP_GROUP_POINTS_MAX];
+    for (int i = 0; i < BP_GROUP_POINTS_MAX; i++) { pts[2 * i] = (uint8_t)(i * 7); pts[2 * i + 1] = (uint8_t)(i * 7 + 1); }
+    bp_turn_t turns[BP_GROUP_TURNS];
+    for (int i = 0; i < BP_GROUP_TURNS; i++)
+        turns[i] = (bp_turn_t){ (uint8_t)(i * 4), (uint8_t)(i * 4 + 4), (uint8_t)(i & 1), 50, 40, 12 };
+    bp_packet_t p;
+    bp_turn_group_t r;
+
+    // The largest packet: 4 + 48 + 66 payload bytes. It fits the MTU of 172 that voice needs.
+    size_t n = bp_build_turn_group(buf, sizeof buf, 4, 31, BP_GROUP_TURNS, turns, BP_GROUP_POINTS_MAX, pts);
+    assert(n == 4 + 118 && n + 3 <= BP_MTU_MIN);
+    assert(buf[0] == BP_TURN_GROUP && buf[2] == 0);
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_turn_group(&p, &r) == BP_OK);
+    assert(r.run_no == 4 && r.group == 31 && r.n_turns == 8 && r.n_points == 33);
+    assert(r.turns[7].first == 28 && r.turns[7].last == 32 && r.turns[7].side == BP_SIDE_HEEL);
+    assert(r.points[2 * 32] == 224 && r.points[2 * 32 + 1] == 225);
+
+    // One turn with unknown metrics.
+    turns[0] = (bp_turn_t){ 0, 1, BP_U8_UNKNOWN, BP_U8_UNKNOWN, BP_U8_UNKNOWN, BP_U8_UNKNOWN };
+    n = bp_build_turn_group(buf, sizeof buf, 4, 0, 1, turns, 2, pts);
+    assert(n == 4 + 4 + 6 + 4);
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_turn_group(&p, &r) == BP_OK && r.turns[0].side == BP_U8_UNKNOWN);
+
+    // Errors.
+    assert(bp_build_turn_group(buf, sizeof buf, 1, 0, 0, turns, 4, pts) == 0);             // no turn
+    assert(bp_build_turn_group(buf, sizeof buf, 1, 0, 9, turns, 33, pts) == 0);            // 9 turns
+    assert(bp_build_turn_group(buf, sizeof buf, 1, 0, 1, turns, 34, pts) == 0);            // 34 points
+    assert(bp_build_turn_group(buf, sizeof buf, 1, 0, 1, turns, 1, pts) == 0);             // 1 point
+    turns[0] = (bp_turn_t){ 3, 3, 0, 1, 1, 1 };
+    assert(bp_build_turn_group(buf, sizeof buf, 1, 0, 1, turns, 4, pts) == 0);             // first == last
+    turns[0] = (bp_turn_t){ 0, 4, 0, 1, 1, 1 };
+    assert(bp_build_turn_group(buf, sizeof buf, 1, 0, 1, turns, 4, pts) == 0);             // last >= points
+    turns[0] = (bp_turn_t){ 0, 2, 2, 1, 1, 1 };
+    assert(bp_build_turn_group(buf, sizeof buf, 1, 0, 1, turns, 4, pts) == 0);             // side 2
+    turns[0] = (bp_turn_t){ 0, 2, 0, 1, 91, 1 };
+    assert(bp_build_turn_group(buf, sizeof buf, 1, 0, 1, turns, 4, pts) == 0);             // edge 91
+
+    // The reader checks the same rules on raw bytes.
+    turns[0] = (bp_turn_t){ 0, 2, 0, 1, 1, 1 };
+    n = bp_build_turn_group(buf, sizeof buf, 1, 0, 1, turns, 4, pts);
+    buf[4 + 4 + 4] = 91;                                                                     // edge 91
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_turn_group(&p, &r) == BP_ERR_FIELD);
+    buf[4 + 4 + 4] = 1;
+    assert(bp_parse(buf, n - 1, &p) == BP_OK && bp_read_turn_group(&p, &r) == BP_ERR_LENGTH); // half a point
+    buf[4 + 3] = 34;                                                                         // 34 points
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_turn_group(&p, &r) == BP_ERR_TOO_LARGE);
+    assert(strcmp(bp_type_name(BP_TURN_GROUP), "TURN_GROUP") == 0);
+}
+
+static void turn_request(void) {
+    uint8_t buf[16];
+    bp_packet_t p;
+    bp_turn_request_t r;
+    size_t n = bp_build_turn_request(buf, sizeof buf, 4, 2, 3);
+    assert(n == 4 + 3 && buf[0] == BP_TURN_REQUEST && buf[4] == 4 && buf[5] == 2 && buf[6] == 3);
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_turn_request(&p, &r) == BP_OK);
+    assert(r.run_no == 4 && r.first_group == 2 && r.count == 3);
+    assert(bp_build_turn_request(buf, sizeof buf, 4, 0, 0) == 0 && bp_build_turn_request(buf, sizeof buf, 4, 0, 4) == 0);
+    n = bp_build_turn_request(buf, sizeof buf, 4, 0, 1);
+    buf[6] = 4;
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_turn_request(&p, &r) == BP_ERR_FIELD);
+    assert(strcmp(bp_type_name(BP_TURN_REQUEST), "TURN_REQUEST") == 0);
+}
+
 int main(void) {
     type_names();
+    turn_shape();
+    turn_group();
+    turn_request();
     roundtrip_link();
     roundtrip_agent_and_audio();
     error_codes();

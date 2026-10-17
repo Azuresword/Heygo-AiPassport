@@ -2,7 +2,7 @@
 
 # Scrum backlog and delivery plan
 
-Version: 0.8. Date: 2026-10-17. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. Increment 2 is in the backlog. The team closed no story.
+Version: 0.9. Date: 2026-10-17. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. Increment 2 is in the backlog. The team closed no story.
 
 Related documents: [Requirements](01-product-requirements.md), [Architecture](02-architecture.md), [Validation and decisions](04-validation-and-decisions.md), [Decision amendments](05-decision-amendments.md), [Sprint 0 plan](06-sprint-0-plan.md), [BLE protocol draft](07-ble-protocol-draft.md), and [Four-hour Sprint roadmap](08-sprint-roadmap.md).
 
@@ -54,6 +54,7 @@ The user made every scope decision so far, including D-17.
 | US-02 Data sync | REQ-02 | P1, Increment 2 | 3–5 | Phone and firmware | Sprint 2 code, Sprint 7 acceptance |
 | US-21 Live data on the live data page | REQ-21 | P1, Increment 2 | 5–8 | Firmware and design | Sprint 3 code, Sprints 7 and 9 acceptance |
 | US-03 Run report | REQ-03 | P1, Increment 2 | 3–5 | Firmware and design | Sprint 4 code, Sprint 7 acceptance |
+| US-05 Turn shape and replay | REQ-05 | P1, Increment 3 (D-30) | 5–8 | Phone, firmware, and design | Sprint 11 code, Sprint 12 acceptance |
 | US-04 Metric charts | REQ-04 | P1 | 3–5 | Firmware | Later |
 | US-09 Human push-to-talk | REQ-09 | P1 | 8–13 | Phone and firmware | Later |
 | US-13 Cached reports | REQ-13 | P1 | 5–8 | Firmware | Later |
@@ -62,7 +63,6 @@ The user made every scope decision so far, including D-17.
 | US-12 Reflection journal | REQ-12 | P2 | 3–5 | Phone | Later |
 | US-18 Session comparison | REQ-18 | P2 | 3–5 | Data | Later |
 | US-19 Share link | REQ-19 | P2 | 3–5 | Phone | Later |
-| US-05 Turn view and replay | REQ-05 | Deferred | None | None | None |
 | US-14 Privacy and authorization | REQ-14 | Deferred | None | None | None |
 | US-16 Resource limits | REQ-16 | Deferred | None | None | None |
 
@@ -205,6 +205,22 @@ As a skier, I want the problem of each run and one tip after the run. Then I kno
 - Dependency: US-02 and US-17.
 - Verification: TC-03.
 
+### US-05: turn shape
+
+As a skier, I want to see the shape of my last run and each turn in it. Then I can connect the tip of the report to a turn.
+
+- Acceptance: the Turns page sits in the page loop between the Report page and the Coach page. Short UP and DOWN presses change the page, as on every page.
+- Acceptance: the page shows 8 turns at a time, and follows the selected turn. It draws the first page point by point. The rider sits at the head of the line.
+- Acceptance: inside the page, an UP hold selects the previous turn, and a DOWN hold goes to the next page of 8 turns.
+- Acceptance: the key bar shows the short presses in row 1, and the holds that work now in row 2.
+- Acceptance: a run of 255 turns works. The device keeps at most 3 groups and asks the phone for the others.
+- Acceptance: a short OK press selects the next turn. After the last turn, it selects the first turn.
+- Acceptance: each turn shows its side, speed, edge angle, and radius. An unknown value shows "--" and never 0.
+- Acceptance: a shape with source 1 shows "示意". Before the first shape arrives, the page shows "暂无弯型数据".
+- Acceptance: an OK hold on the Turns page opens the Coach page and starts no capture.
+- Dependency: US-03. Q-02 for a measured track.
+- Verification: TC-05.
+
 ## 7. Other P1 stories, P2 stories, and Deferred stories
 
 These stories keep their numbers. Their full text returns when a story enters a Sprint.
@@ -222,6 +238,8 @@ Each Sprint lasts four hours. The [Four-hour Sprint roadmap](08-sprint-roadmap.m
 | 5 | Board smoke test, with `phone_sim` as the phone. | Not started. Needs the board. |
 | 6 to 9 | Accept both increments with the real phone application, the real service, and test users. | Not started. Needs a phone application with protocol 0.2. |
 | 10 | Fix defects, and review both increments. | Not started. |
+| 11 | Increment 3: the Turns page and the three turn messages. Host only. | Code on the branch `feat/turn-view`. Device tests NOT RUN. |
+| 12 | Accept Increment 3 on the board with `phone_sim`, then with the real phone application. | Not started. Needs the board and a phone application that answers TURN_REQUEST. |
 
 ## 9. Definition of Done
 

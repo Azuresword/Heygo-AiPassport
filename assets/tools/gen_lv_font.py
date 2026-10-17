@@ -11,7 +11,7 @@ Two character sets exist:
         from the phone in this font, so it needs common characters, not only
         the vocabulary.
   ui    ASCII and every vocabulary character. Large state words use it.
-  latin ASCII only. Display labels and numbers in the brand typeface use it.
+  latin ASCII and the degree sign. Display labels and numbers in the brand typeface use it.
 
 Three source fonts exist. All use the SIL Open Font License 1.1:
 
@@ -103,7 +103,8 @@ def gb2312_level1():
 
 def charset(name):
     if name == "latin":
-        return sorted(ASCII, key=ord)
+        # The degree sign shows the edge angle on the Turns page.
+        return sorted(ASCII + ["°"], key=ord)
     chars = set(ASCII) | vocab_chars()
     if name == "text":
         chars |= set(PUNCT) | set(gb2312_level1())

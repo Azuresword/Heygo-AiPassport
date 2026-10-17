@@ -4,9 +4,11 @@
 It connects to an AI Passport over BLE and speaks protocol 0.2 of doc 07.
 It saves each question that the device sends as a WAV file, and then answers.
 With --runs N, it also sends N simulated runs of ski data: LIVE_STATS once each
-second during a run, then one RUN_REPORT after the run ends. With --jump, it
-also sends SHOW_PAGE after each report. The device opens the Report page from
-the Ski page or the idle Coach page.
+second during a run, then one RUN_REPORT and one TURN_SHAPE after the run ends.
+It answers each TURN_REQUEST of the device with the asked groups of 8 turns.
+With --turns N, every run has N turns, so a test can check many groups.
+With --jump, it also sends SHOW_PAGE after each report. The device opens the
+Report page from the Ski page or the idle Coach page.
 
 Answer modes:
   echo     Play the question back. This tests the full audio path. (Default.)
@@ -55,6 +57,7 @@ class Phone:
         self.answer_task = None
         self.canceled = set()
         self.acked = asyncio.Event()
+        self.shape = None          # (run_no, n_turns) of the last TURN_SHAPE.
 
     async def send(self, data):
         await self.client.write_gatt_char(hl.NUS_RX, data, response=False)
@@ -96,6 +99,10 @@ class Phone:
         elif ptype == hl.AGENT_CANCEL:
             log(f"<- AGENT_CANCEL xid=0x{xid:02x}")
             self.canceled.add(xid)
+        elif ptype == hl.TURN_REQUEST:
+            run_no, first, count = hl.read_turn_request(payload)
+            log(f"<- TURN_REQUEST run {run_no}: groups {first} to {first + count - 1}")
+            asyncio.ensure_future(self.send_groups(run_no, first, count))
         elif ptype == hl.ERROR:
             log(f"<- ERROR code={payload[0]} type=0x{payload[1]:02x} xid=0x{payload[2]:02x}")
         else:
@@ -160,6 +167,19 @@ class Phone:
         await self.send(hl.agent_state(xid, hl.DONE))
         log(f"-> PLAY_END after {len(down)} blocks")
 
+    async def send_groups(self, run_no, first, count):
+        """Answer a TURN_REQUEST: one TURN_GROUP for each asked group of the last run."""
+        if not self.shape or self.shape[0] != run_no:
+            log(f"   run {run_no} is not the last run. No answer.")
+            return
+        n_turns = self.shape[1]
+        for g in range(first, first + count):
+            if g * hl.GROUP_TURNS >= n_turns:
+                break
+            turns, pts = hl.demo_turn_group(n_turns, g)
+            await self.send(hl.turn_group(run_no, g, turns, pts))
+            log(f"-> TURN_GROUP run {run_no} group {g}: {len(turns)} turns, {len(pts)} points")
+
     async def ski_loop(self, runs, run_s):
         """Send simulated runs. Run 2 has no speed, so the device must show "--" for it."""
         await self.acked.wait()
@@ -184,6 +204,12 @@ class Phone:
             iq = 60 + (run_no * 11) % 40
             await self.send(hl.run_report(run_no, dist, turns, iq, "重心偏后", "下一趟把双手放在身体前方"))
             log(f"-> RUN_REPORT run {run_no}: iq {iq}")
+            # Increment 3: the turn shape follows the report. Run 3 sends a schematic shape.
+            n_shape = min(self.args.turns or turns, hl.TURNS_MAX)
+            src = hl.SRC_SCHEMATIC if run_no == 3 else hl.SRC_MEASURED
+            self.shape = (run_no, n_shape)
+            await self.send(hl.turn_shape(run_no, src, n_shape))
+            log(f"-> TURN_SHAPE run {run_no}: {n_shape} turns, source {src}. The device asks for the groups.")
             if self.args.jump:
                 await self.send(hl.show_page())
                 log("-> SHOW_PAGE 3 (Report page)")
@@ -204,6 +230,7 @@ async def main():
     ap.add_argument("--runs", type=int, default=0, help="number of simulated runs of ski data (default 0)")
     ap.add_argument("--run-s", type=int, default=30, help="seconds of each simulated run (default 30)")
     ap.add_argument("--jump", action="store_true", help="send SHOW_PAGE after each report")
+    ap.add_argument("--turns", type=int, default=0, help="turns of each run in TURN_SHAPE (default: the turn count)")
     args = ap.parse_args()
     if args.mode == "wav" and not args.wav:
         ap.error("--mode wav needs --wav FILE")

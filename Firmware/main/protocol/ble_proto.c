@@ -32,6 +32,9 @@ static int min_payload(uint8_t type) {
     case BP_LIVE_STATS:    return BP_LIVE_STATS_SIZE;
     case BP_RUN_REPORT:    return BP_RUN_REPORT_FIXED;
     case BP_SHOW_PAGE:     return 1;
+    case BP_TURN_SHAPE:    return BP_TURN_SHAPE_SIZE;
+    case BP_TURN_GROUP:    return BP_TURN_GROUP_FIXED;
+    case BP_TURN_REQUEST:  return BP_TURN_REQUEST_SIZE;
     default:               return -1;
     }
 }
@@ -399,6 +402,92 @@ size_t bp_build_show_page(uint8_t *out, size_t cap, uint8_t page) {
     return n;
 }
 
+static bp_err_t check_turns(uint8_t n_turns, const bp_turn_t *turns, uint8_t n_points) {
+    for (uint8_t i = 0; i < n_turns; i++) {
+        const bp_turn_t *t = &turns[i];
+        if (t->first >= t->last || t->last >= n_points) return BP_ERR_FIELD;
+        if (t->side > BP_SIDE_HEEL && t->side != BP_U8_UNKNOWN) return BP_ERR_FIELD;
+        if (t->edge_deg > BP_EDGE_MAX && t->edge_deg != BP_U8_UNKNOWN) return BP_ERR_FIELD;
+    }
+    return BP_OK;
+}
+
+static bp_err_t check_group(uint8_t n_turns, const bp_turn_t *turns, uint8_t n_points) {
+    if (n_turns > BP_GROUP_TURNS || n_points > BP_GROUP_POINTS_MAX) return BP_ERR_TOO_LARGE;
+    if (n_turns == 0 || n_points < BP_GROUP_POINTS_MIN) return BP_ERR_FIELD;
+    return check_turns(n_turns, turns, n_points);
+}
+
+bp_err_t bp_read_turn_shape(const bp_packet_t *p, bp_turn_shape_t *out) {
+    bp_err_t e = expect(p, BP_TURN_SHAPE);
+    if (e) return e;
+    out->run_no = p->payload[0];
+    out->source = p->payload[1];
+    out->n_turns = p->payload[2];
+    return out->source > BP_TURN_SRC_SCHEMATIC ? BP_ERR_FIELD : BP_OK;
+}
+
+size_t bp_build_turn_shape(uint8_t *out, size_t cap, uint8_t run_no, uint8_t source, uint8_t n_turns) {
+    if (source > BP_TURN_SRC_SCHEMATIC) return 0;
+    size_t n = header(out, cap, BP_TURN_SHAPE_SIZE, BP_TURN_SHAPE, 0, 0);
+    if (!n) return 0;
+    out[4] = run_no; out[5] = source; out[6] = n_turns;
+    return n;
+}
+
+bp_err_t bp_read_turn_group(const bp_packet_t *p, bp_turn_group_t *out) {
+    bp_err_t e = expect(p, BP_TURN_GROUP);
+    if (e) return e;
+    const uint8_t *b = p->payload;
+    const uint8_t k = b[2], n = b[3];
+    if (k > BP_GROUP_TURNS || n > BP_GROUP_POINTS_MAX) return BP_ERR_TOO_LARGE;
+    if (p->payload_len != (size_t)BP_TURN_GROUP_FIXED + (size_t)BP_TURN_ENTRY * k + 2u * n) return BP_ERR_LENGTH;
+    out->run_no = b[0];
+    out->group = b[1];
+    out->n_turns = k;
+    out->n_points = n;
+    const uint8_t *t = b + BP_TURN_GROUP_FIXED;
+    for (uint8_t i = 0; i < k; i++, t += BP_TURN_ENTRY) {
+        out->turns[i] = (bp_turn_t){ t[0], t[1], t[2], t[3], t[4], t[5] };
+    }
+    out->points = t;
+    return check_group(k, out->turns, n);
+}
+
+size_t bp_build_turn_group(uint8_t *out, size_t cap, uint8_t run_no, uint8_t group, uint8_t n_turns,
+                           const bp_turn_t *turns, uint8_t n_points, const uint8_t *points) {
+    if (!turns || !points || check_group(n_turns, turns, n_points) != BP_OK) return 0;
+    const size_t len = BP_TURN_GROUP_FIXED + (size_t)BP_TURN_ENTRY * n_turns + 2u * n_points;
+    size_t n = header(out, cap, len, BP_TURN_GROUP, 0, 0);
+    if (!n) return 0;
+    uint8_t *b = out + 4;
+    b[0] = run_no; b[1] = group; b[2] = n_turns; b[3] = n_points;
+    uint8_t *t = b + BP_TURN_GROUP_FIXED;
+    for (uint8_t i = 0; i < n_turns; i++, t += BP_TURN_ENTRY) {
+        t[0] = turns[i].first; t[1] = turns[i].last; t[2] = turns[i].side;
+        t[3] = turns[i].speed_kmh; t[4] = turns[i].edge_deg; t[5] = turns[i].radius_m;
+    }
+    memcpy(t, points, 2u * n_points);
+    return n;
+}
+
+bp_err_t bp_read_turn_request(const bp_packet_t *p, bp_turn_request_t *out) {
+    bp_err_t e = expect(p, BP_TURN_REQUEST);
+    if (e) return e;
+    out->run_no = p->payload[0];
+    out->first_group = p->payload[1];
+    out->count = p->payload[2];
+    return (out->count == 0 || out->count > BP_REQUEST_GROUPS_MAX) ? BP_ERR_FIELD : BP_OK;
+}
+
+size_t bp_build_turn_request(uint8_t *out, size_t cap, uint8_t run_no, uint8_t first_group, uint8_t count) {
+    if (count == 0 || count > BP_REQUEST_GROUPS_MAX) return 0;
+    size_t n = header(out, cap, BP_TURN_REQUEST_SIZE, BP_TURN_REQUEST, 0, 0);
+    if (!n) return 0;
+    out[4] = run_no; out[5] = first_group; out[6] = count;
+    return n;
+}
+
 bp_err_t bp_check_version(uint8_t major, uint8_t minor) {
     return (major == BP_PROTO_MAJOR && minor == BP_PROTO_MINOR) ? BP_OK : BP_ERR_VERSION;
 }
@@ -454,6 +543,9 @@ const char *bp_type_name(uint8_t type) {
     case BP_LIVE_STATS: return "LIVE_STATS";
     case BP_RUN_REPORT: return "RUN_REPORT";
     case BP_SHOW_PAGE: return "SHOW_PAGE";
+    case BP_TURN_SHAPE: return "TURN_SHAPE";
+    case BP_TURN_GROUP: return "TURN_GROUP";
+    case BP_TURN_REQUEST: return "TURN_REQUEST";
     default: return "?";
     }
 }

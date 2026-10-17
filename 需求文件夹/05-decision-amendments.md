@@ -1,10 +1,10 @@
 [简体中文](05-decision-amendments.zh_CN.md) · **English**
 
-# Decision amendments: D-08 to D-29
+# Decision amendments: D-08 to D-30
 
-Version: 0.6. Date: 2026-10-17. Status: D-08 to D-15 and D-17 to D-29 accepted by the user. The phone application team accepted D-16.
+Version: 0.9. Date: 2026-10-17. Status: D-08 to D-15 and D-17 to D-30 accepted by the user. The phone application team accepted D-16. It must accept D-29 and the three turn messages of D-30.
 
-This document gives the reasons behind D-08 to D-29.
+This document gives the reasons behind D-08 to D-30.
 [Validation and decisions](04-validation-and-decisions.md) holds the short log.
 Requirement numbers stay stable. This document deletes no requirement.
 
@@ -336,8 +336,48 @@ After Sprint 4, the branch `feat/report-live-data` merges into `main`. At the sa
 
 **Status.** Accepted by the user on 2026-10-17.
 
-## 24. Related documents
-## 23. Related documents
+## 24. D-30: a Turns page in the page loop
+
+**Decision.** REQ-05 leaves Deferred and becomes Increment 3.
+The page loop of D-29 gets a fourth page: the Turns page, between the Report page and the Coach page.
+The phone sends the turn count of the last run in TURN_SHAPE (0x63).
+The page shows 8 turns at a time. The device keeps 3 groups of 8 turns: the group on the screen and the groups next to it.
+The device asks the phone for each missing group in TURN_REQUEST (0x65). The phone answers in TURN_GROUP (0x64).
+
+- Short UP and DOWN presses change the page, as on every page. An OK hold opens the Coach page, as on every page.
+- Inside the page, a short OK press selects the next turn. An UP hold selects the previous turn. A DOWN hold goes to turn 1 of the next page of 8 turns.
+- The page follows the selected turn. When the page opens, the device draws the first page, one point each 40 milliseconds.
+- A rider sprite sits at the head of the line while it draws. After each key press, the rider moves along the selected turn in 1.6 seconds.
+- A bar of two rows names the keys. Row 1 shows the short presses: "▲报告", "●下一弯" or "●跳过", and "▼教练".
+- Row 2 shows the holds that work now: "长按▲上一弯", "长按▼下一页", or both as "长按 ▲上一弯 ▼下一页". With no hold, it shows "长按●问教练".
+- Below the shape, the page shows the side of the turn, its speed, its edge angle, and its radius.
+- The phone sets a source flag in each shape: measured or schematic. For a schematic shape, the page shows "示意".
+
+**Reason.**
+
+- On 2026-10-17, the user asked for a turn shape effect on top of the reports.
+- The App design (Figma, "Segment details") already shows a turn shape and the metrics of each turn. The device page uses the same terms.
+- The device only draws what the phone sends. The phone and the Agent keep all analysis, as in D-26.
+- D-17 deferred the turn view because a schematic curve cannot support a claim about technique. The source flag answers this risk. The phone must mark each shape that does not come from a measured track.
+- A run can have dozens of turns. If one screen shows the whole run, a turn of a 50-turn run gets only 4 px. A page of 8 turns gives each turn 25 px.
+- The user chose a fourth page in the loop. D-29 keeps the short UP and DOWN presses for the loop, so the turns use OK and the two holds that D-29 left free.
+- The phone decides each point. The device sets only the pace, so it can show a whole page at once and draw it again with no new data.
+- The rider is a sprite sheet of 16 frames, so the device rotates no image at run time.
+- The three turn messages add messages and change no current packet. The protocol version stays 0.2, as for SHOW_PAGE (D-28).
+
+**Cost.**
+
+- Q-02 still has no source of real track data. Until it has one, the phone can send only schematic shapes.
+- One step back costs a hold of 500 ms. One step on costs a short press.
+- The loop has 4 pages. From the live data page, the Coach page is now three DOWN presses away. An OK hold still opens it in one step.
+- A run has at most 255 turns. The page and the data use about 4.0 KB of static RAM. The page uses 16,824 bytes of the LVGL pool. The rider sprite uses 25.6 KB of Flash.
+- TURN_REQUEST is the first request from the device to the phone. The phone must keep every group of the last run and answer within 300 ms.
+- Without the link, the page can show only the cached groups.
+- Firmware at commit `bedcf1a` or older answers TURN_SHAPE and TURN_GROUP with ERROR code 1. The phone application can ignore that error.
+
+**Status.** The user accepted the page, the pages of 8 turns, the requests from the device, and the key hints on 2026-10-17. On the same day, the user chose the place of the page: the fourth page in the loop of D-29. The phone application team must accept the three turn messages.
+
+## 25. Related documents
 
 - [Product requirements](01-product-requirements.md).
 - [System architecture](02-architecture.md).

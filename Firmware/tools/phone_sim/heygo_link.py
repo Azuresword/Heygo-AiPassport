@@ -21,7 +21,7 @@ HELLO, HELLO_ACK, PHONE_STATUS, DEVICE_STATUS, ERROR = 0x01, 0x02, 0x03, 0x04, 0
 CONTEXT = 0x10
 AGENT_START, AGENT_END, AGENT_CANCEL, AGENT_STATE = 0x20, 0x21, 0x22, 0x23
 AUDIO_UP, AUDIO_DOWN, PLAY_START, PLAY_END = 0x30, 0x31, 0x32, 0x33
-LIVE_STATS, RUN_REPORT, SHOW_PAGE = 0x60, 0x61, 0x62
+LIVE_STATS, RUN_REPORT, SHOW_PAGE, TURN_SHAPE, TURN_GROUP, TURN_REQUEST = 0x60, 0x61, 0x62, 0x63, 0x64, 0x65
 PAGE_REPORT = 3
 
 TYPE_NAMES = {
@@ -30,7 +30,8 @@ TYPE_NAMES = {
     AGENT_START: "AGENT_START", AGENT_END: "AGENT_END", AGENT_CANCEL: "AGENT_CANCEL",
     AGENT_STATE: "AGENT_STATE", AUDIO_UP: "AUDIO_UP", AUDIO_DOWN: "AUDIO_DOWN",
     PLAY_START: "PLAY_START", PLAY_END: "PLAY_END",
-    LIVE_STATS: "LIVE_STATS", RUN_REPORT: "RUN_REPORT", SHOW_PAGE: "SHOW_PAGE",
+    LIVE_STATS: "LIVE_STATS", RUN_REPORT: "RUN_REPORT", SHOW_PAGE: "SHOW_PAGE", TURN_SHAPE: "TURN_SHAPE",
+    TURN_GROUP: "TURN_GROUP", TURN_REQUEST: "TURN_REQUEST",
 }
 
 ACCEPTED, RECOGNIZING, THINKING, ANSWERING, DONE, FAILED = 1, 2, 3, 4, 5, 6
@@ -43,6 +44,10 @@ CHANNEL_AGENT = 0
 U8_UNKNOWN, U16_UNKNOWN = 0xFF, 0xFFFF
 RUN_UNKNOWN, RUN_SKIING, RUN_STOPPED, RUN_ENDED = 0, 1, 2, 3
 PROBLEM_MAX, TIP_MAX = 36, 60   # UTF-8 bytes: 12 and 20 Chinese characters.
+# Increment 3: TURN_SHAPE, TURN_GROUP, and TURN_REQUEST, doc 07 section 6.
+SRC_MEASURED, SRC_SCHEMATIC = 0, 1
+SIDE_TOE, SIDE_HEEL = 0, 1
+TURNS_MAX, GROUP_TURNS, GROUP_POINTS_MAX, EDGE_MAX = 255, 8, 33, 90
 
 
 # ---------------------------------------------------------------- packets
@@ -104,6 +109,67 @@ def show_page(page=PAGE_REPORT):
     if page != PAGE_REPORT:
         raise ValueError("SHOW_PAGE accepts only the Report page (3)")
     return packet(SHOW_PAGE, payload=bytes([page]))
+
+
+def turn_shape(run_no, source, n_turns):
+    """One TURN_SHAPE packet: the turn count of the run. The device then asks for groups of 8 turns."""
+    if not 0 <= n_turns <= TURNS_MAX or source not in (SRC_MEASURED, SRC_SCHEMATIC):
+        raise ValueError("0 to 255 turns, and source 0 (measured) or 1 (schematic)")
+    return packet(TURN_SHAPE, payload=bytes([run_no, source, n_turns]))
+
+
+def turn_group(run_no, group, turns, points):
+    """One TURN_GROUP packet: turns 8 * group to 8 * group + 7 of the run, and their points.
+
+    turns: (first, last, side, speed_kmh, edge_deg, radius_m). first and last index points.
+    points: (x, y) pairs from 0 to 255 for this group only. x is the side axis, y grows downhill.
+    The device draws 0 to 255 across its whole box, so the phone sets the scale of each axis.
+    """
+    if not 1 <= len(turns) <= GROUP_TURNS or not 2 <= len(points) <= GROUP_POINTS_MAX:
+        raise ValueError("1 to 8 turns, and 2 to 33 points")
+    for first, last, side, _speed, edge, _radius in turns:
+        if not first < last < len(points):
+            raise ValueError("a turn needs first < last < point count")
+        if side not in (SIDE_TOE, SIDE_HEEL, U8_UNKNOWN) or (edge > EDGE_MAX and edge != U8_UNKNOWN):
+            raise ValueError("bad side or edge angle")
+    body = bytes([run_no, group, len(turns), len(points)])
+    body += b"".join(bytes(t) for t in turns)
+    body += b"".join(bytes([x, y]) for x, y in points)
+    return packet(TURN_GROUP, payload=body)
+
+
+def turn_request(run_no, first_group, count):
+    """One TURN_REQUEST packet, as the device sends it."""
+    if not 1 <= count <= 3:
+        raise ValueError("1 to 3 groups")
+    return packet(TURN_REQUEST, payload=bytes([run_no, first_group, count]))
+
+
+def read_turn_request(payload):
+    """(run_no, first_group, count) of a TURN_REQUEST payload."""
+    return payload[0], payload[1], payload[2]
+
+
+def demo_turn_group(n_turns, group):
+    """Group `group` of a demo run of n_turns linked turns: an S line down the slope.
+
+    Each turn uses 3 segments. Even turns swing to the toe side, odd turns to the heel side.
+    The phone scales each group to fill 0 to 255 on both axes, so the turns fill the box.
+    The metrics follow a fixed pattern, so the same run always gives the same packets.
+    """
+    import math
+    first_turn = group * GROUP_TURNS
+    k = min(GROUP_TURNS, n_turns - first_turn)
+    if k <= 0:
+        raise ValueError("no such group")
+    n_points = 3 * k + 1
+    points = [(128 + round(146 * math.sin(math.pi * j / 3)), 255 * j // (n_points - 1)) for j in range(n_points)]
+    turns = []
+    for j in range(k):
+        i = first_turn + j
+        turns.append((3 * j, 3 * j + 3, SIDE_TOE if i % 2 == 0 else SIDE_HEEL,
+                      45 + (i * 7) % 15, 38 + (i * 11) % 25, 9 + (i * 5) % 8))
+    return turns, points
 
 
 def read_hello(payload):

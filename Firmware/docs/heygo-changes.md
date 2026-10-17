@@ -265,7 +265,24 @@ With D-29, Ski mode, Rest mode, and the exit question go away. Three pages sit a
 
 The top left of each page shows the page name in Chinese: live data, run report, or AI coach.
 
-## 11. Open items
+## 11. Increment 3: the Turns page (D-30)
+
+| File | Change |
+| --- | --- |
+| `main/protocol/ble_proto.*` | Parse and build TURN_SHAPE (0x63), TURN_GROUP (0x64), and TURN_REQUEST (0x65). At most 255 turns, 8 turns and 33 points in a group. The protocol version stays 0.2. |
+| `main/link/link_core.*`, `main/link/ble_link.*` | Keep the last shape and at most 3 groups around the group on the screen. Ask for missing groups, and ask once again after 1 s. A bad packet gets an ERROR, and the device keeps the old data. |
+| `main/ui/turn_view.*` | Plain C. It maps one group to the box and rounds the corners twice. While the group draws, it follows the head. It picks the sprite frame and makes the texts, the key hints, and the bar. |
+| `main/ui/turn_page.*` | It puts the view on the screen. It puts the rider at the head of the line, or moves it along the selected turn in 1.6 s. |
+| `../assets/sprites/`, `../assets/tools/gen_sprite.py` | The rider sprite: 16 frames of 20 x 20 px, ARGB8888, 25.6 KB in Flash. |
+| `flows/coach.flow.json` | Add the TURNS state and the Turns page between REPORT and READY in the page loop. Inside TURNS, a short OK selects the next turn, an UP hold the previous turn, and a DOWN hold the next page of 8 turns. |
+| `main/coach_app.c` | It draws the first page, one point each 40 ms. OK and the holds move a cursor from turn to turn. On the Turns page, CONTEXT sends mode 0 and page 5. |
+| `../assets/fonts/heygo_display_*.c` | The three brand fonts add the "°" glyph for the edge angle. |
+| `tools/phone_sim/`, `tools/flow/flow_sim.*` | Both send a demo shape after each report, and answer each TURN_REQUEST. `--turns N` and the simulator field set a long run. Run 3 sends a schematic shape. |
+| `tools/host_render/` | Add the `shape` command and screen images 16 to 21. |
+
+The Turns page uses 16,824 bytes of the LVGL pool. The page and the data use about 4.0 KB of static RAM.
+
+## 12. Open items
 
 - Device tests: NOT RUN. The board is not at hand, and no phone application build follows doc 07 yet.
 - The phone application team must review doc 07 version 0.6. It adds the protocol notes and the two data messages in section 6.

@@ -38,7 +38,7 @@ static coach_step_t step(coach_flow_t *f, coach_event_t e) { return coach_flow_s
 
 // Path 1 (D-29): an OK hold opens the Coach page from every page, and never starts capture there.
 static void path_ok_hold_opens_coach(void) {
-    const coach_state_t pages[] = { COACH_STATE_LIVE, COACH_STATE_REPORT };
+    const coach_state_t pages[] = { COACH_STATE_LIVE, COACH_STATE_REPORT, COACH_STATE_TURNS };
     for (size_t i = 0; i < sizeof pages / sizeof pages[0]; i++) {
         coach_flow_t f; coach_flow_init(&f); f.state = pages[i];
         coach_step_t s = step(&f, COACH_EVENT_OK_HOLD);
@@ -78,18 +78,27 @@ static void path_cancel(void) {
             const owner_t before = busy[i] == COACH_STATE_CAPTURE ? OWNER_CAPTURE
                                  : busy[i] == COACH_STATE_PLAYBACK ? OWNER_PLAYBACK : OWNER_NONE;
             coach_step_t s = step(&f, up ? COACH_EVENT_UP_SHORT : COACH_EVENT_DOWN_SHORT);
-            assert(f.state == (up ? COACH_STATE_REPORT : COACH_STATE_LIVE));
+            assert(f.state == (up ? COACH_STATE_TURNS : COACH_STATE_LIVE));   // D-30: Turns is before Coach
             assert(has_action(&s, COACH_ACTION_LINK_SEND_AGENT_CANCEL));
             assert(apply(before, &s) == OWNER_NONE);
         }
     }
-    // No hold other than the OK hold has a meaning now.
+    // Outside the Turns page, no hold other than the OK hold has a meaning.
     const coach_state_t all[] = { COACH_STATE_LIVE, COACH_STATE_REPORT, COACH_STATE_READY,
                                   COACH_STATE_CAPTURE, COACH_STATE_WAIT_ANSWER, COACH_STATE_PLAYBACK };
     for (size_t i = 0; i < sizeof all / sizeof all[0]; i++) {
         coach_flow_t f; coach_flow_init(&f); f.state = all[i];
         assert(!step(&f, COACH_EVENT_UP_HOLD).handled);
         assert(!step(&f, COACH_EVENT_DOWN_HOLD).handled);
+    }
+    // D-30: on the Turns page, OK and the two holds act inside the page, and start no audio.
+    const coach_event_t inside[] = { COACH_EVENT_OK_SHORT, COACH_EVENT_UP_HOLD, COACH_EVENT_DOWN_HOLD };
+    const coach_action_t act[] = { COACH_ACTION_TURN_NEXT, COACH_ACTION_TURN_PREV, COACH_ACTION_TURN_PAGE };
+    for (size_t i = 0; i < 3; i++) {
+        coach_flow_t f; coach_flow_init(&f); f.state = COACH_STATE_TURNS;
+        coach_step_t s = step(&f, inside[i]);
+        assert(s.handled && f.state == COACH_STATE_TURNS && has_action(&s, act[i]));
+        assert(apply(OWNER_NONE, &s) == OWNER_NONE);
     }
 }
 
@@ -103,24 +112,25 @@ static void path_barge_in(void) {
     assert(stop >= 0 && start >= 0 && stop < start);
 }
 
-// Path 6 (D-29): three flat pages in a loop. DOWN goes forward. UP goes back.
+// Path 6 (D-29, D-30): four flat pages in a loop. DOWN goes forward. UP goes back.
 static void path_pages(void) {
     coach_flow_t f; coach_flow_init(&f);
-    const coach_state_t order[] = { COACH_STATE_LIVE, COACH_STATE_REPORT, COACH_STATE_READY, COACH_STATE_LIVE };
-    for (size_t i = 1; i < sizeof order / sizeof order[0]; i++) {
+    const coach_state_t order[] = { COACH_STATE_LIVE, COACH_STATE_REPORT, COACH_STATE_TURNS, COACH_STATE_READY,
+                                    COACH_STATE_LIVE };
+    const size_t n = sizeof order / sizeof order[0];
+    for (size_t i = 1; i < n; i++) {
         step(&f, COACH_EVENT_DOWN_SHORT);
         assert(f.state == order[i]);
     }
-    for (size_t i = sizeof order / sizeof order[0] - 1; i > 0; i--) {
-        f.state = order[i];
+    for (size_t i = n - 1; i > 0; i--) {
         step(&f, COACH_EVENT_UP_SHORT);
-        assert(f.state == order[i - 1] || (i == 1 && f.state == COACH_STATE_READY) ||
-               (order[i] == COACH_STATE_LIVE && f.state == COACH_STATE_READY));
+        assert(f.state == order[i - 1] || (i == 1 && f.state == COACH_STATE_READY));
     }
-    f.state = COACH_STATE_LIVE;  step(&f, COACH_EVENT_UP_SHORT);  assert(f.state == COACH_STATE_READY);
-    f.state = COACH_STATE_READY; step(&f, COACH_EVENT_UP_SHORT);  assert(f.state == COACH_STATE_REPORT);
+    f.state = COACH_STATE_LIVE;   step(&f, COACH_EVENT_UP_SHORT); assert(f.state == COACH_STATE_READY);
+    f.state = COACH_STATE_READY;  step(&f, COACH_EVENT_UP_SHORT); assert(f.state == COACH_STATE_TURNS);
+    f.state = COACH_STATE_TURNS;  step(&f, COACH_EVENT_UP_SHORT); assert(f.state == COACH_STATE_REPORT);
     f.state = COACH_STATE_REPORT; step(&f, COACH_EVENT_UP_SHORT); assert(f.state == COACH_STATE_LIVE);
-    // A short OK is free for actions inside a page. No page uses it yet.
+    // A short OK is free for actions inside a page. Only the Turns page uses it (D-30).
     const coach_state_t pages[] = { COACH_STATE_LIVE, COACH_STATE_REPORT, COACH_STATE_READY };
     for (size_t i = 0; i < sizeof pages / sizeof pages[0]; i++) {
         f.state = pages[i];
@@ -174,7 +184,7 @@ static void walk_invariants(void) {
         owner = apply(owner, &s);
         if (f.state == COACH_STATE_LIVE || f.state == COACH_STATE_READY ||
             f.state == COACH_STATE_WAIT_ANSWER ||
-            f.state == COACH_STATE_REPORT) {
+            f.state == COACH_STATE_REPORT || f.state == COACH_STATE_TURNS) {
             assert(owner == OWNER_NONE);           // no audio outside capture and playback
         }
         if (f.state == COACH_STATE_CAPTURE) assert(owner == OWNER_CAPTURE);

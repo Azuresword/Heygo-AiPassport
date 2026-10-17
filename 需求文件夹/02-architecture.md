@@ -2,9 +2,9 @@
 
 # HeygoAI × AI Passport: architecture
 
-Version: 0.7. Date: 2026-10-17. Status: Draft for engineering review.
+Version: 0.8. Date: 2026-10-17. Status: Draft for engineering review.
 
-This document proposes a design for Increment 1 and Increment 2 in [product requirements](01-product-requirements.md).
+This document proposes a design for Increments 1, 2, and 3 in [product requirements](01-product-requirements.md).
 It does not describe a working integration.
 [Decision amendments](05-decision-amendments.md) gives the reason behind each decision.
 The [BLE protocol draft](07-ble-protocol-draft.md) defines the packets.
@@ -66,15 +66,16 @@ D-14 limits the device to four tasks:
 
 ## 3. Pages, buttons, and screen
 
-### Pages (D-29)
+### Pages (D-29, D-30)
 
-The device has no Ski mode and no Rest mode. Three pages sit at one level and form a loop:
+The device has no Ski mode and no Rest mode. Four pages sit at one level and form a loop:
 
 | Order | Page | States | Content |
 |---|---|---|---|
 | 1 | Live data page | LIVE | The page after start. Ski data, or the report summary after a run. |
 | 2 | Report page | REPORT | The full report of the last run. |
-| 3 | Coach page | READY, CAPTURE, WAIT_ANSWER, PLAYBACK | Questions to the AI coach. Voice works only on this page. |
+| 3 | Turns page | TURNS | The shape of the last run, 8 turns at a time (D-30). |
+| 4 | Coach page | READY, CAPTURE, WAIT_ANSWER, PLAYBACK | Questions to the AI coach. Voice works only on this page. |
 
 The device cannot check whether the user stopped moving. So an OK hold on another page only opens the Coach page, and never starts capture.
 Capture needs one more OK hold on the Coach page.
@@ -84,12 +85,16 @@ stateDiagram-v2
     direction LR
     [*] --> LIVE
     LIVE --> REPORT: DOWN / SHOW_PAGE
-    REPORT --> READY: DOWN
+    REPORT --> TURNS: DOWN
+    TURNS --> READY: DOWN / OK hold
     READY --> LIVE: DOWN
     LIVE --> READY: UP / OK hold
-    READY --> REPORT: UP / SHOW_PAGE
+    READY --> TURNS: UP
+    READY --> REPORT: SHOW_PAGE
+    TURNS --> REPORT: UP
     REPORT --> LIVE: UP
     REPORT --> READY: OK hold
+    TURNS --> TURNS: OK / UP hold / DOWN hold
     READY --> CAPTURE: OK hold
     CAPTURE --> WAIT_ANSWER: OK release / 20 s
     WAIT_ANSWER --> PLAYBACK: answer starts
@@ -100,9 +105,9 @@ stateDiagram-v2
     CAPTURE --> LIVE: DOWN, cancel
     WAIT_ANSWER --> LIVE: DOWN, cancel
     PLAYBACK --> LIVE: DOWN, cancel
-    CAPTURE --> REPORT: UP, cancel
-    WAIT_ANSWER --> REPORT: UP, cancel
-    PLAYBACK --> REPORT: UP, cancel
+    CAPTURE --> TURNS: UP, cancel
+    WAIT_ANSWER --> TURNS: UP, cancel
+    PLAYBACK --> TURNS: UP, cancel
 ```
 
 The interactive simulator gives the full state diagram from `flows/coach.flow.json`. See `assets/sim/coach-flow.html`.
@@ -113,14 +118,16 @@ The interactive simulator gives the full state diagram from `flows/coach.flow.js
 |---|---|---|
 | Any page | Short DOWN press | Go to the next page. After the Coach page comes the live data page. |
 | Any page | Short UP press | Go to the previous page. Before the live data page comes the Coach page. |
-| Live data page, Report page | Hold OK for 500 ms | Open the Coach page. This press never starts capture. |
+| Live data page, Report page, Turns page | Hold OK for 500 ms | Open the Coach page. This press never starts capture. |
 | Coach page, idle | Hold OK for 500 ms | Start capture. Stream each block to the phone. |
 | Coach page, capture runs | Release OK | Stop capture within 100 ms. Tell the phone that the question ended. |
 | Coach page, capture runs | Reach 20 seconds | Stop capture. Show the limit. |
 | Coach page, wait or playback runs | Hold OK for 500 ms | Stop playback and cancel the last exchange. Then start capture. |
 | Coach page, capture, wait, or playback runs | Short UP or DOWN press | Cancel the question and stop the audio first. Then change the page. |
-| Any page | Short OK press | Kept for actions inside a page. No page uses it yet. |
-| Any page | UP hold or DOWN hold | No action. |
+| Turns page | Short OK press | Select the next turn. The page of 8 turns follows it. While the first page draws, show it at once (D-30). |
+| Turns page | Hold UP for 500 ms | Select the previous turn. |
+| Turns page | Hold DOWN for 500 ms | Go to turn 1 of the next page of 8 turns. After the last page, go to page 1. |
+| Other pages | Short OK press, UP hold, or DOWN hold | No action. |
 
 The three buttons share one ADC input. So while the user holds OK, the device cannot read UP or DOWN. To change the page during capture, the user releases OK first.
 A hold never also triggers a short press.
@@ -182,8 +189,35 @@ The positions come from `flows/coach.flow.json`, and the host screen check passe
 D-28: when the phone sends SHOW_PAGE 3, the state machine goes to REPORT from LIVE and READY only.
 CAPTURE, WAIT_ANSWER, and PLAYBACK have no such transition. They ignore it, so the user is never stopped.
 
+### Turns page layout
+
+| Widget | Position | Font | Content |
+|---|---|---|---|
+| `dest` | `x=14, y=36` | 34 px brand font | "TURN SHAPE" |
+| `title` | `x=14, y=80` | 16 px Chinese | "第 4 趟 · 8 弯". With no shape, "暂无弯型数据" |
+| `source` | `x=170..226, y=80`, right-aligned | 16 px Chinese | "示意" for a schematic shape. Else empty |
+| `shape_panel` | `x=10, y=108`, 220 × 96 | None | The box of the shape |
+| `path` | In the box | Line, 2 px | The whole run, from left to right |
+| `turn` | In the box | Line, 4 px, accent color | The selected turn |
+| `rider` | In the box | 20 px sprite, 16 frames | While the first page draws, it sits at the head of the line. Then it moves along the selected turn in 1.6 s. It faces along the line |
+| `msg` | In the box, centered | 16 px Chinese | "加载中" while the page is not here. "蓝牙断开" when it cannot come |
+| `track`, `thumb` | `x=20, y=199`, 200 × 3 | None | With more than one page: the whole run, and this page on it |
+| `side` | `x=14, y=208` | 20 px brand font | "TOE SIDE" or "HEEL SIDE" |
+| `counter` | `x=112..226, y=208`, right-aligned | 20 px brand font | "TURN 18/44". It counts in the whole run |
+| `metrics` | `x=14, y=233` | 20 px brand font | "54 KM/H  55°  R 12 M". An unknown value shows "--" |
+| `key_up`, `key_ok`, `key_down` | `y=264`, left, middle, right | 16 px Chinese, on the accent bar | The short presses: "▲报告", "●下一弯" or "●跳过", "▼教练" |
+| `key_hold` | `y=289`, second row of the accent bar | 16 px Chinese, dark gray | The holds that work now: "长按 ▲上一弯 ▼下一页" (hold UP for the previous turn, hold DOWN for the next page), or one of them. With no hold, "长按●问教练" (hold OK for the coach) |
+
+Short UP and DOWN presses change the page, as on every page. Inside the page, OK and the two holds move a cursor on the run, one turn at a time. The page shows the 8 turns around the cursor.
+The page of 8 turns is one group of doc 07. The device asks the phone for the groups next to it.
+When the Turns page opens, the device draws the first page, one point each 40 ms. Later pages show at once.
+Each page maps 0 to 255 on each axis to the full box. The phone therefore sets the scale of each page.
+It rounds the corners of the line twice (Chaikin), so 33 points become 132 points on the screen.
+The key hints sit left to right in the order of the keys from top to bottom: UP, OK, DOWN.
+The rider is a sprite sheet of 16 frames, one frame for each 22.5 degrees. The device picks a frame. It does not rotate an image.
+
 Only one screen exists at a time. On a page change, the task deletes the old screen first and then builds the new screen.
-Images 10 to 15 in `assets/mockups` come from the host renderer. They include the longest texts.
+Images 10 to 21 in `assets/mockups` come from the host renderer. Image 9 no longer exists, because D-29 deleted the exit question. They include the longest texts.
 
 ## 4. Audio state
 
@@ -236,6 +270,8 @@ The device has no PSRAM. Streaming makes a full recording unnecessary.
 | LVGL pool | 24 KiB | Current `sdkconfig.defaults` value. |
 | BLE packet queues | 3,440 bytes | Doc 07, section 10. |
 | The last LIVE_STATS and RUN_REPORT | 128 bytes | Doc 07, section 10. The struct sizes measured on the host. |
+| The last TURN_SHAPE, 3 cached groups, and the Turns page | About 4.0 KB | Doc 07, section 10. The symbol table of the firmware build. |
+| Rider sprite | 25.6 KB in Flash, not in RAM | `assets/sprites`, made by `assets/tools/gen_sprite.py`. |
 | 48-pixel digit font | In Flash, not in RAM | Measure the size in Sprint 3. |
 | ADPCM codec state | A few bytes in each direction | D-09. |
 | BLE stack, task stacks, fonts, firmware | Measure on hardware | Do not claim that the rest is enough. |
@@ -282,7 +318,7 @@ D-17 moved these items out of P0. Each item needs its own design work before it 
 - **Live data and the Report page (Increment 2).** Section 3 gives the page design. Doc 07 gives LIVE_STATS. The device keeps only the last packet, in RAM.
 - **Charts and the offline cache (P1, after Increment 2).** Charts need many data points over time. The offline cache writes the last data to Flash. Neither item has a design yet.
 - **Human intercom (P1).** The Team page waits for a start message from the phone before capture. It reuses the Coach audio path. Each speech path crosses two BLE links. The 500 ms audio target lacks a measurement.
-- **Turn visualization (Deferred).** It returns only if Q-02 shows trajectory data with a coordinate frame.
+- **Turn shape (Increment 3, D-30).** Section 3 gives the page design. Doc 07 gives TURN_SHAPE, TURN_GROUP, and TURN_REQUEST. The device keeps at most 3 groups of the last shape, in RAM. Until Q-02 gives a measured track, the phone sends schematic shapes, and the page shows "示意".
 
 Commit `970bb8e` holds the version 0.3 design for these items.
 

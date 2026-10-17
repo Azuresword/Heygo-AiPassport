@@ -2,9 +2,9 @@
 
 # HeygoAI × AI Passport：架构方案
 
-版本：0.7。日期：2026-10-17。状态：工程评审草案。
+版本：0.8。日期：2026-10-17。状态：工程评审草案。
 
-本文针对[产品需求](01-product-requirements.zh_CN.md)中的增量 1 和增量 2 提出设计方案。
+本文针对[产品需求](01-product-requirements.zh_CN.md)中的增量 1、2 和 3 提出设计方案。
 本文不代表联动功能已经实现。
 每项决策的理由见[决策修订](05-decision-amendments.zh_CN.md)。
 具体的包格式见[蓝牙协议草案](07-ble-protocol-draft.zh_CN.md)。
@@ -66,15 +66,16 @@ D-14 把设备限定为四件事：
 
 ## 3. 页面、按键和屏幕
 
-### 页面（D-29）
+### 页面（D-29、D-30）
 
-设备没有滑行模式和休息模式。三个页面平级，首尾相连：
+设备没有滑行模式和休息模式。四个页面平级，首尾相连：
 
 | 顺序 | 页面 | 状态 | 内容 |
 |---|---|---|---|
 | 1 | 实时数据页 | LIVE | 开机后的页面。滑行数据，或一趟结束后的报告摘要。 |
 | 2 | 报告页 | REPORT | 最后一趟的完整报告。 |
-| 3 | 教练页 | READY、CAPTURE、WAIT_ANSWER、PLAYBACK | 向 AI 教练提问。语音只在这一页可用。 |
+| 3 | 弯型页 | TURNS | 最后一趟的弯型，一次 8 个弯（D-30）。 |
+| 4 | 教练页 | READY、CAPTURE、WAIT_ANSWER、PLAYBACK | 向 AI 教练提问。语音只在这一页可用。 |
 
 设备无法检查用户是否已经停下。所以在其他页面长按 OK 只会打开教练页，不会录音。
 录音需要在教练页上再按住一次 OK。
@@ -84,12 +85,16 @@ stateDiagram-v2
     direction LR
     [*] --> LIVE
     LIVE --> REPORT: DOWN / SHOW_PAGE
-    REPORT --> READY: DOWN
+    REPORT --> TURNS: DOWN
+    TURNS --> READY: DOWN / OK hold
     READY --> LIVE: DOWN
     LIVE --> READY: UP / OK hold
-    READY --> REPORT: UP / SHOW_PAGE
+    READY --> TURNS: UP
+    READY --> REPORT: SHOW_PAGE
+    TURNS --> REPORT: UP
     REPORT --> LIVE: UP
     REPORT --> READY: OK hold
+    TURNS --> TURNS: OK / UP hold / DOWN hold
     READY --> CAPTURE: OK hold
     CAPTURE --> WAIT_ANSWER: OK release / 20 s
     WAIT_ANSWER --> PLAYBACK: answer starts
@@ -100,9 +105,9 @@ stateDiagram-v2
     CAPTURE --> LIVE: DOWN, cancel
     WAIT_ANSWER --> LIVE: DOWN, cancel
     PLAYBACK --> LIVE: DOWN, cancel
-    CAPTURE --> REPORT: UP, cancel
-    WAIT_ANSWER --> REPORT: UP, cancel
-    PLAYBACK --> REPORT: UP, cancel
+    CAPTURE --> TURNS: UP, cancel
+    WAIT_ANSWER --> TURNS: UP, cancel
+    PLAYBACK --> TURNS: UP, cancel
 ```
 
 状态图由 `flows/coach.flow.json` 生成的交互模拟器给出完整版本，见 `assets/sim/coach-flow.html`。
@@ -113,14 +118,16 @@ stateDiagram-v2
 |---|---|---|
 | 任意页面 | 短按 DOWN | 翻到下一页。教练页之后回到实时数据页。 |
 | 任意页面 | 短按 UP | 翻到上一页。实时数据页之前是教练页。 |
-| 实时数据页、报告页 | 长按 OK 500 ms | 打开教练页。这次按键不录音。 |
+| 实时数据页、报告页、弯型页 | 长按 OK 500 ms | 打开教练页。这次按键不录音。 |
 | 教练页，空闲 | 长按 OK 500 ms | 开始采集。把每一块流式发给手机。 |
 | 教练页，采集中 | 松开 OK | 100 ms 内停止采集。告诉手机问题已结束。 |
 | 教练页，采集中 | 达到 20 秒 | 停止采集。显示时长上限。 |
 | 教练页，等回答或播放中 | 长按 OK 500 ms | 先停止播放，取消上一个交流，再开始采集。 |
 | 教练页，采集、等回答或播放中 | 短按 UP 或 DOWN | 先取消这次提问，停止音频，再翻页。 |
-| 任意页面 | 短按 OK | 留给页面内的操作。目前没有页面使用。 |
-| 任意页面 | 长按 UP 或长按 DOWN | 没有动作。 |
+| 弯型页 | 短按 OK | 选中下一弯，8 弯一页的画面跟随它。第一页还在画时，立即画完（D-30）。 |
+| 弯型页 | 长按 UP 500 ms | 选中上一弯。 |
+| 弯型页 | 长按 DOWN 500 ms | 跳到下一页（8 个弯）的第 1 弯，最后一页之后回到第 1 页。 |
+| 其他页面 | 短按 OK、长按 UP 或长按 DOWN | 没有动作。 |
 
 三个按键共用一个 ADC 输入，所以按住 OK 时读不到 UP 或 DOWN。采集中要翻页，需要先松开 OK。
 长按之后不会再触发短按。
@@ -182,8 +189,35 @@ D-21 把实时数据页正文换成滑行数据。状态栏和按键提示的位
 D-28：手机发送 SHOW_PAGE 3 时，状态机只在 LIVE 和 READY 转到 REPORT。
 CAPTURE、WAIT_ANSWER 和 PLAYBACK 没有这条转移，所以忽略它，不打断用户。
 
+### 弯型页布局
+
+| 控件 | 位置 | 字体 | 内容 |
+|---|---|---|---|
+| `dest` | `x=14, y=36` | 34 px 品牌字体 | "TURN SHAPE" |
+| `title` | `x=14, y=80` | 16 px 中文 | "第 4 趟 · 8 弯"。没有弯型时显示"暂无弯型数据" |
+| `source` | `x=170..226, y=80`，右对齐 | 16 px 中文 | 示意弯型显示"示意"，否则为空 |
+| `shape_panel` | `x=10, y=108`，220 × 96 | 无 | 弯型的底框 |
+| `path` | 框内 | 线，2 px | 整趟线路，从左到右 |
+| `turn` | 框内 | 线，4 px，强调色 | 当前弯 |
+| `rider` | 框内 | 20 px 精灵图，16 帧 | 第一页还在画时停在线头。之后 1.6 秒内沿当前弯走一遍。朝向跟随线的方向 |
+| `msg` | 框内，居中 | 16 px 中文 | 这一页还没到时显示"加载中"，到不了时显示"蓝牙断开" |
+| `track`、`thumb` | `x=20, y=199`，200 × 3 | 无 | 多于一页时：整趟，以及这一页在其中的位置 |
+| `side` | `x=14, y=208` | 20 px 品牌字体 | "TOE SIDE"或"HEEL SIDE" |
+| `counter` | `x=112..226, y=208`，右对齐 | 20 px 品牌字体 | "TURN 18/44"，按整趟计数 |
+| `metrics` | `x=14, y=233` | 20 px 品牌字体 | "54 KM/H  55°  R 12 M"。未知值显示"--" |
+| `key_up`、`key_ok`、`key_down` | `y=264`，左、中、右 | 16 px 中文，在强调色提示条上 | 短按："▲报告"、"●下一弯"或"●跳过"、"▼教练" |
+| `key_hold` | `y=289`，提示条第二行 | 16 px 中文，深灰色 | 当前有效的长按："长按 ▲上一弯 ▼下一页"，或其中一个。没有有效的长按时显示"长按●问教练" |
+
+短按 UP 和 DOWN 换页面，与其他页面相同。在页面内，OK 和两个长按在这一趟上移动光标，每次一个弯。页面显示光标所在的 8 个弯。
+8 弯一页就是 07 号文档里的一组。设备向手机请求它前后的组。
+打开弯型页时，设备画出第一页，每 40 ms 一个点。之后的页立即显示。
+每页把每个轴的 0 至 255 映射到整个画框，所以每页的缩放由手机决定。
+它对折线做两次圆角处理（Chaikin），所以 33 个点在屏幕上变成 132 个点。
+按键提示从左到右的顺序，与按键从上到下的顺序一致：UP、OK、DOWN。
+小精灵是 16 帧的精灵图，每帧相差 22.5 度。设备只选帧，不旋转图片。
+
 同一时间只存在一个界面。切换页面时，任务先删除旧界面，再构建新界面。
-`assets/mockups` 的 10 至 15 号图片是主机渲染的结果，包含最长文本的情况。
+`assets/mockups` 的 10 至 21 号图片是主机渲染的结果，包含最长文本的情况。9 号图片已删除，因为 D-29 去掉了退出确认。
 
 ## 4. 音频状态
 
@@ -236,6 +270,8 @@ sequenceDiagram
 | LVGL 内存池 | 24 KiB | 当前 `sdkconfig.defaults` 配置。 |
 | 蓝牙包队列 | 3,440 字节 | 07 号文档第 10 节。 |
 | 最后一个 LIVE_STATS 和 RUN_REPORT | 128 字节 | 07 号文档第 10 节。主机实测的结构体大小。 |
+| 最后一个 TURN_SHAPE、3 组缓存和弯型页 | 约 4.0 KB | 07 号文档第 10 节。固件构建的符号表。 |
+| 小精灵图 | Flash 中 25.6 KB，不占 RAM | `assets/sprites`，由 `assets/tools/gen_sprite.py` 生成。 |
 | 48 像素数字字体 | 放在 Flash，不占 RAM | 大小在 Sprint 3 实测。 |
 | ADPCM 编解码状态 | 每个方向几个字节 | D-09。 |
 | 蓝牙协议栈、任务栈、字库、固件 | 在硬件上测量 | 不宣称剩余内存足够。 |
@@ -282,7 +318,7 @@ D-17 把以下项目移出了 P0。每一项回来之前都需要各自的设计
 - **实时数据与报告页（增量 2）。** 第 3 节给出页面设计，07 号文档给出 LIVE_STATS。设备只在内存里保存最后一包。
 - **图表和离线缓存（P1，增量 2 之后）。** 图表需要一段时间内的多个数据点。离线缓存要把最后一份数据写入 Flash。两者都还没有设计。
 - **真人对讲（P1）。** 队伍页收到手机的开始消息后才开始采集。它复用教练页的音频通路。每条语音路径都要经过两段蓝牙链路，500 ms 音频目标尚无实测。
-- **弯型可视化（延后）。** 只有 Q-02 表明存在带坐标系的轨迹数据时才回来。
+- **弯型（增量 3，D-30）。** 第 3 节给出页面设计，07 号文档给出 TURN_SHAPE、TURN_GROUP 和 TURN_REQUEST。设备在内存里最多保存最后一个弯型的 3 组。Q-02 给出实测轨迹之前，手机只发送示意弯型，页面显示"示意"。
 
 提交 `970bb8e` 保存了这些项目在 0.3 版中的设计。
 

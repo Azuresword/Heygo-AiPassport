@@ -1,28 +1,34 @@
 {
   "app": "coach",
-  "title": "Three flat pages: live data, run report, and AI coach (D-29)",
+
+  "title": "Four flat pages: live data, run report, turn shape, and AI coach (D-29, D-30)",
+
   "strings_file": "../../assets/ui/strings.json",
+
   "lvgl_pool_bytes": 24576,
+
   "lvgl_pool_ceiling_bytes": 20480,
+
   "one_screen_at_a_time": true,
 
   "input": {
     "reserve_ok_long_for_page": true,
-    "back_intents": ["UP_SHORT", "DOWN_SHORT"],
-    "extra_events": ["OK_SHORT", "UP_HOLD", "DOWN_HOLD"],
-    "comment": "D-29. An OK hold opens the Coach page from every page, and starts capture on the Coach page. Short UP and DOWN presses move between the three pages."
+    "back_intents": [
+      "UP_SHORT",
+      "DOWN_SHORT"
+    ],
+    "comment": "D-29. An OK hold opens the Coach page from every page, and starts capture on the Coach page. Short UP and DOWN presses move between the four pages. D-30: inside the Turns page, a short OK press and the UP and DOWN holds move between the turns."
   },
 
   "subjects": [
-    { "id": "status_text", "type": "string", "initial": "未连接", "size": 32 },
-    { "id": "tag_text",    "type": "string", "initial": "READY", "size": 16, "comment": "The large English state word. Display font, ASCII only." },
-    { "id": "state_text",  "type": "string", "initial": "就绪", "size": 32 },
-    { "id": "body_text",   "type": "string", "initial": "按住说话，松开发送", "size": 240 },
-    { "id": "hint_text",   "type": "string", "initial": "长按 OK 提问", "size": 48 },
-    { "id": "battery_text", "type": "string", "initial": "", "size": 16 },
-    { "id": "link_state",  "type": "int",    "initial": 0, "comment": "0 down, 1 up" },
-    { "id": "icon_state",  "type": "int",    "initial": 0,
-      "comment": "0 ready, 1 listening, 2 thinking, 3 answering, 4 failed, 5 ski, 6 exit, 7 link lost" }
+    {"id": "status_text", "type": "string", "initial": "未连接", "size": 32},
+    {"id": "tag_text", "type": "string", "initial": "READY", "size": 16, "comment": "The large English state word. Display font, ASCII only."},
+    {"id": "state_text", "type": "string", "initial": "就绪", "size": 32},
+    {"id": "body_text", "type": "string", "initial": "按住说话，松开发送", "size": 240},
+    {"id": "hint_text", "type": "string", "initial": "长按 OK 提问", "size": 48},
+    {"id": "battery_text", "type": "string", "initial": "", "size": 16},
+    {"id": "link_state", "type": "int", "initial": 0, "comment": "0 down, 1 up"},
+    {"id": "icon_state", "type": "int", "initial": 0, "comment": "0 ready, 1 listening, 2 thinking, 3 answering, 4 failed, 5 ski, 6 exit, 7 link lost"}
   ],
 
   "screens": [
@@ -87,153 +93,266 @@
         {"id": "tip", "type": "label", "x": 22, "y": 206, "w": 196, "h": 50, "text": "", "font": "heygo_sc_16", "color": "ink", "long_mode": "dots"},
         {"id": "hint", "type": "label", "x": 22, "y": 280, "w": 196, "align": "top_mid", "text": "长按 OK 问教练", "font": "heygo_sc_16", "color": "bg"}
       ]
+    },
+    {
+      "id": "turns",
+      "widgets": [
+        {"id": "shape_panel", "type": "obj", "x": 10, "y": 108, "w": 220, "h": 96, "bg": "surface", "radius": 16, "border_width": 1, "border_color": "surface_hi"},
+        {"id": "hint_panel", "type": "obj", "x": 10, "y": 262, "w": 220, "h": 52, "bg": "accent", "radius": 18},
+        {"id": "path", "type": "line", "x": 10, "y": 108, "points": [[10, 48], [40, 18], [70, 48], [100, 78], [130, 48], [160, 18], [190, 48]], "width": 2, "color": "ridge"},
+        {"id": "turn", "type": "line", "x": 10, "y": 108, "points": [[10, 48], [40, 18], [70, 48]], "width": 4, "color": "accent"},
+        {"id": "track", "type": "obj", "x": 20, "y": 199, "w": 200, "h": 3, "bg": "surface_hi", "radius": 1, "hidden": true},
+        {"id": "thumb", "type": "obj", "x": 20, "y": 199, "w": 33, "h": 3, "bg": "accent", "radius": 1, "hidden": true},
+        {"id": "msg", "type": "label", "x": 10, "y": 145, "w": 220, "align": "top_mid", "text": "", "font": "heygo_sc_16", "color": "muted"},
+        {"id": "rider", "type": "image", "x": 20, "y": 152, "w": 20, "h": 20},
+        {"id": "mode_dot", "type": "obj", "x": 14, "y": 19, "w": 7, "h": 7, "color": "accent", "radius": 4},
+        {"id": "mode", "type": "label", "x": 26, "y": 10, "w": 110, "text": "弯型", "font": "heygo_sc_16", "color": "ink"},
+        {"id": "battery", "type": "label", "x": 176, "y": 11, "w": 50, "align": "top_right", "text": "", "font": "heygo_display_20", "color": "muted"},
+        {"id": "dest", "type": "label", "x": 14, "y": 36, "w": 212, "text": "TURN SHAPE", "font": "heygo_display_34", "color": "accent", "letter_space": 1},
+        {"id": "title", "type": "label", "x": 14, "y": 80, "w": 150, "text": "暂无弯型数据", "font": "heygo_sc_16", "color": "muted"},
+        {"id": "source", "type": "label", "x": 170, "y": 80, "w": 56, "align": "top_right", "text": "", "font": "heygo_sc_16", "color": "muted"},
+        {"id": "side", "type": "label", "x": 14, "y": 208, "w": 96, "text": "SIDE --", "font": "heygo_display_20", "color": "accent", "letter_space": 1},
+        {"id": "counter", "type": "label", "x": 112, "y": 208, "w": 114, "align": "top_right", "text": "", "font": "heygo_display_20", "color": "muted", "letter_space": 1},
+        {"id": "metrics", "type": "label", "x": 14, "y": 233, "w": 212, "text": "", "font": "heygo_display_20", "color": "ink", "letter_space": 1},
+        {"id": "key_up", "type": "label", "x": 12, "y": 264, "w": 70, "align": "top_mid", "text": "▲报告", "font": "heygo_sc_16", "color": "bg"},
+        {"id": "key_ok", "type": "label", "x": 85, "y": 264, "w": 70, "align": "top_mid", "text": "", "font": "heygo_sc_16", "color": "bg"},
+        {"id": "key_down", "type": "label", "x": 158, "y": 264, "w": 70, "align": "top_mid", "text": "▼教练", "font": "heygo_sc_16", "color": "bg"},
+        {"id": "key_hold", "type": "label", "x": 12, "y": 289, "w": 216, "align": "top_mid", "text": "长按●问教练", "font": "heygo_sc_16", "color": "ridge"}
+      ]
     }
   ],
 
   "transforms": [
-    { "id": "tag_color", "from": "int", "to": "color", "map": { "4": "danger", "7": "danger" }, "default": "accent",
-      "comment": "The large English state word turns red for the failure and link icons." },
-    { "id": "link_color", "from": "int", "to": "color", "map": { "0": "danger", "1": "muted" }, "default": "muted" },
-    { "id": "link_dot_color", "from": "int", "to": "color", "map": { "0": "danger", "1": "ok" }, "default": "danger" }
+    {
+      "id": "tag_color",
+      "from": "int",
+      "to": "color",
+      "map": {
+        "4": "danger",
+        "7": "danger"
+      },
+      "default": "accent",
+      "comment": "The large English state word turns red for the failure and link icons."
+    },
+    {
+      "id": "link_color",
+      "from": "int",
+      "to": "color",
+      "map": {
+        "0": "danger",
+        "1": "muted"
+      },
+      "default": "muted"
+    },
+    {
+      "id": "link_dot_color",
+      "from": "int",
+      "to": "color",
+      "map": {
+        "0": "danger",
+        "1": "ok"
+      },
+      "default": "danger"
+    }
   ],
 
   "bindings": [
-    { "subject": "status_text", "target": "status.text" },
-    { "subject": "tag_text",    "target": "tag.text" },
-    { "subject": "icon_state",  "target": "tag.color", "transform": "tag_color" },
-    { "subject": "state_text",  "target": "state.text" },
-    { "subject": "body_text",   "target": "body.text" },
-    { "subject": "hint_text",   "target": "hint.text" },
-    { "subject": "battery_text", "target": "battery.text" },
-    { "subject": "link_state",  "target": "status.color", "transform": "link_color" },
-    { "subject": "link_state",  "target": "link_dot.color", "transform": "link_dot_color" },
-    { "subject": "icon_state",  "target": "icon.value" }
+    {"subject": "status_text", "target": "status.text"},
+    {"subject": "tag_text", "target": "tag.text"},
+    {"subject": "icon_state", "target": "tag.color", "transform": "tag_color"},
+    {"subject": "state_text", "target": "state.text"},
+    {"subject": "body_text", "target": "body.text"},
+    {"subject": "hint_text", "target": "hint.text"},
+    {"subject": "battery_text", "target": "battery.text"},
+    {"subject": "link_state", "target": "status.color", "transform": "link_color"},
+    {"subject": "link_state", "target": "link_dot.color", "transform": "link_dot_color"},
+    {"subject": "icon_state", "target": "icon.value"}
   ],
 
   "actions": [
-    { "id": "ui_show_live",           "async": false },
-    { "id": "ui_show_ready",          "async": false },
-    { "id": "ui_show_done",           "async": false },
-    { "id": "ui_show_report",         "async": false },
-    { "id": "ui_show_listening",      "async": false },
-    { "id": "ui_show_thinking",       "async": false },
-    { "id": "ui_show_answering",      "async": false },
-    { "id": "ui_show_retry",          "async": false },
-    { "id": "ui_show_timeout",        "async": false },
-    { "id": "ui_show_limit",          "async": false },
-    { "id": "ui_show_link_lost",      "async": false },
-    { "id": "ui_show_blocked",        "async": false },
-    { "id": "ui_link_ready",          "async": false, "comment": "The link glue applies the ui_link_* and ui_why_* actions. No transition uses them." },
-    { "id": "ui_link_down",           "async": false },
-    { "id": "ui_link_no_voice",       "async": false },
-    { "id": "ui_why_link_down",       "async": false },
-    { "id": "ui_why_phone_silent",    "async": false },
-    { "id": "ui_why_version",         "async": false },
-    { "id": "ui_why_mtu",             "async": false },
-    { "id": "ui_why_audio",           "async": false },
-    { "id": "audio_capture_start",    "async": true },
-    { "id": "audio_capture_stop",     "async": true },
-    { "id": "audio_play_start",       "async": true },
-    { "id": "audio_play_stop",        "async": true },
-    { "id": "link_send_agent_start",  "async": true },
-    { "id": "link_send_agent_end",    "async": true },
-    { "id": "link_send_agent_cancel", "async": true }
+    {"id": "ui_show_live", "async": false},
+    {"id": "ui_show_ready", "async": false},
+    {"id": "ui_show_done", "async": false},
+    {"id": "ui_show_report", "async": false},
+    {"id": "ui_show_listening", "async": false},
+    {"id": "ui_show_thinking", "async": false},
+    {"id": "ui_show_answering", "async": false},
+    {"id": "ui_show_retry", "async": false},
+    {"id": "ui_show_timeout", "async": false},
+    {"id": "ui_show_limit", "async": false},
+    {"id": "ui_show_link_lost", "async": false},
+    {"id": "ui_show_blocked", "async": false},
+    {"id": "ui_link_ready", "async": false, "comment": "The link glue applies the ui_link_* and ui_why_* actions. No transition uses them."},
+    {"id": "ui_link_down", "async": false},
+    {"id": "ui_link_no_voice", "async": false},
+    {"id": "ui_why_link_down", "async": false},
+    {"id": "ui_why_phone_silent", "async": false},
+    {"id": "ui_why_version", "async": false},
+    {"id": "ui_why_mtu", "async": false},
+    {"id": "ui_why_audio", "async": false},
+    {"id": "audio_capture_start", "async": true},
+    {"id": "audio_capture_stop", "async": true},
+    {"id": "audio_play_start", "async": true},
+    {"id": "audio_play_stop", "async": true},
+    {"id": "link_send_agent_start", "async": true},
+    {"id": "link_send_agent_end", "async": true},
+    {"id": "link_send_agent_cancel", "async": true},
+    {"id": "ui_show_turns", "async": false},
+    {"id": "turn_next", "async": false, "comment": "Finish the drawing, or select the next turn and replay it. coach_app.c runs it."},
+    {"id": "turn_prev", "async": false, "comment": "Select the previous turn and replay it. coach_app.c runs it."},
+    {"id": "turn_page", "async": false, "comment": "Go to turn 1 of the next page of 8 turns. coach_app.c runs it."}
   ],
 
   "ui_effects": {
     "comment": "The subject values that each ui_show_* action sets. A value is a key in assets/ui/strings.json, or an empty text. n fills {n}. A missing subject keeps its value.",
-    "ui_show_live":      {},
-    "ui_show_report":    {},
-    "ui_show_ready":     { "tag_text": "tag.ready", "state_text": "state.ready",     "body_text": "msg.ready",     "hint_text": "hint.ready",     "icon_state": 0 },
-    "ui_show_done":      { "tag_text": "tag.ready", "state_text": "state.ready",                                    "hint_text": "hint.ready",     "icon_state": 0 },
-    "ui_show_listening": { "tag_text": "tag.listening", "state_text": "state.listening", "body_text": "msg.listening", "hint_text": "hint.listening", "icon_state": 1 },
-    "ui_show_thinking":  { "tag_text": "tag.thinking", "state_text": "state.thinking",  "body_text": "msg.sent",      "hint_text": "hint.thinking",  "icon_state": 2 },
-    "ui_show_answering": { "tag_text": "tag.answering", "state_text": "state.answering",                                "hint_text": "hint.answering", "icon_state": 3 },
-    "ui_show_retry":     { "tag_text": "tag.failed", "state_text": "state.failed",    "body_text": "msg.retry",     "hint_text": "hint.ready",     "icon_state": 4 },
-    "ui_show_timeout":   { "tag_text": "tag.failed", "state_text": "state.failed",    "body_text": "msg.timeout",   "hint_text": "hint.ready",     "icon_state": 4 },
-    "ui_show_limit":     { "tag_text": "tag.thinking", "state_text": "state.thinking",  "body_text": { "key": "msg.limit", "n": 20 }, "hint_text": "hint.thinking", "icon_state": 2 },
-    "ui_show_link_lost": { "tag_text": "tag.failed", "state_text": "state.failed",    "body_text": "msg.link_lost", "hint_text": "hint.ready",     "icon_state": 7 },
-    "ui_show_blocked":     { "tag_text": "tag.failed", "state_text": "state.failed", "hint_text": "hint.ready", "icon_state": 7 },
-    "ui_link_ready":       { "status_text": "status.link_up", "link_state": 1 },
-    "ui_link_down":        { "status_text": "status.link_down", "link_state": 0 },
-    "ui_link_no_voice":    { "status_text": "msg.voice_off", "link_state": 0 },
-    "ui_why_link_down":    { "body_text": "msg.link_lost" },
-    "ui_why_phone_silent": { "body_text": "msg.phone_silent" },
-    "ui_why_version":      { "body_text": "msg.version" },
-    "ui_why_mtu":          { "body_text": "msg.voice_off" },
-    "ui_why_audio":        { "body_text": "msg.voice_off" }
+    "ui_show_live": {},
+    "ui_show_report": {},
+    "ui_show_ready": {
+      "tag_text": "tag.ready",
+      "state_text": "state.ready",
+      "body_text": "msg.ready",
+      "hint_text": "hint.ready",
+      "icon_state": 0
+    },
+    "ui_show_done": {
+      "tag_text": "tag.ready",
+      "state_text": "state.ready",
+      "hint_text": "hint.ready",
+      "icon_state": 0
+    },
+    "ui_show_listening": {
+      "tag_text": "tag.listening",
+      "state_text": "state.listening",
+      "body_text": "msg.listening",
+      "hint_text": "hint.listening",
+      "icon_state": 1
+    },
+    "ui_show_thinking": {
+      "tag_text": "tag.thinking",
+      "state_text": "state.thinking",
+      "body_text": "msg.sent",
+      "hint_text": "hint.thinking",
+      "icon_state": 2
+    },
+    "ui_show_answering": {
+      "tag_text": "tag.answering",
+      "state_text": "state.answering",
+      "hint_text": "hint.answering",
+      "icon_state": 3
+    },
+    "ui_show_retry": {
+      "tag_text": "tag.failed",
+      "state_text": "state.failed",
+      "body_text": "msg.retry",
+      "hint_text": "hint.ready",
+      "icon_state": 4
+    },
+    "ui_show_timeout": {
+      "tag_text": "tag.failed",
+      "state_text": "state.failed",
+      "body_text": "msg.timeout",
+      "hint_text": "hint.ready",
+      "icon_state": 4
+    },
+    "ui_show_limit": {
+      "tag_text": "tag.thinking",
+      "state_text": "state.thinking",
+      "body_text": {
+        "key": "msg.limit",
+        "n": 20
+      },
+      "hint_text": "hint.thinking",
+      "icon_state": 2
+    },
+    "ui_show_link_lost": {
+      "tag_text": "tag.failed",
+      "state_text": "state.failed",
+      "body_text": "msg.link_lost",
+      "hint_text": "hint.ready",
+      "icon_state": 7
+    },
+    "ui_show_blocked": {
+      "tag_text": "tag.failed",
+      "state_text": "state.failed",
+      "hint_text": "hint.ready",
+      "icon_state": 7
+    },
+    "ui_link_ready": {
+      "status_text": "status.link_up",
+      "link_state": 1
+    },
+    "ui_link_down": {
+      "status_text": "status.link_down",
+      "link_state": 0
+    },
+    "ui_link_no_voice": {
+      "status_text": "msg.voice_off",
+      "link_state": 0
+    },
+    "ui_why_link_down": {
+      "body_text": "msg.link_lost"
+    },
+    "ui_why_phone_silent": {
+      "body_text": "msg.phone_silent"
+    },
+    "ui_why_version": {
+      "body_text": "msg.version"
+    },
+    "ui_why_mtu": {
+      "body_text": "msg.voice_off"
+    },
+    "ui_why_audio": {
+      "body_text": "msg.voice_off"
+    },
+    "ui_show_turns": {}
   },
 
   "states": [
-    { "id": "LIVE",        "screen": "ski",   "initial": true, "root": true },
-    { "id": "REPORT",      "screen": "report" },
-    { "id": "READY",       "screen": "coach" },
-    { "id": "CAPTURE",     "screen": "coach" },
-    { "id": "WAIT_ANSWER", "screen": "coach" },
-    { "id": "PLAYBACK",    "screen": "coach" }
+    {"id": "LIVE", "screen": "ski", "initial": true, "root": true},
+    {"id": "REPORT", "screen": "report"},
+    {"id": "TURNS", "screen": "turns"},
+    {"id": "READY", "screen": "coach"},
+    {"id": "CAPTURE", "screen": "coach"},
+    {"id": "WAIT_ANSWER", "screen": "coach"},
+    {"id": "PLAYBACK", "screen": "coach"}
   ],
 
   "transitions": [
-    { "from": "LIVE",   "on": "DOWN_SHORT", "to": "REPORT", "actions": ["ui_show_report"],
-      "comment": "D-29. Three flat pages in a loop: LIVE, REPORT, and the Coach page. DOWN goes forward. UP goes back." },
-    { "from": "LIVE",   "on": "UP_SHORT",   "to": "READY",  "actions": ["ui_show_ready"] },
-    { "from": "LIVE",   "on": "OK_HOLD",    "to": "READY",  "actions": ["ui_show_ready"],
-      "comment": "D-29. An OK hold opens the Coach page from every page. This press never starts capture." },
-    { "from": "LIVE",   "on": "SHOW_REPORT", "to": "REPORT", "actions": ["ui_show_report"],
-      "comment": "D-28. The phone sends SHOW_PAGE 3. Only LIVE and READY accept it, so it never stops a question or an answer." },
-
-    { "from": "REPORT", "on": "DOWN_SHORT", "to": "READY",  "actions": ["ui_show_ready"] },
-    { "from": "REPORT", "on": "UP_SHORT",   "to": "LIVE",   "actions": ["ui_show_live"] },
-    { "from": "REPORT", "on": "OK_HOLD",    "to": "READY",  "actions": ["ui_show_ready"] },
-
-    { "from": "READY", "on": "OK_HOLD", "to": "CAPTURE",
-      "actions": ["ui_show_listening", "audio_capture_start", "link_send_agent_start"],
-      "comment": "On the Coach page, the OK hold is push-to-talk. A release sends the question." },
-    { "from": "READY", "on": "DOWN_SHORT", "to": "LIVE",   "actions": ["ui_show_live"] },
-    { "from": "READY", "on": "UP_SHORT",   "to": "REPORT", "actions": ["ui_show_report"] },
-    { "from": "READY", "on": "SHOW_REPORT", "to": "REPORT", "actions": ["ui_show_report"] },
-    { "from": "READY", "on": "ASK_BLOCKED", "to": "READY", "actions": ["ui_show_blocked"],
-      "comment": "The glue sends ASK_BLOCKED in place of OK_HOLD while voice is not available. The ui_why_* text gives the cause." },
-    { "from": "READY", "on": "LINK_LOST", "to": "READY", "actions": ["ui_show_link_lost"] },
-
-    { "from": "CAPTURE", "on": "OK_RELEASE", "to": "WAIT_ANSWER",
-      "actions": ["audio_capture_stop", "link_send_agent_end", "ui_show_thinking"] },
-    { "from": "CAPTURE", "on": "CAPTURE_LIMIT", "to": "WAIT_ANSWER",
-      "actions": ["audio_capture_stop", "link_send_agent_end", "ui_show_limit"] },
-    { "from": "CAPTURE", "on": "DOWN_SHORT", "to": "LIVE",
-      "actions": ["audio_capture_stop", "link_send_agent_cancel", "ui_show_live"],
-      "comment": "D-29. A page change cancels the question first. The three buttons share one ADC, so this needs the OK release first." },
-    { "from": "CAPTURE", "on": "UP_SHORT", "to": "REPORT",
-      "actions": ["audio_capture_stop", "link_send_agent_cancel", "ui_show_report"] },
-    { "from": "CAPTURE", "on": "LINK_LOST", "to": "READY",
-      "actions": ["audio_capture_stop", "ui_show_link_lost"] },
-
-    { "from": "WAIT_ANSWER", "on": "ANSWER_START", "to": "PLAYBACK",
-      "actions": ["ui_show_answering", "audio_play_start"] },
-    { "from": "WAIT_ANSWER", "on": "ANSWER_FAILED", "to": "READY", "actions": ["ui_show_retry"] },
-    { "from": "WAIT_ANSWER", "on": "AGENT_TIMEOUT", "to": "READY", "actions": ["ui_show_timeout"] },
-    { "from": "WAIT_ANSWER", "on": "OK_HOLD", "to": "CAPTURE",
-      "actions": ["link_send_agent_cancel", "ui_show_listening", "audio_capture_start", "link_send_agent_start"],
-      "comment": "A new question cancels the open exchange. A late answer then carries a stale xid." },
-    { "from": "WAIT_ANSWER", "on": "DOWN_SHORT", "to": "LIVE",
-      "actions": ["link_send_agent_cancel", "ui_show_live"],
-      "comment": "D-29. A page change cancels the open exchange." },
-    { "from": "WAIT_ANSWER", "on": "UP_SHORT", "to": "REPORT",
-      "actions": ["link_send_agent_cancel", "ui_show_report"] },
-    { "from": "WAIT_ANSWER", "on": "LINK_LOST", "to": "READY", "actions": ["ui_show_link_lost"] },
-
-    { "from": "PLAYBACK", "on": "ANSWER_END", "to": "READY",
-      "actions": ["audio_play_stop", "ui_show_done"],
-      "comment": "ui_show_done keeps the answer text on the screen until the next action." },
-    { "from": "PLAYBACK", "on": "OK_HOLD", "to": "CAPTURE",
-      "actions": ["audio_play_stop", "link_send_agent_cancel", "ui_show_listening", "audio_capture_start", "link_send_agent_start"],
-      "comment": "Playback stops before the microphone starts. The device never records and plays together." },
-    { "from": "PLAYBACK", "on": "DOWN_SHORT", "to": "LIVE",
-      "actions": ["audio_play_stop", "link_send_agent_cancel", "ui_show_live"],
-      "comment": "D-29. A page change stops the speaker and cancels the answer." },
-    { "from": "PLAYBACK", "on": "UP_SHORT", "to": "REPORT",
-      "actions": ["audio_play_stop", "link_send_agent_cancel", "ui_show_report"] },
-    { "from": "PLAYBACK", "on": "LINK_LOST", "to": "READY",
-      "actions": ["audio_play_stop", "ui_show_link_lost"] }
+    {"from": "LIVE", "on": "DOWN_SHORT", "to": "REPORT", "actions": ["ui_show_report"], "comment": "D-29. Three flat pages in a loop: LIVE, REPORT, and the Coach page. DOWN goes forward. UP goes back."},
+    {"from": "LIVE", "on": "UP_SHORT", "to": "READY", "actions": ["ui_show_ready"]},
+    {"from": "LIVE", "on": "OK_HOLD", "to": "READY", "actions": ["ui_show_ready"], "comment": "D-29. An OK hold opens the Coach page from every page. This press never starts capture."},
+    {"from": "LIVE", "on": "SHOW_REPORT", "to": "REPORT", "actions": ["ui_show_report"], "comment": "D-28. The phone sends SHOW_PAGE 3. Only LIVE and READY accept it, so it never stops a question or an answer."},
+    {"from": "REPORT", "on": "DOWN_SHORT", "to": "TURNS", "actions": ["ui_show_turns"], "comment": "D-30. The Turns page sits between the Report page and the Coach page."},
+    {"from": "REPORT", "on": "UP_SHORT", "to": "LIVE", "actions": ["ui_show_live"]},
+    {"from": "REPORT", "on": "OK_HOLD", "to": "READY", "actions": ["ui_show_ready"]},
+    {"from": "TURNS", "on": "UP_SHORT", "to": "REPORT", "actions": ["ui_show_report"]},
+    {"from": "TURNS", "on": "DOWN_SHORT", "to": "READY", "actions": ["ui_show_ready"]},
+    {"from": "TURNS", "on": "OK_HOLD", "to": "READY", "actions": ["ui_show_ready"], "comment": "As on every page: an OK hold opens the Coach page and never starts capture."},
+    {"from": "TURNS", "on": "OK_SHORT", "to": "TURNS", "actions": ["turn_next"], "comment": "D-30. Inside the page: OK goes one turn on, an UP hold one turn back, a DOWN hold one page of 8 turns on."},
+    {"from": "TURNS", "on": "UP_HOLD", "to": "TURNS", "actions": ["turn_prev"]},
+    {"from": "TURNS", "on": "DOWN_HOLD", "to": "TURNS", "actions": ["turn_page"]},
+    {"from": "READY", "on": "OK_HOLD", "to": "CAPTURE", "actions": ["ui_show_listening", "audio_capture_start", "link_send_agent_start"], "comment": "On the Coach page, the OK hold is push-to-talk. A release sends the question."},
+    {"from": "READY", "on": "DOWN_SHORT", "to": "LIVE", "actions": ["ui_show_live"]},
+    {"from": "READY", "on": "UP_SHORT", "to": "TURNS", "actions": ["ui_show_turns"]},
+    {"from": "READY", "on": "SHOW_REPORT", "to": "REPORT", "actions": ["ui_show_report"]},
+    {"from": "READY", "on": "ASK_BLOCKED", "to": "READY", "actions": ["ui_show_blocked"], "comment": "The glue sends ASK_BLOCKED in place of OK_HOLD while voice is not available. The ui_why_* text gives the cause."},
+    {"from": "READY", "on": "LINK_LOST", "to": "READY", "actions": ["ui_show_link_lost"]},
+    {"from": "CAPTURE", "on": "OK_RELEASE", "to": "WAIT_ANSWER", "actions": ["audio_capture_stop", "link_send_agent_end", "ui_show_thinking"]},
+    {"from": "CAPTURE", "on": "CAPTURE_LIMIT", "to": "WAIT_ANSWER", "actions": ["audio_capture_stop", "link_send_agent_end", "ui_show_limit"]},
+    {"from": "CAPTURE", "on": "DOWN_SHORT", "to": "LIVE", "actions": ["audio_capture_stop", "link_send_agent_cancel", "ui_show_live"], "comment": "D-29. A page change cancels the question first. The three buttons share one ADC, so this needs the OK release first."},
+    {"from": "CAPTURE", "on": "UP_SHORT", "to": "TURNS", "actions": ["audio_capture_stop", "link_send_agent_cancel", "ui_show_turns"]},
+    {"from": "CAPTURE", "on": "LINK_LOST", "to": "READY", "actions": ["audio_capture_stop", "ui_show_link_lost"]},
+    {"from": "WAIT_ANSWER", "on": "ANSWER_START", "to": "PLAYBACK", "actions": ["ui_show_answering", "audio_play_start"]},
+    {"from": "WAIT_ANSWER", "on": "ANSWER_FAILED", "to": "READY", "actions": ["ui_show_retry"]},
+    {"from": "WAIT_ANSWER", "on": "AGENT_TIMEOUT", "to": "READY", "actions": ["ui_show_timeout"]},
+    {"from": "WAIT_ANSWER", "on": "OK_HOLD", "to": "CAPTURE", "actions": ["link_send_agent_cancel", "ui_show_listening", "audio_capture_start", "link_send_agent_start"], "comment": "A new question cancels the open exchange. A late answer then carries a stale xid."},
+    {"from": "WAIT_ANSWER", "on": "DOWN_SHORT", "to": "LIVE", "actions": ["link_send_agent_cancel", "ui_show_live"], "comment": "D-29. A page change cancels the open exchange."},
+    {"from": "WAIT_ANSWER", "on": "UP_SHORT", "to": "TURNS", "actions": ["link_send_agent_cancel", "ui_show_turns"]},
+    {"from": "WAIT_ANSWER", "on": "LINK_LOST", "to": "READY", "actions": ["ui_show_link_lost"]},
+    {"from": "PLAYBACK", "on": "ANSWER_END", "to": "READY", "actions": ["audio_play_stop", "ui_show_done"], "comment": "ui_show_done keeps the answer text on the screen until the next action."},
+    {"from": "PLAYBACK", "on": "OK_HOLD", "to": "CAPTURE", "actions": ["audio_play_stop", "link_send_agent_cancel", "ui_show_listening", "audio_capture_start", "link_send_agent_start"], "comment": "Playback stops before the microphone starts. The device never records and plays together."},
+    {"from": "PLAYBACK", "on": "DOWN_SHORT", "to": "LIVE", "actions": ["audio_play_stop", "link_send_agent_cancel", "ui_show_live"], "comment": "D-29. A page change stops the speaker and cancels the answer."},
+    {"from": "PLAYBACK", "on": "UP_SHORT", "to": "TURNS", "actions": ["audio_play_stop", "link_send_agent_cancel", "ui_show_turns"]},
+    {"from": "PLAYBACK", "on": "LINK_LOST", "to": "READY", "actions": ["audio_play_stop", "ui_show_link_lost"]}
   ]
 }

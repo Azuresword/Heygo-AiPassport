@@ -2,7 +2,7 @@
 
 # BLE Protocol Draft
 
-Version: 0.8. Date: 2026-10-17. Status: the phone application team accepted protocol 0.2. That team must accept SHOW_PAGE from version 0.7 and the field meanings from version 0.8.
+Version: 0.9. Date: 2026-10-17. Status: the phone application team accepted protocol 0.2. That team must accept SHOW_PAGE from version 0.7, the field meanings from version 0.8, and the three turn messages from version 0.9.
 
 ## 1. Purpose and scope
 
@@ -27,9 +27,11 @@ Section 14 gives this rule.
 
 Version 0.6 adds the two Increment 2 ski data messages LIVE_STATS and RUN_REPORT, from D-23, D-24, and D-26. The protocol version becomes 0.2.
 Section 15 lists these changes.
-
 Version 0.8 removes Ski mode and Rest mode, per D-29. The mode and page fields keep their values but change their meaning. The protocol version stays 0.2.
 Section 16 lists these changes.
+
+Version 0.9 adds the Increment 3 messages TURN_SHAPE, TURN_GROUP, and TURN_REQUEST, and the Turns page, per D-30. The protocol version stays 0.2.
+Section 17 lists these changes.
 
 The draft follows three rules:
 
@@ -167,8 +169,8 @@ D means the device. P means the phone.
 
 | Field | Size | Values |
 | --- | --- | --- |
-| Mode | 1 byte | 0 live data page or Report page. 1 Coach page. Before D-29, the values meant Ski mode and Rest mode. |
-| Page | 1 byte | 0 live data page. 1 Coach page. 2 no longer used (the old exit question). 3 Report page. 4 Team page, P1. |
+| Mode | 1 byte | 0 live data page, Report page, or Turns page. 1 Coach page. Before D-29, the values meant Ski mode and Rest mode. |
+| Page | 1 byte | 0 live data page. 1 Coach page. 2 no longer used (the old exit question). 3 Report page. 4 Team page, P1. 5 Turns page, Increment 3 (D-30). |
 | Codec | 1 byte | 0 IMA ADPCM. 1 Raw PCM. |
 | Codec mask | 1 byte | Bit 0 IMA ADPCM. Bit 1 raw PCM. Bit n matches codec value n. |
 | Sample rate | 1 byte | 16, in kHz. No other value is valid. |
@@ -210,7 +212,7 @@ The device needs the UTC time from the phone, because it has no other clock sour
 | 0x10 | CONTEXT | D to P | Mode (1), page (1) | On each page change |
 
 In P0 the phone attaches the current ski session to each Agent request.
-On the Report page, the page field of CONTEXT is 3.
+On the Report page, the page field of CONTEXT is 3. On the Turns page, it is 5.
 
 ### Agent
 
@@ -371,6 +373,91 @@ The device follows these rules:
 
 After the change, CONTEXT reports mode 0 and page 3.
 
+### Turn shape (D-30)
+
+| Type | Name | Direction | Payload | When |
+| --- | --- | --- | --- | --- |
+| 0x63 | TURN_SHAPE | P to D | 3 bytes | Once after each RUN_REPORT |
+| 0x64 | TURN_GROUP | P to D | 4 fixed bytes, then the turns, then the points | Once for each group that the device asks for |
+| 0x65 | TURN_REQUEST | D to P | 3 bytes | When the device lacks a group that it keeps |
+
+The three messages use `xid` 0 and `seq` 0. No message has an acknowledgment.
+A group is 8 turns: group g holds turns 8g to 8g + 7 of the run. The last group can hold fewer turns.
+The device keeps at most 3 groups: the group on the screen and the groups next to it.
+The device asks for each group that it lacks. The phone keeps every group of the last run.
+
+**TURN_SHAPE payload**
+
+| Offset | Size | Field | Unknown value |
+| --- | --- | --- | --- |
+| 0 | 1 | Run number, as in RUN_REPORT | 0xFF |
+| 1 | 1 | Source: 0 measured track, 1 schematic shape | None |
+| 2 | 1 | Turn count n of the whole run, 0 to 255 | None |
+
+**TURN_REQUEST payload**
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 1 | Run number of the last TURN_SHAPE |
+| 1 | 1 | First group |
+| 2 | 1 | Group count, 1 to 3 |
+
+**TURN_GROUP payload**
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 1 | Run number of the last TURN_SHAPE |
+| 1 | 1 | Group g |
+| 2 | 1 | Turn count k of this group, 1 to 8. It is 8, except in the last group |
+| 3 | 1 | Point count m of this group, 2 to 33 |
+| 4 | 6k | Turns. The next table gives one turn |
+| 4 + 6k | 2m | Points. Each point is x (1 byte), then y (1 byte), from 0 to 255 |
+
+**One turn**
+
+| Offset | Size | Field | Unit | Unknown value |
+| --- | --- | --- | --- | --- |
+| 0 | 1 | Index of the first point of the turn in this group | None | None |
+| 1 | 1 | Index of the last point. It is more than the first index and less than m | None | None |
+| 2 | 1 | Side: 0 toe side, 1 heel side | None | 0xFF |
+| 3 | 1 | Speed in the turn | km/h | 0xFF |
+| 4 | 1 | Edge angle, 0 to 90 | Degrees | 0xFF |
+| 5 | 1 | Turn radius | Meters | 0xFF |
+
+The y axis goes down the slope. The x axis goes across the slope.
+The points of each group use their own scale. The device maps 0 to 255 on each axis to the full box on the screen.
+The phone therefore sets the scale of each group. Each group fills the box.
+
+TURN_GROUP holds at most 122 bytes with its header. It fits in the MTU of 172 that voice needs.
+
+The phone follows these rules:
+
+- After each RUN_REPORT, the phone sends the TURN_SHAPE of the same run.
+- For each TURN_REQUEST, the phone sends one TURN_GROUP for each asked group, in order.
+- The phone answers within 300 ms. This limit is a proposal. The phone application team must accept it.
+- The phone uses at most 4 segments for each turn, so that a group has at most 33 points.
+- If the shape does not come from a measured track, the phone sets source 1. The device then shows "示意" on the page.
+- The phone sends the unknown value for a turn value that it cannot calculate. It never sends 0 in place of an unknown value.
+
+The device follows these rules:
+
+- A new TURN_SHAPE replaces the old one and clears the cache. The device then asks for groups 0 to 2 at once.
+- When the screen shows group g, the device keeps groups g − 1 to g + 1.
+- At the start and at the end of the run, the device keeps the first 3 or the last 3 groups.
+- The device drops each other group, and asks for the missing ones in one TURN_REQUEST.
+- If the groups do not arrive within 1 second, the device asks once again.
+- After a reconnect and a HELLO_ACK, the device asks again for the groups that it lacks.
+- The device drops a TURN_GROUP for a group that it does not keep. It sends no ERROR for it.
+- The device draws a group by itself, one point each 40 ms. Thus a group of 33 points takes 1.32 seconds.
+- For TURN_SHAPE, a source above 1 gets ERROR code 7.
+- For TURN_GROUP, a payload length that is not 4 + 6k + 2m gets code 2. A k above 8 or an m above 33 gets code 4.
+- For TURN_GROUP, k equal to 0, m below 2, and turn indexes that do not follow the rule get code 7.
+- A side above 1 and an edge angle above 90 also get code 7. The unknown value 0xFF is valid.
+- A TURN_GROUP before any TURN_SHAPE, or with another run number, gets code 6.
+- A group past the end of the run, or a turn count that does not match the run, gets code 7.
+- After each ERROR, the device keeps the old shape and the old groups.
+- The device accepts these messages only after a HELLO_ACK with the same protocol version.
+
 ## 7. Audio blocks
 
 ### IMA ADPCM block
@@ -511,6 +598,11 @@ sequenceDiagram
 | The last LIVE_STATS and the last RUN_REPORT, with their receive times | None | 128 |
 | Total | 3,440 | 3,568 |
 
+Increment 3 adds about 4.0 KB of static RAM. The cache of 3 groups uses about 365 bytes, and a copy for the screen uses 359 bytes.
+The Turns page view uses two copies of 816 bytes. The line points and their lengths use 1,584 bytes.
+The rider sprite uses 25.6 KB of Flash and no RAM.
+The symbol table of the firmware build gives these sizes.
+
 The ADPCM codec state adds a few bytes for each direction.
 The NimBLE host and controller need extra memory. Measure them on hardware.
 
@@ -531,6 +623,8 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 13. Fill the last downlink block with silence to the full block size.
 14. Before the answer starts, send an AGENT_STATE at least every 10 seconds.
 15. To show the Report page on the device, send SHOW_PAGE 3. The device changes only from the live data page or the idle Coach page.
+16. Increment 3: after each RUN_REPORT, send the TURN_SHAPE of that run. Set source 1 for a shape that does not come from a measured track.
+17. Keep every group of the last run. Answer each TURN_REQUEST with one TURN_GROUP for each asked group.
 
 ## 12. Open items
 
@@ -540,6 +634,7 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 - The phone application team checks that it can calculate each LIVE_STATS and RUN_REPORT field. It also gives the rules that detect the start and the end of a run. Q-16 tracks this item.
 - Record the interval, the PHY, and the data length that each target phone grants.
 - A later version measures the battery cost of the link settings. D-18 defers this item.
+- The phone application team finds a source of measured track data, and sets the scale of each group. Q-02 tracks this item.
 
 ## 13. Changes in version 0.4
 
@@ -596,7 +691,21 @@ D-29 replaces Ski mode and Rest mode with three pages at one level. No packet fo
 
 The phone application team must read CONTEXT and DEVICE_STATUS with the new meanings.
 
-## 17. Related documents
+## 17. Changes in version 0.9
+
+D-30 adds the Turns page and three turn messages for Increment 3.
+
+| No. | Change | Section |
+| --- | --- | --- |
+| 1 | Add TURN_SHAPE (0x63) and TURN_GROUP (0x64), from the phone to the device. | 6 |
+| 2 | Add TURN_REQUEST (0x65), from the device to the phone. It is the first request for data from the device. | 6 |
+| 3 | Add page 5, the Turns page. On it, the mode field is 0. | 6 |
+| 4 | Add about 4.0 KB of static RAM for the turn cache and the page. | 10 |
+
+The turn messages add messages and change no current packet, so the protocol version stays 0.2.
+Firmware at commit `bedcf1a` or older answers TURN_SHAPE and TURN_GROUP with ERROR code 1. A phone application that does not know page 5 treats it as an unknown page.
+
+## 18. Related documents
 
 - [System Architecture](02-architecture.md).
 - [Validation and Decisions](04-validation-and-decisions.md).

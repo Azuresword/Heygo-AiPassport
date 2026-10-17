@@ -20,12 +20,14 @@
   const on = () => document.querySelector(".scr.on").dataset.id;
   ok(st === "LIVE" && on() === "ski", "1 starts on the live data page (D-29)");
 
-  // D-29: three flat pages in a loop. DOWN goes forward, UP goes back.
+  // D-29 and D-30: four flat pages in a loop. DOWN goes forward, UP goes back.
   await tap("DOWN"); ok(st === "REPORT" && on() === "report", "2 DOWN: live data -> report");
-  await tap("DOWN"); ok(st === "READY" && on() === "coach", "2 DOWN: report -> coach");
+  await tap("DOWN"); ok(st === "TURNS" && on() === "turns", "2 DOWN: report -> turns (D-30)");
+  await tap("DOWN"); ok(st === "READY" && on() === "coach", "2 DOWN: turns -> coach");
   await tap("DOWN"); ok(st === "LIVE", "2 DOWN: coach -> live data (loop)");
   await tap("UP");   ok(st === "READY", "2 UP: live data -> coach (loop)");
-  await tap("UP");   ok(st === "REPORT", "2 UP: coach -> report");
+  await tap("UP");   ok(st === "TURNS", "2 UP: coach -> turns");
+  await tap("UP");   ok(st === "REPORT", "2 UP: turns -> report");
   await tap("OK");   ok(st === "REPORT", "2 a short OK changes no page");
   await hold("UP");  ok(st === "REPORT", "2 an UP hold does nothing");
 
@@ -69,7 +71,7 @@
   await hold("OK", 1200);
   ok(st === "WAIT_ANSWER", "8 the question ends");
   await tap("UP");
-  ok(st === "REPORT" && /AGENT_CANCEL/.test(bleLog().split("AGENT_END").pop()), "8 a short UP in the wait cancels the question and moves back one page");
+  ok(st === "TURNS" && /AGENT_CANCEL/.test(bleLog().split("AGENT_END").pop()), "8 a short UP in the wait cancels the question and moves back one page");
   await hold("OK"); await hold("OK", 1200);
   await sleep(10200);
   ok(st === "READY" && shown("coach.body") === "超时，请重试", "8 no answer gives a timeout after 10 seconds");
@@ -122,6 +124,66 @@
   ok(shown("ski.dest") === "REPORT" && shown("ski.unit") === "HEYGO IQ" && shown("ski.problem") === "重心偏后" && widgetEls["ski.drop"].style.display === "none", "16 the report replaces the metric cells on the live data page");
   await tap("DOWN");
   ok(st === "REPORT" && shown("report.problem") === "重心偏后" && shown("report.title").startsWith("第 1 趟"), "17 the Report page shows the run report");
+
+  // D-30: the Turns page between the Report page and the Coach page. The device asks for groups of 8 turns.
+  ok(/TURN_SHAPE run=1/.test(bleLog()) && /TURN_REQUEST run=1 第 1–1 组/.test(bleLog()) && /TURN_GROUP run=1 第 1 组/.test(bleLog()),
+     "19 the shape follows the report, and the device asks for the first group");
+  const nTurns = dev.n_turns, nPts = dev.slots.get(0).points.length;
+  const pts = id => widgetEls["turns." + id].querySelector("polyline").getAttribute("points").split(" ").map(p => p.split(",").map(Number));
+  const rider = () => widgetEls["turns.rider"];
+  const keys = () => [shown("turns.key_up"), shown("turns.key_ok"), shown("turns.key_down")].join("|");
+  await tap("DOWN");
+  ok(st === "TURNS" && on() === "turns", "19 a short DOWN on the Report page opens the Turns page");
+  await sleep(POINT_MS * 4);
+  ok(turnDrawnPts > 1 && turnDrawnPts < nPts && pts("path").length === turnDrawnPts * 4, "19 the first page draws point by point");
+  const head = pts("path")[pts("path").length - 1];
+  ok(parseInt(rider().style.left) === 10 + head[0] - 10 && parseInt(rider().style.top) === 108 + head[1] - 10, "19 the rider sits at the head of the line");
+  ok(keys() === "▲报告|●跳过|▼教练" && shown("turns.key_hold") === "长按●问教练", "19 while drawing: UP and DOWN change the page, OK skips");
+  await tap("OK");
+  ok(pts("path").length === nPts * 4 && shown("turns.counter") === `TURN 1/${nTurns}` && keys() === "▲报告|●下一弯|▼教练",
+     "19 OK shows the whole page at once");
+  ok(widgetEls["turns.track"].style.display === "none", "19 one page: no bar");
+  const box = el => el.getBoundingClientRect();
+  ok(box(widgetEls["turns.path"].querySelector("polyline")).width > 100 && box(widgetEls["turns.path"].querySelector("svg")).width === 240,
+     "19 the browser draws the line");
+  await sleep(1800);
+  const end1 = pts("turn")[pts("turn").length - 1];
+  ok(parseInt(rider().style.left) === 10 + end1[0] - 10 && /rotate\(/.test(rider().style.transform), "19 the rider replays turn 1 to its end");
+  await tap("OK");
+  ok(shown("turns.counter") === `TURN 2/${nTurns}` && shown("turns.side") === "HEEL SIDE" && shown("turns.key_hold") === "长按▲上一弯",
+     "19 OK selects the next turn, and the hint names the UP hold");
+  await hold("UP");
+  ok(st === "TURNS" && shown("turns.counter") === `TURN 1/${nTurns}`, "19 an UP hold selects the previous turn");
+  await hold("OK");
+  ok(st === "READY" && !mic, "19 an OK hold on the Turns page opens the Coach page, with no capture");
+  await tap("UP");
+  ok(st === "TURNS" && turnSel === 0, "19 a short UP on the Coach page opens the Turns page at turn 1");
+
+  // A long run: 44 turns make 6 pages. The device keeps 3 groups and asks for the others.
+  phoneSendShape(1, 44, 0); await sleep(400);
+  ok(/TURN_REQUEST run=1 第 1–3 组/.test(bleLog()) && [0, 1, 2].every(g => dev.slots.has(g)), "20 the device asks for groups 1 to 3 (24 turns)");
+  await sleep(POINT_MS * 30);
+  ok(shown("turns.title") === "第 1 趟 · 44 弯" && shown("turns.key_hold") === "长按▼下一页", "20 turn 1 of a long run: the DOWN hold goes one page on");
+  ok(widgetEls["turns.thumb"].style.display !== "none" && parseInt(widgetEls["turns.thumb"].style.left) === 20 &&
+     parseInt(widgetEls["turns.thumb"].style.width) === 33, "20 the bar marks page 1 of 6");
+  for (let i = 0; i < 8; i++) await tap("OK");
+  ok(shown("turns.counter") === "TURN 9/44" && parseInt(widgetEls["turns.thumb"].style.left) === 20 + 33 &&
+     shown("turns.key_hold") === "长按 ▲上一弯 ▼下一页", "20 OK past turn 8 moves the page at once");
+  await hold("UP");
+  ok(shown("turns.counter") === "TURN 8/44" && parseInt(widgetEls["turns.thumb"].style.left) === 20, "20 an UP hold goes back across the page edge");
+  await hold("DOWN"); await hold("DOWN"); await sleep(400);
+  ok(shown("turns.counter") === "TURN 17/44" && /TURN_REQUEST run=1 第 4–4 组/.test(bleLog()) && !dev.slots.has(0),
+     "20 two DOWN holds go to page 3, which drops group 1 and asks for group 4");
+  await hold("DOWN"); await hold("DOWN"); await hold("DOWN"); await sleep(400);
+  ok(shown("turns.counter") === "TURN 41/44" && [3, 4, 5].every(g => dev.slots.has(g)), "20 DOWN holds reach the last page");
+  setLink(false);
+  const before = bleLog().length;
+  await hold("DOWN"); await sleep(300);
+  ok(turnSel === 0 && shown("turns.msg") === "蓝牙断开" && bleLog().length === before, "20 the DOWN hold wraps to page 1. With no link, it names the link and asks for nothing");
+  setLink(true); await sleep(400);
+  ok(/TURN_REQUEST run=1 第 1–3 组/.test(bleLog().slice(before)) && shown("turns.msg") === "", "20 after the reconnect, the device asks again");
+  await tap("UP");
+  ok(st === "REPORT", "20 a short UP on the Turns page returns to the Report page");
 
   // D-28: SHOW_PAGE opens the Report page from LIVE and READY only.
   await tap("UP");

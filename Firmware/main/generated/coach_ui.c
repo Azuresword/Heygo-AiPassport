@@ -104,6 +104,8 @@ bool coach_ui_apply(coach_action_t action) {
     case COACH_ACTION_UI_WHY_AUDIO:
         coach_set_body_text("语音不可用");
         return true;
+    case COACH_ACTION_UI_SHOW_TURNS:
+        return true;
     default:
         return false;
     }

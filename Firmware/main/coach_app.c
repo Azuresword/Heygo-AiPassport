@@ -27,6 +27,8 @@
 #include "coach_screens.h"
 #include "coach_ui.h"
 #include "ski_view.h"
+#include "turn_page.h"
+#include "turn_view.h"
 #include "ui_theme.h"
 #include "voice.h"
 #include "esp_log.h"
@@ -47,6 +49,7 @@ static const char *TAG = "coach";
 #define PLAY_WATCH_US    (1000LL * 1000)         // Check the playback once a second.
 #define PLAY_STUCK_MS    3000                    // No progress for 3 s ends the answer.
 #define DATA_TICK_US     (1000LL * 1000)         // The out-of-date mark and the report age.
+#define TURN_POINT_MS    40                      // The Turns page draws one point each 40 ms.
 
 typedef enum { MSG_KEY, MSG_EVENT, MSG_LINK, MSG_AGENT_STATE, MSG_DATA } msg_kind_t;
 
@@ -66,12 +69,20 @@ static coach_input_t s_input;
 static coach_screen_coach_t s_coach;
 static coach_screen_ski_t s_ski;
 static coach_screen_report_t s_report;
+static coach_screen_turns_t s_turns;
 static esp_timer_handle_t s_capture_timer;
 static esp_timer_handle_t s_answer_timer;
 static esp_timer_handle_t s_play_watch;
 static esp_timer_handle_t s_data_tick;
 static ski_view_t s_ski_view;          // The texts on the Ski page now.
 static report_view_t s_report_view;    // The texts on the Report page now.
+static turn_view_t s_turn_view;        // The shape and the texts on the Turns page now.
+static uint8_t s_turn_sel;             // The selected turn in the run. The page shows group s_turn_sel / 8.
+static uint8_t s_turn_drawn;           // Points of that group on the screen, or TURN_VIEW_DRAWN_ALL.
+static uint8_t s_turn_run;             // The run on the page, and its turn count. A new shape starts
+static uint8_t s_turn_count;           // again at turn 1.
+static TickType_t s_turn_tick;         // While the group draws: the time of the next point.
+static link_turns_t s_turn_data;       // A copy of the turn cache. Static, so it stays off the task stack.
 static coach_screen_id_t s_shown = COACH_SCREEN_COUNT;   // COUNT: no screen yet
 static lv_obj_t *s_blank;   // Active while the old screen is deleted. LVGL must not delete the active screen.
 static link_voice_t s_voice = LINK_VOICE_NO_LINK;
@@ -96,6 +107,7 @@ static const char *screen_name(coach_screen_id_t id) {
     case COACH_SCREEN_COACH: return "coach";
     case COACH_SCREEN_SKI: return "ski";
     case COACH_SCREEN_REPORT: return "report";
+    case COACH_SCREEN_TURNS: return "turns";
     default: return "?";
     }
 }
@@ -152,9 +164,65 @@ static void set_hidden(lv_obj_t *obj, bool hidden) {
 #define PUT(page, screen, view, field, want, force) \
     put_label(screen.field, page "." #field, view.field, sizeof view.field, want.field, force)
 
+// Show group `group` of the Turns page from its first turn, and ask the link for the groups next to it.
+static void turn_group_show(uint8_t group) {
+    s_turn_sel = (uint8_t)(group * BP_GROUP_TURNS);
+    s_turn_drawn = 0;
+    ble_link_turns_focus(group);
+}
+
+// The Turns page. replay: move the rider along the marked turn again.
+// When the page opens, the first page of 8 turns draws point by point. The rider sits at
+// the head of the line, and nothing replays. Then the rider replays the first turn.
+// After that, the keys move the cursor, the page follows it, and the rider replays each turn.
+// The caller holds the LVGL lock.
+static void refresh_turns(bool force, bool replay) {
+    const bool has = ble_link_get_turns(&s_turn_data);
+    if (has && (s_turn_data.run_no != s_turn_run || s_turn_data.n_turns != s_turn_count)) {
+        // A new shape: start again at turn 1.
+        s_turn_run = s_turn_data.run_no;
+        s_turn_count = s_turn_data.n_turns;
+        turn_group_show(0);
+    }
+    static turn_view_t v;   // About 800 B. Static, so it stays off the 4 KB task stack.
+    turn_view_build(&v, has ? &s_turn_data : NULL, s_turn_sel, s_turn_drawn, s_voice != LINK_VOICE_NO_LINK,
+                    TURN_PAGE_BOX_W, TURN_PAGE_BOX_H, TURN_PAGE_MARGIN);
+    const bool finished = s_turn_view.drawing && !v.drawing && v.n_path;
+    if (v.drawing && !s_turn_view.drawing) s_turn_tick = xTaskGetTickCount() + pdMS_TO_TICKS(TURN_POINT_MS);
+    const bool changed = memcmp(&v, &s_turn_view, sizeof v) != 0;
+    if (!force && !changed && !replay) return;
+    const bool new_turn = strcmp(v.counter, s_turn_view.counter) != 0;
+    s_turn_view = v;
+    if (force || changed) {
+        turn_page_apply(&s_turns, &v);
+        // While a group draws, log only when the head reaches another turn.
+        if (!v.drawing || new_turn || force) {
+            ESP_LOGI("screen", "turns = \"%s\" %s %s \"%s\" %s %s keys [%s|%s|%s] [%s] page %u/%u", v.title, v.counter,
+                     v.side, v.metrics, v.source, v.msg, v.key_up, v.key_ok, v.key_down, v.key_hold,
+                     has ? s_turn_sel / BP_GROUP_TURNS + 1u : 0u, has ? s_turn_data.n_groups : 0u);
+        }
+    }
+    if (!v.drawing && (finished || replay || force || changed)) turn_page_replay(&s_turns);
+}
+
+// One more point of the group that draws. The Coach task calls it each TURN_POINT_MS.
+static void turn_draw_step(void) {
+    if (s_shown != COACH_SCREEN_TURNS || !s_turn_view.drawing) return;
+    s_turn_tick += pdMS_TO_TICKS(TURN_POINT_MS);
+    if (s_turn_drawn < TURN_VIEW_DRAWN_ALL - 1) s_turn_drawn++;
+    if (lvgl_lock()) {
+        refresh_turns(false, false);
+        lvgl_unlock();
+    }
+}
+
 // Copy the ski data texts into the screen that is on now. force: the screen is new.
 // The caller holds the LVGL lock.
 static void refresh_data(bool force) {
+    if (s_shown == COACH_SCREEN_TURNS) {
+        refresh_turns(force, false);
+        return;
+    }
     if (s_shown != COACH_SCREEN_SKI && s_shown != COACH_SCREEN_REPORT) return;
     bp_live_stats_t live;
     link_report_t report;
@@ -208,6 +276,7 @@ static void show_screen(coach_screen_id_t id) {
     case COACH_SCREEN_COACH: coach_teardown(&s_coach); break;
     case COACH_SCREEN_SKI: coach_screen_ski_destroy(&s_ski); break;
     case COACH_SCREEN_REPORT: coach_screen_report_destroy(&s_report); break;
+    case COACH_SCREEN_TURNS: coach_screen_turns_destroy(&s_turns); break;
     default: break;
     }
     switch (id) {
@@ -224,6 +293,12 @@ static void show_screen(coach_screen_id_t id) {
         coach_screen_report_build(&s_report);
         lv_screen_load(s_report.screen);
         break;
+    case COACH_SCREEN_TURNS:
+        coach_screen_turns_build(&s_turns);
+        lv_screen_load(s_turns.screen);
+        memset(&s_turn_view, 0, sizeof s_turn_view);
+        turn_group_show(0);
+        break;
     default:
         break;
     }
@@ -235,6 +310,30 @@ static void run_action(coach_action_t a) {
     if (coach_ui_apply(a)) return;
     switch (a) {
     case COACH_ACTION_AUDIO_CAPTURE_START: s_start_capture = true; break;
+    case COACH_ACTION_TURN_NEXT:
+    case COACH_ACTION_TURN_PREV:
+    case COACH_ACTION_TURN_PAGE: {
+        // D-30. Inside the Turns page: a short OK goes one turn on, an UP hold one turn back,
+        // and a DOWN hold one page of 8 turns on. While the first page draws, OK only ends the drawing.
+        const bool drawing = s_turn_view.drawing;
+        s_turn_drawn = TURN_VIEW_DRAWN_ALL;
+        const bool has = ble_link_get_turns(&s_turn_data);
+        const uint8_t n = has ? s_turn_data.n_turns : 0;
+        uint8_t sel = s_turn_sel;
+        if (a == COACH_ACTION_TURN_NEXT && !drawing && n) sel = (uint8_t)((sel + 1u) % n);
+        else if (a == COACH_ACTION_TURN_PREV && sel > 0) sel--;
+        else if (a == COACH_ACTION_TURN_PAGE && !drawing && n > BP_GROUP_TURNS) {
+            sel = (uint8_t)((sel / BP_GROUP_TURNS + 1u) * BP_GROUP_TURNS);
+            if (sel >= n) sel = 0;
+        }
+        if (sel / BP_GROUP_TURNS != s_turn_sel / BP_GROUP_TURNS) ble_link_turns_focus(sel / BP_GROUP_TURNS);
+        s_turn_sel = sel;
+        if (s_shown == COACH_SCREEN_TURNS && lvgl_lock()) {
+            refresh_turns(false, true);   // A replay of the turn.
+            lvgl_unlock();
+        }
+        break;
+    }
     case COACH_ACTION_AUDIO_CAPTURE_STOP: voice_capture_stop(); break;
     case COACH_ACTION_AUDIO_PLAY_START: voice_play_enable(); break;
     case COACH_ACTION_AUDIO_PLAY_STOP: voice_play_stop(); break;
@@ -252,10 +351,11 @@ static void run_action(coach_action_t a) {
 // Doc 07 field values for CONTEXT and DEVICE_STATUS.
 static void send_context(coach_state_t st) {
     // D-29 has no Ski or Rest mode. The mode field tells the phone whether the Coach page is on.
-    const bool coach = st != COACH_STATE_LIVE && st != COACH_STATE_REPORT;
+    const bool coach = st != COACH_STATE_LIVE && st != COACH_STATE_REPORT && st != COACH_STATE_TURNS;
     const uint8_t mode = coach ? BP_MODE_REST : BP_MODE_SKI;
     const uint8_t page = st == COACH_STATE_LIVE   ? BP_PAGE_SKI
                        : st == COACH_STATE_REPORT ? BP_PAGE_REPORT
+                       : st == COACH_STATE_TURNS  ? BP_PAGE_TURNS
                                                   : BP_PAGE_COACH;
     ble_link_set_context(mode, page);
 }
@@ -350,7 +450,16 @@ static void coach_task(void *arg) {
     (void)arg;
     msg_t m;
     for (;;) {
-        if (xQueueReceive(s_queue, &m, portMAX_DELAY) != pdTRUE) continue;
+        // While a group of the Turns page draws, wake up for its next point.
+        TickType_t wait = portMAX_DELAY;
+        if (s_shown == COACH_SCREEN_TURNS && s_turn_view.drawing) {
+            const TickType_t now = xTaskGetTickCount();
+            wait = (TickType_t)(s_turn_tick - now) <= pdMS_TO_TICKS(TURN_POINT_MS) ? (TickType_t)(s_turn_tick - now) : 0;
+        }
+        if (xQueueReceive(s_queue, &m, wait) != pdTRUE) {
+            turn_draw_step();
+            continue;
+        }
         switch (m.kind) {
         case MSG_EVENT: handle(m.event); break;
         case MSG_LINK: on_link_msg(m.voice); break;
@@ -366,6 +475,10 @@ static void coach_task(void *arg) {
             if (coach_input_map(&s_input, (coach_key_t)m.btn, (coach_key_ev_t)m.ev, &event)) handle(event);
             break;
         }
+        }
+        // Many messages in a row must not stop the drawing.
+        if (s_shown == COACH_SCREEN_TURNS && s_turn_view.drawing && (int32_t)(xTaskGetTickCount() - s_turn_tick) >= 0) {
+            turn_draw_step();
         }
     }
 }
@@ -404,6 +517,7 @@ static void link_data(void) {
 }
 static void link_live_stats(const bp_live_stats_t *s) { (void)s; link_data(); }
 static void link_run_report(const link_report_t *r) { (void)r; link_data(); }
+static void link_turn_shape(const link_turns_t *t) { (void)t; link_data(); }
 // D-28: the phone opens the Report page. The flow accepts it in LIVE and READY only.
 static void link_show_page(uint8_t page) {
     if (page == BP_PAGE_REPORT) post_event(COACH_EVENT_SHOW_REPORT);
@@ -453,6 +567,7 @@ esp_err_t coach_app_start(void) {
         .voice_changed = link_voice_changed, .agent_state = link_agent_state,
         .play_start = link_play_start, .audio_down = link_audio_down, .play_end = link_play_end,
         .live_stats = link_live_stats, .run_report = link_run_report, .show_page = link_show_page,
+        .turn_shape = link_turn_shape,
     };
     esp_err_t le = ble_link_start(&app);
     if (le != ESP_OK) ESP_LOGE(TAG, "BLE link start failed: %s", esp_err_to_name(le));
