@@ -209,7 +209,7 @@ void coach_screen_ski_build(coach_screen_ski_t *out) {
     lv_obj_set_style_text_color(out->k_drop, ui_color_muted(), 0);
     out->drop = lv_label_create(out->screen);
     lv_obj_set_width(out->drop, 62);
-    lv_obj_set_pos(out->drop, 60, 180);
+    lv_obj_set_pos(out->drop, 60, 184);
     lv_label_set_text(out->drop, "--");
     lv_obj_set_style_text_font(out->drop, &lv_font_heygo_display_20, 0);
     lv_obj_set_style_text_color(out->drop, ui_color_ink(), 0);
@@ -221,7 +221,7 @@ void coach_screen_ski_build(coach_screen_ski_t *out) {
     lv_obj_set_style_text_color(out->k_dist, ui_color_muted(), 0);
     out->dist = lv_label_create(out->screen);
     lv_obj_set_width(out->dist, 62);
-    lv_obj_set_pos(out->dist, 164, 180);
+    lv_obj_set_pos(out->dist, 164, 184);
     lv_label_set_text(out->dist, "--");
     lv_obj_set_style_text_font(out->dist, &lv_font_heygo_display_20, 0);
     lv_obj_set_style_text_color(out->dist, ui_color_ink(), 0);
@@ -233,7 +233,7 @@ void coach_screen_ski_build(coach_screen_ski_t *out) {
     lv_obj_set_style_text_color(out->k_turns, ui_color_muted(), 0);
     out->turns = lv_label_create(out->screen);
     lv_obj_set_width(out->turns, 62);
-    lv_obj_set_pos(out->turns, 60, 218);
+    lv_obj_set_pos(out->turns, 60, 222);
     lv_label_set_text(out->turns, "--");
     lv_obj_set_style_text_font(out->turns, &lv_font_heygo_display_20, 0);
     lv_obj_set_style_text_color(out->turns, ui_color_ink(), 0);
@@ -245,7 +245,7 @@ void coach_screen_ski_build(coach_screen_ski_t *out) {
     lv_obj_set_style_text_color(out->k_time, ui_color_muted(), 0);
     out->time = lv_label_create(out->screen);
     lv_obj_set_width(out->time, 62);
-    lv_obj_set_pos(out->time, 164, 218);
+    lv_obj_set_pos(out->time, 164, 222);
     lv_label_set_text(out->time, "--");
     lv_obj_set_style_text_font(out->time, &lv_font_heygo_display_20, 0);
     lv_obj_set_style_text_color(out->time, ui_color_ink(), 0);

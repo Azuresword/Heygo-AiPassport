@@ -128,14 +128,18 @@ The positions come from `flows/coach.flow.json`, and the host screen check passe
 | Widget | Position | Font | Content |
 |---|---|---|---|
 | `dest` | `x=14, y=36` | 34 px brand font | "LIVE RUN". After the run ends, "RUN ENDED". After the report arrives, "REPORT" |
-| `run` | `x=14, y=80` | 20 px brand font | "RUN 4  02:31". After the report arrives, "RUN 4  1.9 km" |
-| `speed` | `x=14..110, y=105`, right-aligned | 48 px brand font | The speed. After the report arrives, the Heygo IQ |
-| `unit` | `x=116, y=129` | 20 px brand font | "KM/H". After the report arrives, "HEYGO IQ" |
-| `line1` | `x=14, y=176` | 16 px Chinese | "落差 312 m · 1.9 km". After the report arrives, the core problem |
-| `line2` | `x=14, y=200`, height 50 | 16 px Chinese, at most two lines | "24 弯", plus an out-of-date mark or a "report on the way" mark. After the report arrives, the tip |
+| `sub` | `x=14, y=80` | 16 px Chinese | "第 4 趟 · 滑行中", or the stopped, out-of-date, report-on-the-way, or run-report text. With no data, "等待手机数据" |
+| `big` | `x=14..110, y=104`, right-aligned | 48 px brand font | The speed. After the report arrives, the Heygo IQ |
+| `unit` | `x=116, y=128` | 20 px brand font | "KM/H". After the report arrives, "HEYGO IQ" |
+| `body_panel` | `x=10..230, y=168..262` | None | The background of the data panel |
+| `k_drop` + `drop` | `x=22` and `x=60`, `y=182` | Name in 16 px Chinese, value in 20 px brand font | Vertical drop |
+| `k_dist` + `dist` | `x=126` and `x=164`, `y=182` | As above | Distance |
+| `k_turns` + `turns` | `x=22` and `x=60`, `y=220` | As above | Turn count |
+| `k_time` + `time` | `x=126` and `x=164`, `y=220` | As above | Run time |
+| `problem`, `tip` | `x=22`, `y=180` and `y=204` | 16 px Chinese | Hidden until the report arrives. Then they replace the four cells |
 
-- Before any data arrives, `line1` shows "等待手机数据" and `line2` shows "专注雪道，教练随时待命".
-- After 5 seconds with no new packet, the speed shows "--". After the run ends, the phone sends nothing, and the device marks nothing out of date.
+- Each value sits 2 pixels below its name, so that the two baselines align.
+- The Ski page has no state icon and no ridge line. With both, it had 23 widgets, the host render used all of the LVGL pool, and the drawing hung. Without them, the peak is 18,752 of 21,656 bytes (86%).
 - The 48-pixel font is Staatliches from brand version B. It holds all ASCII characters. It stays in Flash, with a bitmap of 26,115 bytes.
 - No color marks a fast or slow speed.
 

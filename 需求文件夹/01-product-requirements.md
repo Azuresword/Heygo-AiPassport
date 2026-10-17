@@ -174,18 +174,20 @@ A canceled answer never resumes.
 
 ### Ski page
 
-D-21 puts live data on the Ski page. During a run, the eyes belong on the slope. So the page shows five numbers, and the speed is the largest.
+D-21 puts live data on the Ski page. During a run, the eyes belong on the slope. So the speed is the largest number, and each other number has a name.
 
 | Area | Content | Example |
 | --- | --- | --- |
-| Title | The run number for today and the run time | Run 4 · 02:31 |
-| Main number | The current speed | 38 km/h |
-| Second line | The vertical drop, the distance, and the turn count | Drop 312 m · 1.8 km · 24 turns |
+| Title | The page state | LIVE RUN |
+| Status line | The run number for today and the run state | 第 4 趟 · 滑行中 |
+| Main number | The current speed | 38 KM/H |
+| Data panel | Four cells, each with a name and a value | 落差 312 m, 距离 1.9 km, 转弯 24, 时间 02:31 |
 | Button hint | No change | Hold OK to rest |
 
 - After the phone detects the start of a run, it sends one packet each second. The device updates the screen for each packet.
-- After 5 seconds with no new packet, the speed shows "--". The other numbers stay, with an out-of-date mark.
-- Before any data arrives, the body shows "Waiting for phone data".
+- The status line shows "skiing" or "stopped". After 5 seconds with no new packet, it shows "data out of date", the speed shows "--", and the panel keeps its numbers.
+- Before any data arrives, the status line shows "waiting for phone data", and each number shows "--".
+- After a run ends, the status line shows "report on the way". When the report arrives, the main number changes to the Heygo IQ, and the panel shows the core problem and the tip.
 - The speed shows as a number only. No color, animation, or sound marks a high speed.
 - If the phone has no speed, it sends the unknown value, and the screen shows "--".
 
