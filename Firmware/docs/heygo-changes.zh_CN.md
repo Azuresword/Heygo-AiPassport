@@ -278,7 +278,7 @@ D-29 去掉滑行模式、休息模式和退出确认，改为三个平级页面
 | `main/coach_app.c` | 打开时画出第一页，每 40 ms 一个点。OK 和两个长按逐弯移动光标。CONTEXT 在弯型页时发送模式 0、页面 5。 |
 | `../assets/fonts/heygo_display_*.c` | 三个品牌字体加入立刃角用的"°"字形。 |
 | `tools/phone_sim/`、`tools/flow/flow_sim.*` | 两者都在每份报告之后发送示例弯型，并回复每个 TURN_REQUEST。`--turns N` 和模拟器的弯数输入框可模拟弯很多的一趟。第 3 趟发送示意弯型。 |
-| `tools/host_render/` | 新增 `shape` 命令，以及 16 至 21 号界面图。 |
+| `tools/host_render/` | 新增 `shape` 命令，以及 16 至 21 号界面图。`turns_gif.py` 生成动画 `../assets/sim/turns-demo.gif`。 |
 
 弯型页占用 LVGL 内存池 16,824 字节。页面和数据约占 4.0 KB 静态内存。
 

@@ -278,7 +278,7 @@ The top left of each page shows the page name in Chinese: live data, run report,
 | `main/coach_app.c` | It draws the first page, one point each 40 ms. OK and the holds move a cursor from turn to turn. On the Turns page, CONTEXT sends mode 0 and page 5. |
 | `../assets/fonts/heygo_display_*.c` | The three brand fonts add the "°" glyph for the edge angle. |
 | `tools/phone_sim/`, `tools/flow/flow_sim.*` | Both send a demo shape after each report, and answer each TURN_REQUEST. `--turns N` and the simulator field set a long run. Run 3 sends a schematic shape. |
-| `tools/host_render/` | Add the `shape` command and screen images 16 to 21. |
+| `tools/host_render/` | Add the `shape` command and screen images 16 to 21. `turns_gif.py` makes the animation `../assets/sim/turns-demo.gif`. |
 
 The Turns page uses 16,824 bytes of the LVGL pool. The page and the data use about 4.0 KB of static RAM.
 

@@ -22,6 +22,7 @@
 | `tools/gen_sprite.py` | 生成小精灵图。 |
 | `mockups/` | 主机界面检查生成的屏幕图片。`compare-A-B.png` 是两个设计方案的对比，目前采用 B 版。 |
 | `sim/coach-flow.html` | Coach 流程的交互模拟器。 |
+| `sim/turns-demo.gif` | 弯型页动画。由 `Firmware/tools/host_render/turns_gif.py` 用设备的绘制代码生成。 |
 
 ## 字体
 
