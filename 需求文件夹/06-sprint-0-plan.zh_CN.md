@@ -146,4 +146,5 @@ Unverified: 真实的手机应用、全部设备行为、全部现场条件
 - [Scrum 待办列表](03-scrum-backlog.zh_CN.md)。
 - [决策修订](05-decision-amendments.zh_CN.md)。
 - [蓝牙协议草案](07-ble-protocol-draft.zh_CN.md)。
+- [4 小时 Sprint 路线图](08-sprint-roadmap.zh_CN.md)。
 - [文档入口](README.zh_CN.md)。

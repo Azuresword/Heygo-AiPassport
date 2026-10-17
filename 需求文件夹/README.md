@@ -2,9 +2,9 @@
 
 # HeygoAI and AI Passport: requirements workspace
 
-Version: 0.7. Date: 2026-10-17. Status: Draft for review.
+Version: 0.8. Date: 2026-10-17. Status: Draft for review.
 This folder holds the product definition, the architecture, and the Scrum backlog.
-It also holds the validation plan, the decision record, the Sprint 0 plan, and the BLE protocol draft.
+It also holds the validation plan, the decision record, the Sprint 0 plan, the BLE protocol draft, and the four-hour Sprint roadmap.
 The firmware code is in the `Firmware` folder of the repository, not in this folder.
 No evidence shows a working HeygoAI integration.
 
@@ -12,25 +12,29 @@ No evidence shows a working HeygoAI integration.
 
 | Document | Purpose |
 | --- | --- |
-| [Product requirements](01-product-requirements.md) | Goal, priorities, 20 requirements, and acceptance targets. |
-| [System architecture](02-architecture.md) | Components, modes, buttons, the Coach audio flow, and device limits. |
+| [Product requirements](01-product-requirements.md) | Goal, priorities, 21 requirements, and acceptance targets. |
+| [System architecture](02-architecture.md) | Components, modes, buttons, page layouts, the Coach audio flow, and device limits. |
 | [Scrum backlog](03-scrum-backlog.md) | User stories, priorities, Sprint order, and the Definition of Done. |
 | [Validation and decisions](04-validation-and-decisions.md) | Test cases, open questions, the decision log, and risks. |
-| [Decision amendments](05-decision-amendments.md) | The reasons behind D-08 to D-20. |
+| [Decision amendments](05-decision-amendments.md) | The reasons behind D-08 to D-27. |
 | [Sprint 0 plan](06-sprint-0-plan.md) | Four hours of host-only work for the first Coach question. Done. |
-| [BLE protocol draft](07-ble-protocol-draft.md) | The device side of the BLE link. |
+| [BLE protocol draft](07-ble-protocol-draft.md) | The device side of the BLE link, with the live data message. |
+| [Four-hour Sprint roadmap](08-sprint-roadmap.md) | The goal, tasks, inputs, and cut line of Sprints 0 to 10. |
 
 ## First version
 
-The skier stops for a rest break.
-The skier holds OK and asks the AI coach a question.
-The skier hears the answer.
-The phone stays in a pocket. The skier keeps the gloves on.
+Two increments form the first version:
 
-D-17 and D-18 set the priorities:
+- **Increment 1, the Coach voice chain.** The skier stops for a rest break, holds OK, asks the AI coach a question, and hears the answer.
+- **Increment 2, live data and reports.** During a run, the Ski page shows the speed, vertical drop, distance, turn count, and run time. After each run, the device shows the report of that run: distance, turn count, Heygo IQ, the core problem, and a short tip.
 
-- **P0, the first version:** device connection, the voice question, the spoken answer, and the Agent exchange. P0 also covers the modes, gloves and Chinese text, and recovery.
-- **P1, the next increment:** reports, metric charts, the offline report cache, and human intercom.
+The phone stays in a pocket. The skier keeps the gloves on. The phone calculates all data. The device only shows it.
+
+D-17, D-18, and D-22 set the priorities:
+
+- **P0, Increment 1:** device connection, the voice question, the spoken answer, and the Agent exchange. P0 also covers the modes, gloves and Chinese text, and recovery.
+- **P1, Increment 2:** data sync, live data on the Ski page, and the Report page.
+- **P1, after Increment 2:** metric charts, the offline report cache, and human intercom.
 - **P2, later candidates:** practice goals, quests, a reflection journal, session comparison, and report sharing.
 - **Deferred:** turn visualization, privacy and authorization, and power management.
 
@@ -39,7 +43,7 @@ D-17 and D-18 set the priorities:
 Sprint 0 ended. The Sprint 1 device code is in the repository. Device tests are NOT RUN. The team closed no story.
 Section 4.1 of the [backlog](03-scrum-backlog.md) gives the progress of each story.
 
-The user accepted D-08 to D-15 and D-17 to D-20. D-16 waits for the phone application team.
+The user accepted D-08 to D-15, D-17 to D-23, and D-26. D-16 waits for the phone application team. D-24, D-25, and D-27 wait for the user.
 A phone application already exists. Another team develops it.
 No person accepted a Scrum role or a delivery date.
 
@@ -90,7 +94,7 @@ python3 "${STE_SKILL}/scripts/ste-lint.py" \
   README.md 01-product-requirements.md 02-architecture.md \
   03-scrum-backlog.md 04-validation-and-decisions.md \
   05-decision-amendments.md 06-sprint-0-plan.md \
-  07-ble-protocol-draft.md
+  07-ble-protocol-draft.md 08-sprint-roadmap.md
 ```
 
 Run the command inside this folder. Set `STE_SKILL` when the skill sits elsewhere.

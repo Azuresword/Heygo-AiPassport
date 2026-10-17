@@ -2,14 +2,19 @@
 
 # Scrum backlog and delivery plan
 
-Version: 0.7. Date: 2026-10-17. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. The team closed no story.
+Version: 0.8. Date: 2026-10-17. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. Increment 2 is in the backlog. The team closed no story.
 
-Related documents: [Requirements](01-product-requirements.md), [Architecture](02-architecture.md), [Validation and decisions](04-validation-and-decisions.md), [Decision amendments](05-decision-amendments.md), [Sprint 0 plan](06-sprint-0-plan.md), and [BLE protocol draft](07-ble-protocol-draft.md).
+Related documents: [Requirements](01-product-requirements.md), [Architecture](02-architecture.md), [Validation and decisions](04-validation-and-decisions.md), [Decision amendments](05-decision-amendments.md), [Sprint 0 plan](06-sprint-0-plan.md), [BLE protocol draft](07-ble-protocol-draft.md), and [Four-hour Sprint roadmap](08-sprint-roadmap.md).
 
 ## 1. Product Goal
 
-During a rest break, the skier asks the AI coach a question by voice and hears the answer.
+The skier reads live data on the device during a run. During a rest break, the skier asks the AI coach a question by voice and hears the answer.
 The skier keeps the phone in a pocket and the gloves on.
+
+Two increments move toward this goal:
+
+- **Increment 1, the Coach voice chain.** P0 stories US-01, US-06, US-07, US-08, US-15, US-17, and US-20.
+- **Increment 2, live data and reports.** P1 stories US-02, US-21, and US-03. D-22 lets the team develop it in parallel with the device acceptance of Increment 1.
 
 ## 2. Planning assumptions
 
@@ -19,7 +24,7 @@ The skier keeps the phone in a pocket and the gloves on.
 | People | One firmware Developer. The phone application team works in parallel. | Check capacity before each Sprint. |
 | Hardware | One AI Passport and one phone. | The board is not at hand. Sprint 0 therefore runs on the host only. |
 | Connection | D-08 selects a BLE phone bridge. | Test link stability and phone background behavior. |
-| Phone application | It exists. Another team develops it. | That team reviews doc 07. |
+| Phone application | It exists. Another team develops it. Per D-23, the device team defines the Increment 2 fields, and the phone application team adapts to them. | That team reviews doc 07 and checks that it can calculate each field (Q-16). |
 | HeygoAI | Interfaces and coaching tools remain unknown. | The phone application team gets access. |
 
 Story points compare uncertainty and effort. They do not represent hours.
@@ -37,17 +42,18 @@ The user made every scope decision so far, including D-17.
 
 ## 4. Product Backlog
 
-| Story | Requirement | Priority | Points | Owner | First target |
+| Story | Requirement | Priority | Points | Owner | Sprint |
 |---|---|---|---|---|---|
-| US-01 Device connection | REQ-01 | P0 | Re-estimate | Firmware and phone | Sprint 1 |
-| US-06 Voice capture | REQ-06 | P0 | 5–8 | Firmware | Sprint 0 logic, Sprint 1 hardware |
-| US-07 Speech playback | REQ-07 | P0 | 3–5 | Firmware | Sprint 0 logic, Sprint 1 hardware |
-| US-08 Button Agent exchange | REQ-08 | P0 | Re-estimate | Phone and firmware | Sprint 1 |
-| US-15 Gloves and Chinese text | REQ-15 | P0 | Re-estimate | Firmware | Sprint 1 |
-| US-17 Explicit modes | REQ-17 | P0 | Re-estimate | Firmware | Sprint 0 logic, Sprint 1 hardware |
-| US-20 Recovery | REQ-20 | P0 | Re-estimate | Firmware and phone | Sprint 1 |
-| US-02 Report sync | REQ-02 | P1 | 5–8 | Phone | Later |
-| US-03 Report cards | REQ-03 | P1 | 3–5 | Firmware | Later |
+| US-01 Device connection | REQ-01 | P0 | Re-estimate | Firmware and phone | Sprint 1 code, Sprint 6 acceptance |
+| US-06 Voice capture | REQ-06 | P0 | 5–8 | Firmware | Sprints 0–1 code, Sprint 6 acceptance |
+| US-07 Speech playback | REQ-07 | P0 | 3–5 | Firmware | Sprints 0–1 code, Sprint 6 acceptance |
+| US-08 Button Agent exchange | REQ-08 | P0 | Re-estimate | Phone and firmware | Sprint 1 code, Sprint 8 acceptance |
+| US-15 Gloves and Chinese text | REQ-15 | P0 | Re-estimate | Firmware | Sprint 1 code, Sprint 9 acceptance |
+| US-17 Explicit modes | REQ-17 | P0 | Re-estimate | Firmware | Sprint 0 code, Sprint 5 acceptance |
+| US-20 Recovery | REQ-20 | P0 | Re-estimate | Firmware and phone | Sprint 1 code, Sprint 6 acceptance |
+| US-02 Data sync | REQ-02 | P1, Increment 2 | 3–5 | Phone and firmware | Sprint 2 code, Sprint 7 acceptance |
+| US-21 Live data on the Ski page | REQ-21 | P1, Increment 2 | 5–8 | Firmware and design | Sprint 3 code, Sprints 7 and 9 acceptance |
+| US-03 Run report | REQ-03 | P1, Increment 2 | 3–5 | Firmware and design | Sprint 4 code, Sprint 7 acceptance |
 | US-04 Metric charts | REQ-04 | P1 | 3–5 | Firmware | Later |
 | US-09 Human push-to-talk | REQ-09 | P1 | 8–13 | Phone and firmware | Later |
 | US-13 Cached reports | REQ-13 | P1 | 5–8 | Firmware | Later |
@@ -64,9 +70,9 @@ The user made every scope decision so far, including D-17.
 
 ### 4.1 P0 progress
 
-This table applies to commit `11b10cc`, dated 2026-10-17.
+This table applies to commit `11b10cc`, dated 2026-10-17. No Increment 2 story has code yet.
 "Device code" means that the code is in the repository. It does not mean that the story meets the Definition of Done.
-Per section 8, each story needs device tests. Some stories also need the real phone application.
+Per section 9, each story needs device tests. Some stories also need the real phone application.
 
 | Story | Device code | Host evidence | Acceptance test | Still needed to close |
 |---|---|---|---|---|
@@ -80,7 +86,7 @@ Per section 8, each story needs device tests. Some stories also need the real ph
 
 The simulator and `phone_sim` show protocol behavior only. They cannot satisfy a device test.
 
-Known gaps, from section 8 of the [firmware change notes](../Firmware/docs/heygo-changes.md):
+Known gaps, from section 9 of the [firmware change notes](../Firmware/docs/heygo-changes.md):
 
 - During capture, wait, or playback, the device ignores a long DOWN press. D-19 accepts this behavior. The code needs no change.
 - A PLAY_START that arrives during capture is lost. The device then shows a timeout. D-20 forbids the phone to send it at that time. The code needs no change. The phone application team must still accept this rule.
@@ -158,25 +164,68 @@ As a skier, I want a clear message when the link fails, so that I know what to d
 - Acceptance: A reconnect creates no duplicate question and plays no stale answer.
 - Verification: TC-20.
 
-## 6. P1, P2, and Deferred stories
+## 6. Increment 2 stories
+
+The phone calculates all Increment 2 data. The device receives it, keeps the last packet, and shows it.
+Section 6 of the [BLE protocol draft](07-ble-protocol-draft.md) gives the fields and the packet format.
+
+### US-02: data sync
+
+As a skier, I want the numbers on the device to match the numbers on the phone, so that I can trust them.
+
+- Acceptance: after a LIVE_STATS packet arrives, the device always shows the latest packet.
+- Acceptance: a field with an unknown value from the phone shows "--", never 0.
+- Acceptance: if a payload is too short, the device sends ERROR code 2 and keeps the old packet on the screen.
+- Acceptance: during a run, after 5 seconds with no new packet, the speed shows "--" with an out-of-date mark. 60 seconds after a report arrives, the Report page shows its receive time.
+- Dependency: the phone application supports protocol 0.2 and accepts the LIVE_STATS and RUN_REPORT fields (Q-16).
+- Verification: TC-02.
+
+### US-21: live data on the Ski page
+
+As a skier, I want to read my speed and this run at a glance. Then I need not take out the phone.
+
+- Acceptance: during a run, the Ski page shows the speed, vertical drop, distance, turn count, run time, and run number. The phone sends one packet each second.
+- Acceptance: the speed is the largest number on the page.
+- Acceptance: after a run ends, the Ski page shows the Heygo IQ, the core problem, and the tip of that run. They stay until the next run starts (D-27, proposed).
+- Acceptance: before any data arrives, the page shows "Waiting for phone data".
+- Acceptance: no color, animation, or sound marks a high speed.
+- Dependency: US-02.
+- Verification: TC-21.
+
+### US-03: run report
+
+As a skier, I want the problem of each run and one tip after the run. Then I know what to change on the next run.
+
+- Acceptance: on the idle Coach page, a short DOWN press opens the Report page. A short UP press returns to the Coach page.
+- Acceptance: the Report page shows the distance, turn count, Heygo IQ, core problem, and tip of the last run.
+- Acceptance: the core problem holds at most 12 Chinese characters, and the tip at most 20. Both show in full, with no cut.
+- Acceptance: before the first report arrives, the Report page shows "The report shows after a run".
+- Acceptance: after a link loss, the Report page keeps the last report and shows its receive time.
+- Acceptance: while audio runs, a short press changes no page.
+- Dependency: US-02 and US-17.
+- Verification: TC-03.
+
+## 7. Other P1 stories, P2 stories, and Deferred stories
 
 These stories keep their numbers. Their full text returns when a story enters a Sprint.
 Commit `970bb8e` holds the version 0.3 text.
 
-## 7. Sprint order
+## 8. Sprint order
 
-| Sprint | Goal | Scope | Evidence | Status |
-|---|---|---|---|---|
-| 0 | Build the device logic for one Coach question. | The [Sprint 0 plan](06-sprint-0-plan.md). Host only. Four hours. | Host tests and a firmware build. | Done, commit `a917aaa`. |
-| 1 | Ask one real question on hardware. | The P0 stories with the board and the phone application. | Device tests for every P0 TC. | In progress. Code committed (`941f4e7`, `11b10cc`). Device tests NOT RUN. |
-| 2 and later | Add P1 items. | Reports first, then intercom. | The P1 tests. | Not started. |
+Each Sprint lasts four hours. The [Four-hour Sprint roadmap](08-sprint-roadmap.md) gives the goal, the tasks, the inputs, and the cut line of each Sprint.
 
-The Sprint 1 code does not need the board or the phone application, so it came first.
-Sprint 1 device acceptance needs two inputs: the board at hand, and a phone application build that follows doc 07.
+| Sprint | Sprint Goal | Status |
+|---|---|---|
+| 0 | Build the device logic for one Coach question. | Done, commit `a917aaa`. |
+| 1 | Connect voice and the BLE link. | Code done, commits `941f4e7` and `11b10cc`. The planned hardware acceptance moves to Sprints 5 to 8. |
+| 2 to 4 | Increment 2: data layer, Ski page, Report page. Host only. | Not started. |
+| 5 | Board smoke test, with `phone_sim` as the phone. | Not started. Needs the board. |
+| 6 to 9 | Accept both increments with the real phone application, the real service, and test users. | Not started. Needs a phone application with protocol 0.2. |
+| 10 | Fix defects, and review both increments. | Not started. |
 
-## 8. Definition of Done
+## 9. Definition of Done
 
-Each selected P0 slice meets every applicable check:
+Each selected slice of Increment 1 or Increment 2 meets every applicable check:
 
 - The user completes the action on a physical AI Passport.
 - The path uses the real phone application where the slice needs it.
@@ -190,7 +239,7 @@ Each selected P0 slice meets every applicable check:
 Report Build, Host tests, Device tests, and unverified items separately.
 A simulator or a stub cannot satisfy a device test or a real-service test.
 
-## 9. Changes
+## 10. Changes
 
 1. Record the feedback and the affected requirement.
 2. The Product Owner orders the backlog again.

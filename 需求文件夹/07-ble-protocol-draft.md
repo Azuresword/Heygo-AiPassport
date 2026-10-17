@@ -2,7 +2,7 @@
 
 # BLE Protocol Draft
 
-Version: 0.5. Date: 2026-10-17. Status: draft from the device team. The phone application team must review it.
+Version: 0.6. Date: 2026-10-17. Status: draft from the device team. The phone application team must review it.
 
 ## 1. Purpose and scope
 
@@ -25,10 +25,13 @@ Section 13 lists the six rules.
 Version 0.5 adds a seventh rule from D-20: the phone starts an answer only after AGENT_END. The protocol version stays 0.1.
 Section 14 gives this rule.
 
+Version 0.6 adds the two Increment 2 ski data messages LIVE_STATS and RUN_REPORT, from D-23, D-24, and D-26. The protocol version becomes 0.2.
+Section 15 lists these changes.
+
 The draft follows three rules:
 
 1. The device does no work beyond its own capability.
-2. Each packet fits in one ATT packet. The device reassembles nothing except one report page.
+2. Each packet fits in one ATT packet. The device reassembles nothing.
 3. The phone makes every decision about the gateway, the room, and retries.
 
 ## 2. Roles and connection
@@ -74,7 +77,7 @@ The device disables voice features in these cases:
 - No HELLO_ACK arrives within 2 seconds.
 - The phone reports an unsupported major version.
 
-The link stays up in these cases. P1 reports still work, because report pages use fragments.
+The link stays up in these cases. Below an MTU of 172, the ski data still works: LIVE_STATS needs an MTU of 19, and RUN_REPORT needs 110. With an unsupported version, the device also ignores both messages.
 The device shows a short message that names the cause.
 
 ### Link settings
@@ -103,7 +106,7 @@ A packet never spans two ATT packets. Two packets never share one ATT packet.
 | Offset | Size | Field | Meaning |
 | --- | --- | --- | --- |
 | 0 | 1 | `type` | Message type. Section 6 lists the values. |
-| 1 | 1 | `flags` | Bit 0 marks the last fragment. The other bits stay zero. |
+| 1 | 1 | `flags` | Bit 0 belongs to fragments. Protocol version 0.2 has no fragment message, so bit 0 is zero. The other bits stay zero. |
 | 2 | 1 | `xid` | Exchange ID. Zero means no exchange. |
 | 3 | 1 | `seq` | Sequence number inside the exchange. It wraps after 255. |
 | 4 | 0 to MTU − 7 | `payload` | Content for the type. |
@@ -136,13 +139,13 @@ Packets from an old connection cannot arrive on a new connection. The link there
 ### Sequence numbers
 
 - The first audio block of each stream has `seq` 0. Each next block adds one. After 255, `seq` wraps to 0.
-- The first fragment of each report page has `seq` 0.
 - Every other packet uses `seq` 0.
 
 ### Protocol version
 
-Document versions 0.3 and 0.4 define protocol version 0.1.
-HELLO and HELLO_ACK therefore carry major 0 and minor 1.
+Document versions 0.3 to 0.5 define protocol version 0.1. Document version 0.6 defines protocol version 0.2.
+HELLO and HELLO_ACK therefore carry major 0 and minor 2.
+Protocol version 0.2 is version 0.1 plus LIVE_STATS and RUN_REPORT.
 Earlier document versions had no implementation, so they carry no protocol number.
 
 While the major version is 0, the protocol is a draft, and incompatible changes stay allowed.
@@ -162,7 +165,7 @@ D means the device. P means the phone.
 | Field | Size | Values |
 | --- | --- | --- |
 | Mode | 1 byte | 0 Ski mode. 1 Rest mode. |
-| Page | 1 byte | 0 Ski status page. 1 Coach page. 2 Exit question. 3 Reports page, P1. 4 Team page, P1. |
+| Page | 1 byte | 0 Ski status page. 1 Coach page. 2 Exit question. 3 Report page, Increment 2. 4 Team page, P1. |
 | Codec | 1 byte | 0 IMA ADPCM. 1 Raw PCM. |
 | Codec mask | 1 byte | Bit 0 IMA ADPCM. Bit 1 raw PCM. Bit n matches codec value n. |
 | Sample rate | 1 byte | 16, in kHz. No other value is valid. |
@@ -204,7 +207,7 @@ The device needs the UTC time from the phone, because it has no other clock sour
 | 0x10 | CONTEXT | D to P | Mode (1), page (1) | On each change of mode or page |
 
 In P0 the phone attaches the current ski session to each Agent request.
-P1 adds report fields at the end of this payload.
+On the Report page, the page field of CONTEXT is 3.
 
 ### Agent
 
@@ -288,39 +291,64 @@ If either condition fails, the device sends TEAM_RELEASE with reason 3, and keep
 | 3 | Late grant |
 | 4 | Link problem |
 
-### Reports (P1)
+### Ski data (Increment 2)
 
-The first version does not build these messages.
+D-23 lets the device team define these fields. The phone application team calculates and sends them.
+Document version 0.6 replaces the JSON report messages of version 0.3 with LIVE_STATS and RUN_REPORT. Those messages were REPORT_REQUEST, REPORT_PAGE, and REPORT_ACK.
+No side built those three messages.
 
 | Type | Name | Direction | Payload | When |
 | --- | --- | --- | --- | --- |
-| 0x60 | REPORT_REQUEST | D to P | Page index (1), report ID (text, empty for the session list) | When the user opens a report or a page |
-| 0x61 | REPORT_PAGE | P to D | Fragment of one JSON page | In answer to REPORT_REQUEST, or when the phone pushes a new report |
-| 0x62 | REPORT_ACK | D to P | Result (1) | After the last fragment, or after a rejection |
+| 0x60 | LIVE_STATS | P to D | The 12 bytes in the next table | Once each second from the start of a run, until the run ends |
+| 0x61 | RUN_REPORT | P to D | 7 fixed bytes, then two texts | Once after each run |
 
-Each REPORT_PAGE transfer uses a new phone `xid`. `seq` holds the fragment index, from zero.
-The first fragment starts with the total length (2). JSON bytes follow.
-The last fragment sets bit 0 of `flags`.
+Both messages use `xid` 0 and `seq` 0. The device sends no acknowledgment.
 
-The device reassembles a page in one fixed buffer of 8,192 bytes.
-The device rejects the transfer in these cases:
+**LIVE_STATS payload**
 
-- The total length exceeds 8,192 bytes.
-- A fragment index skips a value.
-- The JSON does not parse.
-- The report revision is older than the cached revision.
+| Offset | Size | Field | Unit | Unknown value |
+| --- | --- | --- | --- | --- |
+| 0 | 1 | Run state: 0 unknown, 1 skiing, 2 stopped, 3 run ended | None | 0 |
+| 1 | 1 | Run number today, from 1 | Runs | 0xFF |
+| 2 | 2 | Current speed | 0.1 km/h | 0xFFFF |
+| 4 | 2 | Run vertical drop | Meters | 0xFFFF |
+| 6 | 2 | Run distance | Meters | 0xFFFF |
+| 8 | 2 | Run turn count | Turns | 0xFFFF |
+| 10 | 2 | Run time | Seconds | 0xFFFF |
 
-| REPORT_ACK result | Meaning |
-| --- | --- |
-| 0 | Accepted |
-| 1 | Too large |
-| 2 | Sequence gap |
-| 3 | Parse error |
-| 4 | Stale revision |
+The speed field waits for Q-17. If the phone has no speed, it sends the unknown value.
 
-A new transfer `xid` cancels an incomplete transfer. The phone can retry a rejected transfer once.
-The report page follows the JSON contract in architecture section 5.
-The session list uses this JSON form: `{"sessions":[{"id":"...","date":"...","title":"..."}]}`.
+**RUN_REPORT payload**
+
+| Offset | Size | Field | Unit | Unknown value |
+| --- | --- | --- | --- | --- |
+| 0 | 1 | Run number, as in LIVE_STATS | Runs | 0xFF |
+| 1 | 2 | Distance | Meters | 0xFFFF |
+| 3 | 2 | Turn count | Turns | 0xFFFF |
+| 5 | 1 | Heygo IQ, 0 to 100 | Points | 0xFF |
+| 6 | 1 | Byte count n of the core problem, at most 36 | Bytes | 0 for none |
+| 7 | n | Core problem, UTF-8, at most 12 Chinese characters | None | Empty |
+| 7 + n | The rest | Short tip, UTF-8, at most 20 Chinese characters or 60 bytes | None | Empty |
+
+One RUN_REPORT holds at most 107 bytes. It needs an MTU of 110 or more.
+
+The phone follows these rules:
+
+- A run starts when the phone detects skiing. It ends when the phone detects the end of the run. The phone application team sets the detection rules.
+- During a run, the phone sends one LIVE_STATS each second.
+- When a run ends, the phone sends one LIVE_STATS with run state 3. It then sends no LIVE_STATS until the next run starts.
+- After a run ends, the phone sends the RUN_REPORT of that run. The report can arrive later than the end packet.
+- When the phone cannot calculate a field, it sends the unknown value. The phone never sends 0 in place of an unknown value.
+
+The device follows these rules:
+
+- The device keeps only the last LIVE_STATS and the last RUN_REPORT. A new packet replaces the old packet completely.
+- The device shows an unknown value as "--".
+- The device treats an unknown run state value as 0. It sends no ERROR for it.
+- If a LIVE_STATS payload is shorter than 12 bytes, the device sends ERROR with code 2 and keeps the old packet.
+- For a RUN_REPORT, a text above its limit gets code 4. A length past the end gets code 2. An IQ above 100 or text that is not valid UTF-8 gets code 7. In all three cases, the device keeps the old report.
+- The device uses its own receive time to decide that data is out of date. It does not use the phone time.
+- After a link loss, the device keeps both kinds of data, and the screen still shows them.
 
 ## 7. Audio blocks
 
@@ -390,6 +418,10 @@ If no block and no PLAY_END arrive for 2 seconds, the device ends playback and f
 | HELLO_ACK after HELLO | At most 2 seconds | Phone |
 | Interval between PHONE_STATUS packets | At most 5 seconds | Phone |
 | Silence before the device shows that the phone application does not respond | 15 seconds | Device |
+| Interval between LIVE_STATS packets during a run | 1 second | Phone |
+| Silence before the device marks data out of date during a run | 5 seconds with no LIVE_STATS | Device |
+| Time before the report shows its receive time | 60 seconds after RUN_REPORT arrives | Device |
+| Screen update after a LIVE_STATS or RUN_REPORT packet arrives | At most 300 ms at the 95th percentile | Device |
 | P1: TEAM_GRANT or TEAM_DENY after TEAM_REQUEST | At most 1,500 ms. After that, the device treats the request as a timeout. | Device |
 | Before the answer starts: from AGENT_END to the first AGENT_STATE, and between two AGENT_STATE packets | At most 10 seconds. After that, the device shows a timeout and sends AGENT_CANCEL. | Device |
 | Capture stop after OK release or cancellation | At most 100 ms | Device |
@@ -450,13 +482,13 @@ sequenceDiagram
 
 ## 10. Device memory cost
 
-| Item | P0 bytes | With P1 reports |
+| Item | P0 bytes | With Increment 2 |
 | --- | --- | --- |
 | TX control queue, 4 packets of 172 bytes | 688 | 688 |
 | TX audio queue, 8 packets of 172 bytes | 1,376 | 1,376 |
 | Playback queue, 8 packets of 172 bytes | 1,376 | 1,376 |
-| Report page buffer | None | 8,192 |
-| Total | 3,440 | 11,632 |
+| The last LIVE_STATS and the last RUN_REPORT, with their receive times | None | 128 |
+| Total | 3,440 | 3,568 |
 
 The ADPCM codec state adds a few bytes for each direction.
 The NimBLE host and controller need extra memory. Measure them on hardware.
@@ -473,8 +505,8 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 8. Drop the input and the answer after AGENT_CANCEL.
 9. P1: Request the floor after TEAM_REQUEST, and answer within 1,500 ms.
 10. P1: Release the floor after TEAM_RELEASE.
-11. P1: Split each report page into fragments that fit the MTU.
-12. Send major 0 and minor 1 in HELLO_ACK.
+11. Increment 2: during a run, send one LIVE_STATS each second. When the run ends, send the end packet, and then the RUN_REPORT of that run.
+12. Send major 0 and minor 2 in HELLO_ACK.
 13. Fill the last downlink block with silence to the full block size.
 14. Before the answer starts, send an AGENT_STATE at least every 10 seconds.
 
@@ -483,7 +515,8 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 - The phone application team accepts or replaces this draft. Q-13 tracks this item.
 - Measure the MTU, the connection interval, and the throughput on the target phones.
 - Check the background behavior of the phone application while a voice exchange runs.
-- Fix the JSON report schema with real HeygoAI data. Q-01 tracks this item.
+- The phone application team checks that it can calculate each LIVE_STATS and RUN_REPORT field. It also gives the rules that detect the start and the end of a run. Q-16 tracks this item.
+- Find out whether the first number field of LIVE_STATS is the speed. Q-17 tracks this item.
 - Record the interval, the PHY, and the data length that each target phone grants.
 - A later version measures the battery cost of the link settings. D-18 defers this item.
 
@@ -511,10 +544,25 @@ The device also maps failure code 2 to its timeout message, and codes 1 and 3 to
 This rule comes from D-20. It changes no packet format, so the protocol version stays 0.1.
 The phone application team must accept this rule.
 
-## 15. Related documents
+## 15. Changes in version 0.6
+
+| No. | Change | Section |
+| --- | --- | --- |
+| 1 | Add LIVE_STATS (0x60) and RUN_REPORT (0x61), both from the phone to the device. | 6 |
+| 2 | Remove REPORT_REQUEST, REPORT_PAGE, REPORT_ACK, and the report fragment rules. No side built them. | 5, 6 |
+| 3 | Change the protocol version from 0.1 to 0.2. HELLO and HELLO_ACK carry minor 2. | 5 |
+| 4 | Add four timing rules for the ski data. | 8 |
+| 5 | Remove the report page buffer of 8,192 bytes from the device memory cost. Add 128 bytes. | 10 |
+
+The major version is still 0, so both sides must use the same minor.
+If a phone application that supports only 0.1 connects to 0.2 firmware, the device sends code 3 and disables voice.
+The phone application team and the firmware must therefore change to 0.2 together. D-24 sets the time of the change.
+
+## 16. Related documents
 
 - [System Architecture](02-architecture.md).
 - [Validation and Decisions](04-validation-and-decisions.md).
 - [Decision Amendments](05-decision-amendments.md).
 - [Sprint 0 plan](06-sprint-0-plan.md).
+- [Four-hour Sprint roadmap](08-sprint-roadmap.md).
 - [Folder Index](README.md).

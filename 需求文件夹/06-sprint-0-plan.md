@@ -146,4 +146,5 @@ Per section 4, Sprint 0 closes no story.
 - [Scrum backlog](03-scrum-backlog.md).
 - [Decision amendments](05-decision-amendments.md).
 - [BLE protocol draft](07-ble-protocol-draft.md).
+- [Four-hour Sprint roadmap](08-sprint-roadmap.md).
 - [Document index](README.md).

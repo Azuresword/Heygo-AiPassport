@@ -2,18 +2,18 @@
 
 # HeygoAI and AI Passport: product requirements
 
-Version: 0.5. Date: 2026-10-16. Status: Draft for review.
+Version: 0.6. Date: 2026-10-17. Status: Draft for review.
 The Product Owner role has no assigned person.
 This document defines a concept. It does not describe a working integration.
 
 ## 1. Product goal
 
-During a rest break, the skier asks an AI coach about the last runs and hears the answer.
+The skier reads live data on the device during a run. During a rest break, the skier asks an AI coach and hears the answer.
 The skier does not take out the phone. The skier keeps the gloves on.
 
 HeygoAI supplies the ski analysis and the coaching through interfaces that still need evidence.
-The phone application supplies speech recognition, speech synthesis, and the link to HeygoAI.
-AI Passport supplies the buttons, the microphone, the speaker, and a small screen for status.
+The phone application supplies speech recognition, speech synthesis, the ski data, and the link to HeygoAI.
+AI Passport supplies the buttons, the microphone, the speaker, and a small screen.
 
 The phone stays in a pocket during use. The device reaches the network through the phone.
 The device therefore removes the need to take the phone out. It does not remove the need for the phone.
@@ -22,9 +22,10 @@ The device therefore removes the need to take the phone out. It does not remove 
 
 | User | Need | Use moment |
 | --- | --- | --- |
-| Recreational skier | Understand a run without a long phone report. | A rest break after a run. |
+| Recreational skier | Know the progress of this run without the phone. | During a run. |
+| Recreational skier | Know the problem of this run and the fix for the next run, without a long phone report. | After a run, on the lift or during a rest break. |
 | Skier who practices a skill | Get one short tip before the next run. | Before the next run. |
-| Project tester | Reproduce a failed question. | An indoor test session. |
+| Project tester | Reproduce a failed question or a wrong data value. | An indoor test session. |
 
 The pilot assumes adult users and a small group.
 The pilot uses existing boards. It needs no new circuit board or enclosure.
@@ -32,37 +33,41 @@ The pilot uses existing boards. It needs no new circuit board or enclosure.
 ## 3. Product journey
 
 1. The user connects the device to the existing phone application.
-2. The device starts in Ski mode. Ski mode shows only status.
+2. The device starts in Ski mode. The Ski page shows the live data from the phone.
 3. The user holds OK to enter Rest mode. Rest mode opens on the Coach page.
 4. The user holds OK again and asks a question.
 5. The user releases OK. The device ends the question.
 6. The Agent answers through speech, with short text on the screen.
 7. The user can hold UP to stop the answer.
-8. Before the next run, the user holds DOWN and then presses OK to return to Ski mode.
+8. When the Coach page is idle, a short DOWN press opens the Report page. It shows the report of the last run. A short UP press returns to the Coach page.
+9. Before the next run, the user holds DOWN and then presses OK to return to Ski mode.
 
 Rest mode means that the user states they stopped.
 The device cannot check motion. Rest mode never claims that the surroundings are safe.
 
 ## 4. Scope and priorities
 
-D-17 and D-18 set these priorities. [Decision amendments](05-decision-amendments.md) gives the reasons.
+D-17, D-18, and D-22 set these priorities. [Decision amendments](05-decision-amendments.md) gives the reasons.
 
-| Priority | Meaning | Requirements |
+| Priority | Increment | Requirements |
 | --- | --- | --- |
-| P0 | The first version | REQ-01, REQ-06, REQ-07, REQ-08, REQ-15, REQ-17, REQ-20 |
-| P1 | The next increment | REQ-02, REQ-03, REQ-04, REQ-09, REQ-13 |
+| P0 | Increment 1: the Coach voice chain | REQ-01, REQ-06, REQ-07, REQ-08, REQ-15, REQ-17, REQ-20 |
+| P1 | Increment 2: live data and reports | REQ-02, REQ-03, REQ-21 |
+| P1 | After Increment 2 | REQ-04, REQ-09, REQ-13 |
 | P2 | Later candidates | REQ-10, REQ-11, REQ-12, REQ-18, REQ-19 |
 | Deferred | No planned increment | REQ-05, REQ-14, REQ-16 |
 
-P0 builds the complete voice chain once: button, BLE link, phone, Agent, phone, BLE link, speaker.
-Each P1 feature reuses that chain.
+Increment 1 builds the complete voice chain once: button, BLE link, phone, Agent, phone, BLE link, speaker.
+Increment 2 uses the same BLE link in one direction only, from the phone to the device.
+D-22 lets the team develop Increment 2 in parallel with the device acceptance of Increment 1. Each increment has its own acceptance.
 
 ### Exclusions from the first version
 
-- Reports, charts, turn views, and human intercom. They sit in P1 or Deferred.
+- Metric charts, the offline report cache, turn views, and human intercom. They come after Increment 2 or sit in Deferred.
 - Automatic emergency detection or rescue dispatch.
 - Certified instruction, medical advice, or injury prevention claims.
-- Native measurement of position, edge angle, or body posture.
+- Native measurement of speed, position, edge angle, or body posture.
+- Speed rankings, speed badges, or any content that rewards high speed.
 - Continuous listening, a wake word, or an open microphone by default.
 - A phone-free radio intercom.
 - New hardware, manufacturing, payments, or a public social network.
@@ -74,21 +79,21 @@ Each P1 feature reuses that chain.
 
 | Area | Evidence or status | Product consequence |
 | --- | --- | --- |
-| Screen | 240 × 320. No evidence of a touch interface. | Show status and short text. |
+| Screen | 240 × 320. No evidence of a touch interface. | Show status, short text, and a small set of numbers. |
 | Buttons | UP, DOWN, and OK share one ADC input. | Use one button at a time. |
 | Audio | Microphone, speaker, and PCM APIs exist. No echo cancellation. | Stream audio to the phone in small blocks. Never record and play together. |
-| Resources | ESP32-C3, 8 MB Flash, no PSRAM. | Keep speech recognition, synthesis, and the Agent off the device. |
+| Resources | ESP32-C3, 8 MB Flash, no PSRAM. | Keep speech recognition, synthesis, the Agent, and data calculation off the device. |
 | Power | 500 mAh battery. | D-18 defers power management. Claim no runtime. |
-| Motion and location | No evidence of an IMU, GNSS, or barometer. | Get ski data from HeygoAI through the phone. |
+| Motion and location | No evidence of an IMU, GNSS, or barometer on the device. | The phone calculates all ski data. The device only shows it. |
 | HeygoAI | No API contract and no sample data yet. | The phone application handles the integration. |
-| Phone application | It exists. Another team develops it. | Device requirements follow its capabilities. The [BLE protocol draft](07-ble-protocol-draft.md) proposes the link. |
+| Phone application | It exists. Another team develops it. | D-23: the device team defines the data fields, and the phone application team adapts to them. The [BLE protocol draft](07-ble-protocol-draft.md) gives the packet format. |
 
 ## 6. Requirements matrix
 
 Each row has test stage Prototype. Owners are roles with no assigned person.
 [Validation and decisions](04-validation-and-decisions.md) defines each matching TC.
 
-### P0
+### P0, Increment 1
 
 | ID | Value and required behavior | Owner | Acceptance target | Dependency |
 | --- | --- | --- | --- | --- |
@@ -100,15 +105,21 @@ Each row has test stage Prototype. Owners are roles with no assigned person.
 | REQ-17 | Keep Ski mode and Rest mode distinct. Require manual entry before any voice use. | Firmware and design. | TC-17: 50 transition trials keep the mode clear. The press that enters Rest mode never starts capture. | No automatic motion detection exists. |
 | REQ-20 | Explain link failures. Support recovery. | Firmware and phone. | TC-20: 10 reconnect trials create no duplicate question. No stale answer plays. | Test link loss and phone background behavior. |
 
-### P1
+### P1, Increment 2
 
-| ID | Value | Why it waits |
+| ID | Value and required behavior | Owner | Acceptance target | Dependency |
+| --- | --- | --- | --- | --- |
+| REQ-02 | Show the latest ski data packet from the phone. A missing field shows "--" and never 0. Mark data that is out of date. | Phone and firmware. | TC-02: in 300 data packets, the device shows the latest packet each time. Each missing field shows "--". | The phone application sends LIVE_STATS as doc 07 defines. |
+| REQ-21 | During a run, show live data on the Ski page: speed, vertical drop, distance, turn count, and run time. The phone sends one packet each second. | Firmware and design. | TC-21: the screen updates within 300 ms of the packet at the 95th percentile. At least 4 of 5 users read the speed correctly within 2 seconds. | REQ-02. |
+| REQ-03 | After each run, show the report of that run. It holds the distance, the turn count, the Heygo IQ, the core problem, and a tip of at most 20 characters. | Firmware and design. | TC-03: in 30 short DOWN presses on the Coach page, the Report page shows within 500 ms each time. Every value matches the phone log. | REQ-02. |
+
+### P1, after Increment 2
+
+| ID | Value | Why it is not in Increment 2 |
 | --- | --- | --- |
-| REQ-02 | Keep each report consistent across updates. | Q-01 blocks real report data. |
-| REQ-03 | Show a short report card without the phone. | It depends on REQ-02. |
-| REQ-04 | Show metric trends with units and gaps. | It depends on REQ-02. |
+| REQ-04 | Show metric trends with units and gaps. | Increment 2 checks the numbers on the screen first. Charts need more data points and more screen work. |
 | REQ-09 | Hold a button to speak with a companion in a shared room. | It needs a room service, a second endpoint, and phone intercom support. |
-| REQ-13 | Keep the last report readable during a network failure. | It exists only for reports. |
+| REQ-13 | Keep the last report readable after a network failure, a link loss, or a device restart. | Increment 2 keeps the last data packet in RAM only. A Flash copy is separate work. |
 
 ### P2
 
@@ -161,6 +172,60 @@ An OK hold during playback stops the playback first. The microphone starts after
 If the link fails, the device stops capture and shows the failure.
 A canceled answer never resumes.
 
+### Ski page
+
+D-21 puts live data on the Ski page. During a run, the eyes belong on the slope. So the page shows five numbers, and the speed is the largest.
+
+| Area | Content | Example |
+| --- | --- | --- |
+| Title | The run number for today and the run time | Run 4 · 02:31 |
+| Main number | The current speed | 38 km/h |
+| Second line | The vertical drop, the distance, and the turn count | Drop 312 m · 1.8 km · 24 turns |
+| Button hint | No change | Hold OK to rest |
+
+- After the phone detects the start of a run, it sends one packet each second. The device updates the screen for each packet.
+- After 5 seconds with no new packet, the speed shows "--". The other numbers stay, with an out-of-date mark.
+- Before any data arrives, the body shows "Waiting for phone data".
+- The speed shows as a number only. No color, animation, or sound marks a high speed.
+- The speed field waits for Q-17. Until then, the phone can send the unknown value, and the screen shows "--".
+
+### Run report
+
+D-26: after each run, the phone sends the report of that run. D-27 proposes two places for the report:
+
+- **The Ski page on the lift.** After a run ends, the Ski page shows the Heygo IQ, the core problem, and the tip of that run until the next run starts.
+- **The Report page in Rest mode.** On the idle Coach page, a short DOWN press opens the Report page. A short UP press returns to the Coach page.
+
+| Field | Format | Example |
+| --- | --- | --- |
+| Run number | Integer | Run 3 |
+| Distance | As in the live data | 1.9 km |
+| Turn count | Integer | 25 turns |
+| Heygo IQ | Integer from 0 to 100 | 82 |
+| Core problem | At most 12 Chinese characters | Weight too far back |
+| Short tip | At most 20 Chinese characters | Next run, keep both hands in front |
+
+- On the Report page, an OK hold does nothing. The button hint shows "Press UP for coach".
+- On the Report page, a DOWN hold opens the exit question, as on the Coach page.
+- Before the first report arrives, the Report page shows "The report shows after a run".
+- 60 seconds after a report arrives, the Report page shows "N min ago".
+- After a link loss, the device keeps the last report from RAM on the screen.
+
+### Data fields
+
+D-23 lets the device team define the fields. The phone application team calculates and sends them. Section 6 of doc 07 gives the format of each field.
+
+| Field | Unit and format | Live data | Run report |
+| --- | --- | --- | --- |
+| Speed | km/h, integer | Yes, waits for Q-17 | No |
+| Vertical drop | m, integer | Yes | No |
+| Distance | Below 1,000 m in m, else in km with one decimal | Yes | Yes |
+| Turn count | Integer | Yes | Yes |
+| Run time | min:s. From 1 hour, h:min | Yes | No |
+| Heygo IQ | Integer from 0 to 100 | No | Yes |
+| Core problem | At most 12 Chinese characters | No | Yes |
+| Short tip | At most 20 Chinese characters | No | Yes |
+
 ## 8. Success targets
 
 These numbers are test targets, not measurements.
@@ -171,12 +236,15 @@ These numbers are test targets, not measurements.
 | Ask and stop | At least 4 of 5 users ask a question and stop an answer with gloves, without help. |
 | Hear the answer | The first audible answer starts within 5 seconds of release at the 95th percentile. |
 | Stop quickly | Capture stops within 100 ms of release. Playback stops within 200 ms of the cancel command. |
+| Read live data | At least 4 of 5 users read the speed correctly within 2 seconds. |
+| Trust the data | A missing value never shows as 0. |
 
 ## 9. Hardware and pilot limits
 
 The prototype uses existing AI Passport boards and available phones.
 The sources do not show water resistance, cold operation, wind rejection, or outdoor readability.
 Indoor success does not support a claim about slope use.
+The phone sets the accuracy of speed and vertical drop. The device does not check it.
 Manufacturing, certification, packaging, and support stay outside this concept.
 
 ## 10. Related documents
@@ -187,4 +255,5 @@ Manufacturing, certification, packaging, and support stay outside this concept.
 - [Decision amendments](05-decision-amendments.md).
 - [Sprint 0 plan](06-sprint-0-plan.md).
 - [BLE protocol draft](07-ble-protocol-draft.md).
+- [Four-hour Sprint roadmap](08-sprint-roadmap.md).
 - [Document index](README.md).

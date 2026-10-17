@@ -2,7 +2,7 @@
 
 # Validation, open questions, and decisions
 
-Version: 0.7. Date: 2026-10-17. Status: Draft for review.
+Version: 0.8. Date: 2026-10-17. Status: Draft for review.
 Every product test below has status NOT RUN.
 Document checks do not count as firmware or device tests.
 
@@ -44,6 +44,7 @@ Nobody helps during an attempt.
 2. Ask a question.
 3. Stop an answer.
 4. Return to Ski mode.
+5. On the Ski page, read the speed within 2 seconds. Increment 2 adds this task.
 
 ## 3. Acceptance matrix for P0
 
@@ -61,9 +62,19 @@ For TC-06 and TC-07, a 500 ms UP hold produces the cancel command.
 The target is 700 ms from the first UP press to silence.
 Measure the release latency from the release itself.
 
-## 4. Tests outside P0
+### Increment 2 acceptance matrix
 
-TC-02, TC-03, TC-04, TC-09, and TC-13 belong to P1.
+| Test | Condition | Pass rule | Method and owner |
+| --- | --- | --- | --- |
+| TC-02 | The real phone application sends 300 LIVE_STATS packets. 30 packets hold unknown values. 10 packets have a short payload. | The device always shows the latest valid packet. Each unknown value shows "--", never 0. Each short packet gets ERROR code 2, and the screen keeps the old values. | Protocol test and screen log. Firmware and phone. |
+| TC-21 | Under N1, send 300 packets. Read the receive time and the screen update time from the log. Also run task 5 of U1. | The screen update stays within 300 ms at the 95th percentile. At least 4 of 5 users read the speed correctly within 2 seconds. | Log timing and usability test. Firmware and design. |
+| TC-03 | The phone sends 30 RUN_REPORT packets. 5 hold texts at the limit, and 3 hold texts above the limit. On the idle Coach page, press DOWN 30 times. Cover three cases: no report yet, link loss, and a report older than 60 seconds. | The Report page shows within 500 ms each time. The values and texts match the phone log. Texts at the limit show in full. A report above the limit gets ERROR code 4, and the screen keeps the old report. While audio runs, a short press changes no page. | Screen log and hardware demonstration. Firmware. |
+
+`phone_sim` can check these three tests in Sprint 5, but it cannot pass them.
+
+## 4. Tests outside Increment 1 and Increment 2
+
+TC-04, TC-09, and TC-13 belong to P1, after Increment 2.
 TC-10, TC-11, TC-12, TC-18, and TC-19 belong to P2.
 TC-05, TC-14, and TC-16 sit in Deferred.
 None of them gates the first version. Commit `970bb8e` holds their version 0.3 text.
@@ -74,8 +85,8 @@ The user parked these questions. The user will share answers after a review with
 
 | ID | Question | Needed for | Status |
 | --- | --- | --- | --- |
-| Q-01 | Which HeygoAI APIs, coaching tools, and report fields exist? | P0 coaching, P1 reports | Open |
-| Q-02 | Which source supplies metrics and turns, with which units and frame? | P1 metrics, Deferred turns | Open |
+| Q-01 | Which HeygoAI APIs and coaching tools exist? | P0 coaching | Open. After D-23, the Increment 2 fields do not depend on HeygoAI. |
+| Q-02 | Which source supplies metrics and turns, with which units and frame? | Increment 2 metrics, Deferred turns | D-23 closes it for Increment 2: the phone calculates the metrics, and doc 07 gives the units. Turn data stays open. |
 | Q-03 | Which phone platform runs the application? | P0 | Open. D-08 selected the transport. |
 | Q-04 | Which consent and deletion rules apply? | Deferred | Deferred by D-13 |
 | Q-05 | Which speech recognition and synthesis services apply? | P0 | Open. The phone application can supply them. |
@@ -89,6 +100,8 @@ The user parked these questions. The user will share answers after a review with
 | Q-13 | Does the phone application accept the BLE protocol draft? | P0 | Open. Doc 07 version 0.4 offers the device draft. |
 | Q-14 | What does the device do on a long DOWN press during capture, wait, or playback? | P0 | Closed by D-19. |
 | Q-15 | What does the device do with a PLAY_START that arrives during capture? | P0 | Closed by D-20. The phone application team must still accept it. |
+| Q-16 | Can the phone application calculate each LIVE_STATS and RUN_REPORT field? Which rules detect the start and the end of a run? | Increment 2 | Open. The phone application team answers. |
+| Q-17 | Is the live field "structure" from the user the speed? | Increment 2 | Open. Until then, the protocol keeps the speed field, and the phone can send the unknown value. |
 
 ## 6. Decision log
 
@@ -114,6 +127,13 @@ The user parked these questions. The user will share answers after a review with
 | D-18 | The first version builds no power management, and requests the best-performance link settings. REQ-16 moves to Deferred. | Accepted by the user. |
 | D-19 | During capture, wait, or playback, the device ignores a long DOWN press. The user holds UP to cancel, then holds DOWN to exit. | Accepted by the user. |
 | D-20 | The phone sends the PLAY_START of an exchange only after it receives AGENT_END. During capture, the device drops a PLAY_START. | Accepted by the user. Waits for the phone application team. See doc 07, section 14. |
+| D-21 | The Ski page shows live data. Rest mode adds a Report page. | Accepted by the user. |
+| D-22 | Live data and reports form Increment 2. The team develops it in parallel with the device acceptance of Increment 1. Each increment has its own acceptance. | Accepted by the user. |
+| D-23 | The device team defines the data fields, and the phone application team adapts to them. The live fields cover vertical drop, distance, turn count, and run time. The speed waits for Q-17. After a run starts, the phone sends one packet each second. | Accepted by the user. Changed on 2026-10-17. |
+| D-24 | The protocol changes to 0.2 and adds LIVE_STATS. After Sprint 4, the branch merges into `main`, and the team tells the phone application team to change to 0.2. | Proposed. |
+| D-25 | On the idle Coach page, a short DOWN press opens the Report page. On the Report page, a short UP press returns to the Coach page. An OK hold on the Report page does nothing. | Proposed. |
+| D-26 | After each run, the phone sends the report of that run. It holds the distance, turn count, Heygo IQ, core problem, and a tip of at most 20 characters. | Accepted by the user. |
+| D-27 | The Heygo IQ is an integer from 0 to 100. The phone sends the core problem as text of at most 12 Chinese characters. The report shows on the Ski page on the lift and on the Report page in Rest mode. | Proposed. Until the user answers, the device team uses these three values. |
 
 ## 7. Risks
 
@@ -127,6 +147,9 @@ The user parked these questions. The user will share answers after a review with
 | The open BLE link lets a nearby client connect. | A stranger can hear audio blocks. | Keep pilots indoor and small. Review D-12 before a public trial. | Product Owner. |
 | Cold, wind, or gloves impair use. | Indoor results do not transfer. | Define Q-07 before field tests. | Product and hardware. |
 | The first version has no power management. | The battery drains faster than expected, and a pilot session ends early. | Charge the device before each pilot session. Review D-18 before a field pilot. | Product Owner. |
+| A look at the screen during a run takes attention from the slope. | A collision or a fall. | The page shows five numbers only. No animation, color, or sound marks the speed. Nothing rewards high speed. U1 tests a 2-second reading. | Product Owner and design. |
+| The phone gives speed and vertical drop with large errors. | Users stop trusting the data. | The phone owns the accuracy. TC-02 checks only that the device matches the phone. Assess the accuracy before a field pilot. | Phone application team. |
+| The change to protocol 0.2 is not at the same time on both sides. | A phone application with 0.1 only gets no voice with the new firmware. | Change both sides together per D-24. Tell the phone application team at the end of Sprint 4. | Firmware and phone application team. |
 
 ## 8. Delivery evidence
 

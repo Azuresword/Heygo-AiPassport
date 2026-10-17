@@ -2,9 +2,9 @@
 
 # HeygoAI × AI Passport: architecture
 
-Version: 0.6. Date: 2026-10-17. Status: Draft for engineering review.
+Version: 0.7. Date: 2026-10-17. Status: Draft for engineering review.
 
-This document proposes a design for the P0 scope in [product requirements](01-product-requirements.md).
+This document proposes a design for Increment 1 and Increment 2 in [product requirements](01-product-requirements.md).
 It does not describe a working integration.
 [Decision amendments](05-decision-amendments.md) gives the reason behind each decision.
 The [BLE protocol draft](07-ble-protocol-draft.md) defines the packets.
@@ -54,12 +54,12 @@ D-14 limits the device to four tasks:
 1. Tell the phone about button events.
 2. Stream microphone blocks to the phone.
 3. Play the audio blocks that the phone streams.
-4. Show the status and the short text that the phone supplies.
+4. Show the status, the short text, and the ski data that the phone supplies.
 
 | Component | Owns | Does not claim |
 |---|---|---|
 | HeygoAI | Ski analysis and coaching after contract checks | Undocumented APIs |
-| Phone application | Device connection, account, speech recognition, speech synthesis, the ski session context, gateway requests, and retries | Guaranteed background execution |
+| Phone application | Device connection, account, speech recognition, speech synthesis, the ski session context, the ski data calculation, gateway requests, and retries | Guaranteed background execution |
 | Gateway and adapter | Contract conversion and session routing | New ski measurements |
 | Passport application | The four device tasks, the modes, button state, and audio ownership | Local speech recognition or a local language model |
 | Passport BSP | Screen, buttons, audio format, volume, and buses | Product pages or coaching logic |
@@ -70,7 +70,7 @@ D-14 limits the device to four tasks:
 
 D-15 sets two modes.
 
-- **Ski mode.** The device starts here. It shows the link state, the battery, and the time. Voice stays off.
+- **Ski mode.** The device starts here. It shows the link state, the battery, and the live data. Voice stays off.
 - **Rest mode.** The user enters it on purpose. It opens on the Coach page. Voice works only here.
 
 The device cannot check whether the user stopped moving.
@@ -91,7 +91,11 @@ Capture needs a new OK press that starts in Rest mode.
 | Any page | Hold UP for 500 ms | Cancel the active capture or playback. Do nothing when neither runs. |
 | Coach page, idle | Hold DOWN for 500 ms | Open the exit question. A short OK returns to Ski mode. Any other input closes the question. |
 | Coach page, capture, wait, or playback runs | Hold DOWN for 500 ms | Do nothing (D-19). Hold UP to cancel first. Then hold DOWN to exit. |
-| Any page | Short press | No action in P0, except OK in the exit question. |
+| Coach page, idle | Short DOWN press | Open the Report page (D-21). |
+| Report page | Short UP press | Return to the Coach page. |
+| Report page | Hold DOWN for 500 ms | Open the exit question, as on the Coach page. |
+| Report page | Hold OK for 500 ms | Do nothing. |
+| Any page | Other short presses | No action, except OK in the exit question. |
 
 A hold never also triggers a short press.
 The cancel command appears when the UP hold reaches 500 ms.
@@ -115,6 +119,33 @@ The screen has a corner mask with a 30-pixel radius. Key text stays out of the m
 
 The page uses a new design. It does not reuse the demo menu or its frame.
 Check the glyph coverage of every Chinese string. A successful build does not prove that Chinese text shows.
+
+### Ski page layout
+
+D-21 replaces the Ski page body with live data. The status bar and the button hints use the same areas as on the Coach page.
+
+| Area | Range | Content |
+|---|---|---|
+| Status bar | `x=32..207, y=0..35` | Mode, link state, battery |
+| Title | `x=12..227, y=36..67` | "Run 4 · 02:31". After the run ends, "Run 4 · Ended" |
+| Speed | `x=12..227, y=68..187` | The speed in 48-pixel digits, then "km/h" in 16 pixels. After the run ends, the Heygo IQ |
+| Second numbers | `x=12..227, y=188..283` | Line 1 "Drop 312 m", line 2 "1.8 km · 24 turns". Out-of-date data adds the line "Data out of date". After the run ends, the core problem and the tip |
+| Button hints | `x=32..207, y=284..319` | "Hold OK to rest" |
+
+The 48-pixel font uses Staatliches from brand version B. It holds only digits, the decimal point, the colon, and "-". It stays in Flash.
+No color marks a fast or slow speed. When data is out of date, the numbers use the secondary text color.
+
+### Report page layout
+
+| Area | Range | Content |
+|---|---|---|
+| Status bar | `x=32..207, y=0..35` | Mode, link state, battery |
+| Title | `x=12..227, y=36..67` | "Run 3 report" |
+| Score | `x=12..227, y=68..187` | The Heygo IQ in 48 pixels, with the line "1.9 km · 25 turns" below it |
+| Text | `x=12..227, y=188..283` | The core problem on one line, and the tip on at most two lines. 60 seconds after the report arrives, a line "N min ago" |
+| Button hints | `x=32..207, y=284..319` | "Press UP for coach" |
+
+Only one screen exists at a time. On a page change, the task deletes the old screen first and then builds the new screen.
 
 ## 4. Audio state
 
@@ -166,6 +197,8 @@ The device has no PSRAM. Streaming makes a full recording unnecessary.
 | LVGL draw buffer | One 40-line RGB565 buffer | Current source uses 19,200 bytes. |
 | LVGL pool | 24 KiB | Current `sdkconfig.defaults` value. |
 | BLE packet queues | 3,440 bytes | Doc 07, section 10. |
+| The last LIVE_STATS and RUN_REPORT | 128 bytes | Doc 07, section 10. The struct sizes measured on the host. |
+| 48-pixel digit font | In Flash, not in RAM | Measure the size in Sprint 3. |
 | ADPCM codec state | A few bytes in each direction | D-09. |
 | BLE stack, task stacks, fonts, firmware | Measure on hardware | Do not claim that the rest is enough. |
 
@@ -198,6 +231,9 @@ Raw PCM stays a fallback for diagnostics. Opus waits until ADPCM works and the t
 | Audio queue overflow | Drop the oldest block. | Keep real-time pace. |
 | Low memory | Stop audio before an allocation fails. Show an error. | Stop streaming. |
 | Unknown battery | Show an unknown battery state. | None. |
+| No LIVE_STATS for 5 seconds | Show the speed as "--". Keep the other numbers with an out-of-date mark. | Send again. |
+| LIVE_STATS with a wrong length | Send ERROR code 2. Keep the old packet. | Send a packet of the right length. |
+| The phone cannot calculate a field | Show "--" for that field. | Send the unknown value, never 0. |
 
 D-12 and D-13 exclude security and privacy work. The device stores no account data and no token.
 
@@ -205,7 +241,8 @@ D-12 and D-13 exclude security and privacy work. The device stores no account da
 
 D-17 moved these items out of P0. Each item needs its own design work before it returns.
 
-- **Reports, charts, and the offline cache (P1).** The phone sends report pages through doc 07. The device parses one page of at most 8 KiB in a fixed buffer. The cache keeps at most 64 KiB.
+- **Live data and the Report page (Increment 2).** Section 3 gives the page design. Doc 07 gives LIVE_STATS. The device keeps only the last packet, in RAM.
+- **Charts and the offline cache (P1, after Increment 2).** Charts need many data points over time. The offline cache writes the last data to Flash. Neither item has a design yet.
 - **Human intercom (P1).** The Team page waits for a start message from the phone before capture. It reuses the Coach audio path. Each speech path crosses two BLE links. The 500 ms audio target lacks a measurement.
 - **Turn visualization (Deferred).** It returns only if Q-02 shows trajectory data with a coordinate frame.
 
@@ -216,7 +253,8 @@ Commit `970bb8e` holds the version 0.3 design for these items.
 1. Select a transport. D-08 closed this gate.
 2. Agree the BLE protocol with the phone application team. Doc 07 holds the device draft.
 3. Accept the Rest mode pilot on real hardware.
+4. The phone application team accepts the LIVE_STATS fields of protocol 0.2 (Q-16).
 
-Open items: the review of doc 07, the phone platform, the HeygoAI coaching tools, and the cold limits.
+Open items: the review of doc 07, the phone platform, the HeygoAI coaching tools, the run detection rules, and the cold limits.
 D-18 defers every power and battery-life item.
 Do not treat a diagram or a successful build as hardware validation.
