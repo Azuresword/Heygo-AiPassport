@@ -83,6 +83,11 @@ The tool prints one row for each question: hold time, blocks, peak level, stop t
 The summary checks two limits: 100 ms for the capture stop (TC-06), and 200 ms for the playback stop (TC-07).
 The playback figure adds 90 ms, because the I2S DMA still holds that much sound after the stop.
 
+For ski data, the tool prints one row for each LIVE_STATS, RUN_REPORT, and SHOW_PAGE packet.
+Each row gives the time from the packet to the first screen change, and the name of that change.
+The summary gives the 95th percentile and checks it against 300 ms (TC-21 and TC-03).
+A packet with no screen change counts apart. An example is a LIVE_STATS with the same values as the last one.
+
 ## Limits
 
 - The macOS BLE stack picks the MTU. `phone_sim.py` cannot request 247.

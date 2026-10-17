@@ -83,6 +83,11 @@ python3 tools/phone_sim/analyze_log.py /tmp/monitor.log --csv /tmp/questions.csv
 汇总部分检查两个上限：录音停止 100 ms（TC-06），播放停止 200 ms（TC-07）。
 播放停止时间会加上 90 ms，因为停止后 I2S DMA 里还留有这么长的声音。
 
+对于滑行数据，工具为每个 LIVE_STATS、RUN_REPORT 和 SHOW_PAGE 输出一行。
+每行给出从收到数据包到屏幕第一次变化的时间，以及变化的是哪个标签。
+汇总部分给出第 95 百分位，并对照 300 ms 的上限（TC-21 和 TC-03）。
+屏幕没有变化的数据包单独计数，例如和上一包数值完全相同的 LIVE_STATS。
+
 ## 限制
 
 - macOS 的 BLE 协议栈自己决定 MTU，`phone_sim.py` 无法请求 247。

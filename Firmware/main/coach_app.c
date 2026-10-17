@@ -150,8 +150,9 @@ static void set_hidden(lv_obj_t *obj, bool hidden) {
     else lv_obj_remove_flag(obj, LV_OBJ_FLAG_HIDDEN);
 }
 
-#define PUT(screen, view, field, want, force) \
-    put_label(screen.field, #view "." #field, view.field, sizeof view.field, want.field, force)
+// The log name is "ski.<field>" or "report.<field>". tools/phone_sim/analyze_log.py reads it.
+#define PUT(page, screen, view, field, want, force) \
+    put_label(screen.field, page "." #field, view.field, sizeof view.field, want.field, force)
 
 // Copy the ski data texts into the screen that is on now. force: the screen is new.
 // The caller holds the LVGL lock.
@@ -165,16 +166,16 @@ static void refresh_data(bool force) {
     if (s_shown == COACH_SCREEN_SKI) {
         ski_view_t v;
         ski_view_build(&v, has_live ? &live : NULL, stale, has_report ? &report : NULL);
-        PUT(s_ski, s_ski_view, dest, v, force);
-        PUT(s_ski, s_ski_view, sub, v, force);
-        PUT(s_ski, s_ski_view, big, v, force);
-        PUT(s_ski, s_ski_view, unit, v, force);
-        PUT(s_ski, s_ski_view, drop, v, force);
-        PUT(s_ski, s_ski_view, dist, v, force);
-        PUT(s_ski, s_ski_view, turns, v, force);
-        PUT(s_ski, s_ski_view, time, v, force);
-        PUT(s_ski, s_ski_view, problem, v, force);
-        PUT(s_ski, s_ski_view, tip, v, force);
+        PUT("ski", s_ski, s_ski_view, dest, v, force);
+        PUT("ski", s_ski, s_ski_view, sub, v, force);
+        PUT("ski", s_ski, s_ski_view, big, v, force);
+        PUT("ski", s_ski, s_ski_view, unit, v, force);
+        PUT("ski", s_ski, s_ski_view, drop, v, force);
+        PUT("ski", s_ski, s_ski_view, dist, v, force);
+        PUT("ski", s_ski, s_ski_view, turns, v, force);
+        PUT("ski", s_ski, s_ski_view, time, v, force);
+        PUT("ski", s_ski, s_ski_view, problem, v, force);
+        PUT("ski", s_ski, s_ski_view, tip, v, force);
         // The panel shows the four metric cells, or the problem and the tip of the report.
         if (force || v.report != s_ski_view.report) {
             s_ski_view.report = v.report;
@@ -188,11 +189,11 @@ static void refresh_data(bool force) {
     } else {
         report_view_t v;
         report_view_build(&v, has_report ? &report : NULL, age);
-        PUT(s_report, s_report_view, title, v, force);
-        PUT(s_report, s_report_view, iq, v, force);
-        PUT(s_report, s_report_view, age, v, force);
-        PUT(s_report, s_report_view, problem, v, force);
-        PUT(s_report, s_report_view, tip, v, force);
+        PUT("report", s_report, s_report_view, title, v, force);
+        PUT("report", s_report, s_report_view, iq, v, force);
+        PUT("report", s_report, s_report_view, age, v, force);
+        PUT("report", s_report, s_report_view, problem, v, force);
+        PUT("report", s_report, s_report_view, tip, v, force);
     }
 }
 
