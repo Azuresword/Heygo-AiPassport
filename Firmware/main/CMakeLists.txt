@@ -23,6 +23,7 @@ idf_component_register(
          "demo_low_power.c"
          "ui/ui_theme.c"
          "ui/ui_state_icon.c"
+         "ui/stats_fmt.c"
          "generated/coach_flow.c"
          "generated/coach_screens.c"
          "generated/coach_bindings.c"

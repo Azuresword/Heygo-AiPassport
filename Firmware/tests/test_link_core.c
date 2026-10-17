@@ -35,8 +35,14 @@ static void io_play_end(void *c) { (void)c; s_play_end++; }
 static int s_drops_rx;
 static uint8_t s_drop_type, s_drop_xid, s_drop_cur;
 static void io_dropped(void *c, uint8_t t, uint8_t x, uint8_t cur) { (void)c; s_drops_rx++; s_drop_type = t; s_drop_xid = x; s_drop_cur = cur; }
+static int s_lives, s_reports;
+static bp_live_stats_t s_live;
+static link_report_t s_report;
+static void io_live(void *c, const bp_live_stats_t *s) { (void)c; s_lives++; s_live = *s; }
+static void io_report(void *c, const link_report_t *r) { (void)c; s_reports++; s_report = *r; }
 
-static const link_io_t IO = { NULL, io_send, io_drop, io_voice, io_state, io_play_start, io_down, io_play_end, io_dropped };
+static const link_io_t IO = { NULL, io_send, io_drop, io_voice, io_state, io_play_start, io_down, io_play_end, io_dropped,
+                              io_live, io_report };
 
 static void clear(void) { s_nsent = 0; }
 static const sent_t *last(void) { return s_nsent ? &s_sent[s_nsent - 1] : NULL; }
@@ -60,7 +66,7 @@ static uint32_t ready(link_core_t *l, uint32_t t) {
     link_on_connect(l, t);
     link_on_mtu(l, 247, t);
     link_on_subscribe(l, true, t);
-    ack(l, 0, 1, t + 10);
+    ack(l, 0, 2, t + 10);
     return t + 10;
 }
 
@@ -75,7 +81,7 @@ static void test_handshake(void) {
     link_on_subscribe(&l, true, 1000);
     const sent_t *h = last();
     CHECK(h && h->buf[0] == BP_HELLO && h->lane == LINK_LANE_CONTROL, "HELLO after the subscription");
-    CHECK(h && h->buf[4] == 0 && h->buf[5] == 1 && h->buf[6] == BP_CODEC_MASK_ADPCM, "HELLO carries 0.1 and ADPCM only");
+    CHECK(h && h->buf[4] == 0 && h->buf[5] == 2 && h->buf[6] == BP_CODEC_MASK_ADPCM, "HELLO carries 0.2 and ADPCM only");
     CHECK(h && h->buf[7] == 23 && h->buf[8] == 0, "HELLO carries the current MTU");
     CHECK(s_voice == LINK_VOICE_WAIT_HELLO, "waits for HELLO_ACK");
     link_tick(&l, 2999);
@@ -84,7 +90,7 @@ static void test_handshake(void) {
     CHECK(s_voice == LINK_VOICE_NO_ACK, "no HELLO_ACK after 2 s");
 
     clear();
-    ack(&l, 0, 1, 3100);
+    ack(&l, 0, 2, 3100);
     CHECK(s_voice == LINK_VOICE_MTU, "a late HELLO_ACK works, but MTU 23 blocks voice");
     CHECK(find_type(BP_CONTEXT) && find_type(BP_DEVICE_STATUS), "CONTEXT and DEVICE_STATUS after HELLO_ACK");
     link_on_mtu(&l, 171, 3100);
@@ -100,12 +106,12 @@ static void test_version(void) {
     link_on_mtu(&l, 247, 0);
     link_on_subscribe(&l, true, 0);
     clear();
-    ack(&l, 0, 2, 50);
+    ack(&l, 0, 1, 50);
     const sent_t *e = last();
-    CHECK(e && e->buf[0] == BP_ERROR && e->buf[4] == BP_ERR_VERSION && e->buf[5] == BP_HELLO_ACK, "ERROR 3 for version 0.2");
+    CHECK(e && e->buf[0] == BP_ERROR && e->buf[4] == BP_ERR_VERSION && e->buf[5] == BP_HELLO_ACK, "ERROR 3 for version 0.1");
     CHECK(s_voice == LINK_VOICE_VERSION, "a version mismatch blocks voice");
     CHECK(link_agent_start(&l) == 0, "no exchange without voice");
-    ack(&l, 0, 1, 60);
+    ack(&l, 0, 2, 60);
     CHECK(s_voice == LINK_VOICE_OK, "a correct HELLO_ACK recovers");
 }
 
@@ -241,7 +247,7 @@ static void test_reconnect_and_status(void) {
     link_on_connect(&l, t + 2);
     link_on_mtu(&l, 247, t + 2);
     link_on_subscribe(&l, true, t + 2);
-    ack(&l, 0, 1, t + 3);
+    ack(&l, 0, 2, t + 3);
     CHECK(link_agent_start(&l) == 0x01, "a new connection resets the xid to 0x01");
 
     clear();
@@ -266,6 +272,79 @@ static void test_reconnect_and_status(void) {
           "DEVICE_STATUS carries battery, mode, page, and heap");
 }
 
+// Increment 2: LIVE_STATS and RUN_REPORT, doc 07 sections 6 and 8.
+static void test_live_data(void) {
+    link_core_t l;
+    uint8_t p[LINK_PACKET_MAX];
+    const bp_live_stats_t in = { BP_RUN_SKIING, 3, 383, 312, 1850, 24, 151 };
+    size_t n = bp_build_live_stats(p, sizeof p, &in);
+    bool stale = false;
+    s_lives = 0;
+
+    // Before HELLO_ACK the device ignores the data.
+    link_init(&l, &IO, "fw");
+    link_on_connect(&l, 0);
+    link_on_subscribe(&l, true, 0);
+    rx(&l, p, n, 5);
+    CHECK(s_lives == 0 && link_live(&l, 5, &stale) == NULL && stale, "no data before HELLO_ACK");
+
+    // A wrong version also blocks the data.
+    ack(&l, 0, 1, 10);
+    rx(&l, p, n, 20);
+    CHECK(s_lives == 0, "no data with a version mismatch");
+
+    // MTU 23 blocks voice, but not the data: LIVE_STATS needs 31 only.
+    ack(&l, 0, 2, 30);
+    CHECK(s_voice == LINK_VOICE_MTU, "MTU 23 blocks voice");
+    clear();
+    rx(&l, p, n, 1000);
+    CHECK(s_lives == 1 && s_live.distance_m == 1850 && s_live.turns == 24, "LIVE_STATS reaches the app");
+    CHECK(s_nsent == 0, "the device sends no reply to LIVE_STATS");
+    const bp_live_stats_t *got = link_live(&l, 1000 + LINK_LIVE_STALE_MS - 1, &stale);
+    CHECK(got && got->time_s == 151 && !stale, "fresh before 5 s");
+    link_live(&l, 1000 + LINK_LIVE_STALE_MS, &stale);
+    CHECK(stale, "stale after 5 s with no packet");
+
+    // A new packet replaces the old one completely.
+    const bp_live_stats_t next = { BP_RUN_ENDED, 3, BP_U16_UNKNOWN, 320, 1900, 25, 160 };
+    n = bp_build_live_stats(p, sizeof p, &next);
+    rx(&l, p, n, 7000);
+    got = link_live(&l, 7000, &stale);
+    CHECK(got && got->run_state == BP_RUN_ENDED && got->speed_dkmh == 0xFFFF && !stale, "the new packet replaces the old");
+
+    // A short payload gets ERROR 2 and keeps the old packet.
+    clear();
+    rx(&l, p, n - 1, 7100);
+    const sent_t *e = last();
+    CHECK(e && e->buf[0] == BP_ERROR && e->buf[4] == BP_ERR_LENGTH && e->buf[5] == BP_LIVE_STATS, "ERROR 2 for a short LIVE_STATS");
+    got = link_live(&l, 7100, &stale);
+    CHECK(got && got->distance_m == 1900, "a short packet keeps the old data");
+
+    // RUN_REPORT: copied texts, closed by a zero byte.
+    s_reports = 0;
+    uint32_t age = 0;
+    CHECK(link_report(&l, 7200, &age) == NULL, "no report before the first one");
+    n = bp_build_run_report(p, sizeof p, 3, 1900, 25, 82, "重心偏后", "下一趟把双手放在身体前方");
+    rx(&l, p, n, 8000);
+    const link_report_t *r = link_report(&l, 8000 + LINK_DATA_AGE_MS, &age);
+    CHECK(s_reports == 1 && r && r->run_no == 3 && r->iq == 82 && r->turns == 25, "RUN_REPORT reaches the app");
+    CHECK(r && strcmp(r->problem, "重心偏后") == 0 && strcmp(r->tip, "下一趟把双手放在身体前方") == 0, "the texts arrive whole");
+    CHECK(age == LINK_DATA_AGE_MS, "the report age uses the local receive time");
+
+    // A bad report gets an ERROR and keeps the old report.
+    clear();
+    p[BP_HEADER_SIZE + 5] = 101;
+    rx(&l, p, n, 8100);
+    e = last();
+    CHECK(e && e->buf[4] == BP_ERR_FIELD && e->buf[5] == BP_RUN_REPORT, "ERROR 7 for an IQ above 100");
+    r = link_report(&l, 8100, &age);
+    CHECK(s_reports == 1 && r && r->iq == 82, "a bad report keeps the old report");
+
+    // A disconnect keeps both, so that the screen can still show them.
+    link_on_disconnect(&l, 9000);
+    CHECK(link_live(&l, 9000, &stale) != NULL && link_report(&l, 9000, &age) != NULL, "a disconnect keeps the data");
+}
+
 int main(void) {
     test_handshake();
     test_version();
@@ -274,6 +353,7 @@ int main(void) {
     test_silence();
     test_errors();
     test_reconnect_and_status();
+    test_live_data();
     if (s_fail) return EXIT_FAILURE;
     printf("link core tests: PASS\n");
     return EXIT_SUCCESS;

@@ -154,6 +154,21 @@ static void log_packet(const char *dir, const uint8_t *buf, size_t len) {
             ESP_LOGI(TAG, "%s PLAY_START xid=0x%02x channel=%u codec=%u", dir, p.xid, a.channel, a.codec);
         return;
     }
+    case BP_LIVE_STATS: {
+        bp_live_stats_t s;
+        if (bp_read_live_stats(&p, &s) == BP_OK)
+            ESP_LOGI(TAG, "%s LIVE_STATS run=%u state=%u speed=%u drop=%u dist=%u turns=%u time=%u", dir,
+                     s.run_no, s.run_state, s.speed_dkmh, s.drop_m, s.distance_m, s.turns, s.time_s);
+        return;
+    }
+    case BP_RUN_REPORT: {
+        bp_run_report_t r;
+        if (bp_read_run_report(&p, &r) == BP_OK)
+            ESP_LOGI(TAG, "%s RUN_REPORT run=%u dist=%u turns=%u iq=%u problem=\"%.*s\" tip=\"%.*s\"", dir,
+                     r.run_no, r.distance_m, r.turns, r.iq, (int)r.problem.len, (const char *)r.problem.ptr,
+                     (int)r.tip.len, (const char *)r.tip.ptr);
+        return;
+    }
     default:
         ESP_LOGI(TAG, "%s %s xid=0x%02x seq=%u len=%u", dir, name, p.xid, p.seq, (unsigned)p.payload_len);
         return;
@@ -208,6 +223,14 @@ static void io_play_end(void *ctx) {
     ESP_LOGI(TAG, "answer received: %u AUDIO_DOWN blocks (%u ms), %u missing",
              s_down_blocks, s_down_blocks * 20, s_down_missing);
     if (s_app.play_end) s_app.play_end();
+}
+static void io_live(void *ctx, const bp_live_stats_t *s) {
+    (void)ctx;
+    if (s_app.live_stats) s_app.live_stats(s);
+}
+static void io_report(void *ctx, const link_report_t *r) {
+    (void)ctx;
+    if (s_app.run_report) s_app.run_report(r);
 }
 static void io_dropped(void *ctx, uint8_t type, uint8_t xid, uint8_t current) {
     (void)ctx;
@@ -441,7 +464,7 @@ esp_err_t ble_link_start(const ble_link_app_t *app) {
     }
 
     const link_io_t io = { NULL, io_send, io_drop_audio, io_voice, io_state, io_play_start, io_down,
-                           io_play_end, io_dropped };
+                           io_play_end, io_dropped, io_live, io_report };
     link_init(&s_core, &io, s_fw);
 
     esp_err_t err = demo_radio_nvs_prepare();

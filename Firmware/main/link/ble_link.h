@@ -23,6 +23,9 @@ typedef struct {
     void (*play_start)(void);
     void (*audio_down)(const uint8_t *block, size_t len, uint8_t missing);
     void (*play_end)(void);
+    // Increment 2 data. Each call runs on the NimBLE host task.
+    void (*live_stats)(const bp_live_stats_t *s);
+    void (*run_report)(const link_report_t *r);
 } ble_link_app_t;
 
 // Start NimBLE, register the service, and advertise. Call once.

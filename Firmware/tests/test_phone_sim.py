@@ -40,7 +40,7 @@ def c_build(fn, *args):
 
 class PacketTest(unittest.TestCase):
     def test_hello_ack(self):
-        c = c_build("bp_build_hello_ack", ctypes.c_uint8(0), ctypes.c_uint8(1), ctypes.c_uint32(1760000000),
+        c = c_build("bp_build_hello_ack", ctypes.c_uint8(0), ctypes.c_uint8(2), ctypes.c_uint32(1760000000),
                     ctypes.c_char_p(b"phone_sim"))
         self.assertEqual(hl.hello_ack(1760000000, "phone_sim"), c)
 
@@ -71,7 +71,28 @@ class PacketTest(unittest.TestCase):
     def test_read_hello(self):
         c = c_build("bp_build_hello", ctypes.c_uint8(1), ctypes.c_uint16(247), ctypes.c_char_p(b"heygo 0.2"))
         _, _, _, _, payload = hl.parse(c)
-        self.assertEqual(hl.read_hello(payload), {"major": 0, "minor": 1, "codec_mask": 1, "mtu": 247, "fw": "heygo 0.2"})
+        self.assertEqual(hl.read_hello(payload), {"major": 0, "minor": 2, "codec_mask": 1, "mtu": 247, "fw": "heygo 0.2"})
+
+    def test_live_stats(self):
+        class Live(ctypes.Structure):
+            _fields_ = [("run_state", ctypes.c_uint8), ("run_no", ctypes.c_uint8), ("speed_dkmh", ctypes.c_uint16),
+                        ("drop_m", ctypes.c_uint16), ("distance_m", ctypes.c_uint16), ("turns", ctypes.c_uint16),
+                        ("time_s", ctypes.c_uint16)]
+        for vals in [(1, 4, 383, 312, 1850, 24, 151), (3, 0xFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF)]:
+            c = c_build("bp_build_live_stats", ctypes.byref(Live(*vals)))
+            self.assertEqual(hl.live_stats(*vals), c)
+            self.assertEqual(len(c), 16)
+
+    def test_run_report(self):
+        for vals in [(4, 1850, 24, 82, "重心偏后", "下一趟把双手放在身体前方"), (1, 0xFFFF, 0xFFFF, 0xFF, "", "")]:
+            run_no, dist, turns, iq, problem, tip = vals
+            c = c_build("bp_build_run_report", ctypes.c_uint8(run_no), ctypes.c_uint16(dist), ctypes.c_uint16(turns),
+                        ctypes.c_uint8(iq), ctypes.c_char_p(problem.encode()), ctypes.c_char_p(tip.encode()))
+            self.assertEqual(hl.run_report(*vals), c)
+        with self.assertRaises(ValueError):
+            hl.run_report(1, 0, 0, 50, tip="雪" * 21)
+        with self.assertRaises(ValueError):
+            hl.run_report(1, 0, 0, 101)
 
     def test_short_packet(self):
         with self.assertRaises(ValueError):

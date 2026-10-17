@@ -183,6 +183,43 @@ static void on_play_end(link_core_t *l, const bp_packet_t *p) {
     if (l->io.play_end) l->io.play_end(l->io.ctx);
 }
 
+// Doc 07: the data messages need a HELLO_ACK with the same protocol version.
+static bool data_allowed(const link_core_t *l) { return l->acked && !l->version_bad; }
+
+static void on_live_stats(link_core_t *l, const bp_packet_t *p, uint32_t now_ms) {
+    bp_live_stats_t s;
+    if (!data_allowed(l) || bp_read_live_stats(p, &s) != BP_OK) return;
+    l->live = s;
+    l->has_live = true;
+    l->live_ms = now_ms;
+    if (l->io.live_stats) l->io.live_stats(l->io.ctx, &l->live);
+}
+
+static void copy_text(char *dst, const bp_text_t *t) {
+    if (t->len) memcpy(dst, t->ptr, t->len);
+    dst[t->len] = '\0';
+}
+
+static void on_run_report(link_core_t *l, const bp_packet_t *p, uint32_t now_ms) {
+    if (!data_allowed(l)) return;
+    bp_run_report_t r;
+    const bp_err_t err = bp_read_run_report(p, &r);
+    if (err != BP_OK) {
+        // The old report stays on the screen.
+        send_error(l, (uint8_t)err, p->type, p->xid);
+        return;
+    }
+    l->report.run_no = r.run_no;
+    l->report.distance_m = r.distance_m;
+    l->report.turns = r.turns;
+    l->report.iq = r.iq;
+    copy_text(l->report.problem, &r.problem);
+    copy_text(l->report.tip, &r.tip);
+    l->has_report = true;
+    l->report_ms = now_ms;
+    if (l->io.run_report) l->io.run_report(l->io.ctx, &l->report);
+}
+
 void link_on_rx(link_core_t *l, const uint8_t *buf, size_t len, uint32_t now_ms) {
     if (!l->connected) return;
     l->last_rx_ms = now_ms;
@@ -208,6 +245,8 @@ void link_on_rx(link_core_t *l, const uint8_t *buf, size_t len, uint32_t now_ms)
     case BP_PLAY_START: on_play_start(l, &p); break;
     case BP_AUDIO_DOWN: on_audio_down(l, &p); break;
     case BP_PLAY_END: on_play_end(l, &p); break;
+    case BP_LIVE_STATS: on_live_stats(l, &p, now_ms); break;
+    case BP_RUN_REPORT: on_run_report(l, &p, now_ms); break;
     default:
         // A device-to-phone type that arrives from the phone.
         send_error(l, BP_ERR_STATE, p.type, p.xid);
@@ -266,6 +305,19 @@ void link_set_device(link_core_t *l, uint8_t battery, uint8_t mode, uint8_t page
     l->free_kib = free_kib;
     // A heap change alone waits for the 30-second packet.
     if (changed) send_device_state(l, context, now_ms);
+}
+
+const bp_live_stats_t *link_live(const link_core_t *l, uint32_t now_ms, bool *stale) {
+    if (stale) *stale = true;
+    if (!l->has_live) return NULL;
+    if (stale) *stale = (uint32_t)(now_ms - l->live_ms) >= LINK_LIVE_STALE_MS;
+    return &l->live;
+}
+
+const link_report_t *link_report(const link_core_t *l, uint32_t now_ms, uint32_t *age_ms) {
+    if (!l->has_report) return NULL;
+    if (age_ms) *age_ms = (uint32_t)(now_ms - l->report_ms);
+    return &l->report;
 }
 
 const char *link_voice_name(link_voice_t voice) {

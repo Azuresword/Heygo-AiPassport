@@ -1,5 +1,5 @@
 // Host tests for the packet layer in Sprint 0, task T-2.
-// Every value comes from doc 07, protocol version 0.1.
+// Every value comes from doc 07, protocol version 0.2.
 #include "protocol/ble_proto.h"
 
 #include <assert.h>
@@ -14,11 +14,11 @@ static void roundtrip_link(void) {
     bp_packet_t p;
     size_t n = bp_build_hello(buf, CAP, BP_CODEC_MASK_ADPCM | BP_CODEC_MASK_PCM, 247, "0.1.0");
     assert(n == 4 + 5 + 5);
-    assert(buf[4] == 0 && buf[5] == 1);                // protocol 0.1
+    assert(buf[4] == 0 && buf[5] == 2);                // protocol 0.2
     assert(buf[7] == 0xF7 && buf[8] == 0x00);          // MTU 247, little-endian
     assert(bp_parse(buf, n, &p) == BP_OK);
     bp_hello_t h; assert(bp_read_hello(&p, &h) == BP_OK);
-    assert(h.major == 0 && h.minor == 1 && h.mtu == 247 && h.codec_mask == 3);
+    assert(h.major == 0 && h.minor == 2 && h.mtu == 247 && h.codec_mask == 3);
     assert(h.fw.len == 5 && memcmp(h.fw.ptr, "0.1.0", 5) == 0);
 
     n = bp_build_hello_ack(buf, CAP, 0, 1, 1760000000u, "app-1.0");
@@ -100,10 +100,10 @@ static void error_codes(void) {
     uint8_t team[4] = { 0x50, 0, 0, 0 };
     assert(bp_parse(team, 4, &p) == BP_ERR_UNKNOWN_TYPE);
 
-    // Code 3: any version other than 0.1 while the major is 0.
-    assert(bp_check_version(0, 1) == BP_OK);
-    assert(bp_check_version(0, 2) == BP_ERR_VERSION);
-    assert(bp_check_version(1, 1) == BP_ERR_VERSION);
+    // Code 3: any version other than 0.2 while the major is 0.
+    assert(bp_check_version(0, 2) == BP_OK);
+    assert(bp_check_version(0, 1) == BP_ERR_VERSION);
+    assert(bp_check_version(1, 2) == BP_ERR_VERSION);
 
     // Code 7: an unknown codec, a wrong sample rate, or a failure code outside "Failed".
     uint8_t bad_codec[6] = { BP_AGENT_START, 0, 5, 0, 9, 16 };
@@ -122,6 +122,97 @@ static void error_codes(void) {
     // Code 2 for an audio block of the wrong size.
     assert(bp_check_audio_block(BP_CODEC_ADPCM, BP_ADPCM_BLOCK - 1) == BP_ERR_LENGTH);
     assert(bp_check_audio_block(BP_CODEC_PCM, BP_PCM_BLOCK) == BP_OK);
+}
+
+// Increment 2: LIVE_STATS and RUN_REPORT, doc 07 section 6.
+static void live_stats(void) {
+    bp_packet_t p;
+    const bp_live_stats_t in = { BP_RUN_SKIING, 4, 383, 312, 1850, 24, 151 };
+    size_t n = bp_build_live_stats(buf, CAP, &in);
+    assert(n == BP_HEADER_SIZE + 12);
+    assert(buf[0] == 0x60 && buf[2] == 0 && buf[3] == 0);         // xid 0, seq 0
+    assert(buf[6] == 0x7F && buf[7] == 0x01);                       // 383, little-endian
+    assert(bp_parse(buf, n, &p) == BP_OK);
+    bp_live_stats_t s; assert(bp_read_live_stats(&p, &s) == BP_OK);
+    assert(memcmp(&s, &in, sizeof s) == 0);
+
+    // Unknown values pass through unchanged. The screen shows them as "--".
+    const bp_live_stats_t unk = { BP_RUN_UNKNOWN, BP_U8_UNKNOWN, BP_U16_UNKNOWN, BP_U16_UNKNOWN,
+                                  BP_U16_UNKNOWN, BP_U16_UNKNOWN, BP_U16_UNKNOWN };
+    n = bp_build_live_stats(buf, CAP, &unk);
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_live_stats(&p, &s) == BP_OK);
+    assert(s.speed_dkmh == 0xFFFF && s.run_no == 0xFF && s.turns == 0xFFFF);
+
+    // An unknown run state reads as unknown, with no error.
+    buf[4] = 9;
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_live_stats(&p, &s) == BP_OK && s.run_state == BP_RUN_UNKNOWN);
+    // A short payload gets code 2. Extra bytes stay allowed.
+    assert(bp_parse(buf, n - 1, &p) == BP_ERR_LENGTH);
+    assert(bp_parse(buf, n + 3, &p) == BP_OK);
+    // The builder refuses a run state that the protocol does not define.
+    bp_live_stats_t bad = in; bad.run_state = 4;
+    assert(bp_build_live_stats(buf, CAP, &bad) == 0);
+}
+
+static void run_report(void) {
+    bp_packet_t p;
+    bp_run_report_t r;
+    const char *problem = "重心偏后";                          // 12 bytes
+    const char *tip = "下一趟把双手放在身体前方";                // 36 bytes
+    size_t n = bp_build_run_report(buf, CAP, 4, 1850, 24, 82, problem, tip);
+    assert(n == BP_HEADER_SIZE + 7 + 12 + 36);
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_run_report(&p, &r) == BP_OK);
+    assert(r.run_no == 4 && r.distance_m == 1850 && r.turns == 24 && r.iq == 82);
+    assert(r.problem.len == 12 && memcmp(r.problem.ptr, problem, 12) == 0);
+    assert(r.tip.len == 36 && memcmp(r.tip.ptr, tip, 36) == 0);
+
+    // Empty texts and an unknown IQ stay valid.
+    n = bp_build_run_report(buf, CAP, 1, BP_U16_UNKNOWN, BP_U16_UNKNOWN, BP_U8_UNKNOWN, "", "");
+    assert(n == BP_HEADER_SIZE + 7);
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_run_report(&p, &r) == BP_OK);
+    assert(r.iq == 0xFF && r.problem.len == 0 && r.tip.len == 0);
+
+    // The longest texts: 12 and 20 Chinese characters. The packet fits at MTU 172.
+    char longp[64] = "", longt[96] = "";
+    for (int i = 0; i < 12; i++) strcat(longp, "滑");
+    for (int i = 0; i < 20; i++) strcat(longt, "雪");
+    n = bp_build_run_report(buf, CAP, 2, 100, 10, 100, longp, longt);
+    assert(n == BP_HEADER_SIZE + 7 + 36 + 60 && n <= CAP);
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_run_report(&p, &r) == BP_OK);
+
+    // The builder refuses a text above the limit, and an IQ above 100.
+    strcat(longt, "雪");
+    assert(bp_build_run_report(buf, CAP, 2, 100, 10, 100, longp, longt) == 0);
+    assert(bp_build_run_report(buf, CAP, 2, 100, 10, 101, "", "") == 0);
+
+    // The reader gives code 4 for a long text, code 2 for a length past the end,
+    // and code 7 for a bad IQ or bad UTF-8.
+    uint8_t raw[BP_HEADER_SIZE + 7 + 70] = { BP_RUN_REPORT, 0, 0, 0, 1, 0, 0, 0, 0, 50, 0 };
+    memset(raw + 11, 'a', 70);
+    assert(bp_parse(raw, sizeof raw, &p) == BP_OK && bp_read_run_report(&p, &r) == BP_ERR_TOO_LARGE);
+    raw[10] = 37;                                                   // problem 37 bytes, tip 33
+    assert(bp_parse(raw, sizeof raw, &p) == BP_OK && bp_read_run_report(&p, &r) == BP_ERR_TOO_LARGE);
+    raw[10] = 71;                                                   // past the end
+    assert(bp_parse(raw, sizeof raw, &p) == BP_OK && bp_read_run_report(&p, &r) == BP_ERR_LENGTH);
+    raw[10] = 0;
+    assert(bp_parse(raw, BP_HEADER_SIZE + 7 + 10, &p) == BP_OK && bp_read_run_report(&p, &r) == BP_OK);
+    raw[9] = 101;
+    assert(bp_parse(raw, BP_HEADER_SIZE + 7 + 10, &p) == BP_OK && bp_read_run_report(&p, &r) == BP_ERR_FIELD);
+    raw[9] = 50;
+    raw[11] = 0xE6; raw[12] = 0xBB;                                 // a cut 3-byte character
+    assert(bp_parse(raw, BP_HEADER_SIZE + 7 + 2, &p) == BP_OK && bp_read_run_report(&p, &r) == BP_ERR_FIELD);
+    assert(bp_parse(raw, BP_HEADER_SIZE + 6, &p) == BP_ERR_LENGTH);
+}
+
+static void utf8_rules(void) {
+    assert(bp_utf8_valid((const uint8_t *)"", 0));
+    assert(bp_utf8_valid((const uint8_t *)"ok 重心", 9));
+    const uint8_t overlong[] = { 0xC0, 0xAF };
+    const uint8_t surrogate[] = { 0xED, 0xA0, 0x80 };
+    const uint8_t lone[] = { 0x80 };
+    const uint8_t cut[] = { 0xE9, 0x87 };
+    assert(!bp_utf8_valid(overlong, 2) && !bp_utf8_valid(surrogate, 3));
+    assert(!bp_utf8_valid(lone, 1) && !bp_utf8_valid(cut, 2));
 }
 
 static void trailing_bytes_ignored(void) {
@@ -180,6 +271,8 @@ static void seq_rules(void) {
 static void type_names(void) {
     assert(strcmp(bp_type_name(BP_AGENT_STATE), "AGENT_STATE") == 0);
     assert(strcmp(bp_type_name(BP_PLAY_END), "PLAY_END") == 0);
+    assert(strcmp(bp_type_name(BP_LIVE_STATS), "LIVE_STATS") == 0);
+    assert(strcmp(bp_type_name(BP_RUN_REPORT), "RUN_REPORT") == 0);
     assert(strcmp(bp_type_name(0x55), "?") == 0);
 }
 
@@ -188,6 +281,9 @@ int main(void) {
     roundtrip_link();
     roundtrip_agent_and_audio();
     error_codes();
+    live_stats();
+    run_report();
+    utf8_rules();
     trailing_bytes_ignored();
     reader_guards();
     xid_rules();

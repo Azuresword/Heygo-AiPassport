@@ -1,4 +1,4 @@
-"""heygo_link - the phone side of the doc 07 protocol, version 0.1, in plain Python.
+"""heygo_link - the phone side of the doc 07 protocol, version 0.2, in plain Python.
 
 This module has no BLE code. phone_sim.py uses it over BLE, and
 tests/test_phone_sim.py checks it byte for byte against the C code of the firmware.
@@ -6,7 +6,7 @@ tests/test_phone_sim.py checks it byte for byte against the C code of the firmwa
 
 import struct
 
-PROTO_MAJOR, PROTO_MINOR = 0, 1
+PROTO_MAJOR, PROTO_MINOR = 0, 2
 HEADER = 4
 ADPCM_BLOCK = 164
 BLOCK_SAMPLES = 320
@@ -21,6 +21,7 @@ HELLO, HELLO_ACK, PHONE_STATUS, DEVICE_STATUS, ERROR = 0x01, 0x02, 0x03, 0x04, 0
 CONTEXT = 0x10
 AGENT_START, AGENT_END, AGENT_CANCEL, AGENT_STATE = 0x20, 0x21, 0x22, 0x23
 AUDIO_UP, AUDIO_DOWN, PLAY_START, PLAY_END = 0x30, 0x31, 0x32, 0x33
+LIVE_STATS, RUN_REPORT = 0x60, 0x61
 
 TYPE_NAMES = {
     HELLO: "HELLO", HELLO_ACK: "HELLO_ACK", PHONE_STATUS: "PHONE_STATUS",
@@ -28,12 +29,19 @@ TYPE_NAMES = {
     AGENT_START: "AGENT_START", AGENT_END: "AGENT_END", AGENT_CANCEL: "AGENT_CANCEL",
     AGENT_STATE: "AGENT_STATE", AUDIO_UP: "AUDIO_UP", AUDIO_DOWN: "AUDIO_DOWN",
     PLAY_START: "PLAY_START", PLAY_END: "PLAY_END",
+    LIVE_STATS: "LIVE_STATS", RUN_REPORT: "RUN_REPORT",
 }
 
 ACCEPTED, RECOGNIZING, THINKING, ANSWERING, DONE, FAILED = 1, 2, 3, 4, 5, 6
 FAIL_RECOGNITION, FAIL_TIMEOUT, FAIL_GATEWAY = 1, 2, 3
 CODEC_ADPCM = 0
 CHANNEL_AGENT = 0
+
+# Increment 2 data, doc 07 section 6. The phone sends these values when it cannot
+# calculate a field.
+U8_UNKNOWN, U16_UNKNOWN = 0xFF, 0xFFFF
+RUN_UNKNOWN, RUN_SKIING, RUN_STOPPED, RUN_ENDED = 0, 1, 2, 3
+PROBLEM_MAX, TIP_MAX = 36, 60   # UTF-8 bytes: 12 and 20 Chinese characters.
 
 
 # ---------------------------------------------------------------- packets
@@ -72,6 +80,22 @@ def audio_down(xid, seq, block):
 
 def play_end(xid):
     return packet(PLAY_END, xid)
+
+
+def live_stats(run_state, run_no, speed_dkmh, drop_m, distance_m, turns, time_s):
+    """One LIVE_STATS packet. Speed in 0.1 km/h. Use U8_UNKNOWN or U16_UNKNOWN for a missing field."""
+    return packet(LIVE_STATS, payload=struct.pack("<BBHHHHH", run_state, run_no, speed_dkmh, drop_m,
+                                                  distance_m, turns, time_s))
+
+
+def run_report(run_no, distance_m, turns, iq, problem="", tip=""):
+    """One RUN_REPORT packet. iq is 0 to 100, or U8_UNKNOWN."""
+    p, t = problem.encode(), tip.encode()
+    if len(p) > PROBLEM_MAX or len(t) > TIP_MAX:
+        raise ValueError("problem holds at most 36 bytes, tip at most 60 bytes")
+    if iq > 100 and iq != U8_UNKNOWN:
+        raise ValueError("iq is 0 to 100, or U8_UNKNOWN")
+    return packet(RUN_REPORT, payload=struct.pack("<BHHBB", run_no, distance_m, turns, iq, len(p)) + p + t)
 
 
 def read_hello(payload):

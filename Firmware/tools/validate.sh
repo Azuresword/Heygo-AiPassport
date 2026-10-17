@@ -106,6 +106,10 @@ run_static_checks() {
         tests/test_link_core.c main/link/link_core.c main/protocol/ble_proto.c \
         -o "${test_dir}/test_link_core"
     "${test_dir}/test_link_core"
+    # Sprint 2: the text of the Increment 2 numbers.
+    "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain/ui \
+        tests/test_stats_fmt.c main/ui/stats_fmt.c -o "${test_dir}/test_stats_fmt"
+    "${test_dir}/test_stats_fmt"
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_phone_sim.py
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_analyze_log.py
 

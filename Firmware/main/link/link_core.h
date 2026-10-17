@@ -1,5 +1,5 @@
 // main/link/link_core.h
-// The device side of the BLE protocol session: doc 07, protocol version 0.1.
+// The device side of the BLE protocol session: doc 07, protocol version 0.2.
 //
 // The core owns the handshake, the voice availability, the exchange IDs, and the
 // periodic status packets. It does no I/O. It sends packets and reports events
@@ -25,6 +25,8 @@ extern "C" {
 #define LINK_ATT_OVERHEAD     3       // ATT header in each notification and write.
 #define LINK_PACKET_MAX       244     // ATT MTU 247 minus the ATT header.
 #define LINK_TEXT_MAX         240     // Longest AGENT_STATE text at MTU 247, plus room.
+#define LINK_LIVE_STALE_MS    5000    // Doc 07 section 8: the Ski page shows the speed as "--".
+#define LINK_DATA_AGE_MS      60000   // Doc 07 section 8: the screen shows the data age.
 
 // Control packets go before audio packets. AGENT_END travels in the audio lane,
 // so that it follows the last AUDIO_UP block. See doc 07 section 7, "Last block".
@@ -41,6 +43,16 @@ typedef enum {
     LINK_VOICE_SILENT,       // No packet from the phone for 15 s.
 } link_voice_t;
 
+// The last RUN_REPORT, with its texts copied and closed by a zero byte.
+typedef struct {
+    uint8_t run_no;
+    uint16_t distance_m;
+    uint16_t turns;
+    uint8_t iq;
+    char problem[BP_PROBLEM_MAX + 1];
+    char tip[BP_TIP_MAX + 1];
+} link_report_t;
+
 typedef struct {
     void *ctx;
     void (*send)(void *ctx, link_lane_t lane, const uint8_t *pkt, size_t len);
@@ -54,6 +66,9 @@ typedef struct {
     // A packet of an Agent exchange arrived with another xid, or for a closed stream.
     // current is the xid of the open exchange, or 0. For debug logs.
     void (*dropped)(void *ctx, uint8_t type, uint8_t xid, uint8_t current);
+    // Increment 2 data. They come only after a HELLO_ACK with the same protocol version.
+    void (*live_stats)(void *ctx, const bp_live_stats_t *s);
+    void (*run_report)(void *ctx, const link_report_t *r);
 } link_io_t;
 
 typedef struct {
@@ -80,6 +95,13 @@ typedef struct {
     uint16_t free_kib;
     uint32_t utc;          // UTC seconds from HELLO_ACK or PHONE_STATUS. Zero: unknown.
     uint32_t utc_ms;       // Local time when utc arrived.
+    // Increment 2 data. A disconnect keeps it, so that the screen can still show it.
+    bp_live_stats_t live;
+    bool has_live;
+    uint32_t live_ms;      // Local receive time of live.
+    link_report_t report;
+    bool has_report;
+    uint32_t report_ms;    // Local receive time of report.
 } link_core_t;
 
 void link_init(link_core_t *l, const link_io_t *io, const char *fw_version);
@@ -105,6 +127,12 @@ void link_agent_done(link_core_t *l);                         // The answer ende
 // Device state for CONTEXT and DEVICE_STATUS. A change sends the packets at once.
 void link_set_device(link_core_t *l, uint8_t battery, uint8_t mode, uint8_t page,
                      uint16_t free_kib, uint32_t now_ms);
+
+// The last LIVE_STATS, or NULL when none arrived. *stale is true after LINK_LIVE_STALE_MS
+// with no new packet. The device uses its own receive time, not the phone time.
+const bp_live_stats_t *link_live(const link_core_t *l, uint32_t now_ms, bool *stale);
+// The last RUN_REPORT, or NULL when none arrived. *age_ms is the time since it arrived.
+const link_report_t *link_report(const link_core_t *l, uint32_t now_ms, uint32_t *age_ms);
 
 const char *link_voice_name(link_voice_t voice);
 

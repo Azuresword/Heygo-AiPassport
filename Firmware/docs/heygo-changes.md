@@ -212,11 +212,34 @@ If the lock times out, the setter does nothing.
 Each string setter cuts a text that is too long at a UTF-8 character boundary.
 The body subject holds 239 bytes of text. At an MTU of 247, `AGENT_STATE` text can have 238 bytes.
 
-## 8. Open items
+## 8. Sprint 2: ski data
+
+Sprint 2 lets the device receive the two Increment 2 messages. Section 6 of doc 07 defines them. The protocol version is 0.2.
+This Sprint does not change the screens. Sprints 3 and 4 connect the Ski page and the Report page.
+
+| File | Change |
+| --- | --- |
+| `main/protocol/ble_proto.*` | Protocol 0.2. Parse and build LIVE_STATS (0x60) and RUN_REPORT (0x61). Add a UTF-8 check. |
+| `main/link/link_core.*` | Keep the last LIVE_STATS, the last report, and their receive times. `link_live()` gives the 5-second out-of-date flag. `link_report()` gives the age of the report. |
+| `main/link/ble_link.*` | Give both kinds of data to the app callbacks. Log one line for each packet. |
+| `main/ui/stats_fmt.*` | Number formats in plain C. An unknown value gives "--", never 0. |
+| `tools/phone_sim/` | Protocol 0.2. `--runs N` sends N simulated runs. |
+| `tests/test_ble_proto.c`, `tests/test_link_core.c`, `tests/test_stats_fmt.c`, `tests/test_phone_sim.py` | The new messages, the session rules, the formats, and a byte-for-byte check of Python against C. |
+
+The device follows these rules:
+
+- The device accepts the two data messages only after a HELLO_ACK with the same protocol version.
+- Below an MTU of 172, voice stays off, but the data messages still work.
+- A bad report gets an ERROR, and the device keeps the old report.
+- After a link loss, the device keeps both kinds of data.
+
+If a phone application that supports only protocol 0.1 connects to this firmware, the device sends code 3 and disables voice.
+
+## 9. Open items
 
 - During capture, wait, or playback, the state machine ignores a DOWN hold. D-19 accepts this behavior.
 - Device tests: NOT RUN. The board is not at hand, and no phone application build follows doc 07 yet.
-- The phone application team must review doc 07 version 0.5, which adds the protocol notes in section 6.
+- The phone application team must review doc 07 version 0.6. It adds the protocol notes and the two data messages in section 6.
 - The battery label on the screen stays empty. DEVICE_STATUS carries the battery level.
 - A PLAY_START that arrives during capture is lost. The device then shows a timeout. D-20 forbids the phone to send it at that time.
 - The body label shows four lines. It ends a longer text with three dots. The device speaks the full answer.

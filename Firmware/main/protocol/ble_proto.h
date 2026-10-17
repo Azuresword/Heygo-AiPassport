@@ -1,9 +1,10 @@
 // main/protocol/ble_proto.h
-// Packet layer for the BLE protocol draft: doc 07, protocol version 0.1.
+// Packet layer for the BLE protocol draft: doc 07, protocol version 0.2.
 // Plain C. No NimBLE, no ESP-IDF, and no LVGL, so host tests can link it.
 //
-// The first version builds only the P0 messages. A P1 type (Team, Reports,
-// PLAY_STOP) counts as an unknown type here, and gets error code 1.
+// The first version builds the P0 messages and the Increment 2 data messages
+// LIVE_STATS and RUN_REPORT. A P1 type (Team, PLAY_STOP) counts as an unknown
+// type here, and gets error code 1.
 #pragma once
 
 #include <stdbool.h>
@@ -11,7 +12,7 @@
 #include <stdint.h>
 
 #define BP_PROTO_MAJOR     0
-#define BP_PROTO_MINOR     1
+#define BP_PROTO_MINOR     2
 #define BP_HEADER_SIZE     4
 #define BP_MTU_MIN         172
 #define BP_ADPCM_BLOCK     164      // 20 ms at 16 kHz, doc 07 section 7
@@ -34,6 +35,8 @@ typedef enum {
     BP_AUDIO_DOWN    = 0x31,
     BP_PLAY_START    = 0x32,
     BP_PLAY_END      = 0x33,
+    BP_LIVE_STATS    = 0x60,
+    BP_RUN_REPORT    = 0x61,
 } bp_type_t;
 
 typedef enum {
@@ -48,7 +51,7 @@ typedef enum {
 } bp_err_t;
 
 enum { BP_MODE_SKI = 0, BP_MODE_REST = 1 };
-enum { BP_PAGE_SKI = 0, BP_PAGE_COACH = 1, BP_PAGE_EXIT = 2, BP_PAGE_REPORTS = 3, BP_PAGE_TEAM = 4 };
+enum { BP_PAGE_SKI = 0, BP_PAGE_COACH = 1, BP_PAGE_EXIT = 2, BP_PAGE_REPORT = 3, BP_PAGE_TEAM = 4 };
 enum { BP_CODEC_ADPCM = 0, BP_CODEC_PCM = 1 };
 enum { BP_CODEC_MASK_ADPCM = 1u << BP_CODEC_ADPCM, BP_CODEC_MASK_PCM = 1u << BP_CODEC_PCM };
 enum { BP_AGENT_ACCEPTED = 1, BP_AGENT_RECOGNIZING, BP_AGENT_THINKING,
@@ -57,6 +60,16 @@ enum { BP_FAIL_NONE = 0, BP_FAIL_RECOGNITION = 1, BP_FAIL_TIMEOUT = 2, BP_FAIL_G
 enum { BP_END_RELEASE = 0, BP_END_LIMIT = 1 };
 enum { BP_CHANNEL_AGENT = 0, BP_CHANNEL_TEAM = 1 };
 #define BP_BATTERY_UNKNOWN 0xFF
+// Increment 2 data, doc 07 section 6. The phone sends these values when it cannot
+// calculate a field. The device shows them as "--" and never as 0.
+#define BP_U8_UNKNOWN      0xFF
+#define BP_U16_UNKNOWN     0xFFFF
+enum { BP_RUN_UNKNOWN = 0, BP_RUN_SKIING = 1, BP_RUN_STOPPED = 2, BP_RUN_ENDED = 3 };
+#define BP_LIVE_STATS_SIZE   12
+#define BP_RUN_REPORT_FIXED  7
+#define BP_IQ_MAX            100
+#define BP_PROBLEM_MAX       36     // 12 Chinese characters in UTF-8.
+#define BP_TIP_MAX           60     // 20 Chinese characters in UTF-8.
 #define BP_FLAG_LAST       0x01
 
 typedef struct {
@@ -76,6 +89,23 @@ typedef struct { uint8_t mode, page; } bp_context_t;
 typedef struct { uint8_t codec, rate_khz; } bp_agent_start_t;
 typedef struct { uint8_t state, failure; bp_text_t text; } bp_agent_state_t;
 typedef struct { uint8_t channel, codec; bp_text_t speaker; } bp_play_start_t;
+typedef struct {
+    uint8_t run_state;       // BP_RUN_*. An unknown value reads as BP_RUN_UNKNOWN.
+    uint8_t run_no;          // Run number today, from 1.
+    uint16_t speed_dkmh;     // 0.1 km/h.
+    uint16_t drop_m;
+    uint16_t distance_m;
+    uint16_t turns;
+    uint16_t time_s;
+} bp_live_stats_t;
+typedef struct {
+    uint8_t run_no;
+    uint16_t distance_m;
+    uint16_t turns;
+    uint8_t iq;              // 0 to 100, or BP_U8_UNKNOWN.
+    bp_text_t problem;       // At most BP_PROBLEM_MAX bytes of UTF-8.
+    bp_text_t tip;           // At most BP_TIP_MAX bytes of UTF-8.
+} bp_run_report_t;
 
 // Parse the header and check the minimum payload length of a P0 type.
 // Extra bytes at the end of a fixed payload stay allowed.
@@ -91,6 +121,9 @@ bp_err_t bp_read_agent_start(const bp_packet_t *p, bp_agent_start_t *out);
 bp_err_t bp_read_agent_end(const bp_packet_t *p, uint8_t *reason);
 bp_err_t bp_read_agent_state(const bp_packet_t *p, bp_agent_state_t *out);
 bp_err_t bp_read_play_start(const bp_packet_t *p, bp_play_start_t *out);
+bp_err_t bp_read_live_stats(const bp_packet_t *p, bp_live_stats_t *out);
+// Gives BP_ERR_TOO_LARGE for a long text and BP_ERR_FIELD for bad UTF-8 or an IQ above 100.
+bp_err_t bp_read_run_report(const bp_packet_t *p, bp_run_report_t *out);
 
 // Each builder returns the packet length, or 0 when `cap` is too small or a value is invalid.
 size_t bp_build_hello(uint8_t *out, size_t cap, uint8_t codec_mask, uint16_t mtu, const char *fw);
@@ -107,12 +140,17 @@ size_t bp_build_audio(uint8_t *out, size_t cap, uint8_t type, uint8_t xid, uint8
                       const uint8_t *block, size_t block_len);
 size_t bp_build_play_start(uint8_t *out, size_t cap, uint8_t xid, uint8_t channel, uint8_t codec, const char *speaker);
 size_t bp_build_play_end(uint8_t *out, size_t cap, uint8_t xid);
+size_t bp_build_live_stats(uint8_t *out, size_t cap, const bp_live_stats_t *s);
+size_t bp_build_run_report(uint8_t *out, size_t cap, uint8_t run_no, uint16_t distance_m, uint16_t turns,
+                           uint8_t iq, const char *problem, const char *tip);
 
 // The name of a type, for logs. Returns "?" for an unknown type.
 const char *bp_type_name(uint8_t type);
 
 // While the major version is 0, both sides must use the same major and minor.
 bp_err_t bp_check_version(uint8_t major, uint8_t minor);
+// True when the bytes are complete UTF-8 with no overlong form.
+bool bp_utf8_valid(const uint8_t *p, size_t len);
 // Returns 0 for an unknown codec.
 size_t bp_audio_block_size(uint8_t codec);
 bp_err_t bp_check_audio_block(uint8_t codec, size_t len);

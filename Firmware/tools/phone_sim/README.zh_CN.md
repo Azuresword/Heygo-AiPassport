@@ -2,16 +2,17 @@
 
 # phone_sim：手机应用的替身
 
-`phone_sim.py` 通过 BLE 连接 AI Passport，按文档 07 的协议 0.1 通信。
+`phone_sim.py` 通过 BLE 连接 AI Passport，按文档 07 的协议 0.2 通信。
 在手机应用团队交付版本之前，用它做设备测试。
 它不做语音识别，也不调用 Agent。
 
 ## 它做什么
 
 1. 找到第一个名称以 `HeygoPP-` 开头的设备，并连接。
-2. 用 HELLO_ACK 0.1 回应 HELLO，每 3 秒发送一次 PHONE_STATUS。
+2. 用 HELLO_ACK 0.2 回应 HELLO，每 3 秒发送一次 PHONE_STATUS。
 3. 以 AUDIO_UP 块接收每个问题，保存成 WAV 文件。
 4. 按所选模式回答。
+5. 加上 `--runs N` 时，发送 N 趟模拟的滑行数据。见"滑行数据"一节。
 
 | 模式 | 回答 |
 | --- | --- |
@@ -36,6 +37,21 @@ python3 tools/phone_sim/phone_sim.py --mode wav --wav /tmp/a.wav
 
 日志显示每个数据包、MTU、块数、丢失的块，以及从 AGENT_END 到回答的延迟。
 
+## 滑行数据
+
+`--runs N` 发送 N 趟。`--run-s` 设定每趟的秒数，默认 30。
+
+```bash
+python3 tools/phone_sim/phone_sim.py --runs 3 --run-s 30
+```
+
+1. 滑行中，每秒发送一个 LIVE_STATS。
+2. 一趟不少于 20 秒时，中间发送 3 秒的"静止"状态。
+3. 第 2 趟没有速度。设备必须把速度显示为"--"，绝不显示 0。
+4. 一趟结束时，发送一个"本趟结束"状态的 LIVE_STATS。
+5. 2 秒后，发送一个 RUN_REPORT。
+6. 接着 10 秒不发送任何数据，模拟坐缆车。5 秒后，设备标明数据过期。
+
 ## 设备测试
 
 在刷了当前固件的板子上按下面的步骤做。
@@ -49,6 +65,7 @@ python3 tools/phone_sim/phone_sim.py --mode wav --wav /tmp/a.wav
 | 4 | 回答时长按 UP。 | 喇叭停止。日志显示 AGENT_CANCEL。 | TC-07 |
 | 5 | 提问过程中停止 `phone_sim.py`。 | 设备停止录音，并显示失败。 | TC-20 |
 | 6 | 先用 `fail` 模式，再用 `silent` 模式。 | 设备先显示重说提示，再显示超时提示。 | TC-06 |
+| 7 | 启动 `phone_sim.py --runs 3`。 | 日志每秒出现一行 LIVE_STATS，每趟结束后出现一行 RUN_REPORT。 | TC-02 |
 
 ## 日志分析
 

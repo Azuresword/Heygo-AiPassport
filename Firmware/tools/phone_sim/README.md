@@ -2,16 +2,17 @@
 
 # phone_sim: a stand-in for the phone application
 
-`phone_sim.py` connects to AI Passport over BLE and speaks protocol 0.1 of doc 07.
+`phone_sim.py` connects to AI Passport over BLE and speaks protocol 0.2 of doc 07.
 Use it for device tests before the phone application team delivers a build.
 It does no speech recognition and calls no Agent.
 
 ## What it does
 
 1. It finds the first device with a name that starts with `HeygoPP-`, and connects.
-2. It answers HELLO with HELLO_ACK 0.1, and sends PHONE_STATUS every 3 seconds.
+2. It answers HELLO with HELLO_ACK 0.2, and sends PHONE_STATUS every 3 seconds.
 3. It receives each question as AUDIO_UP blocks, and saves it as a WAV file.
 4. It answers in the selected mode.
+5. With `--runs N`, it sends N simulated runs of ski data. See the section "Ski data".
 
 | Mode | Answer |
 | --- | --- |
@@ -36,6 +37,21 @@ python3 tools/phone_sim/phone_sim.py --mode wav --wav /tmp/a.wav
 
 The log shows each packet, the MTU, the number of blocks, the missing blocks, and the delay from AGENT_END to the answer.
 
+## Ski data
+
+`--runs N` sends N runs. `--run-s` sets the seconds of each run. The default is 30.
+
+```bash
+python3 tools/phone_sim/phone_sim.py --runs 3 --run-s 30
+```
+
+1. During a run, it sends one LIVE_STATS each second.
+2. In a run of 20 seconds or more, it sends 3 seconds of the stopped state in the middle.
+3. Run 2 has no speed. The device must show "--" for the speed, never 0.
+4. When a run ends, it sends one LIVE_STATS with the ended state.
+5. After 2 seconds, it sends one RUN_REPORT.
+6. It then sends nothing for 10 seconds, as on a lift. The device marks the data out of date after 5 seconds.
+
 ## Device test
 
 Run these steps on a board with the current firmware.
@@ -49,6 +65,7 @@ Record the phone, the log, and the result of each step.
 | 4 | Hold UP during the answer. | The speaker stops. The log shows AGENT_CANCEL. | TC-07 |
 | 5 | Stop `phone_sim.py` during a question. | The device stops capture and shows the failure. | TC-20 |
 | 6 | Use `fail` mode, then `silent` mode. | The device shows the retry text, and then the timeout text. | TC-06 |
+| 7 | Start `phone_sim.py --runs 3`. | The log shows a LIVE_STATS line each second and a RUN_REPORT line after each run. | TC-02 |
 
 ## Log analysis
 

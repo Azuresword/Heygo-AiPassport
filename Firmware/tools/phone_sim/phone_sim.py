@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """phone_sim - a stand-in for the phone application, for device tests.
 
-It connects to an AI Passport over BLE and speaks protocol 0.1 of doc 07.
+It connects to an AI Passport over BLE and speaks protocol 0.2 of doc 07.
 It saves each question that the device sends as a WAV file, and then answers.
+With --runs N, it also sends N simulated runs of ski data: LIVE_STATS once each
+second during a run, then one RUN_REPORT after the run ends.
 
 Answer modes:
   echo     Play the question back. This tests the full audio path. (Default.)
@@ -13,6 +15,7 @@ Answer modes:
 Usage:
   pip install bleak
   python3 tools/phone_sim/phone_sim.py [--mode echo|wav|fail|silent] [--wav FILE] [--name HeygoPP-XXXX]
+                                      [--runs N] [--run-s SECONDS]
 
 To make a WAV file on macOS:
   say -o /tmp/a.aiff "上一趟重心偏后" && afconvert -f WAVE -d LEI16@16000 -c 1 /tmp/a.aiff /tmp/a.wav
@@ -49,6 +52,7 @@ class Phone:
         self.t_end = 0.0
         self.answer_task = None
         self.canceled = set()
+        self.acked = asyncio.Event()
 
     async def send(self, data):
         await self.client.write_gatt_char(hl.NUS_RX, data, response=False)
@@ -64,7 +68,8 @@ class Phone:
             h = hl.read_hello(payload)
             log(f"<- HELLO {h['major']}.{h['minor']} mask={h['codec_mask']} mtu={h['mtu']} fw={h['fw']!r}")
             asyncio.ensure_future(self.send(hl.hello_ack(int(time.time()))))
-            log("-> HELLO_ACK 0.1")
+            log(f"-> HELLO_ACK {hl.PROTO_MAJOR}.{hl.PROTO_MINOR}")
+            self.acked.set()
         elif ptype == hl.DEVICE_STATUS:
             log(f"<- DEVICE_STATUS {hl.read_device_status(payload)}")
         elif ptype == hl.CONTEXT:
@@ -153,6 +158,32 @@ class Phone:
         await self.send(hl.agent_state(xid, hl.DONE))
         log(f"-> PLAY_END after {len(down)} blocks")
 
+    async def ski_loop(self, runs, run_s):
+        """Send simulated runs. Run 2 has no speed, so the device must show "--" for it."""
+        await self.acked.wait()
+        await asyncio.sleep(1.0)
+        for run_no in range(1, runs + 1):
+            drop = dist = turns = 0
+            log(f"run {run_no}: start, {run_s} s")
+            for t in range(run_s):
+                stopped = run_s >= 20 and run_s // 2 <= t < run_s // 2 + 3     # A short stop mid-run.
+                speed = 0 if stopped else 250 + (t * 37) % 200                    # 25.0 to 44.9 km/h
+                if not stopped:
+                    drop += 4
+                    dist += speed // 36                                           # meters in one second
+                    turns += 1 if t % 3 == 0 else 0
+                state = hl.RUN_STOPPED if stopped else hl.RUN_SKIING
+                shown = hl.U16_UNKNOWN if run_no == 2 else speed
+                await self.send(hl.live_stats(state, run_no, shown, drop, dist, turns, t + 1))
+                await asyncio.sleep(1.0)
+            await self.send(hl.live_stats(hl.RUN_ENDED, run_no, hl.U16_UNKNOWN, drop, dist, turns, run_s))
+            log(f"run {run_no}: end, drop {drop} m, {dist} m, {turns} turns")
+            await asyncio.sleep(2.0)                                              # The phone needs time for the report.
+            iq = 60 + (run_no * 11) % 40
+            await self.send(hl.run_report(run_no, dist, turns, iq, "重心偏后", "下一趟把双手放在身体前方"))
+            log(f"-> RUN_REPORT run {run_no}: iq {iq}")
+            await asyncio.sleep(10.0)                                             # The lift: no LIVE_STATS.
+
     async def status_loop(self):
         while self.client.is_connected:
             await self.send(hl.phone_status(int(time.time())))
@@ -165,6 +196,8 @@ async def main():
     ap.add_argument("--wav", help="answer file for --mode wav")
     ap.add_argument("--name", help="device name; default: the first HeygoPP-* device")
     ap.add_argument("--out", default=".", help="folder for the question WAV files")
+    ap.add_argument("--runs", type=int, default=0, help="number of simulated runs of ski data (default 0)")
+    ap.add_argument("--run-s", type=int, default=30, help="seconds of each simulated run (default 30)")
     args = ap.parse_args()
     if args.mode == "wav" and not args.wav:
         ap.error("--mode wav needs --wav FILE")
@@ -185,6 +218,8 @@ async def main():
             log("warning: MTU below 172. The device disables voice.")
         phone = Phone(client, args)
         await client.start_notify(hl.NUS_TX, phone.on_notify)
+        if args.runs > 0:
+            asyncio.ensure_future(phone.ski_loop(args.runs, max(1, args.run_s)))
         await phone.status_loop()
     log("disconnected")
 
