@@ -24,6 +24,7 @@ idf_component_register(
          "ui/ui_theme.c"
          "ui/ui_state_icon.c"
          "ui/stats_fmt.c"
+         "ui/ski_view.c"
          "generated/coach_flow.c"
          "generated/coach_screens.c"
          "generated/coach_bindings.c"
@@ -36,6 +37,7 @@ idf_component_register(
          "${HEYGO_FONTS}/heygo_sc_28.c"
          "${HEYGO_FONTS}/heygo_display_20.c"
          "${HEYGO_FONTS}/heygo_display_34.c"
+         "${HEYGO_FONTS}/heygo_display_48.c"
     INCLUDE_DIRS "." "ui" "generated" "audio" "protocol" "link" "${HEYGO_FONTS}"
     REQUIRES bsp bt esp_app_format esp_event esp_hw_support esp_netif esp_timer esp_wifi nvs_flash
 )

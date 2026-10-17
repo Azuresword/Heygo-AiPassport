@@ -235,7 +235,22 @@ The device follows these rules:
 
 If a phone application that supports only protocol 0.1 connects to this firmware, the device sends code 3 and disables voice.
 
-## 9. Open items
+## 9. Sprints 3 and 4: the Ski page and the Report page
+
+| File | Change |
+| --- | --- |
+| `flows/coach.flow.json` | The Ski page gets the data layout. Add the Report page and the REPORT state. Add three transitions. A short DOWN in READY opens REPORT. A short UP in REPORT returns to READY. A DOWN hold in REPORT opens the exit question. |
+| `main/ui/ski_view.*` | Plain C. It makes the text of each label on both pages from the last LIVE_STATS and the last report. |
+| `main/coach_app.c` | When data arrives, and once each second, it writes only the changed texts into the current page. It logs one `screen` line for each write. On the Report page, CONTEXT sends page 3. |
+| `../assets/fonts/heygo_display_48.c` | The 48-pixel Staatliches font for the speed and the Heygo IQ. |
+| `tools/host_render/` | Add the `label` command and screen images 10 to 15. |
+| `tools/flow/flow_sim.*` | The simulator adds the Report page, the ski data buttons, and 16 new self-test items. |
+
+Data changes only the screen texts. It never changes the state of the state machine.
+flowc makes data bindings for the first screen only. The Coach task therefore writes the texts of the Ski page and the Report page into their labels.
+flowc estimates 18,960 bytes of LVGL pool for all four screens. Only one screen exists at run time. The host measures a peak of 17,584 of 21,656 bytes.
+
+## 10. Open items
 
 - During capture, wait, or playback, the state machine ignores a DOWN hold. D-19 accepts this behavior.
 - Device tests: NOT RUN. The board is not at hand, and no phone application build follows doc 07 yet.

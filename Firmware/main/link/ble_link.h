@@ -37,6 +37,10 @@ void ble_link_audio_up(const uint8_t *block);
 void ble_link_agent_end(uint8_t reason);
 void ble_link_agent_cancel(void);
 void ble_link_agent_done(void);
+// Copy the last ski data under the link lock. live or report can be NULL.
+// Each flag is false when that data never arrived.
+void ble_link_get_data(bp_live_stats_t *live, bool *has_live, bool *stale,
+                       link_report_t *report, bool *has_report, uint32_t *report_age_ms);
 // The mode and page for CONTEXT and DEVICE_STATUS (doc 07 field values).
 void ble_link_set_context(uint8_t mode, uint8_t page);
 

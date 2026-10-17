@@ -90,7 +90,8 @@ def build(sdkconfig):
                FW / "main/ui/ui_state_icon.c",
                FW / "main/generated/coach_screens.c", FW / "main/generated/coach_bindings.c",
                ASSETS / "fonts/heygo_sc_16.c", ASSETS / "fonts/heygo_sc_28.c",
-               ASSETS / "fonts/heygo_display_20.c", ASSETS / "fonts/heygo_display_34.c"]
+               ASSETS / "fonts/heygo_display_20.c", ASSETS / "fonts/heygo_display_34.c",
+               ASSETS / "fonts/heygo_display_48.c"]
     lvgl_jobs = len(jobs)
     jobs += [(s, BUILD / "app" / (s.stem + ".o"), app_inc) for s in app_src]
     with ThreadPoolExecutor(os.cpu_count() or 4) as pool:
@@ -132,6 +133,18 @@ def frames(s):
         ("08-link-lost", None, {"status_text": rest_down, "link_state": "0",
                                 "body_text": s["msg.link_lost"], "icon_state": "7"}),
         ("09-exit", "exit", {}),
+        # Ski data (Increment 2). A key that starts with @ sets a label, as the Coach task does.
+        ("10-ski-live", "ski", {"@run": "RUN 4  02:31", "@speed": "38", "@line1": "落差 312 m · 1.9 km",
+                                "@line2": "24 弯"}),
+        ("11-ski-stale", None, {"@speed": "--", "@line2": "24 弯 · " + s["msg.stale"]}),
+        ("12-ski-report", None, {"@dest": "REPORT", "@run": "RUN 4  1.9 km", "@speed": "82",
+                                 "@unit": "HEYGO IQ", "@line1": "重心偏后" * 3,
+                                 "@line2": "下一趟把双手放在身体前方，膝盖再多弯一点"}),
+        ("13-report-empty", "report", {}),
+        ("14-report", None, {"@title": "第 3 趟 · 1.9 km · 25 弯", "@iq": "82", "@problem": "重心偏后",
+                             "@tip": "下一趟把双手放在身体前方"}),
+        ("15-report-max", None, {"@title": "第 12 趟 · 12.4 km · 136 弯", "@age": "59 MIN AGO", "@iq": "100",
+                                 "@problem": "重心偏后" * 3, "@tip": "下一趟把双手放在身体前方，膝盖再多弯一点"}),
     ]
 
 
@@ -223,7 +236,7 @@ def main():
             cmds.append(f"screen {screen}")
         if screen == "coach":
             cmds.append("mem coach_built")
-        cmds += [f"set {k} {v}" for k, v in sets.items()]
+        cmds += [f"label {k[1:]} {v}" if k.startswith("@") else f"set {k} {v}" for k, v in sets.items()]
         cmds.append(f"snap {name}")
     # The body subject holds BODY_SIZE - 1 bytes. One ASCII byte in front of
     # 3-byte characters puts a plain cut inside a character.

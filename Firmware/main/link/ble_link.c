@@ -537,6 +537,26 @@ void ble_link_agent_done(void) {
     unlock();
 }
 
+void ble_link_get_data(bp_live_stats_t *live, bool *has_live, bool *stale,
+                       link_report_t *report, bool *has_report, uint32_t *report_age_ms) {
+    if (has_live) *has_live = false;
+    if (has_report) *has_report = false;
+    if (!s_mu) return;
+    const uint32_t t = now_ms();
+    bool old = true;
+    uint32_t age = 0;
+    lock();
+    const bp_live_stats_t *l = link_live(&s_core, t, &old);
+    const link_report_t *r = link_report(&s_core, t, &age);
+    if (l && live) *live = *l;
+    if (r && report) *report = *r;
+    unlock();
+    if (has_live) *has_live = l != NULL;
+    if (stale) *stale = old;
+    if (has_report) *has_report = r != NULL;
+    if (report_age_ms) *report_age_ms = age;
+}
+
 void ble_link_set_context(uint8_t mode, uint8_t page) {
     if (!s_mu) return;
     lock();

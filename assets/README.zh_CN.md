@@ -12,7 +12,7 @@
 | `ui/strings.json` | P0 屏幕显示的 38 条文字，有中文和英文。 |
 | `fonts/heygo_sc_16.c` | 16 px 字体，用于状态、提示和手机发来的文字。3,869 个字形。 |
 | `fonts/heygo_sc_28.c` | 28 px 粗体，用于状态词和标题。185 个字形。 |
-| `fonts/heygo_display_20.c`、`fonts/heygo_display_34.c` | Staatliches 展示字体，20 px 和 34 px。只含 ASCII。 |
+| `fonts/heygo_display_20.c`、`fonts/heygo_display_34.c`、`fonts/heygo_display_48.c` | Staatliches 展示字体，20 px、34 px 和 48 px。只含 ASCII。48 px 用于显示速度。 |
 | `fonts/heygo_fonts.h` | 四个字体的声明。 |
 | `fonts/*.chars.txt` | 每个字体包含的字符。 |
 | `fonts/LICENSE-OFL.txt`、`fonts/LICENSE-OFL-Staatliches.txt` | 源字体的许可证。 |
@@ -38,7 +38,7 @@
 | --- | --- | --- |
 | `heygo_sc_16` | Noto Sans SC Regular | ASCII、中文标点、GB2312 一级字（3,755 个）和全部词汇表字符。 |
 | `heygo_sc_28` | Noto Sans SC Bold | ASCII 和全部词汇表字符。 |
-| `heygo_display_20`、`heygo_display_34` | Staatliches | 只含 ASCII。 |
+| `heygo_display_20`、`heygo_display_34`、`heygo_display_48` | Staatliches | 只含 ASCII。 |
 
 16 px 字体要显示手机发来的转写和回答，所以需要常用字。
 字符集以外的字符会显示成空框。
@@ -50,6 +50,7 @@ python3 tools/gen_lv_font.py --name heygo_sc_16 --size 16 --charset text
 python3 tools/gen_lv_font.py --name heygo_sc_28 --size 28 --charset ui --source sc-bold
 python3 tools/gen_lv_font.py --name heygo_display_20 --size 20 --charset latin --source staatliches
 python3 tools/gen_lv_font.py --name heygo_display_34 --size 34 --charset latin --source staatliches
+python3 tools/gen_lv_font.py --name heygo_display_48 --size 48 --charset latin --source staatliches
 python3 tools/check_glyphs.py
 ```
 
@@ -81,7 +82,13 @@ python3 tools/check_glyphs.py
 | `07-failed.png` | 语音识别失败 |
 | `08-link-lost.png` | 与手机的连接断开 |
 | `09-exit.png` | 退出确认 |
-| `contact-sheet.png` | 全部九张图，放大 2 倍 |
+| `10-ski-live.png` | 滑行中的实时数据 |
+| `11-ski-stale.png` | 5 秒没有数据包：速度显示"--" |
+| `12-ski-report.png` | 一趟结束后：滑行页显示报告，含最长文本 |
+| `13-report-empty.png` | 还没有报告时的报告页 |
+| `14-report.png` | 有报告的报告页 |
+| `15-report-max.png` | 最长文本和报告时间的报告页 |
+| `contact-sheet.png` | 全部十五张图，放大 2 倍 |
 
 ## 模拟器
 
@@ -91,6 +98,8 @@ python3 tools/check_glyphs.py
 - 流转图和触发矩阵显示当前状态和可走的转换。
 - 手机面板会自动回应每个问题。可以选场景，也可以关掉自动应答，手动发送手机事件。
 - 日志显示每次转换、对应的动作和每条蓝牙消息。
+- 滑行数据按钮可以开始一趟、暂停发送和结束这一趟。LIVE_STATS 每秒一帧，结束后 2 秒发送 RUN_REPORT。
+- 教练页空闲时短按 DOWN 打开报告页，短按 UP 返回。
 
 浏览器用系统字体绘制屏幕。真实像素以 `mockups/` 里的图片为准。
 不要手工修改这个页面。在 `../Firmware` 里运行 `python3 tools/flow/flow_sim.py`。

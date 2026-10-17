@@ -10,7 +10,14 @@
 //     before link_send_agent_start, and the first block needs the new xid.
 //   - A capture stop waits for the last block, so AGENT_END follows it.
 //   - A playback stop waits for the speaker, so the microphone never runs during playback.
+//
+// Ski data (Increment 2): the link keeps the last LIVE_STATS and RUN_REPORT. A data
+// message, or the 1-second tick, asks this task to copy the texts from main/ui/ski_view.c
+// into the labels of the Ski page or the Report page. Data never changes the state.
 #include "coach_app.h"
+
+#include <stdio.h>
+#include <string.h>
 
 #include "ble_link.h"
 #include "bsp_display.h"
@@ -19,6 +26,7 @@
 #include "coach_input.h"
 #include "coach_screens.h"
 #include "coach_ui.h"
+#include "ski_view.h"
 #include "ui_theme.h"
 #include "voice.h"
 #include "esp_log.h"
@@ -38,8 +46,9 @@ static const char *TAG = "coach";
 #define AGENT_TIMEOUT_US (10LL * 1000 * 1000)   // Document 07: the first answer comes within 10 s.
 #define PLAY_WATCH_US    (1000LL * 1000)         // Check the playback once a second.
 #define PLAY_STUCK_MS    3000                    // No progress for 3 s ends the answer.
+#define DATA_TICK_US     (1000LL * 1000)         // The out-of-date mark and the report age.
 
-typedef enum { MSG_KEY, MSG_EVENT, MSG_LINK, MSG_AGENT_STATE } msg_kind_t;
+typedef enum { MSG_KEY, MSG_EVENT, MSG_LINK, MSG_AGENT_STATE, MSG_DATA } msg_kind_t;
 
 typedef struct {
     msg_kind_t kind;
@@ -56,10 +65,14 @@ static coach_flow_t s_flow;
 static coach_input_t s_input;
 static coach_screen_coach_t s_coach;
 static coach_screen_ski_t s_ski;
+static coach_screen_report_t s_report;
 static coach_screen_exit_t s_exit;
 static esp_timer_handle_t s_capture_timer;
 static esp_timer_handle_t s_answer_timer;
 static esp_timer_handle_t s_play_watch;
+static esp_timer_handle_t s_data_tick;
+static ski_view_t s_ski_view;          // The texts on the Ski page now.
+static report_view_t s_report_view;    // The texts on the Report page now.
 static coach_screen_id_t s_shown = COACH_SCREEN_COUNT;   // COUNT: no screen yet
 static lv_obj_t *s_blank;   // Active while the old screen is deleted. LVGL must not delete the active screen.
 static link_voice_t s_voice = LINK_VOICE_NO_LINK;
@@ -83,6 +96,7 @@ static const char *screen_name(coach_screen_id_t id) {
     switch (id) {
     case COACH_SCREEN_COACH: return "coach";
     case COACH_SCREEN_SKI: return "ski";
+    case COACH_SCREEN_REPORT: return "report";
     case COACH_SCREEN_EXIT: return "exit";
     default: return "?";
     }
@@ -104,6 +118,11 @@ static void post_msg(const msg_t *m) {
 }
 
 static void on_capture_limit(void *arg) { (void)arg; post_event(COACH_EVENT_CAPTURE_LIMIT); }
+static void on_data_tick(void *arg) {
+    (void)arg;
+    const msg_t m = { .kind = MSG_DATA };
+    post_msg(&m);
+}
 static void on_answer_timeout(void *arg) { (void)arg; post_event(COACH_EVENT_AGENT_TIMEOUT); }
 
 // The voice task ends a stalled stream after 2 s. This watchdog covers a voice task
@@ -114,6 +133,46 @@ static void on_play_watch(void *arg) {
     if (voice_play_idle_ms() >= PLAY_STUCK_MS) {
         ESP_LOGW(TAG, "playback made no progress for %d ms: end the answer", PLAY_STUCK_MS);
         post_event(COACH_EVENT_ANSWER_END);
+    }
+}
+
+// Write one label when its text changes. The log line shows what the user sees.
+static void put_label(lv_obj_t *label, const char *name, char *now, size_t cap, const char *want, bool force) {
+    if (!label || (!force && strcmp(now, want) == 0)) return;
+    snprintf(now, cap, "%s", want);
+    lv_label_set_text(label, want);
+    ESP_LOGI("screen", "%s = \"%s\"", name, want);
+}
+
+#define PUT(screen, view, field, want, force) \
+    put_label(screen.field, #view "." #field, view.field, sizeof view.field, want.field, force)
+
+// Copy the ski data texts into the screen that is on now. force: the screen is new.
+// The caller holds the LVGL lock.
+static void refresh_data(bool force) {
+    if (s_shown != COACH_SCREEN_SKI && s_shown != COACH_SCREEN_REPORT) return;
+    bp_live_stats_t live;
+    link_report_t report;
+    bool has_live, stale, has_report;
+    uint32_t age;
+    ble_link_get_data(&live, &has_live, &stale, &report, &has_report, &age);
+    if (s_shown == COACH_SCREEN_SKI) {
+        ski_view_t v;
+        ski_view_build(&v, has_live ? &live : NULL, stale, has_report ? &report : NULL);
+        PUT(s_ski, s_ski_view, dest, v, force);
+        PUT(s_ski, s_ski_view, run, v, force);
+        PUT(s_ski, s_ski_view, speed, v, force);
+        PUT(s_ski, s_ski_view, unit, v, force);
+        PUT(s_ski, s_ski_view, line1, v, force);
+        PUT(s_ski, s_ski_view, line2, v, force);
+    } else {
+        report_view_t v;
+        report_view_build(&v, has_report ? &report : NULL, age);
+        PUT(s_report, s_report_view, title, v, force);
+        PUT(s_report, s_report_view, iq, v, force);
+        PUT(s_report, s_report_view, age, v, force);
+        PUT(s_report, s_report_view, problem, v, force);
+        PUT(s_report, s_report_view, tip, v, force);
     }
 }
 
@@ -129,6 +188,7 @@ static void show_screen(coach_screen_id_t id) {
     switch (s_shown) {
     case COACH_SCREEN_COACH: coach_teardown(&s_coach); break;
     case COACH_SCREEN_SKI: coach_screen_ski_destroy(&s_ski); break;
+    case COACH_SCREEN_REPORT: coach_screen_report_destroy(&s_report); break;
     case COACH_SCREEN_EXIT: coach_screen_exit_destroy(&s_exit); break;
     default: break;
     }
@@ -142,6 +202,10 @@ static void show_screen(coach_screen_id_t id) {
         coach_screen_ski_build(&s_ski);
         lv_screen_load(s_ski.screen);
         break;
+    case COACH_SCREEN_REPORT:
+        coach_screen_report_build(&s_report);
+        lv_screen_load(s_report.screen);
+        break;
     case COACH_SCREEN_EXIT:
         coach_screen_exit_build(&s_exit);
         lv_screen_load(s_exit.screen);
@@ -150,6 +214,7 @@ static void show_screen(coach_screen_id_t id) {
         break;
     }
     s_shown = id;
+    refresh_data(true);
 }
 
 static void run_action(coach_action_t a) {
@@ -173,7 +238,10 @@ static void run_action(coach_action_t a) {
 // Doc 07 field values for CONTEXT and DEVICE_STATUS.
 static void send_context(coach_state_t st) {
     const uint8_t mode = st == COACH_STATE_SKI ? BP_MODE_SKI : BP_MODE_REST;
-    const uint8_t page = st == COACH_STATE_SKI ? BP_PAGE_SKI : st == COACH_STATE_EXIT_Q ? BP_PAGE_EXIT : BP_PAGE_COACH;
+    const uint8_t page = st == COACH_STATE_SKI      ? BP_PAGE_SKI
+                       : st == COACH_STATE_EXIT_Q   ? BP_PAGE_EXIT
+                       : st == COACH_STATE_REPORT   ? BP_PAGE_REPORT
+                                                    : BP_PAGE_COACH;
     ble_link_set_context(mode, page);
 }
 
@@ -272,6 +340,12 @@ static void coach_task(void *arg) {
         case MSG_EVENT: handle(m.event); break;
         case MSG_LINK: on_link_msg(m.voice); break;
         case MSG_AGENT_STATE: on_agent_state_msg(m.state, m.failure); break;
+        case MSG_DATA:
+            if (lvgl_lock()) {
+                refresh_data(false);
+                lvgl_unlock();
+            }
+            break;
         case MSG_KEY: {
             coach_event_t event;
             if (coach_input_map(&s_input, (coach_key_t)m.btn, (coach_key_ev_t)m.ev, &event)) handle(event);
@@ -308,6 +382,14 @@ static void link_audio_down(const uint8_t *block, size_t len, uint8_t missing) {
 
 static void link_play_end(void) { voice_down_end(); }
 
+// The link keeps the data. The Coach task reads it with ble_link_get_data().
+static void link_data(void) {
+    const msg_t m = { .kind = MSG_DATA };
+    post_msg(&m);
+}
+static void link_live_stats(const bp_live_stats_t *s) { (void)s; link_data(); }
+static void link_run_report(const link_report_t *r) { (void)r; link_data(); }
+
 static void voice_up_block(const uint8_t *block) { ble_link_audio_up(block); }
 static void voice_play_done(void) { post_event(COACH_EVENT_ANSWER_END); }
 
@@ -325,9 +407,11 @@ esp_err_t coach_app_start(void) {
     const esp_timer_create_args_t cap = { .callback = on_capture_limit, .name = "coach_cap" };
     const esp_timer_create_args_t ans = { .callback = on_answer_timeout, .name = "coach_ans" };
     const esp_timer_create_args_t watch = { .callback = on_play_watch, .name = "coach_play" };
+    const esp_timer_create_args_t data = { .callback = on_data_tick, .name = "coach_data" };
     esp_err_t e = esp_timer_create(&cap, &s_capture_timer);
     if (e == ESP_OK) e = esp_timer_create(&ans, &s_answer_timer);
     if (e == ESP_OK) e = esp_timer_create(&watch, &s_play_watch);
+    if (e == ESP_OK) e = esp_timer_create(&data, &s_data_tick);
     if (e != ESP_OK) return e;
 
     coach_bindings_init();
@@ -349,6 +433,7 @@ esp_err_t coach_app_start(void) {
     const ble_link_app_t app = {
         .voice_changed = link_voice_changed, .agent_state = link_agent_state,
         .play_start = link_play_start, .audio_down = link_audio_down, .play_end = link_play_end,
+        .live_stats = link_live_stats, .run_report = link_run_report,
     };
     esp_err_t le = ble_link_start(&app);
     if (le != ESP_OK) ESP_LOGE(TAG, "BLE link start failed: %s", esp_err_to_name(le));
@@ -357,6 +442,7 @@ esp_err_t coach_app_start(void) {
         s_queue = NULL;
         return ESP_ERR_NO_MEM;
     }
+    esp_timer_start_periodic(s_data_tick, DATA_TICK_US);
     ESP_LOGI(TAG, "start in %s", coach_state_name(s_flow.state));
     return ESP_OK;
 }

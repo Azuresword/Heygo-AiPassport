@@ -106,6 +106,7 @@
   .w.f28 { font-size: 28px; line-height: 34px; font-weight: 700; }
   .w.f20 { font-size: 20px; line-height: 24px; }
   .w.f34 { font-size: 34px; line-height: 40px; }
+  .w.f48 { font-size: 48px; line-height: 58px; }
   .w.disp { font-family: "Staatliches", Impact, "Arial Narrow", sans-serif; }
   .w.line-w { overflow: visible; pointer-events: none; }
   .w.wrap { white-space: normal; word-break: break-word; }
@@ -275,7 +276,7 @@
     <div class="card">
       <div class="section-head">
         <div><span class="section-kicker">Scenario controls</span><h2>手机端模拟</h2></div>
-        <span class="status-chip">协议 0.1</span>
+        <span class="status-chip">协议 0.2</span>
       </div>
       <div class="row" style="margin-bottom:10px">
         <label class="switch-label"><input type="checkbox" id="auto" checked> 自动应答</label>
@@ -288,6 +289,8 @@
       </div>
       <div class="row" id="phoneBtns"></div>
       <p class="note">自动模式会在 AGENT_END 后按所选场景回应。关闭后可手动发送手机事件。</p>
+      <div class="row" style="margin-top:12px" id="skiBtns"></div>
+      <p class="note">滑行数据：开始后手机每秒发一个 LIVE_STATS。暂停 5 秒后速度显示"--"。结束一趟后 2 秒发 RUN_REPORT。数据只改屏幕文字，不改状态。</p>
     </div>
     <div class="card">
       <div class="section-head">
@@ -328,7 +331,7 @@ const DATA = __DATA__;
 const F = DATA.flow, S = DATA.strings, C = DATA.colors;
 const HOLD_MS = DATA.hold_ms, CAPTURE_LIMIT_MS = 20000, AGENT_TIMEOUT_MS = 10000;
 
-const STATE_NAME = { SKI: "滑行", READY: "就绪", CAPTURE: "录音", WAIT_ANSWER: "等回答", PLAYBACK: "播放回答", EXIT_Q: "退出确认" };
+const STATE_NAME = { SKI: "滑行", READY: "就绪", CAPTURE: "录音", WAIT_ANSWER: "等回答", PLAYBACK: "播放回答", REPORT: "报告页", EXIT_Q: "退出确认" };
 const EVENT_NAME = {
   OK_HOLD: "长按 OK", OK_SHORT: "短按 OK", OK_RELEASE: "松开 OK",
   UP_HOLD: "长按 UP", UP_SHORT: "短按 UP", DOWN_HOLD: "长按 DOWN", DOWN_SHORT: "短按 DOWN",
@@ -336,7 +339,7 @@ const EVENT_NAME = {
   ANSWER_START: "回答开始", ANSWER_END: "回答结束", ANSWER_FAILED: "识别失败", LINK_LOST: "蓝牙断开",
 };
 // The main path runs left to right. Returns to READY arc below it. A new question arcs above it.
-const POS = { SKI: [80, 80], EXIT_Q: [80, 350], READY: [290, 210], CAPTURE: [500, 210], WAIT_ANSWER: [710, 210], PLAYBACK: [912, 210] };
+const POS = { SKI: [80, 80], EXIT_Q: [80, 350], READY: [290, 210], REPORT: [430, 410], CAPTURE: [500, 210], WAIT_ANSWER: [710, 210], PLAYBACK: [912, 210] };
 const BEND = {
   "READY>CAPTURE": [0, 0], "CAPTURE>WAIT_ANSWER": [0, 0], "WAIT_ANSWER>PLAYBACK": [0, 0],
   "CAPTURE>READY": [0, 70], "WAIT_ANSWER>READY": [0, 190], "PLAYBACK>READY": [0, 300],
@@ -448,6 +451,7 @@ function paint() {
     }
     else if (prop === "value" && el.dataset.type === "state_icon") setStateIcon(el, v);
   }
+  paintData();
   for (const d of document.querySelectorAll(".scr")) d.classList.toggle("on", d.dataset.id === screenOf[st]);
 }
 
@@ -595,8 +599,11 @@ function setLink(up) {
   const linkAction = up ? "ui_link_ready" : "ui_link_down";
   if (F.ui_effects && F.ui_effects[linkAction]) runAction(linkAction);
   else { subj.link_state = up ? 1 : 0; subj.status_text = statusText(); }
-  if (up) { ble("dp", "HELLO", "version=0.1 codec=ADPCM mtu=247"); ble("pd", "HELLO_ACK", "version=0.1"); }
-  else { phoneTimers.forEach(clearTimeout); phoneTimers = []; addLog("bleLog", "<b>蓝牙断开</b>", "bad"); fire("LINK_LOST", "蓝牙"); }
+  if (up) { ble("dp", "HELLO", "version=0.2 codec=ADPCM mtu=247"); ble("pd", "HELLO_ACK", "version=0.2"); }
+  else {
+    phoneTimers.forEach(clearTimeout); phoneTimers = []; skiStop();
+    addLog("bleLog", "<b>蓝牙断开</b>", "bad"); fire("LINK_LOST", "蓝牙");
+  }
   render();
 }
 const PHONE_BTNS = [
@@ -617,6 +624,117 @@ function buildPhone() {
   lb.type = "button"; lb.className = "ctl"; lb.id = "linkBtn";
   lb.onclick = () => setLink(!link);
   box.appendChild(lb);
+}
+
+// ---------------------------------------------------------------- ski data (Increment 2)
+// The same rules as main/ui/stats_fmt.c and main/ui/ski_view.c. Data changes texts, not the state.
+const U8 = 0xFF, U16 = 0xFFFF, STALE_MS = 5000, AGE_MS = 60000;
+const RUN_SKIING = 1, RUN_STOPPED = 2, RUN_ENDED = 3;
+const REPORTS = [["重心偏后", "下一趟把双手放在身体前方"], ["转弯半径过大", "入弯前先看出口，膝盖再多弯一点"],
+                 ["上身转动过早", "让雪板先转，上身保持朝向山下"]];
+const fmt = {
+  speed: v => v === U16 ? "--" : String(Math.floor((v + 5) / 10)),
+  drop: v => v === U16 ? "--" : `${v} m`,
+  dist: v => v === U16 ? "--" : v < 1000 ? `${v} m` : (() => { const t = Math.floor((v + 50) / 100); return `${Math.floor(t / 10)}.${t % 10} km`; })(),
+  count: v => v === U16 ? "--" : String(v),
+  count8: v => v === U8 ? "--" : String(v),
+  time: v => v === U16 ? "--" : v < 3600 ? `${String(Math.floor(v / 60)).padStart(2, "0")}:${String(v % 60).padStart(2, "0")}`
+                                           : `${Math.floor(v / 3600)}:${String(Math.floor(v / 60) % 60).padStart(2, "0")}`,
+  iq: v => v > 100 ? "--" : String(v),
+};
+let live, liveAt, report, reportAt, runNo, skiTimer, skiPaused, liveLine, liveCount;
+function skiView(now) {
+  const stale = !live || now - liveAt >= STALE_MS;
+  const v = { unit: "KM/H" };
+  const showReport = r => Object.assign(v, { dest: "REPORT", run: `RUN ${fmt.count8(r.run_no)}  ${fmt.dist(r.distance_m)}`,
+    speed: fmt.iq(r.iq), unit: "HEYGO IQ", line1: r.problem, line2: r.tip });
+  if (!live) {
+    if (report) return showReport(report);
+    return Object.assign(v, { dest: "LIVE RUN", run: "RUN --", speed: "--", line1: S["msg.wait_data"], line2: S["msg.ski_idle"] });
+  }
+  const ended = live.state === RUN_ENDED;
+  if (ended && report && report.run_no === live.run_no) return showReport(report);
+  const old = stale && !ended;
+  return Object.assign(v, {
+    dest: ended ? "RUN ENDED" : "LIVE RUN", run: `RUN ${fmt.count8(live.run_no)}  ${fmt.time(live.time_s)}`,
+    speed: ended || old ? "--" : fmt.speed(live.speed_dkmh),
+    line1: `落差 ${fmt.drop(live.drop_m)} · ${fmt.dist(live.distance_m)}`,
+    line2: `${fmt.count(live.turns)} 弯` + (ended ? " · " + S["msg.report_wait"] : old ? " · " + S["msg.stale"] : ""),
+  });
+}
+function reportView(now) {
+  if (!report) return { title: S["msg.no_report"], iq: "--", age: "", problem: "", tip: "" };
+  const age = now - reportAt;
+  return { title: `第 ${fmt.count8(report.run_no)} 趟 · ${fmt.dist(report.distance_m)} · ${fmt.count(report.turns)} 弯`,
+           iq: fmt.iq(report.iq), age: age >= AGE_MS ? `${Math.floor(age / 60000)} MIN AGO` : "",
+           problem: report.problem, tip: report.tip };
+}
+function paintData() {
+  const now = performance.now();
+  for (const [scr, view] of [["ski", skiView(now)], ["report", reportView(now)]]) {
+    for (const [k, v] of Object.entries(view)) if (widgetEls[scr + "." + k]) widgetEls[scr + "." + k].textContent = v;
+  }
+}
+function sendLive() {
+  if (!link || skiPaused) return;
+  liveAt = performance.now();
+  liveCount++;
+  liveLine ||= ble("pd", "LIVE_STATS", '<span class="n"></span>');
+  liveLine.querySelector(".n").textContent =
+    `×${liveCount} run=${live.run_no} state=${live.state} ${fmt.speed(live.speed_dkmh)} km/h ${live.drop_m} m ${live.distance_m} m ${live.turns} 弯`;
+  paintData();
+}
+function skiStep() {
+  const t = live.time_s;
+  const stopped = t % 25 >= 20;                          // A short stop every 25 s.
+  const speed = stopped ? 0 : 250 + (t * 37) % 200;
+  if (!stopped) { live.drop_m += 4; live.distance_m += Math.floor(speed / 36); if (t % 3 === 0) live.turns++; }
+  live.state = stopped ? RUN_STOPPED : RUN_SKIING;
+  live.speed_dkmh = $("noSpeed").checked ? U16 : speed;
+  live.time_s = t + 1;
+  sendLive();
+}
+function skiStart() {
+  if (!link) return toast("蓝牙未连接");
+  if (skiTimer) return toast("这一趟还在进行");
+  runNo++;
+  live = { run_no: runNo, state: RUN_SKIING, speed_dkmh: U16, drop_m: 0, distance_m: 0, turns: 0, time_s: 0 };
+  liveLine = null; liveCount = 0; skiPaused = false;
+  addLog("bleLog", `<b>第 ${runNo} 趟开始</b>：手机判定开始滑行`);
+  skiStep();
+  skiTimer = setInterval(skiStep, 1000);
+}
+function skiStop() { clearInterval(skiTimer); skiTimer = null; }
+function skiEnd() {
+  if (!skiTimer) return toast("没有进行中的一趟");
+  skiStop(); skiPaused = false;
+  live.state = RUN_ENDED; live.speed_dkmh = U16; sendLive();
+  const r = REPORTS[(live.run_no - 1) % REPORTS.length];
+  const rep = { run_no: live.run_no, distance_m: live.distance_m, turns: live.turns, iq: 60 + (live.run_no * 11) % 40,
+                problem: r[0], tip: r[1] };
+  later(2000, () => {
+    if (!link) return;
+    report = rep; reportAt = performance.now();
+    ble("pd", "RUN_REPORT", `run=${rep.run_no} ${rep.distance_m} m ${rep.turns} 弯 IQ=${rep.iq} "${rep.problem}" "${rep.tip}"`);
+    paintData();
+  });
+}
+function buildSki() {
+  const box = $("skiBtns"); box.innerHTML = "";
+  const add = (label, title, fn, id) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "ctl"; b.textContent = label; b.title = title; if (id) b.id = id; b.onclick = fn;
+    box.appendChild(b);
+  };
+  add("开始滑行", "LIVE_STATS 每秒一帧", skiStart, "skiStartBtn");
+  add("暂停发送", "停发 LIVE_STATS，5 秒后数据过期", () => {
+    if (!skiTimer) return toast("没有进行中的一趟");
+    skiPaused = !skiPaused; $("skiPauseBtn").textContent = skiPaused ? "恢复发送" : "暂停发送";
+  }, "skiPauseBtn");
+  add("结束这一趟", "结束帧 + 2 秒后 RUN_REPORT", skiEnd, "skiEndBtn");
+  const lab = document.createElement("label");
+  lab.className = "switch-label"; lab.innerHTML = '<input type="checkbox" id="noSpeed"> 速度未知';
+  box.appendChild(lab);
 }
 
 // ---------------------------------------------------------------- buttons
@@ -791,6 +909,8 @@ function reset() {
   st = initial; subj = Object.fromEntries(F.subjects.map(s => [s.id, s.initial]));
   mic = spk = false; link = false; xidNext = 1; xid = 0; last = null; timers = {}; phoneTimers = [];
   upCount = downCount = 0; upLine = downLine = null; seenIssues = new Set();
+  if (typeof skiTimer !== "undefined") skiStop();
+  live = report = null; liveAt = reportAt = 0; runNo = 0; skiPaused = false; liveLine = null; liveCount = 0;
   t0 = performance.now();
   $("fsmLog").innerHTML = ""; $("bleLog").innerHTML = ""; $("issues").innerHTML = "";
   for (const s of DATA.static_issues) { const li = document.createElement("li"); li.textContent = s; $("issues").appendChild(li); }
@@ -799,10 +919,12 @@ function reset() {
   setLink(true);
   render();
 }
-buildPhone(); buildGraph(); buildMatrix();
+buildPhone(); buildSki(); buildGraph(); buildMatrix();
 $("reset").onclick = reset;
 reset();
 requestAnimationFrame(tick);
+// The same 1-second tick as coach_app.c: the out-of-date mark and the report age.
+setInterval(paintData, 1000);
 </script>
 </body>
 </html>

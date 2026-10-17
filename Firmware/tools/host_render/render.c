@@ -3,8 +3,9 @@
 // Host program that draws the generated coach screens with the device LVGL
 // configuration. render.py builds it and sends commands on stdin:
 //
-//   screen coach|ski|exit   Delete the current screen and build this one.
+//   screen coach|ski|report|exit   Delete the current screen and build this one.
 //   set <subject> <value>   Call the generated setter. The value is the rest of the line.
+//   label <widget> <text>   Set a label of the Ski or Report page, as the Coach task does.
 //   snap <name>             Draw the screen and write <outdir>/<name>.rgb565.
 //   drop                    Delete the current screen and load a blank screen.
 //   text body               Write the byte length and the bytes of the body label text.
@@ -28,9 +29,10 @@ static uint16_t s_draw_buf[HOR * VER];
 static uint16_t s_frame[HOR * VER];
 static const char *s_outdir;
 
-static enum { NONE, COACH, SKI, EXIT } s_kind = NONE;
+static enum { NONE, COACH, SKI, REPORT, EXIT } s_kind = NONE;
 static coach_screen_coach_t s_coach;
 static coach_screen_ski_t s_ski;
+static coach_screen_report_t s_report;
 static coach_screen_exit_t s_exit;
 static lv_obj_t *s_blank;
 
@@ -81,6 +83,7 @@ static void drop_screen(void)
     switch (s_kind) {
     case COACH: coach_teardown(&s_coach); break;
     case SKI: coach_screen_ski_destroy(&s_ski); break;
+    case REPORT: coach_screen_report_destroy(&s_report); break;
     case EXIT: coach_screen_exit_destroy(&s_exit); break;
     case NONE: break;
     }
@@ -99,6 +102,10 @@ static void load_screen(const char *name)
         coach_screen_ski_build(&s_ski);
         lv_screen_load(s_ski.screen);
         s_kind = SKI;
+    } else if (strcmp(name, "report") == 0) {
+        coach_screen_report_build(&s_report);
+        lv_screen_load(s_report.screen);
+        s_kind = REPORT;
     } else if (strcmp(name, "exit") == 0) {
         coach_screen_exit_build(&s_exit);
         lv_screen_load(s_exit.screen);
@@ -119,6 +126,26 @@ static void set_subject(const char *id, const char *value)
     else if (strcmp(id, "link_state") == 0) coach_set_link_state(atoi(value));
     else if (strcmp(id, "icon_state") == 0) coach_set_icon_state(atoi(value));
     else printf("ERR unknown subject %s\n", id);
+}
+
+// The data labels of the Ski page and the Report page. coach_app.c writes them.
+static lv_obj_t *data_label(const char *id)
+{
+    if (s_kind == SKI) {
+        if (strcmp(id, "dest") == 0) return s_ski.dest;
+        if (strcmp(id, "run") == 0) return s_ski.run;
+        if (strcmp(id, "speed") == 0) return s_ski.speed;
+        if (strcmp(id, "unit") == 0) return s_ski.unit;
+        if (strcmp(id, "line1") == 0) return s_ski.line1;
+        if (strcmp(id, "line2") == 0) return s_ski.line2;
+    } else if (s_kind == REPORT) {
+        if (strcmp(id, "title") == 0) return s_report.title;
+        if (strcmp(id, "iq") == 0) return s_report.iq;
+        if (strcmp(id, "age") == 0) return s_report.age;
+        if (strcmp(id, "problem") == 0) return s_report.problem;
+        if (strcmp(id, "tip") == 0) return s_report.tip;
+    }
+    return NULL;
 }
 
 static void snap(const char *name)
@@ -146,9 +173,18 @@ static void snap(const char *name)
     case SKI:
         print_box("mode", s_ski.mode); print_box("battery", s_ski.battery);
         print_box("dest", s_ski.dest); print_box("icon", s_ski.icon);
-        print_box("title", s_ski.title); print_box("body", s_ski.body);
-        print_box("slogan", s_ski.slogan);
+        print_box("run", s_ski.run); print_box("speed", s_ski.speed);
+        print_box("unit", s_ski.unit); print_box("line1", s_ski.line1);
+        print_box("line2", s_ski.line2);
         print_box("hint", s_ski.hint);
+        break;
+    case REPORT:
+        print_box("mode", s_report.mode); print_box("battery", s_report.battery);
+        print_box("dest", s_report.dest); print_box("title", s_report.title);
+        print_box("iq", s_report.iq); print_box("iq_name", s_report.iq_name);
+        print_box("age", s_report.age);
+        print_box("problem", s_report.problem); print_box("tip", s_report.tip);
+        print_box("hint", s_report.hint);
         break;
     case EXIT:
         print_box("mode", s_exit.mode); print_box("battery", s_exit.battery);
@@ -187,6 +223,11 @@ int main(int argc, char **argv)
         char *rest = strtok(NULL, "");
         if (strcmp(cmd, "screen") == 0 && arg) load_screen(arg);
         else if (strcmp(cmd, "set") == 0 && arg) set_subject(arg, rest ? rest : "");
+        else if (strcmp(cmd, "label") == 0 && arg) {
+            lv_obj_t *w = data_label(arg);
+            if (w) lv_label_set_text(w, rest ? rest : "");
+            else printf("ERR unknown label %s\n", arg);
+        }
         else if (strcmp(cmd, "snap") == 0 && arg) snap(arg);
         else if (strcmp(cmd, "mem") == 0 && arg) print_mem(arg);
         else if (strcmp(cmd, "drop") == 0) drop_screen();

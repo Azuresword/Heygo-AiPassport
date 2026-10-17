@@ -110,6 +110,9 @@ run_static_checks() {
     "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain/ui \
         tests/test_stats_fmt.c main/ui/stats_fmt.c -o "${test_dir}/test_stats_fmt"
     "${test_dir}/test_stats_fmt"
+    "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain/ui -Imain/protocol -Imain/link \
+        tests/test_ski_view.c main/ui/ski_view.c main/ui/stats_fmt.c -o "${test_dir}/test_ski_view"
+    "${test_dir}/test_ski_view"
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_phone_sim.py
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_analyze_log.py
 

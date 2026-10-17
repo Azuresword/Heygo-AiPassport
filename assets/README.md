@@ -12,7 +12,7 @@ The firmware in `../Firmware` compiles the fonts from this folder.
 | `ui/strings.json` | The 38 strings that the P0 screen shows, in Chinese and English. |
 | `fonts/heygo_sc_16.c` | 16 px font for status, hints, and phone text. 3,869 glyphs. |
 | `fonts/heygo_sc_28.c` | 28 px bold font for state words and titles. 185 glyphs. |
-| `fonts/heygo_display_20.c`, `fonts/heygo_display_34.c` | Staatliches headline font, 20 px and 34 px. ASCII only. |
+| `fonts/heygo_display_20.c`, `fonts/heygo_display_34.c`, `fonts/heygo_display_48.c` | Staatliches headline font, 20 px, 34 px, and 48 px. ASCII only. The 48 px font shows the speed. |
 | `fonts/heygo_fonts.h` | Declarations of the four fonts. |
 | `fonts/*.chars.txt` | The characters in each font. |
 | `fonts/LICENSE-OFL.txt`, `fonts/LICENSE-OFL-Staatliches.txt` | The licenses of the source fonts. |
@@ -38,7 +38,7 @@ All fonts use the LVGL 9 format `lv_font_fmt_txt` with 4 bits for each pixel and
 | --- | --- | --- |
 | `heygo_sc_16` | Noto Sans SC Regular | ASCII, Chinese punctuation, GB2312 level 1 (3,755 characters), and all vocabulary characters. |
 | `heygo_sc_28` | Noto Sans SC Bold | ASCII and all vocabulary characters. |
-| `heygo_display_20`, `heygo_display_34` | Staatliches | ASCII only. |
+| `heygo_display_20`, `heygo_display_34`, `heygo_display_48` | Staatliches | ASCII only. |
 
 The 16 px font needs common characters because it shows transcripts and answers from the phone.
 A character outside this set shows as an empty box.
@@ -50,6 +50,7 @@ python3 tools/gen_lv_font.py --name heygo_sc_16 --size 16 --charset text
 python3 tools/gen_lv_font.py --name heygo_sc_28 --size 28 --charset ui --source sc-bold
 python3 tools/gen_lv_font.py --name heygo_display_20 --size 20 --charset latin --source staatliches
 python3 tools/gen_lv_font.py --name heygo_display_34 --size 34 --charset latin --source staatliches
+python3 tools/gen_lv_font.py --name heygo_display_48 --size 48 --charset latin --source staatliches
 python3 tools/check_glyphs.py
 ```
 
@@ -81,7 +82,13 @@ To make the images again, run `python3 tools/host_render/render.py` from `../Fir
 | `07-failed.png` | Speech recognition failed |
 | `08-link-lost.png` | The phone link is lost |
 | `09-exit.png` | The exit question |
-| `contact-sheet.png` | All nine images at 2x scale |
+| `10-ski-live.png` | Ski data during a run |
+| `11-ski-stale.png` | 5 seconds with no packet: the speed shows "--" |
+| `12-ski-report.png` | After a run: the report on the Ski page, with the longest texts |
+| `13-report-empty.png` | The Report page before the first report |
+| `14-report.png` | The Report page with a report |
+| `15-report-max.png` | The Report page with the longest texts and the report age |
+| `contact-sheet.png` | All fifteen images at 2x scale |
 
 ## Simulator
 
@@ -91,6 +98,8 @@ Open `sim/coach-flow.html` in a browser. It needs no server and no network.
 - The diagram and the trigger matrix show the current state and the possible transitions.
 - The phone panel answers each question automatically. Select a scenario, or turn off the automatic answer and send each phone event by hand.
 - The logs show each transition, its actions, and each BLE message.
+- The ski data buttons start a run, pause the packets, and end the run. LIVE_STATS comes once each second, and RUN_REPORT comes 2 seconds after the end.
+- A short DOWN press on the idle Coach page opens the Report page. A short UP press returns.
 
 The browser draws the screen with system fonts. The images in `mockups/` show the real pixels.
 Do not edit the page by hand. Run `python3 tools/flow/flow_sim.py` from `../Firmware`.

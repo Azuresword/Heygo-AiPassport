@@ -39,6 +39,15 @@
     "msg.phone_silent":      { "zh": "手机应用无响应",   "en": "Phone app not responding", "size": 16 },
     "msg.version":           { "zh": "协议版本不兼容",   "en": "Protocol version mismatch", "size": 16 },
     "msg.voice_off":         { "zh": "语音不可用",       "en": "Voice unavailable",     "size": 16 },
-    "msg.cancelled":         { "zh": "已取消",           "en": "Canceled",              "size": 16 }
+    "msg.cancelled":         { "zh": "已取消",           "en": "Canceled",              "size": 16 },
+    "hint.report":           { "zh": "短按 UP 回教练",   "en": "Press UP for coach",    "size": 16 },
+    "msg.wait_data":         { "zh": "等待手机数据",     "en": "Waiting for phone data", "size": 16 },
+    "msg.ski_idle":          { "zh": "专注雪道，教练随时待命", "en": "Eyes on the slope. The coach waits.", "size": 16 },
+    "msg.stale":             { "zh": "数据已过期",       "en": "Data out of date",      "size": 16 },
+    "msg.report_wait":       { "zh": "报告生成中",       "en": "Report on the way",     "size": 16 },
+    "msg.no_report":         { "zh": "滑完一趟后显示报告", "en": "The report shows after a run", "size": 16 },
+    "fmt.drop":              { "zh": "落差 {n} m",       "en": "Drop {n} m",            "size": 16 },
+    "fmt.turns":             { "zh": "{n} 弯",           "en": "{n} turns",             "size": 16 },
+    "fmt.run":               { "zh": "第 {n} 趟",        "en": "Run {n}",               "size": 16 }
   }
 }

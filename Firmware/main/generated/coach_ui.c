@@ -10,6 +10,8 @@ bool coach_ui_apply(coach_action_t action) {
         return true;
     case COACH_ACTION_UI_SHOW_EXIT:
         return true;
+    case COACH_ACTION_UI_SHOW_REPORT:
+        return true;
     case COACH_ACTION_UI_SHOW_REST:
         coach_set_tag_text("READY");
         coach_set_state_text("就绪");

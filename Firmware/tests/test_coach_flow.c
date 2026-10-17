@@ -32,6 +32,12 @@ int main(void) {
       assert(s.action_count == 1); }
     coach_flow_init(&flow);
     flow.state = COACH_STATE_READY;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_REPORT);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_READY;
     { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_ASK_BLOCKED);
       assert(s.handled);
       assert(s.to == COACH_STATE_READY);
@@ -126,6 +132,18 @@ int main(void) {
       assert(s.handled);
       assert(s.to == COACH_STATE_READY);
       assert(s.action_count == 2); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_REPORT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_READY);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_REPORT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_HOLD);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_EXIT_Q);
+      assert(s.action_count == 1); }
     coach_flow_init(&flow);
     flow.state = COACH_STATE_EXIT_Q;
     { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_OK_SHORT);

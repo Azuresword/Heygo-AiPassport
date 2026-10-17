@@ -33,21 +33,42 @@ typedef struct {
     lv_obj_t *screen;
     lv_obj_t *hint_panel;
     lv_obj_t *ridge_back;
-    lv_obj_t *track_a;
-    lv_obj_t *track_b;
     lv_obj_t *mode_dot;
     lv_obj_t *icon;
     lv_obj_t *mode;
     lv_obj_t *battery;
     lv_obj_t *dest;
-    lv_obj_t *title;
-    lv_obj_t *body;
-    lv_obj_t *slogan;
+    lv_obj_t *run;
+    lv_obj_t *speed;
+    lv_obj_t *unit;
+    lv_obj_t *line1;
+    lv_obj_t *line2;
     lv_obj_t *hint;
 } coach_screen_ski_t;
 
 void coach_screen_ski_build(coach_screen_ski_t *out);
 void coach_screen_ski_destroy(coach_screen_ski_t *out);
+
+typedef struct {
+    lv_obj_t *screen;
+    lv_obj_t *body_panel;
+    lv_obj_t *hint_panel;
+    lv_obj_t *ridge_back;
+    lv_obj_t *mode_dot;
+    lv_obj_t *mode;
+    lv_obj_t *battery;
+    lv_obj_t *dest;
+    lv_obj_t *title;
+    lv_obj_t *iq;
+    lv_obj_t *iq_name;
+    lv_obj_t *age;
+    lv_obj_t *problem;
+    lv_obj_t *tip;
+    lv_obj_t *hint;
+} coach_screen_report_t;
+
+void coach_screen_report_build(coach_screen_report_t *out);
+void coach_screen_report_destroy(coach_screen_report_t *out);
 
 typedef struct {
     lv_obj_t *screen;

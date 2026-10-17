@@ -64,7 +64,7 @@ def static_issues(flow):
     busy = [s for s in ("CAPTURE", "WAIT_ANSWER", "PLAYBACK") if (s, "DOWN_HOLD") not in table]
     if busy:
         issues.append("在 " + "、".join(busy) + " 状态下长按 DOWN 会被忽略。"
-                      "这是固件侧的选择，需求没有定义这种情况。")
+                      "D-19 确认了这个行为：先长按 UP 取消，再长按 DOWN 退出。")
     return issues
 
 

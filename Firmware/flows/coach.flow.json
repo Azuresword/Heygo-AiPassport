@@ -1,6 +1,6 @@
 {
   "app": "coach",
-  "title": "Coach voice chain (P0)",
+  "title": "Coach voice chain (P0) and ski data (Increment 2)",
   "strings_file": "../../assets/ui/strings.json",
   "lvgl_pool_bytes": 24576,
   "lvgl_pool_ceiling_bytes": 20480,
@@ -46,18 +46,37 @@
       "id": "ski",
       "widgets": [
         {"id": "hint_panel", "type": "obj", "x": 10, "y": 272, "w": 220, "h": 38, "bg": "accent", "radius": 19},
-        {"id": "ridge_back", "type": "line", "x": 0, "y": 128, "points": [[0, 40], [30, 20], [52, 30], [90, 0], [122, 24], [146, 16], [176, 36], [206, 10], [240, 26]], "width": 2, "color": "ridge"},
-        {"id": "track_a", "type": "line", "x": 0, "y": 154, "points": [[104, 2], [111, 6], [113, 9], [106, 13], [92, 17], [75, 21], [61, 24], [52, 28], [51, 32], [56, 35], [61, 39], [62, 43], [58, 47], [47, 50], [34, 54]], "width": 2, "color": "accent"},
-        {"id": "track_b", "type": "line", "x": 0, "y": 154, "points": [[111, 3], [118, 7], [120, 10], [113, 14], [99, 18], [82, 22], [68, 25], [60, 29], [58, 33], [63, 36], [68, 40], [69, 44], [65, 48], [54, 51], [41, 55]], "width": 2, "color": "accent_dim"},
+        {"id": "ridge_back", "type": "line", "x": 0, "y": 152, "points": [[0, 22], [26, 12], [44, 17], [74, 0], [100, 14], [120, 9], [150, 22], [182, 3], [208, 13], [240, 8]], "width": 2, "color": "ridge"},
         {"id": "mode_dot", "type": "obj", "x": 14, "y": 19, "w": 7, "h": 7, "color": "accent", "radius": 4},
         {"id": "icon", "type": "state_icon", "x": 170, "y": 64, "w": 56, "h": 56, "value": 5},
         {"id": "mode", "type": "label", "x": 26, "y": 10, "w": 110, "text": "滑行模式", "font": "heygo_sc_16", "color": "ink"},
         {"id": "battery", "type": "label", "x": 176, "y": 11, "w": 50, "align": "top_right", "text": "", "font": "heygo_display_20", "color": "muted"},
         {"id": "dest", "type": "label", "x": 14, "y": 36, "w": 150, "text": "LIVE RUN", "font": "heygo_display_34", "color": "accent", "letter_space": 1},
-        {"id": "title", "type": "label", "x": 14, "y": 82, "w": 150, "text": "滑行中", "font": "heygo_sc_28", "color": "ink"},
-        {"id": "body", "type": "label", "x": 14, "y": 214, "w": 212, "text": "专注雪道，教练随时待命", "font": "heygo_sc_16", "color": "muted"},
-        {"id": "slogan", "type": "label", "x": 14, "y": 240, "w": 212, "text": "MAKE EVERY RUN COUNT", "font": "heygo_display_20", "color": "ink", "letter_space": 1},
+        {"id": "run", "type": "label", "x": 14, "y": 80, "w": 150, "text": "RUN --", "font": "heygo_display_20", "color": "muted", "letter_space": 1},
+        {"id": "speed", "type": "label", "x": 14, "y": 105, "w": 96, "align": "top_right", "text": "--", "font": "heygo_display_48", "color": "ink"},
+        {"id": "unit", "type": "label", "x": 116, "y": 129, "w": 110, "text": "KM/H", "font": "heygo_display_20", "color": "muted", "letter_space": 1},
+        {"id": "line1", "type": "label", "x": 14, "y": 176, "w": 212, "text": "等待手机数据", "font": "heygo_sc_16", "color": "accent"},
+        {"id": "line2", "type": "label", "x": 14, "y": 200, "w": 212, "h": 50, "text": "专注雪道，教练随时待命", "font": "heygo_sc_16", "color": "ink", "long_mode": "dots"},
         {"id": "hint", "type": "label", "x": 22, "y": 280, "w": 196, "align": "top_mid", "text": "长按 OK 进入休息", "font": "heygo_sc_16", "color": "bg"}
+      ]
+    },
+    {
+      "id": "report",
+      "widgets": [
+        {"id": "body_panel", "type": "obj", "x": 10, "y": 172, "w": 220, "h": 90, "bg": "surface", "radius": 16, "border_width": 1, "border_color": "surface_hi"},
+        {"id": "hint_panel", "type": "obj", "x": 10, "y": 272, "w": 220, "h": 38, "bg": "accent", "radius": 19},
+        {"id": "ridge_back", "type": "line", "x": 0, "y": 152, "points": [[0, 22], [26, 12], [44, 17], [74, 0], [100, 14], [120, 9], [150, 22], [182, 3], [208, 13], [240, 8]], "width": 2, "color": "ridge"},
+        {"id": "mode_dot", "type": "obj", "x": 14, "y": 19, "w": 7, "h": 7, "color": "accent", "radius": 4},
+        {"id": "mode", "type": "label", "x": 26, "y": 10, "w": 110, "text": "休息模式", "font": "heygo_sc_16", "color": "ink"},
+        {"id": "battery", "type": "label", "x": 176, "y": 11, "w": 50, "align": "top_right", "text": "", "font": "heygo_display_20", "color": "muted"},
+        {"id": "dest", "type": "label", "x": 14, "y": 36, "w": 212, "text": "RUN REPORT", "font": "heygo_display_34", "color": "accent", "letter_space": 1},
+        {"id": "title", "type": "label", "x": 14, "y": 80, "w": 212, "text": "滑完一趟后显示报告", "font": "heygo_sc_16", "color": "muted"},
+        {"id": "iq", "type": "label", "x": 14, "y": 105, "w": 96, "align": "top_right", "text": "--", "font": "heygo_display_48", "color": "ink"},
+        {"id": "iq_name", "type": "label", "x": 116, "y": 106, "w": 110, "text": "HEYGO IQ", "font": "heygo_display_20", "color": "muted", "letter_space": 1},
+        {"id": "age", "type": "label", "x": 116, "y": 131, "w": 110, "text": "", "font": "heygo_display_20", "color": "muted", "letter_space": 1},
+        {"id": "problem", "type": "label", "x": 22, "y": 182, "w": 196, "text": "", "font": "heygo_sc_16", "color": "accent"},
+        {"id": "tip", "type": "label", "x": 22, "y": 206, "w": 196, "h": 50, "text": "", "font": "heygo_sc_16", "color": "ink", "long_mode": "dots"},
+        {"id": "hint", "type": "label", "x": 22, "y": 280, "w": 196, "align": "top_mid", "text": "短按 UP 回教练", "font": "heygo_sc_16", "color": "bg"}
       ]
     },
     {
@@ -103,6 +122,7 @@
     { "id": "ui_show_rest",           "async": false },
     { "id": "ui_show_done",           "async": false },
     { "id": "ui_show_exit",           "async": false },
+    { "id": "ui_show_report",         "async": false },
     { "id": "ui_show_listening",      "async": false },
     { "id": "ui_show_thinking",       "async": false },
     { "id": "ui_show_answering",      "async": false },
@@ -132,6 +152,7 @@
     "comment": "The subject values that each ui_show_* action sets. A value is a key in assets/ui/strings.json, or an empty text. n fills {n}. A missing subject keeps its value.",
     "ui_show_ski":       {},
     "ui_show_exit":      {},
+    "ui_show_report":    {},
     "ui_show_rest":      { "tag_text": "tag.ready", "state_text": "state.ready",     "body_text": "msg.ready",     "hint_text": "hint.ready",     "icon_state": 0 },
     "ui_show_done":      { "tag_text": "tag.ready", "state_text": "state.ready",                                    "hint_text": "hint.ready",     "icon_state": 0 },
     "ui_show_listening": { "tag_text": "tag.listening", "state_text": "state.listening", "body_text": "msg.listening", "hint_text": "hint.listening", "icon_state": 1 },
@@ -158,6 +179,7 @@
     { "id": "CAPTURE",     "screen": "coach" },
     { "id": "WAIT_ANSWER", "screen": "coach" },
     { "id": "PLAYBACK",    "screen": "coach" },
+    { "id": "REPORT",      "screen": "report" },
     { "id": "EXIT_Q",      "screen": "exit" }
   ],
 
@@ -168,6 +190,8 @@
     { "from": "READY", "on": "OK_HOLD", "to": "CAPTURE",
       "actions": ["ui_show_listening", "audio_capture_start", "link_send_agent_start"] },
     { "from": "READY", "on": "DOWN_HOLD", "to": "EXIT_Q", "actions": ["ui_show_exit"] },
+    { "from": "READY", "on": "DOWN_SHORT", "to": "REPORT", "actions": ["ui_show_report"],
+      "comment": "D-25. Only the idle Coach page opens the Report page. A short press during audio changes no page." },
     { "from": "READY", "on": "ASK_BLOCKED", "to": "READY", "actions": ["ui_show_blocked"],
       "comment": "The glue sends ASK_BLOCKED in place of OK_HOLD while voice is not available. The ui_why_* text gives the cause." },
     { "from": "READY", "on": "LINK_LOST", "to": "READY", "actions": ["ui_show_link_lost"] },
@@ -203,6 +227,9 @@
     { "from": "PLAYBACK", "on": "LINK_LOST", "to": "READY",
       "actions": ["audio_play_stop", "ui_show_link_lost"] },
 
+    { "from": "REPORT", "on": "UP_SHORT",  "to": "READY",  "actions": ["ui_show_rest"] },
+    { "from": "REPORT", "on": "DOWN_HOLD", "to": "EXIT_Q", "actions": ["ui_show_exit"],
+      "comment": "As on the Coach page. An OK hold on the Report page does nothing (D-25)." },
     { "from": "EXIT_Q", "on": "OK_SHORT",   "to": "SKI",   "actions": ["ui_show_ski"] },
     { "from": "EXIT_Q", "on": "UP_SHORT",   "to": "READY", "actions": ["ui_show_rest"] },
     { "from": "EXIT_Q", "on": "DOWN_SHORT", "to": "READY", "actions": ["ui_show_rest"] },

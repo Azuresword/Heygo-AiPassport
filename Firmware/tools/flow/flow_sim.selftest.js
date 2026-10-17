@@ -94,6 +94,41 @@
   ok(document.getElementById("toast").textContent.includes("一次只能按一个键"), "12 a second key is refused");
 
   ok(!both, "13 capture and playback never run together");
+
+  // Increment 2: the Report page and the ski data. D-25 and doc 07 section 6.
+  ok(shown("ski.line1") === "等待手机数据" && shown("ski.speed") === "--", "14 the Ski page waits for data");
+  skiStart(); await sleep(2100);
+  ok(/^\d+$/.test(shown("ski.speed")) && shown("ski.dest") === "LIVE RUN", "14 LIVE_STATS shows the speed");
+  ok(shown("ski.run").startsWith("RUN 1  00:0"), "14 the run number and the run time show");
+  ok(st === "SKI", "14 data does not change the state");
+  document.getElementById("noSpeed").checked = true; await sleep(1100);
+  ok(shown("ski.speed") === "--", "14 an unknown speed shows -- and never 0");
+  document.getElementById("noSpeed").checked = false;
+  // The screen refreshes once a second, so the mark shows between 5 s and 6 s.
+  skiPaused = true; await sleep(6200);
+  ok(shown("ski.speed") === "--" && shown("ski.line2").includes("数据已过期"), "15 5 s with no packet marks the data out of date");
+  skiPaused = false; await sleep(1100);
+  ok(!shown("ski.line2").includes("数据已过期"), "15 a new packet clears the mark");
+  skiEnd(); await sleep(100);
+  ok(shown("ski.dest") === "RUN ENDED" && shown("ski.line2").includes("报告生成中"), "16 the end packet waits for the report");
+  await sleep(2100);
+  ok(shown("ski.dest") === "REPORT" && shown("ski.unit") === "HEYGO IQ" && shown("ski.line1") === "重心偏后", "16 the report shows on the Ski page");
+  await hold("OK"); await tap("DOWN");
+  ok(st === "REPORT" && document.querySelector(".scr.on").dataset.id === "report", "17 a short DOWN on the idle Coach page opens the Report page");
+  ok(shown("report.problem") === "重心偏后" && shown("report.title").startsWith("第 1 趟"), "17 the Report page shows the run report");
+  await hold("OK");
+  ok(st === "REPORT" && !mic, "17 an OK hold on the Report page does nothing");
+  await tap("UP");
+  ok(st === "READY", "17 a short UP returns to the Coach page");
+  await hold("OK", 700); release("OK");
+  press("OK", key("OK")); await sleep(600);
+  await tap("DOWN");
+  ok(st === "CAPTURE", "17 a short DOWN during capture changes no page");
+  release("OK"); await sleep(50); await hold("UP");
+  await tap("DOWN"); await hold("DOWN");
+  ok(st === "EXIT_Q", "17 a DOWN hold on the Report page opens the exit question");
+  await tap("OK");
+  ok(st === "SKI", "17 the exit returns to Ski mode");
   const pre = document.createElement("pre");
   pre.id = "selftest";
   pre.textContent = out.join("\n") + `\nRESULT ${fails ? "FAIL" : "PASS"} ${out.length - fails}/${out.length}`;
