@@ -278,7 +278,9 @@ The top left of each page shows the page name in Chinese: live data, run report,
 | `main/coach_app.c` | It draws the first page, one point each 40 ms. OK and the holds move a cursor from turn to turn. On the Turns page, CONTEXT sends mode 0 and page 5. |
 | `../assets/fonts/heygo_display_*.c` | The three brand fonts add the "°" glyph for the edge angle. |
 | `tools/phone_sim/`, `tools/flow/flow_sim.*` | Both send a demo shape after each report, and answer each TURN_REQUEST. `--turns N` and the simulator field set a long run. Run 3 sends a schematic shape. |
-| `tools/host_render/` | Add the `shape` command and screen images 16 to 21. |
+| `tools/host_render/` | Add the `shape` command and screen images 16 to 21. `turns_gif.py` makes the animation `../assets/sim/turns-demo.gif`. |
+
+A RUN_REPORT of a new run clears the turn cache, so the Turns page shows the same run as the Report page. It shows a load text until the TURN_SHAPE of that run arrives, for at most 90 s. A run with no turn data shows a text for no data, not "0" turns.
 
 The Turns page uses 16,824 bytes of the LVGL pool. The page and the data use about 4.0 KB of static RAM.
 
@@ -306,7 +308,7 @@ The popup page uses at most 13,288 bytes of the LVGL pool (image 26). The peak o
 - Device tests: NOT RUN. The board is not at hand, and no phone application build follows doc 07 yet.
 - Popups (D-31): check on the board that the first blocks of the popup audio play when a popup interrupts an answer. Sprint 14 holds this test.
 - Popups (D-31): a fall popup closes after 10 seconds with no user action. The phone application team must build the escalation of a fall alert.
-- The phone application team must accept POPUP, POPUP_END, and channel 2 of doc 07 version 0.10.
+- The phone application team must accept POPUP, POPUP_END, and channel 2 of doc 07 version 0.11.
 - The phone application team must review doc 07 version 0.6. It adds the protocol notes and the two data messages in section 6.
 - The battery label on the screen stays empty. DEVICE_STATUS carries the battery level.
 - A PLAY_START that arrives during capture is lost. The device then shows a timeout. D-20 forbids the phone to send it at that time.

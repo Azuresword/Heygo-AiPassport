@@ -139,6 +139,25 @@ static void test_drawing(void) {
           "after the last point, sel selects");
 }
 
+// The App team request of 2026-10-17: a run with no turn to show.
+static void test_no_turns(void) {
+    link_turns_t t;
+    turn_view_t v;
+    memset(&t, 0, sizeof t);
+    t.run_no = 2;
+    t.waiting = true;
+    turn_view_build(&v, &t, 0, ALL, true, 220, 96, 10);
+    CHECK(strcmp(v.title, "第 2 趟") == 0 && strcmp(v.msg, "加载中") == 0, "waiting for the shape: the run and the load text");
+    CHECK(v.n_path == 0 && v.key_ok[0] == '\0' && strcmp(v.key_hold, "长按●问教练") == 0 && !v.has_progress,
+          "waiting: OK and the holds have no turn action");
+    turn_view_build(&v, &t, 0, ALL, false, 220, 96, 10);
+    CHECK(strcmp(v.msg, "蓝牙断开") == 0, "waiting with no link: the shape cannot come");
+    t.waiting = false;
+    turn_view_build(&v, &t, 0, ALL, true, 220, 96, 10);
+    CHECK(strcmp(v.title, "第 2 趟") == 0 && strcmp(v.msg, "暂无弯型数据") == 0, "a shape of 0 turns: no turn data, never 0 弯");
+    CHECK(strstr(v.title, "0 弯") == NULL && v.key_ok[0] == '\0', "the title never says 0 turns");
+}
+
 static void test_frames(void) {
     CHECK(turn_view_frame(0, 0) == 0, "no move gives frame 0");
     CHECK(turn_view_frame(10, 0) == 0, "right is frame 0");
@@ -160,7 +179,7 @@ static void test_edge_cases(void) {
     t.n_turns = 0;
     t.n_groups = 0;
     turn_view_build(&v, &t, 0, ALL, true, 220, 120, 10);
-    CHECK(v.n_path == 0 && strcmp(v.title, "第 -- 趟 · 0 弯") == 0 && v.key_ok[0] == '\0', "a run with no turns");
+    CHECK(v.n_path == 0 && strcmp(v.title, "第 -- 趟") == 0 && strcmp(v.msg, "暂无弯型数据") == 0 && v.key_ok[0] == '\0', "a run with no turns");
 
     // The largest group: 8 turns and 33 points fill the buffer and stay in the box.
     memset(&t, 0, sizeof t);
@@ -187,6 +206,7 @@ int main(void) {
     test_turn_and_texts();
     test_groups();
     test_drawing();
+    test_no_turns();
     test_frames();
     test_edge_cases();
     if (s_fail) return EXIT_FAILURE;

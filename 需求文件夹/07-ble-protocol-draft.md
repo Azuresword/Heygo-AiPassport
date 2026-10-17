@@ -2,7 +2,7 @@
 
 # BLE Protocol Draft
 
-Version: 0.10. Date: 2026-10-17. Status: the phone application team accepted protocol 0.2. That team must accept SHOW_PAGE from version 0.7 and the field meanings from version 0.8. It must also accept the turn messages from version 0.9 and the popup messages from version 0.10.
+Version: 0.11. Date: 2026-10-17. Status: the phone application team accepted protocol 0.2. That team must accept SHOW_PAGE from version 0.7, the field meanings from version 0.8, and the three turn messages from version 0.9. Version 0.10 adds the device rules that the phone application team asked for. That team must also accept the popup messages from version 0.11.
 
 ## 1. Purpose and scope
 
@@ -33,7 +33,7 @@ Section 16 lists these changes.
 Version 0.9 adds the Increment 3 messages TURN_SHAPE, TURN_GROUP, and TURN_REQUEST, and the Turns page, per D-30. The protocol version stays 0.2.
 Section 17 lists these changes.
 
-Version 0.10 adds the Increment 4 messages POPUP and POPUP_END, the popup audio channel, and the popup page, per D-31. The protocol version stays 0.2.
+Version 0.11 adds the Increment 4 messages POPUP and POPUP_END, the popup audio channel, and the popup page, per D-31. The protocol version stays 0.2.
 Section 18 lists these changes.
 
 The draft follows three rules:
@@ -334,7 +334,7 @@ If the phone has no speed, it sends the unknown value.
 | 0 | 1 | Run number, as in LIVE_STATS | Runs | 0xFF |
 | 1 | 2 | Distance | Meters | 0xFFFF |
 | 3 | 2 | Turn count | Turns | 0xFFFF |
-| 5 | 1 | Heygo IQ, 0 to 100 | Points | 0xFF |
+| 5 | 1 | Heygo IQ, 0 to 200 | Points | 0xFF |
 | 6 | 1 | Byte count n of the core problem, at most 36 | Bytes | 0 for none |
 | 7 | n | Core problem, UTF-8, at most 12 Chinese characters | None | Empty |
 | 7 + n | The rest | Short tip, UTF-8, at most 20 Chinese characters or 60 bytes | None | Empty |
@@ -355,7 +355,7 @@ The device follows these rules:
 - The device shows an unknown value as "--".
 - The device treats an unknown run state value as 0. It sends no ERROR for it.
 - If a LIVE_STATS payload is shorter than 12 bytes, the device sends ERROR with code 2 and keeps the old packet.
-- For a RUN_REPORT, a text above its limit gets code 4. A length past the end gets code 2. An IQ above 100 or text that is not valid UTF-8 gets code 7. In all three cases, the device keeps the old report.
+- For a RUN_REPORT, a text above its limit gets code 4. A length past the end gets code 2. An IQ above 200 or text that is not valid UTF-8 gets code 7. In all three cases, the device keeps the old report.
 - The device uses its own receive time to decide that data is out of date. It does not use the phone time.
 - After a link loss, the device keeps both kinds of data, and the screen still shows them.
 
@@ -432,6 +432,19 @@ The y axis goes down the slope. The x axis goes across the slope.
 The points of each group use their own scale. The device maps 0 to 255 on each axis to the full box on the screen.
 The phone therefore sets the scale of each group. Each group fills the box.
 
+The drawing area is 200 x 76 pixels: the box of 220 x 96 pixels with a margin of 10 pixels.
+The device places a point at these box pixels, with integer division:
+
+- Screen x = 10 + (y x 200 + 127) / 255. Down the slope goes to the right.
+- Screen y = 10 + (x x 76 + 127) / 255. Across the slope goes down.
+
+The phone can use one scale k, in pixels for each meter, on both axes. Then it sends these values:
+
+- y = d x k x 255 / 200
+- x = s x k x 255 / 76
+
+Here d is the distance down the slope and s is the distance across the slope, in meters from the corner of the group.
+
 TURN_GROUP holds at most 122 bytes with its header. It fits in the MTU of 172 that voice needs.
 
 The phone follows these rules:
@@ -461,6 +474,12 @@ The device follows these rules:
 - A group past the end of the run, or a turn count that does not match the run, gets code 7.
 - After each ERROR, the device keeps the old shape and the old groups.
 - The device accepts these messages only after a HELLO_ACK with the same protocol version.
+- A RUN_REPORT of a new run clears the turn cache. The Turns page then shows the run of that RUN_REPORT, and "加载中" (loading) until its TURN_SHAPE arrives. The device sends no TURN_REQUEST for this run before its TURN_SHAPE.
+- A RUN_REPORT of the run of the turn cache keeps the cache.
+- A TURN_SHAPE with 0 turns shows "暂无弯型数据" (no turn data) for that run. The title shows the run and no turn count.
+- If no TURN_SHAPE arrives within 90 seconds of the RUN_REPORT, the page also shows "暂无弯型数据". A later TURN_SHAPE of that run still arrives.
+- While the page waits and the link is down, it shows "蓝牙断开" (Bluetooth is off).
+- With no turn to show, the OK key and the two holds have no action on the Turns page.
 
 ### Popups (D-31)
 
@@ -789,11 +808,26 @@ D-30 adds the Turns page and three turn messages for Increment 3.
 | 2 | Add TURN_REQUEST (0x65), from the device to the phone. It is the first request for data from the device. | 6 |
 | 3 | Add page 5, the Turns page. On it, the mode field is 0. | 6 |
 | 4 | Add about 4.0 KB of static RAM for the turn cache and the page. | 10 |
+| 5 | The Heygo IQ in RUN_REPORT runs from 0 to 200, not 0 to 100 (D-27). Firmware at commit `49573f9` or older answers an IQ above 100 with ERROR code 7. | 6 |
 
 The turn messages add messages and change no current packet, so the protocol version stays 0.2.
 Firmware at commit `bedcf1a` or older answers TURN_SHAPE and TURN_GROUP with ERROR code 1. A phone application that does not know page 5 treats it as an unknown page.
 
 ## 18. Changes in version 0.10
+
+The phone application team asked for these device rules on 2026-10-17, so that the Turns page shows the same run as the Report page.
+No packet format changes. The protocol version stays 0.2.
+
+| No. | Change | Section |
+| --- | --- | --- |
+| 1 | A RUN_REPORT of a new run clears the turn cache. The page shows "加载中" until TURN_SHAPE arrives. | 6 |
+| 2 | A TURN_SHAPE with 0 turns shows "暂无弯型数据". The title never shows "0 弯". | 6 |
+| 3 | The wait for TURN_SHAPE ends after 90 seconds, with "暂无弯型数据". | 6 |
+| 4 | The drawing area of 200 x 76 pixels, and the formula that places each point. | 6 |
+
+Firmware at commit `98f80ef` or older keeps the shape of the previous run until the new TURN_SHAPE arrives. It shows "0 弯" for a shape of 0 turns.
+
+## 19. Changes in version 0.11
 
 D-31 adds phone popups for Increment 4.
 
@@ -807,9 +841,9 @@ D-31 adds phone popups for Increment 4.
 | 6 | Add about 0.7 KB of static RAM for the popup. | 10 |
 
 The popup messages add messages and a channel value. They change no current packet, so the protocol version stays 0.2.
-Firmware at commit `49573f9` or older answers POPUP with ERROR code 1, and ignores a PLAY_START on channel 2. A phone application that does not know page 6 treats it as an unknown page.
+Firmware at commit `421b15c` or older answers POPUP with ERROR code 1, and ignores a PLAY_START on channel 2. A phone application that does not know page 6 treats it as an unknown page.
 
-## 19. Related documents
+## 20. Related documents
 
 - [System Architecture](02-architecture.md).
 - [Validation and Decisions](04-validation-and-decisions.md).

@@ -14,8 +14,8 @@ The device connects to a phone over BLE. The phone does speech recognition, spee
 | Increment | Function | Status |
 | --- | --- | --- |
 | Increment 1: Coach voice | An OK hold on any page opens the Coach page. Another OK hold asks the AI coach. The device plays the answer. | Code done. Device tests NOT RUN. |
-| Increment 2: ski data and reports | During a run, show the speed, vertical drop, distance, turns, and time. After each run, show the Heygo IQ, the core problem, and one short tip. | Code done. Device tests NOT RUN. |
-| Increment 3: turn shape (D-30) | After each run, show the shape of the run, 8 turns at a time. Show the side, speed, edge angle, and radius of each turn. | Code done. Device tests NOT RUN. |
+| Increment 2: ski data and reports | During a run, show the speed, vertical drop, distance, turns, and time. After each run, show the Heygo IQ (0 to 200), the core problem, and one short tip. | Code done. Device tests NOT RUN. |
+| Increment 3: turn shape | After each run, draw the line of the run, 8 turns at a time. OK selects the next turn. An UP hold selects the previous turn. A DOWN hold goes to the next page. | Code done. Device tests NOT RUN. |
 | Increment 4: phone popups (D-31) | The phone shows a fall alert, a voice message, a problem report, or an achievement at once. The device plays the popup audio, then counts down 10 seconds. Any key closes the popup. | Code done. Host tests pass. Device tests NOT RUN. |
 
 The BLE protocol is version 0.2. The phone application team accepted it.
@@ -23,9 +23,14 @@ On `main`, the firmware gate `./tools/validate.sh` gives exit code 0.
 
 ## Interactive simulator
 
-![Interactive simulator](assets/sim/preview.png)
+**Try it in the browser: [https://azuresword.github.io/Heygo-AiPassport/](https://azuresword.github.io/Heygo-AiPassport/)**
 
-`assets/sim/coach-flow.html` is a single web page. Use it on a computer to try the buttons and the pages of the device.
+The link opens `assets/sim/coach-flow.html` through GitHub Pages. You can press the buttons of the device there.
+If that link does not open, use this mirror: [htmlpreview](https://htmlpreview.github.io/?https://github.com/Azuresword/Heygo-AiPassport/blob/main/assets/sim/coach-flow.html). It runs the same page from the `main` branch.
+
+[![Interactive simulator](assets/sim/preview.png)](https://azuresword.github.io/Heygo-AiPassport/)
+
+`assets/sim/coach-flow.html` is a single web page. You can also download it and open it on a computer.
 It needs no server and no network.
 
 - On the left are the device screen and the three buttons. A press of 500 ms is a hold. The keys Up, Space, and Down are UP, OK, and DOWN.
@@ -44,6 +49,39 @@ The flow graph `Firmware/flows/coach.flow.json` makes the page. The firmware use
 Do not edit the page by hand. After a change to the flow graph, run `python3 tools/flow/flow_sim.py` in `Firmware`.
 The browser draws the screen with system fonts. The images in `assets/mockups` show the real pixels.
 
+## State machine
+
+GitHub draws this diagram from the text. The interactive simulator shows every transition.
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> LIVE
+    LIVE --> REPORT: DOWN
+    REPORT --> TURNS: DOWN
+    TURNS --> READY: DOWN
+    READY --> LIVE: DOWN
+    LIVE --> READY: UP
+    READY --> TURNS: UP
+    TURNS --> REPORT: UP
+    REPORT --> LIVE: UP
+    LIVE --> READY: OK hold
+    REPORT --> READY: OK hold
+    TURNS --> READY: OK hold
+    TURNS --> TURNS: OK / UP hold / DOWN hold
+    READY --> CAPTURE: OK hold
+    CAPTURE --> WAIT_ANSWER: OK release
+    WAIT_ANSWER --> PLAYBACK: answer starts
+    PLAYBACK --> READY: answer ends
+```
+
+## Turns page
+
+<img src="assets/sim/turns-demo.gif" width="240" alt="Turns page animation">
+
+The device drawing code makes this animation: `Firmware/tools/host_render/turns_gif.py`.
+The page draws the first 8 turns point by point. Then the rider replays turns 1, 2, and 3.
+
 ## Screen images
 
 LVGL draws the 25 images in `assets/mockups` on a computer with the device settings. They are not drawings.
@@ -54,7 +92,7 @@ LVGL draws the 25 images in `assets/mockups` on a computer with the device setti
 | 01–08 | The live data page with no data, and each Coach page state |
 | 10–12 | Ski data during a run, out-of-date data, and the report after a run |
 | 13–15 | The Report page: no report, a report, and the longest texts |
-| 16–21 | The Turns page: no shape, the first draw, a heel side turn, a schematic shape, a page on its way, and a short run |
+| 16–21 | The Turns page. 16: no shape. 17: the first page draws. 18: a heel side turn. 19: a schematic run of 255 turns. 20: a page that is on its way. 21: a run of one page. |
 | 22–26 | The popup page: fall alert, voice message, problem report, achievement, and the longest texts (D-31) |
 | `popup-anim.gif` | The entry animation of the four popup kinds |
 

@@ -216,11 +216,11 @@ class Phone:
             await self.send(hl.live_stats(hl.RUN_ENDED, run_no, hl.U16_UNKNOWN, drop, dist, turns, run_s))
             log(f"run {run_no}: end, drop {drop} m, {dist} m, {turns} turns")
             await asyncio.sleep(2.0)                                              # The phone needs time for the report.
-            iq = 60 + (run_no * 11) % 40
+            iq = 90 + (run_no * 37) % 111                                     # 0 to 200 (D-27): run 1 gives 127
             await self.send(hl.run_report(run_no, dist, turns, iq, "重心偏后", "下一趟把双手放在身体前方"))
             log(f"-> RUN_REPORT run {run_no}: iq {iq}")
             # Increment 3: the turn shape follows the report. Run 3 sends a schematic shape.
-            n_shape = min(self.args.turns or turns, hl.TURNS_MAX)
+            n_shape = min(turns if self.args.turns is None else self.args.turns, hl.TURNS_MAX)
             src = hl.SRC_SCHEMATIC if run_no == 3 else hl.SRC_MEASURED
             self.shape = (run_no, n_shape)
             await self.send(hl.turn_shape(run_no, src, n_shape))
@@ -292,7 +292,8 @@ async def main():
     ap.add_argument("--runs", type=int, default=0, help="number of simulated runs of ski data (default 0)")
     ap.add_argument("--run-s", type=int, default=30, help="seconds of each simulated run (default 30)")
     ap.add_argument("--jump", action="store_true", help="send SHOW_PAGE after each report")
-    ap.add_argument("--turns", type=int, default=0, help="turns of each run in TURN_SHAPE (default: the turn count)")
+    ap.add_argument("--turns", type=int, default=None,
+                    help="turns of each run in TURN_SHAPE (default: the turn count). 0 sends a run with no turn data")
     ap.add_argument("--popups", type=int, default=0, help="number of popups to send (default 0)")
     ap.add_argument("--popup-gap", type=float, default=20.0, help="seconds between popups (default 20)")
     args = ap.parse_args()

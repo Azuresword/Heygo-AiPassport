@@ -84,7 +84,8 @@ class PacketTest(unittest.TestCase):
             self.assertEqual(len(c), 16)
 
     def test_run_report(self):
-        for vals in [(4, 1850, 24, 82, "重心偏后", "下一趟把双手放在身体前方"), (1, 0xFFFF, 0xFFFF, 0xFF, "", "")]:
+        for vals in [(4, 1850, 24, 82, "重心偏后", "下一趟把双手放在身体前方"), (1, 0xFFFF, 0xFFFF, 0xFF, "", ""),
+                     (2, 900, 12, 200, "", ""), (3, 900, 12, 127, "", "")]:
             run_no, dist, turns, iq, problem, tip = vals
             c = c_build("bp_build_run_report", ctypes.c_uint8(run_no), ctypes.c_uint16(dist), ctypes.c_uint16(turns),
                         ctypes.c_uint8(iq), ctypes.c_char_p(problem.encode()), ctypes.c_char_p(tip.encode()))
@@ -92,7 +93,7 @@ class PacketTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             hl.run_report(1, 0, 0, 50, tip="雪" * 21)
         with self.assertRaises(ValueError):
-            hl.run_report(1, 0, 0, 101)
+            hl.run_report(1, 0, 0, 201)
 
     def test_show_page(self):
         self.assertEqual(hl.show_page(), c_build("bp_build_show_page", ctypes.c_uint8(3)))

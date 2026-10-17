@@ -23,6 +23,7 @@ The firmware in `../Firmware` compiles the fonts from this folder.
 | `tools/gen_sprite.py` | Makes the rider sprite. |
 | `mockups/` | Screen images from the host screen check. `compare-A-B.png` shows the two design options. Version B is in use. |
 | `sim/coach-flow.html` | Interactive simulator of the Coach flow. |
+| `sim/turns-demo.gif` | An animation of the Turns page. `Firmware/tools/host_render/turns_gif.py` makes it with the device drawing code. |
 
 ## Fonts
 

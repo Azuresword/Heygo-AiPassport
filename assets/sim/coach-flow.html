@@ -813,7 +813,7 @@ const fmt = {
   count8: v => v === U8 ? "--" : String(v),
   time: v => v === U16 ? "--" : v < 3600 ? `${String(Math.floor(v / 60)).padStart(2, "0")}:${String(v % 60).padStart(2, "0")}`
                                            : `${Math.floor(v / 3600)}:${String(Math.floor(v / 60) % 60).padStart(2, "0")}`,
-  iq: v => v > 100 ? "--" : String(v),
+  iq: v => v > 200 ? "--" : String(v),   // D-27: the Heygo IQ runs from 0 to 200.
 };
 let live, liveAt, report, reportAt, runNo, skiTimer, skiPaused, liveLine, liveCount;
 function skiView(now) {
@@ -860,10 +860,21 @@ function demoGroup(n_turns, g) {
   return { group: g, turns, points };
 }
 // The phone sends TURN_SHAPE after the report. The device then asks for its first groups.
+// The same as on_run_report in main/link/link_core.c: the Turns page shows the run of the last
+// report. A report of a new run clears the turn cache and waits for its TURN_SHAPE (90 s at most).
+const TURN_WAIT_MS = 90000;
+function deviceOnReport(run_no) {
+  if (dev && dev.run_no === run_no) return;
+  dev = { run_no, source: 0, n_turns: 0, n_groups: 0, focus: 0, slots: new Map(), waiting: true };
+  turnSel = 0; turnDrawnPts = 0;
+  const d = dev;
+  later(TURN_WAIT_MS, () => { if (dev === d && d.waiting) { d.waiting = false; paintData(); } });
+  paintData();
+}
 function phoneSendShape(run_no, n_turns, source) {
   phoneRun = { run_no, source, n_turns };
   ble("pd", "TURN_SHAPE", `run=${run_no} ${n_turns} 弯${source ? "（示意）" : ""}`);
-  dev = { run_no, source, n_turns, n_groups: Math.ceil(n_turns / 8), focus: 0, slots: new Map() };
+  dev = { run_no, source, n_turns, n_groups: Math.ceil(n_turns / 8), focus: 0, slots: new Map(), waiting: false };
   turnSel = 0; turnDrawnPts = 0; turnReplay = performance.now();   // A new run starts again at turn 1.
   requestGroups();
   paintData();
@@ -920,9 +931,14 @@ function turnView(sel, drawn) {
               side: "SIDE --", metrics: "", source: "", msg: "", key_up: S["key.up_report"], key_ok: "", key_down: S["key.down_coach"],
               key_hold: S["hint.hold_coach"] };
   if (!dev) return v;
+  if (!dev.n_turns) {
+    // No turn to show: the shape did not arrive yet, or it has 0 turns. OK and the holds do nothing.
+    v.title = `第 ${fmt.count8(dev.run_no)} 趟`;
+    v.msg = !dev.waiting ? S["msg.no_turns"] : link ? S["msg.loading"] : S["msg.turns_link_down"];
+    return v;
+  }
   v.title = `第 ${fmt.count8(dev.run_no)} 趟 · ${dev.n_turns} 弯`;
   if (dev.source === SRC_SCHEMATIC) v.source = S["tag.schematic"];
-  if (!dev.n_turns) return v;
   if (sel >= dev.n_turns) sel = 0;
   const g = sel >> 3;
   // Short UP and DOWN change the page. OK and the holds act inside the page.
@@ -1073,15 +1089,18 @@ function skiEnd() {
   skiStop(); skiPaused = false;
   live.state = RUN_ENDED; live.speed_dkmh = U16; sendLive();
   const r = REPORTS[(live.run_no - 1) % REPORTS.length];
-  const rep = { run_no: live.run_no, distance_m: live.distance_m, turns: live.turns, iq: 60 + (live.run_no * 11) % 40,
+  const rep = { run_no: live.run_no, distance_m: live.distance_m, turns: live.turns, iq: 90 + (live.run_no * 37) % 111,
                 problem: r[0], tip: r[1] };
   later(2000, () => {
     if (!link) return;
     report = rep; reportAt = performance.now();
     ble("pd", "RUN_REPORT", `run=${rep.run_no} ${rep.distance_m} m ${rep.turns} 弯 IQ=${rep.iq} "${rep.problem}" "${rep.tip}"`);
-    // Increment 3: the turn shape follows the report. Run 3 sends a schematic shape, as phone_sim.py.
-    const nTurns = Math.min(255, parseInt($("turnCount").value, 10) || rep.turns);
-    phoneSendShape(rep.run_no, nTurns, rep.run_no === 3 ? SRC_SCHEMATIC : 0);
+    deviceOnReport(rep.run_no);
+    // Increment 3: the turn shape comes 1.5 s after the report, as the App needs time for it.
+    // Run 3 sends a schematic shape, as phone_sim.py. A turn count of 0 sends a run with no turn data.
+    const field = $("turnCount").value.trim();
+    const nTurns = Math.min(255, field === "" ? rep.turns : Math.max(0, parseInt(field, 10) || 0));
+    later(1500, () => { if (link) phoneSendShape(rep.run_no, nTurns, rep.run_no === 3 ? SRC_SCHEMATIC : 0); });
   });
 }
 // D-28: the phone opens the Report page. Only LIVE and READY accept it.

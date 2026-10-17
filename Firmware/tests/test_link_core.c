@@ -343,10 +343,10 @@ static void test_live_data(void) {
 
     // A bad report gets an ERROR and keeps the old report.
     clear();
-    p[BP_HEADER_SIZE + 5] = 101;
+    p[BP_HEADER_SIZE + 5] = 201;
     rx(&l, p, n, 8100);
     e = last();
-    CHECK(e && e->buf[4] == BP_ERR_FIELD && e->buf[5] == BP_RUN_REPORT, "ERROR 7 for an IQ above 100");
+    CHECK(e && e->buf[4] == BP_ERR_FIELD && e->buf[5] == BP_RUN_REPORT, "ERROR 7 for an IQ above 200");
     r = link_report(&l, 8100, &age);
     CHECK(s_reports == 1 && r && r->iq == 82, "a bad report keeps the old report");
 
@@ -548,6 +548,76 @@ static void test_popup(void) {
     CHECK(l.popup.xid == 0, "a disconnect clears the popup");
 }
 
+// The App team request of 2026-10-17: the Turns page shows the run of the last RUN_REPORT.
+static size_t report_pkt(uint8_t *p, size_t cap, uint8_t run) {
+    return bp_build_run_report(p, cap, run, 900, 20, 127, "", "");
+}
+
+static void test_turn_report_sync(void) {
+    link_core_t l;
+    uint8_t p[256], q[256], first = 0, count = 0;
+    link_init(&l, &IO, "fw");
+    uint32_t t = ready(&l, 0);
+    const link_turns_t *got = NULL;
+
+    // A report of a new run clears the cache of run 1, waits, and asks for nothing.
+    size_t n = bp_build_turn_shape(p, sizeof p, 1, BP_TURN_SRC_MEASURED, 20);
+    rx(&l, p, n, t + 1);
+    size_t m = group_pkt(q, sizeof q, 1, 0, 8, 40);
+    rx(&l, q, m, t + 2);
+    clear();
+    s_turn_calls = 0;
+    n = report_pkt(p, sizeof p, 2);
+    rx(&l, p, n, t + 3);
+    got = link_turns(&l);
+    CHECK(got && got->run_no == 2 && got->n_turns == 0 && got->n_groups == 0 && got->waiting,
+          "F1: a report of run 2 gives a waiting cache of run 2 with 0 turns");
+    CHECK(!link_turns_group(got, 0) && s_turn_calls == 1, "F1: the groups of run 1 are gone, and the screen hears of it");
+    CHECK(!last_request(&first, &count), "F1: no TURN_REQUEST for a waiting cache");
+
+    // The same report again keeps the cache.
+    rx(&l, p, n, t + 4);
+    CHECK(got->run_no == 2 && got->waiting && s_turn_calls == 1, "F1: a second report of run 2 keeps the cache");
+
+    // A group of the old run gets ERROR 6, and the cache stays.
+    clear();
+    m = group_pkt(q, sizeof q, 1, 0, 8, 40);
+    rx(&l, q, m, t + 5);
+    CHECK(last() && last()->buf[4] == BP_ERR_STATE && last()->buf[5] == BP_TURN_GROUP, "F1: a group of run 1 gets ERROR 6");
+    CHECK(got->run_no == 2 && got->waiting && got->n_turns == 0, "F1: the cache does not change");
+
+    // The shape of run 2 ends the wait and asks for groups 0 to 2.
+    clear();
+    n = bp_build_turn_shape(p, sizeof p, 2, BP_TURN_SRC_MEASURED, 20);
+    rx(&l, p, n, t + 6);
+    CHECK(!got->waiting && got->n_turns == 20 && got->n_groups == 3, "F1: the shape of run 2 ends the wait");
+    CHECK(last_request(&first, &count) && first == 0 && count == 3, "F1: then the device asks for groups 0 to 2");
+
+    // A shape of 0 turns: no wait, nothing to ask for.
+    n = report_pkt(p, sizeof p, 3);
+    rx(&l, p, n, t + 7);
+    clear();
+    n = bp_build_turn_shape(p, sizeof p, 3, BP_TURN_SRC_MEASURED, 0);
+    rx(&l, p, n, t + 8);
+    CHECK(got->run_no == 3 && !got->waiting && got->n_turns == 0 && !last(), "F2: a shape of 0 turns ends the wait");
+    // A later shape with the real count replaces it, as the App sends it.
+    n = bp_build_turn_shape(p, sizeof p, 3, BP_TURN_SRC_MEASURED, 9);
+    rx(&l, p, n, t + 9);
+    CHECK(got->n_turns == 9 && got->n_groups == 2, "a later shape of the same run gives the real count");
+
+    // No shape at all: after LINK_TURN_WAIT_MS the run counts as a run with no turn data.
+    n = report_pkt(p, sizeof p, 4);
+    rx(&l, p, n, t + 10);
+    s_turn_calls = 0;
+    link_tick(&l, t + 10 + LINK_TURN_WAIT_MS - 1);
+    CHECK(got->waiting && s_turn_calls == 0, "the wait goes on until the time limit");
+    link_tick(&l, t + 10 + LINK_TURN_WAIT_MS);
+    CHECK(!got->waiting && got->run_no == 4 && got->n_turns == 0 && s_turn_calls == 1, "the wait ends at the time limit");
+    n = bp_build_turn_shape(p, sizeof p, 4, BP_TURN_SRC_MEASURED, 5);
+    rx(&l, p, n, t + LINK_TURN_WAIT_MS + 20);
+    CHECK(got->n_turns == 5, "a shape after the time limit still arrives");
+}
+
 int main(void) {
     test_handshake();
     test_version();
@@ -558,6 +628,7 @@ int main(void) {
     test_reconnect_and_status();
     test_live_data();
     test_turn_shape();
+    test_turn_report_sync();
     test_popup();
     if (s_fail) return EXIT_FAILURE;
     printf("link core tests: PASS\n");

@@ -208,7 +208,7 @@ D-26: after each run, the phone sends the report of that run. D-27 sets two plac
 | Run number | Integer | Run 3 |
 | Distance | As in the live data | 1.9 km |
 | Turn count | Integer | 25 turns |
-| Heygo IQ | Integer from 0 to 100 | 82 |
+| Heygo IQ | Integer from 0 to 200 | 82 |
 | Core problem | At most 12 Chinese characters | Weight too far back |
 | Short tip | At most 20 Chinese characters | Next run, keep both hands in front |
 
@@ -267,7 +267,7 @@ D-23 lets the device team define the fields. The phone application team calculat
 | Distance | Below 1,000 m in m, else in km with one decimal | Yes | Yes |
 | Turn count | Integer | Yes | Yes |
 | Run time | min:s. From 1 hour, h:min | Yes | No |
-| Heygo IQ | Integer from 0 to 100 | No | Yes |
+| Heygo IQ | Integer from 0 to 200 | No | Yes |
 | Core problem | At most 12 Chinese characters | No | Yes |
 | Short tip | At most 20 Chinese characters | No | Yes |
 

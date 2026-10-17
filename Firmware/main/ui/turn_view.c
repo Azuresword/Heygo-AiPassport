@@ -85,9 +85,15 @@ void turn_view_build(turn_view_t *v, const link_turns_t *t, uint8_t sel, uint8_t
     }
     char no[8];
     put_u8(no, sizeof no, t->run_no);
+    if (t->n_turns == 0) {
+        // No turn to show: the TURN_SHAPE of the run did not arrive yet, or it has 0 turns.
+        // OK and the two holds have no turn action, so the key bar is the one of a run with no turns.
+        snprintf(v->title, sizeof v->title, "第 %s 趟", no);
+        snprintf(v->msg, sizeof v->msg, "%s", !t->waiting ? NO_TURNS : link_up ? LOADING : LINK_DOWN);
+        return;
+    }
     snprintf(v->title, sizeof v->title, "第 %s 趟" SEP "%u 弯", no, t->n_turns);
     if (t->source == BP_TURN_SRC_SCHEMATIC) snprintf(v->source, sizeof v->source, SCHEMATIC);
-    if (t->n_turns == 0) return;
 
     if (sel >= t->n_turns) sel = 0;
     const uint8_t group = sel / BP_GROUP_TURNS;

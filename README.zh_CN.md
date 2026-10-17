@@ -14,8 +14,8 @@
 | 增量 | 功能 | 状态 |
 | --- | --- | --- |
 | 增量 1：教练语音 | 在任何页面长按 OK 打开教练页，再按住 OK 向 AI 教练提问，设备播放回答。 | 代码已完成。设备测试未运行。 |
-| 增量 2：滑行数据与报告 | 滑行时显示速度、落差、距离、转弯和时间。每趟结束后显示 Heygo IQ、核心问题和一条小建议。 | 代码已完成。设备测试未运行。 |
-| 增量 3：弯型（D-30） | 每趟结束后显示这一趟的弯型，一次 8 个弯。每个弯显示边刃、速度、立刃角和半径。 | 代码已完成。设备测试未运行。 |
+| 增量 2：滑行数据与报告 | 滑行时显示速度、落差、距离、转弯和时间。每趟结束后显示 Heygo IQ（0 至 200）、核心问题和一条小建议。 | 代码已完成。设备测试未运行。 |
+| 增量 3：弯型 | 每趟结束后画出这一趟的线路，一次 8 个弯。OK 选中下一弯，长按 UP 选中上一弯，长按 DOWN 跳到下一页。 | 代码已完成。设备测试未运行。 |
 | 增量 4：手机弹窗（D-31） | 手机立即弹出摔倒提醒、语音播报、问题报告或成就报告。设备播放弹窗语音，然后倒计时 10 秒。按任意键关闭。 | 代码已完成。主机测试通过。设备测试未运行。 |
 
 蓝牙协议为 0.2 版，手机应用团队已确认。
@@ -23,9 +23,14 @@
 
 ## 交互模拟器
 
-![交互模拟器](assets/sim/preview.png)
+**在浏览器里直接试用：[https://azuresword.github.io/Heygo-AiPassport/](https://azuresword.github.io/Heygo-AiPassport/)**
 
-`assets/sim/coach-flow.html` 是一个单文件网页，用来在电脑上试用设备的按键和页面。
+这个链接通过 GitHub Pages 打开 `assets/sim/coach-flow.html`，可以在网页上直接按设备的按键。
+如果打不开，用这个备用入口：[htmlpreview](https://htmlpreview.github.io/?https://github.com/Azuresword/Heygo-AiPassport/blob/main/assets/sim/coach-flow.html)。它运行的是 `main` 分支上的同一个页面。
+
+[![交互模拟器](assets/sim/preview.png)](https://azuresword.github.io/Heygo-AiPassport/)
+
+`assets/sim/coach-flow.html` 是一个单文件网页，也可以下载后在电脑上打开。
 它不需要服务器，也不需要联网。
 
 - 左侧是设备屏幕和三个按键。按住 500 ms 算长按。键盘的 ↑、空格、↓ 对应 UP、OK、DOWN。
@@ -44,6 +49,39 @@ open assets/sim/coach-flow.html
 不要手工修改这个页面。修改流程图后，在 `Firmware` 里运行 `python3 tools/flow/flow_sim.py`。
 浏览器用系统字体绘制屏幕。真实像素以 `assets/mockups` 里的图片为准。
 
+## 状态机
+
+GitHub 会根据下面的文本直接画出状态图。每一条转移都可以在交互模拟器里试。
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> LIVE
+    LIVE --> REPORT: DOWN
+    REPORT --> TURNS: DOWN
+    TURNS --> READY: DOWN
+    READY --> LIVE: DOWN
+    LIVE --> READY: UP
+    READY --> TURNS: UP
+    TURNS --> REPORT: UP
+    REPORT --> LIVE: UP
+    LIVE --> READY: OK hold
+    REPORT --> READY: OK hold
+    TURNS --> READY: OK hold
+    TURNS --> TURNS: OK / UP hold / DOWN hold
+    READY --> CAPTURE: OK hold
+    CAPTURE --> WAIT_ANSWER: OK release
+    WAIT_ANSWER --> PLAYBACK: answer starts
+    PLAYBACK --> READY: answer ends
+```
+
+## 弯型页
+
+<img src="assets/sim/turns-demo.gif" width="240" alt="弯型页动画">
+
+这段动画由设备的绘制代码生成：`Firmware/tools/host_render/turns_gif.py`。
+弯型页先逐点画出前 8 个弯，小精灵再依次重放第 1、2、3 弯。
+
 ## 界面效果图
 
 `assets/mockups` 里的 25 张图由 LVGL 在电脑上按设备配置绘制，不是手绘稿。
@@ -54,7 +92,7 @@ open assets/sim/coach-flow.html
 | 01–08 | 实时数据页的等待状态，以及教练页的各个状态 |
 | 10–12 | 滑行中的数据、数据过期、一趟结束后的报告 |
 | 13–15 | 报告页：没有报告、有报告、最长文本 |
-| 16–21 | 弯型页：没有弯型、第一次画线、脚跟侧的弯、示意弯型、正在加载的一页、只有一页的一趟 |
+| 16–21 | 弯型页：没有弯型、第一页正在画、一个 HEEL SIDE 弯、255 弯的示意弯型、某一页还在路上、只有一页的一趟 |
 | 22–26 | 弹窗页：摔倒提醒、语音播报、问题报告、成就报告、最长文本（D-31） |
 | `popup-anim.gif` | 四种弹窗的入场动画 |
 

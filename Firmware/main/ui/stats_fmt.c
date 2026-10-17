@@ -56,6 +56,6 @@ size_t stats_fmt_time(char *out, size_t cap, uint16_t time_s) {
 }
 
 size_t stats_fmt_iq(char *out, size_t cap, uint8_t iq) {
-    if (iq > 100u) return put(out, cap, "%s", STATS_UNKNOWN);
+    if (iq > STATS_IQ_MAX) return put(out, cap, "%s", STATS_UNKNOWN);
     return put(out, cap, "%u", (unsigned)iq);
 }

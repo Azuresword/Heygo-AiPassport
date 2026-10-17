@@ -27,7 +27,8 @@ static void unknown_is_never_zero(void) {
     EXPECT(stats_fmt_count8(O, 0xFF), "--");
     EXPECT(stats_fmt_time(O, 0xFFFF), "--");
     EXPECT(stats_fmt_iq(O, 0xFF), "--");
-    EXPECT(stats_fmt_iq(O, 101), "--");
+    EXPECT(stats_fmt_iq(O, 201), "--");
+    EXPECT(stats_fmt_iq(O, 127), "127");
 }
 
 static void zero_stays_zero(void) {
@@ -58,6 +59,7 @@ static void values(void) {
     EXPECT(stats_fmt_time(O, 65534), "18:12");
     EXPECT(stats_fmt_iq(O, 82), "82");
     EXPECT(stats_fmt_iq(O, 100), "100");
+    EXPECT(stats_fmt_iq(O, 200), "200");
 }
 
 static void small_buffer(void) {

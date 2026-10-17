@@ -286,13 +286,13 @@ After Sprint 4, the branch `feat/report-live-data` merges into `main`. At the sa
 
 **Decision.** The user did not answer these three items. The device team uses these values until the user answers:
 
-- The Heygo IQ is an integer from 0 to 100, in 1 byte.
+- The Heygo IQ is an integer from 0 to 200, in 1 byte.
 - The phone sends the core problem as text of at most 12 Chinese characters.
 - The report shows on the live data page on the lift and on the Report page in Rest mode.
 
 **Reason.** The three items change only the screen. They do not change the rest of the protocol. A later change costs little.
 
-**Status.** Accepted by the user on 2026-10-17.
+**Status.** Accepted by the user on 2026-10-17. Later on the same day, the user changed the range: the highest Heygo IQ is 200, not 100. The App design shows values above 100, for example 127. The value still fits in 1 byte, so no packet format changes.
 
 ## 22. D-28: the phone opens the Report page
 
@@ -377,6 +377,8 @@ The device asks the phone for each missing group in TURN_REQUEST (0x65). The pho
 
 **Status.** The user accepted the page, the pages of 8 turns, the requests from the device, and the key hints on 2026-10-17. On the same day, the user chose the place of the page: the fourth page in the loop of D-29. The phone application team must accept the three turn messages.
 
+**Change on 2026-10-17.** The phone application team asked that the Turns page shows the same run as the Report page. The firmware team accepted it. A RUN_REPORT of a new run clears the turn cache, and the page shows "加载中" (loading) until the TURN_SHAPE of that run arrives. A run with no turn data shows "暂无弯型数据" (no turn data), not "0 弯". The wait ends after 90 seconds. Doc 07 version 0.10 gives the rules.
+
 ## 25. D-31: phone popups
 
 **Decision.** The phone can show a popup on the device at any time. REQ-22 is Increment 4.
@@ -416,7 +418,7 @@ The user made four choices on 2026-10-17:
 - The popup audio can arrive before the Coach task stops the old answer. The device therefore uses `audio_play_cut`, which keeps the queued blocks. Only the device tests can show whether the first blocks of the popup audio play.
 - A lost link sends no POPUP_END. A new connection resets every xid, so the phone must treat the popup as closed.
 - The title holds at most 36 bytes (12 Chinese characters). The body holds at most 120 bytes (40 Chinese characters).
-- Firmware at commit `49573f9` or older answers POPUP with ERROR code 1. The phone application can ignore that error.
+- Firmware at commit `421b15c` or older answers POPUP with ERROR code 1. The phone application can ignore that error.
 
 **Status.** The user accepted the popups and the four choices on 2026-10-17. The phone application team must accept POPUP and POPUP_END. Device tests are NOT RUN.
 
