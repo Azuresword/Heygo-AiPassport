@@ -1,10 +1,10 @@
 [简体中文](05-decision-amendments.zh_CN.md) · **English**
 
-# Decision amendments: D-08 to D-18
+# Decision amendments: D-08 to D-20
 
-Version: 0.5. Date: 2026-10-16. Status: D-08 to D-15, D-17, and D-18 accepted by the user. D-16 proposed.
+Version: 0.6. Date: 2026-10-17. Status: D-08 to D-15 and D-17 to D-20 accepted by the user. D-16 proposed.
 
-This document gives the reasons behind D-08 to D-18.
+This document gives the reasons behind D-08 to D-20.
 [Validation and decisions](04-validation-and-decisions.md) holds the short log.
 Requirement numbers stay stable. This document deletes no requirement.
 
@@ -161,7 +161,39 @@ Doc 07, section 4, lists the link settings: the shortest interval, no peripheral
 - The 60-minute stability test leaves the first-version gate. A reset shows up only in the Sprint 1 device tests.
 - A field pilot needs a review of this decision.
 
-## 13. Related documents
+## 13. D-19: ignore a long DOWN press while audio runs
+
+**Problem.** The requirements define a long DOWN press only on the idle Coach page. They do not define it during capture, wait, or playback.
+
+**Decision.** In these three states, the device ignores a long DOWN press.
+The user holds UP to cancel first. Then the user holds DOWN to exit.
+
+**Reason.**
+
+- REQ-17 requires clear modes and no accidental input. While audio runs, each button does one thing.
+- This follows D-10: cancel and exit use different holds.
+- The firmware already behaves this way. The code needs no change.
+
+**Cost.** An exit during audio needs one more press.
+
+## 14. D-20: the phone answers only after the question ends
+
+**Problem.** The phone can start an answer while the user still holds OK.
+The device still records at that time. It drops the PLAY_START and the audio blocks after it.
+After the 10-second wait, the screen shows a timeout. The user hears no answer.
+
+**Decision.** The phone sends the PLAY_START of an exchange only after it receives AGENT_END.
+During capture, the device still drops a PLAY_START.
+
+**Reason.**
+
+- Push-to-talk ends the question when the user releases OK. The device must not stop the microphone while the user holds OK.
+- The phone keeps the complexity. This follows the principle in section 1.
+- No packet format changes, so the protocol version stays 0.1.
+
+**Cost.** The phone application team must accept this rule. Doc 07, section 14, gives the rule.
+
+## 15. Related documents
 
 - [Product requirements](01-product-requirements.md).
 - [System architecture](02-architecture.md).

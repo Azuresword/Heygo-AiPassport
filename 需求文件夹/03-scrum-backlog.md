@@ -2,7 +2,7 @@
 
 # Scrum backlog and delivery plan
 
-Version: 0.6. Date: 2026-10-17. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. The team closed no story.
+Version: 0.7. Date: 2026-10-17. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. The team closed no story.
 
 Related documents: [Requirements](01-product-requirements.md), [Architecture](02-architecture.md), [Validation and decisions](04-validation-and-decisions.md), [Decision amendments](05-decision-amendments.md), [Sprint 0 plan](06-sprint-0-plan.md), and [BLE protocol draft](07-ble-protocol-draft.md).
 
@@ -82,8 +82,8 @@ The simulator and `phone_sim` show protocol behavior only. They cannot satisfy a
 
 Known gaps, from section 8 of the [firmware change notes](../Firmware/docs/heygo-changes.md):
 
-- During capture or playback, the device ignores a long DOWN press. The requirements do not define this case. See Q-14.
-- A PLAY_START that arrives during capture is lost. The device then shows a timeout. See Q-15.
+- During capture, wait, or playback, the device ignores a long DOWN press. D-19 accepts this behavior. The code needs no change.
+- A PLAY_START that arrives during capture is lost. The device then shows a timeout. D-20 forbids the phone to send it at that time. The code needs no change. The phone application team must still accept this rule.
 - The battery label on the screen stays empty. D-18 keeps the battery level on the screen.
 - The body label shows four lines. Longer text ends with three dots. The device speaks the full answer.
 

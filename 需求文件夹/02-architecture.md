@@ -2,7 +2,7 @@
 
 # HeygoAI × AI Passport: architecture
 
-Version: 0.5. Date: 2026-10-16. Status: Draft for engineering review.
+Version: 0.6. Date: 2026-10-17. Status: Draft for engineering review.
 
 This document proposes a design for the P0 scope in [product requirements](01-product-requirements.md).
 It does not describe a working integration.
@@ -89,7 +89,8 @@ Capture needs a new OK press that starts in Rest mode.
 | Coach page, capture runs | Reach 20 seconds | Stop capture. Show the limit. |
 | Coach page, playback runs | Hold OK for 500 ms | Stop playback. Then start capture. |
 | Any page | Hold UP for 500 ms | Cancel the active capture or playback. Do nothing when neither runs. |
-| Coach page | Hold DOWN for 500 ms | Open the exit question. A short OK returns to Ski mode. Any other input closes the question. |
+| Coach page, idle | Hold DOWN for 500 ms | Open the exit question. A short OK returns to Ski mode. Any other input closes the question. |
+| Coach page, capture, wait, or playback runs | Hold DOWN for 500 ms | Do nothing (D-19). Hold UP to cancel first. Then hold DOWN to exit. |
 | Any page | Short press | No action in P0, except OK in the exit question. |
 
 A hold never also triggers a short press.

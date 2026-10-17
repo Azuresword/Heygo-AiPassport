@@ -2,7 +2,7 @@
 
 # Validation, open questions, and decisions
 
-Version: 0.6. Date: 2026-10-17. Status: Draft for review.
+Version: 0.7. Date: 2026-10-17. Status: Draft for review.
 Every product test below has status NOT RUN.
 Document checks do not count as firmware or device tests.
 
@@ -87,8 +87,8 @@ The user parked these questions. The user will share answers after a review with
 | Q-11 | Which final memory and queue limits apply? | Deferred | Deferred by D-18 |
 | Q-12 | Which conditions make two sessions comparable? | P2 | Open |
 | Q-13 | Does the phone application accept the BLE protocol draft? | P0 | Open. Doc 07 version 0.4 offers the device draft. |
-| Q-14 | What does the device do on a long DOWN press during capture or playback? | P0 | Open. The firmware ignores the press now. |
-| Q-15 | What does the device do with a PLAY_START that arrives during capture? | P0 | Open. The firmware drops it now and then shows a timeout. |
+| Q-14 | What does the device do on a long DOWN press during capture, wait, or playback? | P0 | Closed by D-19. |
+| Q-15 | What does the device do with a PLAY_START that arrives during capture? | P0 | Closed by D-20. The phone application team must still accept it. |
 
 ## 6. Decision log
 
@@ -112,6 +112,8 @@ The user parked these questions. The user will share answers after a review with
 | D-16 | The device team proposes the BLE protocol draft. Document version 0.4 defines protocol version 0.1. | Proposed. Waits for the phone application team. |
 | D-17 | P0 keeps the Coach voice chain. Reports, charts, the cache, and intercom move to P1. Turn views move to Deferred. | Accepted by the user. |
 | D-18 | The first version builds no power management, and requests the best-performance link settings. REQ-16 moves to Deferred. | Accepted by the user. |
+| D-19 | During capture, wait, or playback, the device ignores a long DOWN press. The user holds UP to cancel, then holds DOWN to exit. | Accepted by the user. |
+| D-20 | The phone sends the PLAY_START of an exchange only after it receives AGENT_END. During capture, the device drops a PLAY_START. | Accepted by the user. Waits for the phone application team. See doc 07, section 14. |
 
 ## 7. Risks
 

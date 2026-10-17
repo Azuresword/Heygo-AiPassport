@@ -170,7 +170,7 @@ The monitor log shows each step of an exchange. These tags help the phone team a
 
 ### Protocol notes for the phone application team
 
-Doc 07 version 0.4 states these notes in its section 13. The phone application team must check each note.
+Doc 07 states notes 1 to 6 in section 13 of version 0.4, and note 7 in section 14 of version 0.5. The phone application team must check each note.
 
 1. AGENT_END travels behind the last AUDIO_UP block of its exchange. Every other control packet goes before the audio.
 2. HELLO offers IMA ADPCM only. PLAY_START with codec 1 gets ERROR 7.
@@ -178,6 +178,7 @@ Doc 07 version 0.4 states these notes in its section 13. The phone application t
 4. The device does not start the MTU exchange. The phone must request the MTU.
 5. After its own 10-second timeout, the device sends AGENT_CANCEL.
 6. The device ignores PLAY_START for the Team channel, because Team speech is P1.
+7. The phone sends the PLAY_START of an exchange only after it receives AGENT_END. During capture, the device drops a PLAY_START. This note comes from D-20.
 
 ## 7. Rules for integration
 
@@ -200,9 +201,9 @@ The body subject holds 239 bytes of text. At an MTU of 247, `AGENT_STATE` text c
 
 ## 8. Open items
 
-- During capture or playback, the state machine ignores a DOWN hold. The requirements do not define this case.
+- During capture, wait, or playback, the state machine ignores a DOWN hold. D-19 accepts this behavior.
 - Device tests: NOT RUN. The board is not at hand, and no phone application build follows doc 07 yet.
-- The phone application team must review doc 07 version 0.4, which adds the protocol notes in section 6.
+- The phone application team must review doc 07 version 0.5, which adds the protocol notes in section 6.
 - The battery label on the screen stays empty. DEVICE_STATUS carries the battery level.
-- A PLAY_START that arrives during capture is lost. The device then shows a timeout.
+- A PLAY_START that arrives during capture is lost. The device then shows a timeout. D-20 forbids the phone to send it at that time.
 - The body label shows four lines. It ends a longer text with three dots. The device speaks the full answer.

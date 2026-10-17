@@ -2,7 +2,7 @@
 
 # BLE Protocol Draft
 
-Version: 0.4. Date: 2026-10-17. Status: draft from the device team. The phone application team must review it.
+Version: 0.5. Date: 2026-10-17. Status: draft from the device team. The phone application team must review it.
 
 ## 1. Purpose and scope
 
@@ -21,6 +21,9 @@ It also uses one fixed advertising interval.
 
 Version 0.4 adds six rules from the Sprint 1 firmware. It changes no packet format, so the protocol version stays 0.1.
 Section 13 lists the six rules.
+
+Version 0.5 adds a seventh rule from D-20: the phone starts an answer only after AGENT_END. The protocol version stays 0.1.
+Section 14 gives this rule.
 
 The draft follows three rules:
 
@@ -249,6 +252,7 @@ At an UP hold during Team playback, the device sends PLAY_STOP.
 In both cases the device stops the speaker at once. It does not wait for the phone.
 
 The first version offers only IMA ADPCM in HELLO. The device answers a PLAY_START with codec 1 with ERROR code 7.
+The phone sends the PLAY_START of an exchange only after it receives AGENT_END. During capture, the device drops a PLAY_START.
 The first version has no Team owner. The device ignores a PLAY_START for the Team channel.
 
 ### Team (P1)
@@ -498,7 +502,16 @@ The Sprint 1 firmware follows these rules. None of them changes a packet format.
 
 The device also maps failure code 2 to its timeout message, and codes 1 and 3 to its retry message.
 
-## 14. Related documents
+## 14. Changes in version 0.5
+
+| No. | Rule | Section |
+| --- | --- | --- |
+| 7 | The phone sends the PLAY_START of an exchange only after it receives AGENT_END. During capture, the device drops the PLAY_START and the AUDIO_DOWN blocks after it. The device then shows a timeout. | 6 |
+
+This rule comes from D-20. It changes no packet format, so the protocol version stays 0.1.
+The phone application team must accept this rule.
+
+## 15. Related documents
 
 - [System Architecture](02-architecture.md).
 - [Validation and Decisions](04-validation-and-decisions.md).

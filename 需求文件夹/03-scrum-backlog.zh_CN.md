@@ -2,7 +2,7 @@
 
 # Scrum 待办列表与交付计划
 
-版本：0.6。日期：2026-10-17。状态：进行中。Sprint 0 已完成。Sprint 1 的设备侧代码已提交，设备验收尚未开始。没有关闭任何故事。
+版本：0.7。日期：2026-10-17。状态：进行中。Sprint 0 已完成。Sprint 1 的设备侧代码已提交，设备验收尚未开始。没有关闭任何故事。
 
 关联文档：[产品需求](01-product-requirements.zh_CN.md)、[系统架构](02-architecture.zh_CN.md)、[验证与决策](04-validation-and-decisions.zh_CN.md)、[决策修订](05-decision-amendments.zh_CN.md)、[Sprint 0 计划](06-sprint-0-plan.zh_CN.md)、[蓝牙协议草案](07-ble-protocol-draft.zh_CN.md)。
 
@@ -82,8 +82,8 @@
 
 已知缺口，来自[固件改动说明](../Firmware/docs/heygo-changes.zh_CN.md)第 8 节：
 
-- 录音或播放时，设备忽略 DOWN 长按。需求没有定义这种情况，见 Q-14。
-- 录音期间到达的 PLAY_START 会丢失，设备随后显示超时，见 Q-15。
+- 录音、等待回答或播放时，设备忽略 DOWN 长按。D-19 确认了这个行为，不需要改代码。
+- 录音期间到达的 PLAY_START 会丢失，设备随后显示超时。D-20 规定手机不能这样发送，不需要改代码。手机应用团队还需要确认这条规则。
 - 屏幕上的电量标签一直为空。D-18 保留了电量显示。
 - body 标签只显示四行，更长的文字以三个点结尾。设备会用语音播完整的回答。
 
