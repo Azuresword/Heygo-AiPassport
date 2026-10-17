@@ -157,6 +157,19 @@ class GeneratorTest(unittest.TestCase):
             check(g)
         self.assertIn("unknown long_mode 'marquee'", str(ctx.exception))
 
+    def test_line_widget(self):
+        g = copy.deepcopy(GOOD)
+        g["screens"][0]["widgets"].append({"id": "ridge", "type": "line", "x": 0, "y": 100,
+                                           "points": [[0, 40], [60, 0], [120, 30]], "width": 3, "color": "ridge"})
+        check(g)
+        _, c = flowc.emit_screens(g, "x.json")
+        self.assertIn("static const lv_point_precise_t coach_ridge_points[] = { {0, 40}, {60, 0}, {120, 30} };", c)
+        self.assertIn("lv_line_set_points(out->ridge, coach_ridge_points, 3);", c)
+        g["screens"][0]["widgets"][-1]["points"] = [[0, 0]]
+        with self.assertRaises(flowc.FlowError) as ctx:
+            check(g)
+        self.assertIn("a line needs 2 or more", str(ctx.exception))
+
     def test_setters_call_the_trace_hook(self):
         h, c = flowc.emit_bindings(copy.deepcopy(GOOD), "x.json")
         self.assertIn("coach_bindings_set_trace", h)

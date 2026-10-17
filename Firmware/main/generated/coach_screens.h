@@ -11,14 +11,15 @@ extern "C" {
 
 typedef struct {
     lv_obj_t *screen;
-    lv_obj_t *top_panel;
     lv_obj_t *body_panel;
     lv_obj_t *hint_panel;
+    lv_obj_t *ridge_back;
     lv_obj_t *link_dot;
     lv_obj_t *icon;
     lv_obj_t *mode;
     lv_obj_t *status;
     lv_obj_t *battery;
+    lv_obj_t *tag;
     lv_obj_t *dest;
     lv_obj_t *state;
     lv_obj_t *body;
@@ -30,9 +31,10 @@ void coach_screen_coach_destroy(coach_screen_coach_t *out);
 
 typedef struct {
     lv_obj_t *screen;
-    lv_obj_t *top_panel;
-    lv_obj_t *body_panel;
     lv_obj_t *hint_panel;
+    lv_obj_t *ridge_back;
+    lv_obj_t *track_a;
+    lv_obj_t *track_b;
     lv_obj_t *mode_dot;
     lv_obj_t *icon;
     lv_obj_t *mode;
@@ -40,6 +42,7 @@ typedef struct {
     lv_obj_t *dest;
     lv_obj_t *title;
     lv_obj_t *body;
+    lv_obj_t *slogan;
     lv_obj_t *hint;
 } coach_screen_ski_t;
 
@@ -48,7 +51,6 @@ void coach_screen_ski_destroy(coach_screen_ski_t *out);
 
 typedef struct {
     lv_obj_t *screen;
-    lv_obj_t *top_panel;
     lv_obj_t *body_panel;
     lv_obj_t *hint_panel;
     lv_obj_t *mode_dot;

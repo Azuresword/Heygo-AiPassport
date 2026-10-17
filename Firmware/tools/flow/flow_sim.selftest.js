@@ -73,7 +73,7 @@
   await hold("UP");
 
   setLink(false);
-  ok(st === "READY" && widgetEls["coach.status"].style.color === "rgb(255, 114, 114)", "10 link loss keeps READY and shows the status in the danger color");
+  ok(st === "READY" && widgetEls["coach.status"].style.color === "rgb(239, 68, 68)", "10 link loss keeps READY and shows the status in the danger color");
   ok(shown("coach.status") === "未连接", "10 status shows 未连接");
   ok(widgetEls["coach.icon"].classList.contains("icon-link"), "10 link loss has its own icon");
   await hold("OK");

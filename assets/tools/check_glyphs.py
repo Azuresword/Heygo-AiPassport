@@ -33,7 +33,9 @@ def missing(text, chars):
 
 def main():
     errors = []
-    fonts = {name: font_chars(name) for name in ("heygo_sc_16", "heygo_sc_28")}
+    # Every generated font has a glyph list. A flow label can use any of them.
+    names = sorted(p.name[:-len(".chars.txt")] for p in (ASSETS / "fonts").glob("*.chars.txt"))
+    fonts = {name: font_chars(name) for name in sorted(set(names) | {"heygo_sc_16", "heygo_sc_28"})}
     for name, chars in fonts.items():
         if chars is None:
             errors.append(f"{name}: no glyph list. Run tools/gen_lv_font.py first.")

@@ -32,6 +32,8 @@ idf_component_register(
          "protocol/ble_proto.c"
          "${HEYGO_FONTS}/heygo_sc_16.c"
          "${HEYGO_FONTS}/heygo_sc_28.c"
+         "${HEYGO_FONTS}/heygo_display_20.c"
+         "${HEYGO_FONTS}/heygo_display_34.c"
     INCLUDE_DIRS "." "ui" "generated" "audio" "protocol" "link" "${HEYGO_FONTS}"
     REQUIRES bsp bt esp_app_format esp_event esp_hw_support esp_netif esp_timer esp_wifi nvs_flash
 )

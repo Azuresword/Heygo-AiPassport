@@ -9,29 +9,36 @@ The firmware in `../Firmware` compiles the fonts from this folder.
 
 | Path | Content |
 | --- | --- |
-| `ui/strings.json` | The 33 strings that the P0 screen shows, in Chinese and English. |
+| `ui/strings.json` | The 38 strings that the P0 screen shows, in Chinese and English. |
 | `fonts/heygo_sc_16.c` | 16 px font for status, hints, and phone text. 3,869 glyphs. |
-| `fonts/heygo_sc_28.c` | 28 px font for state words and titles. 176 glyphs. |
-| `fonts/heygo_fonts.h` | Declarations of the two fonts. |
+| `fonts/heygo_sc_28.c` | 28 px bold font for state words and titles. 185 glyphs. |
+| `fonts/heygo_display_20.c`, `fonts/heygo_display_34.c` | Staatliches headline font, 20 px and 34 px. ASCII only. |
+| `fonts/heygo_fonts.h` | Declarations of the four fonts. |
 | `fonts/*.chars.txt` | The characters in each font. |
-| `fonts/LICENSE-OFL.txt` | The license of the source font. |
+| `fonts/LICENSE-OFL.txt`, `fonts/LICENSE-OFL-Staatliches.txt` | The licenses of the source fonts. |
 | `tools/gen_lv_font.py` | Makes a font file from the source font. |
 | `tools/check_glyphs.py` | Makes sure that each shown character exists in its font. |
-| `mockups/` | Screen images from the host screen check. |
+| `mockups/` | Screen images from the host screen check. `compare-A-B.png` shows the two design options. Version B is in use. |
 | `sim/coach-flow.html` | Interactive simulator of the Coach flow. |
 
 ## Fonts
 
-The source font is Noto Sans SC Regular, under the SIL Open Font License 1.1.
-`gen_lv_font.py` downloads it once and checks its SHA-256 digest.
-It keeps the source font in `~/.cache/heygo-fonts`, outside the repository.
+Three source fonts exist. All use the SIL Open Font License 1.1:
 
-Both fonts use the LVGL 9 format `lv_font_fmt_txt` with 4 bits for each pixel and no compression.
+- Noto Sans SC Regular for body text.
+- Noto Sans SC Bold for state words.
+- Staatliches, the condensed headline face of the Heygo brand book in Figma.
 
-| Font | Character set |
-| --- | --- |
-| `heygo_sc_16` | ASCII, Chinese punctuation, GB2312 level 1 (3,755 characters), and all vocabulary characters. |
-| `heygo_sc_28` | ASCII and all vocabulary characters. |
+`gen_lv_font.py` downloads each source font once and checks its SHA-256 digest.
+It keeps the source fonts in `~/.cache/heygo-fonts`, outside the repository.
+
+All fonts use the LVGL 9 format `lv_font_fmt_txt` with 4 bits for each pixel and no compression.
+
+| Font | Source | Character set |
+| --- | --- | --- |
+| `heygo_sc_16` | Noto Sans SC Regular | ASCII, Chinese punctuation, GB2312 level 1 (3,755 characters), and all vocabulary characters. |
+| `heygo_sc_28` | Noto Sans SC Bold | ASCII and all vocabulary characters. |
+| `heygo_display_20`, `heygo_display_34` | Staatliches | ASCII only. |
 
 The 16 px font needs common characters because it shows transcripts and answers from the phone.
 A character outside this set shows as an empty box.
@@ -40,7 +47,9 @@ To make the fonts again, run these commands from this folder:
 
 ```bash
 python3 tools/gen_lv_font.py --name heygo_sc_16 --size 16 --charset text
-python3 tools/gen_lv_font.py --name heygo_sc_28 --size 28 --charset ui
+python3 tools/gen_lv_font.py --name heygo_sc_28 --size 28 --charset ui --source sc-bold
+python3 tools/gen_lv_font.py --name heygo_display_20 --size 20 --charset latin --source staatliches
+python3 tools/gen_lv_font.py --name heygo_display_34 --size 34 --charset latin --source staatliches
 python3 tools/check_glyphs.py
 ```
 

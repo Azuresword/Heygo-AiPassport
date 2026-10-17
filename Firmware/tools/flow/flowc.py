@@ -38,6 +38,7 @@ WIDGET_POOL_COST = {
     "slider": 300,
     "switch": 240,
     "state_icon": 540,
+    "line": 200,        # Not measured yet. The points stay in flash.
 }
 SCREEN_POOL_COST = 330
 OBSERVER_POOL_COST = 120
@@ -87,6 +88,10 @@ def validate(g, path):
             widgets[f"{scr['id']}.{w['id']}"] = w
             if w["type"] not in WIDGET_POOL_COST:
                 errors.append(f"widget {scr['id']}.{w['id']}: unknown type {w['type']!r}")
+            if w["type"] == "line":
+                pts = w.get("points", [])
+                if len(pts) < 2 or not all(isinstance(q, list) and len(q) == 2 for q in pts):
+                    errors.append(f"widget {scr['id']}.{w['id']}: a line needs 2 or more [x, y] points")
             mode = w.get("long_mode")
             if mode is not None and mode not in LONG_MODES:
                 errors.append(f"widget {scr['id']}.{w['id']}: unknown long_mode {mode!r}")
@@ -403,6 +408,12 @@ def emit_screens(g, src):
         h.append(f"void {app}_screen_{sid}_destroy({app}_screen_{sid}_t *out);")
         h.append("")
 
+        # Line points must stay valid while the line exists, so they are static constants.
+        for w in scr["widgets"]:
+            if w["type"] == "line":
+                pts = ", ".join(f"{{{int(x)}, {int(y)}}}" for x, y in w["points"])
+                c.append(f"static const lv_point_precise_t {sid}_{ident(w['id'])}_points[] = {{ {pts} }};")
+        c.append("")
         c.append(f"void {app}_screen_{sid}_build({app}_screen_{sid}_t *out) {{")
         c.append("    if (!out) return;")
         c.append("    out->screen = lv_obj_create(NULL);")
@@ -415,7 +426,8 @@ def emit_screens(g, src):
             ctor = {"label": "lv_label_create", "arc": "lv_arc_create", "bar": "lv_bar_create",
                     "obj": "lv_obj_create", "button": "lv_button_create",
                     "image": "lv_image_create", "slider": "lv_slider_create",
-                    "switch": "lv_switch_create", "state_icon": "ui_state_icon_create"}[wt]
+                    "switch": "lv_switch_create", "state_icon": "ui_state_icon_create",
+                    "line": "lv_line_create"}[wt]
             if wt == "state_icon":
                 c.append(
                     f"    out->{wid} = {ctor}(out->screen, "
@@ -428,6 +440,11 @@ def emit_screens(g, src):
             elif "w" in w:
                 c.append(f"    lv_obj_set_width(out->{wid}, {w['w']});")
             c.append(f"    lv_obj_set_pos(out->{wid}, {w.get('x', 0)}, {w.get('y', 0)});")
+            if wt == "line":
+                c.append(f"    lv_line_set_points(out->{wid}, {sid}_{wid}_points, {len(w['points'])});")
+                c.append(f"    lv_obj_set_style_line_width(out->{wid}, {int(w.get('width', 2))}, 0);")
+                c.append(f"    lv_obj_set_style_line_color(out->{wid}, ui_color_{w.get('color', 'ridge')}(), 0);")
+                c.append(f"    lv_obj_set_style_line_rounded(out->{wid}, true, 0);")
             if wt == "label":
                 c.append(f'    lv_label_set_text(out->{wid}, "{w.get("text", "")}");')
                 if w.get("long_mode") in LONG_MODES:

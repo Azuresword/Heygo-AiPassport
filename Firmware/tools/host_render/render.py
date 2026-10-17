@@ -78,16 +78,25 @@ def compile_one(src, obj, extra, stamp):
 
 def build(sdkconfig):
     stamp = sdkconfig_header(sdkconfig).stat().st_mtime
+    # An object file also depends on the headers. A changed screen struct in a generated
+    # header with an old render.o crashed the renderer, so a newer header rebuilds the app.
+    headers = list((FW / "main" / "generated").glob("*.h")) + list((FW / "main" / "ui").glob("*.h")) + \
+        [ASSETS / "fonts" / "heygo_fonts.h"]
+    app_stamp = max([stamp] + [h.stat().st_mtime for h in headers])
     jobs = [(s, BUILD / "lvgl" / s.relative_to(LVGL).with_suffix(".o"), [])
             for s in sorted((LVGL / "src").rglob("*.c"))]
     app_inc = [f"-I{FW / 'main' / d}" for d in ("ui", "generated")] + [f"-I{ASSETS / 'fonts'}"]
     app_src = [HERE / "render.c", FW / "main/ui/ui_theme.c",
                FW / "main/ui/ui_state_icon.c",
                FW / "main/generated/coach_screens.c", FW / "main/generated/coach_bindings.c",
-               ASSETS / "fonts/heygo_sc_16.c", ASSETS / "fonts/heygo_sc_28.c"]
+               ASSETS / "fonts/heygo_sc_16.c", ASSETS / "fonts/heygo_sc_28.c",
+               ASSETS / "fonts/heygo_display_20.c", ASSETS / "fonts/heygo_display_34.c"]
+    lvgl_jobs = len(jobs)
     jobs += [(s, BUILD / "app" / (s.stem + ".o"), app_inc) for s in app_src]
     with ThreadPoolExecutor(os.cpu_count() or 4) as pool:
-        errors = [e for e in pool.map(lambda j: compile_one(j[0], j[1], j[2], stamp), jobs) if e]
+        errors = [e for e in pool.map(
+            lambda ij: compile_one(ij[1][0], ij[1][1], ij[1][2], stamp if ij[0] < lvgl_jobs else app_stamp),
+            enumerate(jobs)) if e]
     if errors:
         sys.exit("ERROR: compile failed\n" + errors[0])
     exe = BUILD / "render"
@@ -108,17 +117,17 @@ def frames(s):
     return [
         ("01-ski", "ski", {}),
         ("02-ready", "coach", {"status_text": rest_up, "link_state": "1",
-                               "state_text": s["state.ready"], "body_text": s["msg.ready"],
+                               "state_text": s["state.ready"], "tag_text": s["tag.ready"], "body_text": s["msg.ready"],
                                "hint_text": s["hint.ready"], "icon_state": "0"}),
-        ("03-listening", None, {"state_text": s["state.listening"],
+        ("03-listening", None, {"state_text": s["state.listening"], "tag_text": s["tag.listening"],
                                 "body_text": s["msg.listening"],
                                 "hint_text": s["hint.listening"], "icon_state": "1"}),
-        ("04-thinking", None, {"state_text": s["state.thinking"], "body_text": question,
+        ("04-thinking", None, {"state_text": s["state.thinking"], "tag_text": s["tag.thinking"], "body_text": question,
                                "hint_text": s["hint.thinking"], "icon_state": "2"}),
-        ("05-answering", None, {"state_text": s["state.answering"], "body_text": answer,
+        ("05-answering", None, {"state_text": s["state.answering"], "tag_text": s["tag.answering"], "body_text": answer,
                                 "hint_text": s["hint.answering"], "icon_state": "3"}),
         ("06-answer-max", None, {"body_text": long_answer}),
-        ("07-failed", None, {"state_text": s["state.failed"], "body_text": s["msg.retry"],
+        ("07-failed", None, {"state_text": s["state.failed"], "tag_text": s["tag.failed"], "body_text": s["msg.retry"],
                              "hint_text": s["hint.ready"], "icon_state": "4"}),
         ("08-link-lost", None, {"status_text": rest_down, "link_state": "0",
                                 "body_text": s["msg.link_lost"], "icon_state": "7"}),

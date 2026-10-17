@@ -31,6 +31,7 @@ void coach_bindings_set_trace(coach_trace_fn fn);
 
 // Each setter takes the lock. It does nothing when the lock times out.
 void coach_set_status_text(const char *value);
+void coach_set_tag_text(const char *value);
 void coach_set_state_text(const char *value);
 void coach_set_body_text(const char *value);
 void coach_set_hint_text(const char *value);

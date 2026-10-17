@@ -81,12 +81,12 @@ The host UI measurements are from 2026-10-17, after the visual redesign. Device 
 | Item | Result | Method |
 | --- | --- | --- |
 | Full gate | Exit code 0 | `./tools/validate.sh` |
-| Application image | 1,616,982 bytes of 8,323,072 bytes. It contains the Coach app, NimBLE, and both fonts. | `idf.py size` |
-| Static DRAM | 141,616 of 321,296 bytes, 44.1%. The baseline demo used 178,960 bytes. | `idf.py size` |
+| Application image | 1,649,886 bytes of 8,323,072 bytes. It contains the Coach app, NimBLE, and four fonts. | `idf.py size` |
+| Static DRAM | 141,728 of 321,296 bytes, 44.1%. The baseline demo used 178,960 bytes. | `idf.py size` |
 | LVGL pool before the Heygo screens | 9,352 bytes of 21,656 bytes | Host screen check |
-| Coach screen | +6,184 bytes on first build. +5,856 bytes after rendering. | Host screen check |
-| flowc estimate for all three screens | 12,930 bytes. Only one screen is active at a time. | `tools/flow/flowc.py` |
-| LVGL pool peak | 17,128 of 21,656 bytes, 79% | Host screen check |
+| Coach screen | +6,768 bytes on first build | Host screen check |
+| flowc estimate for all three screens | 13,970 bytes. Only one screen is active at a time. | `tools/flow/flowc.py` |
+| LVGL pool peak | 17,584 of 21,656 bytes, 81% | Host screen check |
 
 Sprint 1 added NimBLE and the voice task. They raised the static DRAM by 36,006 bytes, from 105,610 bytes.
 The app does not link Wi-Fi, so the figure stays below the baseline.
@@ -154,6 +154,19 @@ The phone events map to flow events as follows:
 | AGENT_STATE failed, code 1 or 3 | `ANSWER_FAILED` |
 | AGENT_STATE failed, code 2 | `AGENT_TIMEOUT` |
 | Voice becomes unavailable | `LINK_LOST` |
+
+### Screen design
+
+The screens follow the Heygo brand book in Figma (file `d1RBbdR0K2sEScrmKP1efZ`, page Brandbook-cn).
+`../assets/mockups/compare-A-B.png` shows the two options. Version B is in use.
+
+- Colors: a black base, `#1A1A1A` cards, white text, and the lime accent `#B1FE2B`.
+- Type: the Staatliches headline face for English words and numbers, and Noto Sans SC Bold for state words.
+- Each Coach state shows a large English word, for example READY. It turns red for a failure.
+- Line widgets draw a mountain ridge, and two ski tracks on the Ski screen.
+- The hint at the bottom is a lime pill with black text.
+
+flowc has a `line` widget type for these shapes. Its points stay in flash.
 
 ### Debug log
 

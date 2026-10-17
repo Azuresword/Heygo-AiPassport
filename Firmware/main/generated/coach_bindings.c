@@ -38,6 +38,9 @@ static const char *fit_utf8(const char *value, size_t size) {
 static lv_subject_t s_subject_status_text;
 static char s_buf_status_text[32];
 static char s_prev_status_text[32];
+static lv_subject_t s_subject_tag_text;
+static char s_buf_tag_text[16];
+static char s_prev_tag_text[16];
 static lv_subject_t s_subject_state_text;
 static char s_buf_state_text[32];
 static char s_prev_state_text[32];
@@ -54,6 +57,14 @@ static lv_subject_t s_subject_link_state;
 static lv_subject_t s_subject_icon_state;
 
 static coach_screen_coach_t s_screen;
+
+static lv_color_t transform_tag_color(int32_t v) {
+    switch (v) {
+    case 4: return ui_color_danger();
+    case 7: return ui_color_danger();
+    default: return ui_color_accent();
+    }
+}
 
 static lv_color_t transform_link_color(int32_t v) {
     switch (v) {
@@ -86,7 +97,8 @@ static void observer_1(lv_observer_t *observer, lv_subject_t *subject) {
 static void observer_2(lv_observer_t *observer, lv_subject_t *subject) {
     lv_obj_t *w = (lv_obj_t *)lv_observer_get_target(observer);
     if (!w) return;
-    lv_label_set_text(w, lv_subject_get_string(subject));
+    lv_color_t col = transform_tag_color(lv_subject_get_int(subject));
+    lv_obj_set_style_text_color(w, col, 0);
 }
 
 static void observer_3(lv_observer_t *observer, lv_subject_t *subject) {
@@ -104,18 +116,30 @@ static void observer_4(lv_observer_t *observer, lv_subject_t *subject) {
 static void observer_5(lv_observer_t *observer, lv_subject_t *subject) {
     lv_obj_t *w = (lv_obj_t *)lv_observer_get_target(observer);
     if (!w) return;
+    lv_label_set_text(w, lv_subject_get_string(subject));
+}
+
+static void observer_6(lv_observer_t *observer, lv_subject_t *subject) {
+    lv_obj_t *w = (lv_obj_t *)lv_observer_get_target(observer);
+    if (!w) return;
+    lv_label_set_text(w, lv_subject_get_string(subject));
+}
+
+static void observer_7(lv_observer_t *observer, lv_subject_t *subject) {
+    lv_obj_t *w = (lv_obj_t *)lv_observer_get_target(observer);
+    if (!w) return;
     lv_color_t col = transform_link_color(lv_subject_get_int(subject));
     lv_obj_set_style_text_color(w, col, 0);
 }
 
-static void observer_6(lv_observer_t *observer, lv_subject_t *subject) {
+static void observer_8(lv_observer_t *observer, lv_subject_t *subject) {
     lv_obj_t *w = (lv_obj_t *)lv_observer_get_target(observer);
     if (!w) return;
     lv_color_t col = transform_link_dot_color(lv_subject_get_int(subject));
     lv_obj_set_style_bg_color(w, col, 0);
 }
 
-static void observer_7(lv_observer_t *observer, lv_subject_t *subject) {
+static void observer_9(lv_observer_t *observer, lv_subject_t *subject) {
     lv_obj_t *w = (lv_obj_t *)lv_observer_get_target(observer);
     if (!w) return;
     int32_t value = lv_subject_get_int(subject);
@@ -125,6 +149,7 @@ static void observer_7(lv_observer_t *observer, lv_subject_t *subject) {
 void coach_bindings_init(void) {
     if (s_ready) return;
     lv_subject_init_string(&s_subject_status_text, s_buf_status_text, s_prev_status_text, 32, "未连接");
+    lv_subject_init_string(&s_subject_tag_text, s_buf_tag_text, s_prev_tag_text, 16, "READY");
     lv_subject_init_string(&s_subject_state_text, s_buf_state_text, s_prev_state_text, 32, "就绪");
     lv_subject_init_string(&s_subject_body_text, s_buf_body_text, s_prev_body_text, 240, "按住说话，松开发送");
     lv_subject_init_string(&s_subject_hint_text, s_buf_hint_text, s_prev_hint_text, 48, "长按 OK 提问");
@@ -140,13 +165,15 @@ void coach_bindings_attach(const coach_screen_coach_t *screen) {
     coach_bindings_detach();
     s_screen = *screen;
     (void)lv_subject_add_observer_obj(&s_subject_status_text, observer_0, s_screen.status, NULL);
-    (void)lv_subject_add_observer_obj(&s_subject_state_text, observer_1, s_screen.state, NULL);
-    (void)lv_subject_add_observer_obj(&s_subject_body_text, observer_2, s_screen.body, NULL);
-    (void)lv_subject_add_observer_obj(&s_subject_hint_text, observer_3, s_screen.hint, NULL);
-    (void)lv_subject_add_observer_obj(&s_subject_battery_text, observer_4, s_screen.battery, NULL);
-    (void)lv_subject_add_observer_obj(&s_subject_link_state, observer_5, s_screen.status, NULL);
-    (void)lv_subject_add_observer_obj(&s_subject_link_state, observer_6, s_screen.link_dot, NULL);
-    (void)lv_subject_add_observer_obj(&s_subject_icon_state, observer_7, s_screen.icon, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_tag_text, observer_1, s_screen.tag, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_icon_state, observer_2, s_screen.tag, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_state_text, observer_3, s_screen.state, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_body_text, observer_4, s_screen.body, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_hint_text, observer_5, s_screen.hint, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_battery_text, observer_6, s_screen.battery, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_link_state, observer_7, s_screen.status, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_link_state, observer_8, s_screen.link_dot, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_icon_state, observer_9, s_screen.icon, NULL);
 }
 
 void coach_bindings_detach(void) {
@@ -157,6 +184,7 @@ void coach_bindings_detach(void) {
     if (s_screen.link_dot) lv_obj_remove_from_subject(s_screen.link_dot, NULL);
     if (s_screen.state) lv_obj_remove_from_subject(s_screen.state, NULL);
     if (s_screen.status) lv_obj_remove_from_subject(s_screen.status, NULL);
+    if (s_screen.tag) lv_obj_remove_from_subject(s_screen.tag, NULL);
     memset(&s_screen, 0, sizeof(s_screen));
 }
 
@@ -169,6 +197,13 @@ void coach_set_status_text(const char *value) {
     if (s_trace && value) s_trace("status_text", value, 0);
     if (!s_ready || !value || !take_lock()) return;
     lv_subject_copy_string(&s_subject_status_text, fit_utf8(value, sizeof s_buf_status_text));
+    give_lock();
+}
+
+void coach_set_tag_text(const char *value) {
+    if (s_trace && value) s_trace("tag_text", value, 0);
+    if (!s_ready || !value || !take_lock()) return;
+    lv_subject_copy_string(&s_subject_tag_text, fit_utf8(value, sizeof s_buf_tag_text));
     give_lock();
 }
 

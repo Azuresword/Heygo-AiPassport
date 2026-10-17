@@ -4,7 +4,10 @@
  *   lv_font_heygo_sc_16  Body text. ASCII, Chinese punctuation, GB2312 level 1,
  *                        and every vocabulary character. Use it for any text
  *                        that the phone sends.
- *   lv_font_heygo_sc_28  Large state words. ASCII and the vocabulary only.
+ *   lv_font_heygo_sc_28  Large state words, Noto Sans SC Bold. ASCII and the vocabulary only.
+ *   lv_font_heygo_display_20, lv_font_heygo_display_34
+ *                        Staatliches, the condensed display face of the brand book.
+ *                        ASCII only: labels such as "AI COACH" and numbers.
  */
 #pragma once
 
@@ -12,3 +15,5 @@
 
 LV_FONT_DECLARE(lv_font_heygo_sc_16)
 LV_FONT_DECLARE(lv_font_heygo_sc_28)
+LV_FONT_DECLARE(lv_font_heygo_display_20)
+LV_FONT_DECLARE(lv_font_heygo_display_34)

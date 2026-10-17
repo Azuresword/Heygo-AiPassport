@@ -11,10 +11,16 @@ Two character sets exist:
         from the phone in this font, so it needs common characters, not only
         the vocabulary.
   ui    ASCII and every vocabulary character. Large state words use it.
+  latin ASCII only. Display labels and numbers in the brand typeface use it.
 
-The source font is Noto Sans SC Regular under the SIL Open Font License 1.1.
-The tool downloads it once, checks its SHA-256, and keeps it outside the
-repository.
+Three source fonts exist. All use the SIL Open Font License 1.1:
+
+  sc-regular   Noto Sans SC Regular. Body text.
+  sc-bold      Noto Sans SC Bold. Large state words.
+  staatliches  Staatliches Regular. The condensed display face of the Heygo brand book.
+
+The tool downloads each source font once, checks its SHA-256, and keeps it
+outside the repository.
 """
 
 import argparse
@@ -27,9 +33,20 @@ import urllib.request
 from fontTools.ttLib import TTFont
 from PIL import Image, ImageDraw, ImageFont
 
-FONT_URL = "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/SubsetOTF/SC/NotoSansSC-Regular.otf"
-FONT_SHA256 = "faa6c9df652116dde789d351359f3d7e5d2285a2b2a1f04a2d7244df706d5ea9"
-FONT_CACHE = pathlib.Path.home() / ".cache" / "heygo-fonts" / "NotoSansSC-Regular.otf"
+NOTO = "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/SubsetOTF/SC/"
+SOURCES = {
+    # name: (label, URL, SHA-256)
+    "sc-regular": ("Noto Sans SC Regular", NOTO + "NotoSansSC-Regular.otf",
+                   "faa6c9df652116dde789d351359f3d7e5d2285a2b2a1f04a2d7244df706d5ea9"),
+    "sc-bold": ("Noto Sans SC Bold", NOTO + "NotoSansSC-Bold.otf",
+                "c6cb5a93abaa9edc8ee7463b7ebb7f42d618d40e6ed2f7a5371c97b0b64767c0"),
+    "staatliches": ("Staatliches Regular",
+                    "https://raw.githubusercontent.com/google/fonts/main/ofl/staatliches/Staatliches-Regular.ttf",
+                    "8395212aa4c6c3534bd39a745d956305ff080c3f3ed73ba61e4fbaae951e55cc"),
+}
+FONT_DIR = pathlib.Path.home() / ".cache" / "heygo-fonts"
+LICENSE_FILES = {"sc-regular": "LICENSE-OFL.txt", "sc-bold": "LICENSE-OFL.txt",
+                 "staatliches": "LICENSE-OFL-Staatliches.txt"}
 
 ASSETS = pathlib.Path(__file__).resolve().parents[1]
 VOCAB = ASSETS / "ui" / "strings.json"
@@ -49,17 +66,19 @@ def sha256(path):
     return h.hexdigest()
 
 
-def ensure_font():
-    if not FONT_CACHE.exists():
-        FONT_CACHE.parent.mkdir(parents=True, exist_ok=True)
-        tmp = FONT_CACHE.with_suffix(".part")
-        print(f"downloading {FONT_URL}")
-        urllib.request.urlretrieve(FONT_URL, tmp)
-        tmp.rename(FONT_CACHE)
-    got = sha256(FONT_CACHE)
-    if got != FONT_SHA256:
-        sys.exit(f"font checksum mismatch: expected {FONT_SHA256}, got {got}. Delete {FONT_CACHE} and run again.")
-    return FONT_CACHE
+def ensure_font(source):
+    _, url, want = SOURCES[source]
+    path = FONT_DIR / url.rsplit("/", 1)[1]
+    if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".part")
+        print(f"downloading {url}")
+        urllib.request.urlretrieve(url, tmp)
+        tmp.rename(path)
+    got = sha256(path)
+    if got != want:
+        sys.exit(f"font checksum mismatch: expected {want}, got {got}. Delete {path} and run again.")
+    return path
 
 
 def vocab_chars():
@@ -83,6 +102,8 @@ def gb2312_level1():
 
 
 def charset(name):
+    if name == "latin":
+        return sorted(ASCII, key=ord)
     chars = set(ASCII) | vocab_chars()
     if name == "text":
         chars |= set(PUNCT) | set(gb2312_level1())
@@ -130,7 +151,7 @@ def c_array(data, per_line=24):
     return "\n".join(lines)
 
 
-def generate(name, size, chars, font_path):
+def generate(name, size, chars, font_path, source="sc-regular"):
     cmap = TTFont(font_path, lazy=True).getBestCmap()
     missing = [c for c in chars if ord(c) not in cmap and c != " "]
     if missing:
@@ -141,8 +162,9 @@ def generate(name, size, chars, font_path):
         sys.exit(f"{name}: the ASCII range must be complete")
     other = [c for c in chars if ord(c) > 0x7E]
     ordered = ascii_part + other
-    start = ord(other[0])
-    span = ord(other[-1]) - start + 1
+    # The latin set has no characters above ASCII, so it needs no sparse range.
+    start = ord(other[0]) if other else 0
+    span = ord(other[-1]) - start + 1 if other else 0
     if span > 0xFFFF:
         sys.exit(f"{name}: the sparse range spans {span} code points, above 65535")
 
@@ -165,12 +187,20 @@ def generate(name, size, chars, font_path):
 
     unicode_list = [ord(c) - start for c in other]
     copyright_text = font_copyright(font_path)
+    sparse_list = sparse_cmap = ""
+    if other:
+        rows = "\n".join("    " + ",".join(str(v) for v in unicode_list[i:i + 16]) + ","
+                         for i in range(0, len(unicode_list), 16))
+        sparse_list = f"static const uint16_t unicode_list_1[] = {{\n{rows}\n}};\n"
+        sparse_cmap = (f"\n    {{\n        .range_start = {start}, .range_length = {span}, .glyph_id_start = 96,\n"
+                       f"        .unicode_list = unicode_list_1, .glyph_id_ofs_list = NULL, .list_length = {len(unicode_list)},\n"
+                       f"        .type = LV_FONT_FMT_TXT_CMAP_SPARSE_TINY\n    }}")
     src = f"""/* Generated by assets/tools/gen_lv_font.py. Do not edit by hand.
  *
  * Font: {name}. Size: {size} px. Bpp: 4. Glyphs: {len(ordered)}. Bitmap bytes: {len(bitmap)}.
- * Source: Noto Sans SC Regular, SHA-256 {FONT_SHA256}.
+ * Source: {SOURCES[source][0]}, SHA-256 {SOURCES[source][2]}.
  * {copyright_text}
- * License: SIL Open Font License 1.1. See assets/fonts/LICENSE-OFL.txt.
+ * License: SIL Open Font License 1.1. See assets/fonts/{LICENSE_FILES[source]}.
  */
 
 #include "lvgl.h"
@@ -183,21 +213,13 @@ static const lv_font_fmt_txt_glyph_dsc_t glyph_dsc[] = {{
 {chr(10).join(dsc)}
 }};
 
-static const uint16_t unicode_list_1[] = {{
-{chr(10).join("    " + ",".join(str(v) for v in unicode_list[i:i + 16]) + "," for i in range(0, len(unicode_list), 16))}
-}};
-
+{sparse_list}
 static const lv_font_fmt_txt_cmap_t cmaps[] = {{
     {{
         .range_start = 32, .range_length = 95, .glyph_id_start = 1,
         .unicode_list = NULL, .glyph_id_ofs_list = NULL, .list_length = 0,
         .type = LV_FONT_FMT_TXT_CMAP_FORMAT0_TINY
-    }},
-    {{
-        .range_start = {start}, .range_length = {span}, .glyph_id_start = 96,
-        .unicode_list = unicode_list_1, .glyph_id_ofs_list = NULL, .list_length = {len(unicode_list)},
-        .type = LV_FONT_FMT_TXT_CMAP_SPARSE_TINY
-    }}
+    }},{sparse_cmap}
 }};
 
 static const lv_font_fmt_txt_dsc_t font_dsc = {{
@@ -206,7 +228,7 @@ static const lv_font_fmt_txt_dsc_t font_dsc = {{
     .cmaps = cmaps,
     .kern_dsc = NULL,
     .kern_scale = 0,
-    .cmap_num = 2,
+    .cmap_num = {2 if other else 1},
     .bpp = 4,
     .kern_classes = 0,
     .bitmap_format = 0,
@@ -230,13 +252,14 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="Generate an LVGL 9 font from the source font.")
     ap.add_argument("--name", required=True, help="font name, for example heygo_sc_16")
     ap.add_argument("--size", type=int, required=True, help="pixel size")
-    ap.add_argument("--charset", choices=["text", "ui"], required=True)
+    ap.add_argument("--charset", choices=["text", "ui", "latin"], required=True)
+    ap.add_argument("--source", choices=sorted(SOURCES), default="sc-regular")
     ap.add_argument("--out-dir", default=str(ASSETS / "fonts"))
     args = ap.parse_args(argv)
 
-    font_path = ensure_font()
+    font_path = ensure_font(args.source)
     chars = charset(args.charset)
-    src, glyphs, nbytes = generate(args.name, args.size, chars, font_path)
+    src, glyphs, nbytes = generate(args.name, args.size, chars, font_path, args.source)
     out = pathlib.Path(args.out_dir)
     (out / f"{args.name}.c").write_text(src, encoding="utf-8")
     (out / f"{args.name}.chars.txt").write_text(glyphs + "\n", encoding="utf-8")

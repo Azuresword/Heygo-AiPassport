@@ -112,6 +112,7 @@ static void set_subject(const char *id, const char *value)
 {
     if (strcmp(id, "status_text") == 0) coach_set_status_text(value);
     else if (strcmp(id, "state_text") == 0) coach_set_state_text(value);
+    else if (strcmp(id, "tag_text") == 0) coach_set_tag_text(value);
     else if (strcmp(id, "body_text") == 0) coach_set_body_text(value);
     else if (strcmp(id, "hint_text") == 0) coach_set_hint_text(value);
     else if (strcmp(id, "battery_text") == 0) coach_set_battery_text(value);
@@ -138,6 +139,7 @@ static void snap(const char *name)
         print_box("mode", s_coach.mode); print_box("status", s_coach.status);
         print_box("battery", s_coach.battery); print_box("dest", s_coach.dest);
         print_box("icon", s_coach.icon);
+        print_box("tag", s_coach.tag);
         print_box("state", s_coach.state); print_box("body", s_coach.body);
         print_box("hint", s_coach.hint);
         break;
@@ -145,6 +147,7 @@ static void snap(const char *name)
         print_box("mode", s_ski.mode); print_box("battery", s_ski.battery);
         print_box("dest", s_ski.dest); print_box("icon", s_ski.icon);
         print_box("title", s_ski.title); print_box("body", s_ski.body);
+        print_box("slogan", s_ski.slogan);
         print_box("hint", s_ski.hint);
         break;
     case EXIT:

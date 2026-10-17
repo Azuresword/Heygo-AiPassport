@@ -103,7 +103,11 @@
   .w.widget-obj { z-index: 1; }
   .w.f14 { font-size: 14px; line-height: 18px; }
   .w.f16 { font-size: 16px; line-height: 20px; }
-  .w.f28 { font-size: 28px; line-height: 34px; }
+  .w.f28 { font-size: 28px; line-height: 34px; font-weight: 700; }
+  .w.f20 { font-size: 20px; line-height: 24px; }
+  .w.f34 { font-size: 34px; line-height: 40px; }
+  .w.disp { font-family: "Staatliches", Impact, "Arial Narrow", sans-serif; }
+  .w.line-w { overflow: visible; pointer-events: none; }
   .w.wrap { white-space: normal; word-break: break-word; }
   .w.dots { display: -webkit-box; white-space: normal; word-break: break-word; -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
   .w.center { text-align: center; }
@@ -393,6 +397,8 @@ function buildScreens() {
       const size = (w.font || "").match(/_(\d+)$/)?.[1] || "16";
       const classes = ["w"];
       if (w.type === "label") classes.push("f" + size);
+      if (w.type === "label" && (w.font || "").startsWith("heygo_display")) classes.push("disp");
+      if (w.type === "line") classes.push("line-w");
       if (w.type === "obj") classes.push("widget-obj");
       if (w.type === "state_icon") classes.push("state-icon");
       if (w.align === "top_mid") classes.push("center");
@@ -406,6 +412,12 @@ function buildScreens() {
         e.style.background = C[w.bg || w.color || "surface"];
         e.style.borderRadius = (w.radius || 0) + "px";
         if (w.border_width) e.style.border = `${w.border_width}px solid ${C[w.border_color || "surface_hi"]}`;
+      } else if (w.type === "line") {
+        // The same points as the generated lv_line, relative to the widget position.
+        const pts = (w.points || []).map(p => p.join(",")).join(" ");
+        e.innerHTML = `<svg width="240" height="320" style="position:absolute;left:0;top:0;overflow:visible">` +
+          `<polyline points="${pts}" fill="none" stroke="${C[w.color || "ridge"]}" stroke-width="${w.width || 2}" ` +
+          `stroke-linecap="round" stroke-linejoin="round"/></svg>`;
       } else if (w.type === "state_icon") {
         e.innerHTML = '<span class="state-icon-glyph" aria-hidden="true"></span>';
         setStateIcon(e, w.value || 0);

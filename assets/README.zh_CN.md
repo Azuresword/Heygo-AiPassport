@@ -9,29 +9,36 @@
 
 | 路径 | 内容 |
 | --- | --- |
-| `ui/strings.json` | P0 屏幕显示的 33 条文字，有中文和英文。 |
+| `ui/strings.json` | P0 屏幕显示的 38 条文字，有中文和英文。 |
 | `fonts/heygo_sc_16.c` | 16 px 字体，用于状态、提示和手机发来的文字。3,869 个字形。 |
-| `fonts/heygo_sc_28.c` | 28 px 字体，用于状态词和标题。176 个字形。 |
-| `fonts/heygo_fonts.h` | 两个字体的声明。 |
+| `fonts/heygo_sc_28.c` | 28 px 粗体，用于状态词和标题。185 个字形。 |
+| `fonts/heygo_display_20.c`、`fonts/heygo_display_34.c` | Staatliches 展示字体，20 px 和 34 px。只含 ASCII。 |
+| `fonts/heygo_fonts.h` | 四个字体的声明。 |
 | `fonts/*.chars.txt` | 每个字体包含的字符。 |
-| `fonts/LICENSE-OFL.txt` | 源字体的许可证。 |
+| `fonts/LICENSE-OFL.txt`、`fonts/LICENSE-OFL-Staatliches.txt` | 源字体的许可证。 |
 | `tools/gen_lv_font.py` | 从源字体生成字体文件。 |
 | `tools/check_glyphs.py` | 确认每个要显示的字符都在对应字体里。 |
-| `mockups/` | 主机界面检查生成的屏幕图片。 |
+| `mockups/` | 主机界面检查生成的屏幕图片。`compare-A-B.png` 是两个设计方案的对比，目前采用 B 版。 |
 | `sim/coach-flow.html` | Coach 流程的交互模拟器。 |
 
 ## 字体
 
-源字体是 Noto Sans SC Regular，许可证为 SIL Open Font License 1.1。
-`gen_lv_font.py` 只下载一次源字体，并校验它的 SHA-256 摘要。
+共有三个源字体，许可证都是 SIL Open Font License 1.1：
+
+- Noto Sans SC Regular，用于正文。
+- Noto Sans SC Bold，用于状态词。
+- Staatliches，Figma 里 Heygo 品牌手册使用的窄体展示字体。
+
+`gen_lv_font.py` 每个源字体只下载一次，并校验它的 SHA-256 摘要。
 源字体保存在 `~/.cache/heygo-fonts`，不放进仓库。
 
-两个字体都使用 LVGL 9 的 `lv_font_fmt_txt` 格式，每像素 4 位，不压缩。
+所有字体都使用 LVGL 9 的 `lv_font_fmt_txt` 格式，每像素 4 位，不压缩。
 
-| 字体 | 字符集 |
-| --- | --- |
-| `heygo_sc_16` | ASCII、中文标点、GB2312 一级字（3,755 个）和全部词汇表字符。 |
-| `heygo_sc_28` | ASCII 和全部词汇表字符。 |
+| 字体 | 源字体 | 字符集 |
+| --- | --- | --- |
+| `heygo_sc_16` | Noto Sans SC Regular | ASCII、中文标点、GB2312 一级字（3,755 个）和全部词汇表字符。 |
+| `heygo_sc_28` | Noto Sans SC Bold | ASCII 和全部词汇表字符。 |
+| `heygo_display_20`、`heygo_display_34` | Staatliches | 只含 ASCII。 |
 
 16 px 字体要显示手机发来的转写和回答，所以需要常用字。
 字符集以外的字符会显示成空框。
@@ -40,7 +47,9 @@
 
 ```bash
 python3 tools/gen_lv_font.py --name heygo_sc_16 --size 16 --charset text
-python3 tools/gen_lv_font.py --name heygo_sc_28 --size 28 --charset ui
+python3 tools/gen_lv_font.py --name heygo_sc_28 --size 28 --charset ui --source sc-bold
+python3 tools/gen_lv_font.py --name heygo_display_20 --size 20 --charset latin --source staatliches
+python3 tools/gen_lv_font.py --name heygo_display_34 --size 34 --charset latin --source staatliches
 python3 tools/check_glyphs.py
 ```
 
