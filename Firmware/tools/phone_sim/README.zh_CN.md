@@ -62,9 +62,9 @@ python3 tools/phone_sim/phone_sim.py --runs 3 --run-s 30
 | 步骤 | 操作 | 预期结果 | 测试用例 |
 | --- | --- | --- | --- |
 | 1 | 启动设备。启动 `phone_sim.py`。 | 日志显示 HELLO，然后是 CONTEXT 和 DEVICE_STATUS。状态栏显示"已连接"。 | TC-01 |
-| 2 | 长按 OK 进入休息模式。再长按 OK 说话。松开 OK。 | 日志显示 AGENT_START、AUDIO_UP 块和 AGENT_END。WAV 文件里是问题录音。 | TC-06 |
+| 2 | 长按 OK 打开教练页。再按住 OK 说话。松开 OK。 | 日志显示 AGENT_START、AUDIO_UP 块和 AGENT_END。WAV 文件里是问题录音。 | TC-06 |
 | 3 | 在 `echo` 模式下等待回答。 | 设备把问题播回来。界面回到就绪。 | TC-07、TC-08 |
-| 4 | 回答时长按 UP。 | 喇叭停止。日志显示 AGENT_CANCEL。 | TC-07 |
+| 4 | 回答时短按 DOWN。 | 喇叭停止，设备翻到实时数据页。日志显示 AGENT_CANCEL。 | TC-07 |
 | 5 | 提问过程中停止 `phone_sim.py`。 | 设备停止录音，并显示失败。 | TC-20 |
 | 6 | 先用 `fail` 模式，再用 `silent` 模式。 | 设备先显示重说提示，再显示超时提示。 | TC-06 |
 | 7 | 启动 `phone_sim.py --runs 3`。 | 日志每秒出现一行 LIVE_STATS，每趟结束后出现一行 RUN_REPORT。 | TC-02 |

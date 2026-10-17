@@ -62,9 +62,9 @@ Record the phone, the log, and the result of each step.
 | Step | Action | Expected result | Test case |
 | --- | --- | --- | --- |
 | 1 | Start the device. Start `phone_sim.py`. | The log shows HELLO, then CONTEXT and DEVICE_STATUS. The status line shows the connected text. | TC-01 |
-| 2 | Hold OK to enter Rest mode. Hold OK again and speak. Release OK. | The log shows AGENT_START, the AUDIO_UP blocks, and AGENT_END. A WAV file holds the question. | TC-06 |
+| 2 | Hold OK to open the Coach page. Hold OK again and speak. Release OK. | The log shows AGENT_START, the AUDIO_UP blocks, and AGENT_END. A WAV file holds the question. | TC-06 |
 | 3 | Wait for the answer in `echo` mode. | The device plays the question back. The screen returns to ready. | TC-07, TC-08 |
-| 4 | Hold UP during the answer. | The speaker stops. The log shows AGENT_CANCEL. | TC-07 |
+| 4 | Press DOWN during the answer. | The speaker stops, and the device goes to the live data page. The log shows AGENT_CANCEL. | TC-07 |
 | 5 | Stop `phone_sim.py` during a question. | The device stops capture and shows the failure. | TC-20 |
 | 6 | Use `fail` mode, then `silent` mode. | The device shows the retry text, and then the timeout text. | TC-06 |
 | 7 | Start `phone_sim.py --runs 3`. | The log shows a LIVE_STATS line each second and a RUN_REPORT line after each run. | TC-02 |

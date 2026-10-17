@@ -1,6 +1,6 @@
 {
   "app": "coach",
-  "title": "Coach voice chain (P0) and ski data (Increment 2)",
+  "title": "Three flat pages: live data, run report, and AI coach (D-29)",
   "strings_file": "../../assets/ui/strings.json",
   "lvgl_pool_bytes": 24576,
   "lvgl_pool_ceiling_bytes": 20480,
@@ -8,8 +8,9 @@
 
   "input": {
     "reserve_ok_long_for_page": true,
-    "back_intents": ["DOWN_HOLD"],
-    "comment": "The Coach page uses the OK hold for capture. D-10 makes the DOWN hold the way back."
+    "back_intents": ["UP_SHORT", "DOWN_SHORT"],
+    "extra_events": ["OK_SHORT", "UP_HOLD", "DOWN_HOLD"],
+    "comment": "D-29. An OK hold opens the Coach page from every page, and starts capture on the Coach page. Short UP and DOWN presses move between the three pages."
   },
 
   "subjects": [
@@ -33,7 +34,7 @@
         {"id": "ridge_back", "type": "line", "x": 0, "y": 146, "points": [[0, 22], [26, 12], [44, 17], [74, 0], [100, 14], [120, 9], [150, 22], [182, 3], [208, 13], [240, 8]], "width": 2, "color": "ridge"},
         {"id": "link_dot", "type": "obj", "x": 96, "y": 19, "w": 7, "h": 7, "color": "danger", "radius": 4},
         {"id": "icon", "type": "state_icon", "x": 170, "y": 70, "w": 56, "h": 56, "value": 0},
-        {"id": "mode", "type": "label", "x": 14, "y": 10, "w": 76, "text": "休息模式", "font": "heygo_sc_16", "color": "ink"},
+        {"id": "mode", "type": "label", "x": 14, "y": 10, "w": 76, "text": "AI 教练", "font": "heygo_sc_16", "color": "ink"},
         {"id": "status", "type": "label", "x": 108, "y": 10, "w": 66, "text": "未连接", "font": "heygo_sc_16", "color": "danger"},
         {"id": "battery", "type": "label", "x": 176, "y": 11, "w": 50, "align": "top_right", "text": "", "font": "heygo_display_20", "color": "muted"},
         {"id": "tag", "type": "label", "x": 14, "y": 61, "w": 150, "text": "READY", "font": "heygo_display_34", "color": "accent", "letter_space": 1},
@@ -49,7 +50,7 @@
         {"id": "hint_panel", "type": "obj", "x": 10, "y": 272, "w": 220, "h": 38, "bg": "accent", "radius": 19},
         {"id": "body_panel", "type": "obj", "x": 10, "y": 168, "w": 220, "h": 94, "bg": "surface", "radius": 16, "border_width": 1, "border_color": "surface_hi"},
         {"id": "mode_dot", "type": "obj", "x": 14, "y": 19, "w": 7, "h": 7, "color": "accent", "radius": 4},
-        {"id": "mode", "type": "label", "x": 26, "y": 10, "w": 110, "text": "滑行模式", "font": "heygo_sc_16", "color": "ink"},
+        {"id": "mode", "type": "label", "x": 26, "y": 10, "w": 110, "text": "实时数据", "font": "heygo_sc_16", "color": "ink"},
         {"id": "battery", "type": "label", "x": 176, "y": 11, "w": 50, "align": "top_right", "text": "", "font": "heygo_display_20", "color": "muted"},
         {"id": "dest", "type": "label", "x": 14, "y": 36, "w": 212, "text": "LIVE RUN", "font": "heygo_display_34", "color": "accent", "letter_space": 1},
         {"id": "sub", "type": "label", "x": 14, "y": 80, "w": 212, "text": "等待手机数据", "font": "heygo_sc_16", "color": "muted"},
@@ -65,7 +66,7 @@
         {"id": "time", "type": "label", "x": 164, "y": 222, "w": 62, "text": "--", "font": "heygo_display_20", "color": "ink"},
         {"id": "problem", "type": "label", "x": 22, "y": 180, "w": 196, "text": "", "font": "heygo_sc_16", "color": "accent", "hidden": true},
         {"id": "tip", "type": "label", "x": 22, "y": 204, "w": 196, "h": 50, "text": "", "font": "heygo_sc_16", "color": "ink", "long_mode": "dots", "hidden": true},
-        {"id": "hint", "type": "label", "x": 22, "y": 280, "w": 196, "align": "top_mid", "text": "长按 OK 进入休息", "font": "heygo_sc_16", "color": "bg"}
+        {"id": "hint", "type": "label", "x": 22, "y": 280, "w": 196, "align": "top_mid", "text": "长按 OK 问教练", "font": "heygo_sc_16", "color": "bg"}
       ]
     },
     {
@@ -75,7 +76,7 @@
         {"id": "hint_panel", "type": "obj", "x": 10, "y": 272, "w": 220, "h": 38, "bg": "accent", "radius": 19},
         {"id": "ridge_back", "type": "line", "x": 0, "y": 152, "points": [[0, 22], [26, 12], [44, 17], [74, 0], [100, 14], [120, 9], [150, 22], [182, 3], [208, 13], [240, 8]], "width": 2, "color": "ridge"},
         {"id": "mode_dot", "type": "obj", "x": 14, "y": 19, "w": 7, "h": 7, "color": "accent", "radius": 4},
-        {"id": "mode", "type": "label", "x": 26, "y": 10, "w": 110, "text": "休息模式", "font": "heygo_sc_16", "color": "ink"},
+        {"id": "mode", "type": "label", "x": 26, "y": 10, "w": 110, "text": "本趟报告", "font": "heygo_sc_16", "color": "ink"},
         {"id": "battery", "type": "label", "x": 176, "y": 11, "w": 50, "align": "top_right", "text": "", "font": "heygo_display_20", "color": "muted"},
         {"id": "dest", "type": "label", "x": 14, "y": 36, "w": 212, "text": "RUN REPORT", "font": "heygo_display_34", "color": "accent", "letter_space": 1},
         {"id": "title", "type": "label", "x": 14, "y": 80, "w": 212, "text": "滑完一趟后显示报告", "font": "heygo_sc_16", "color": "muted"},
@@ -84,23 +85,7 @@
         {"id": "age", "type": "label", "x": 116, "y": 131, "w": 110, "text": "", "font": "heygo_display_20", "color": "muted", "letter_space": 1},
         {"id": "problem", "type": "label", "x": 22, "y": 182, "w": 196, "text": "", "font": "heygo_sc_16", "color": "accent"},
         {"id": "tip", "type": "label", "x": 22, "y": 206, "w": 196, "h": 50, "text": "", "font": "heygo_sc_16", "color": "ink", "long_mode": "dots"},
-        {"id": "hint", "type": "label", "x": 22, "y": 280, "w": 196, "align": "top_mid", "text": "短按 UP 回教练", "font": "heygo_sc_16", "color": "bg"}
-      ]
-    },
-    {
-      "id": "exit",
-      "widgets": [
-        {"id": "body_panel", "type": "obj", "x": 10, "y": 176, "w": 220, "h": 86, "bg": "surface", "radius": 16, "border_width": 1, "border_color": "surface_hi"},
-        {"id": "hint_panel", "type": "obj", "x": 10, "y": 272, "w": 220, "h": 38, "bg": "accent", "radius": 19},
-        {"id": "mode_dot", "type": "obj", "x": 14, "y": 19, "w": 7, "h": 7, "color": "danger", "radius": 4},
-        {"id": "icon", "type": "state_icon", "x": 170, "y": 64, "w": 56, "h": 56, "value": 6},
-        {"id": "mode", "type": "label", "x": 26, "y": 10, "w": 110, "text": "休息模式", "font": "heygo_sc_16", "color": "ink"},
-        {"id": "battery", "type": "label", "x": 176, "y": 11, "w": 50, "align": "top_right", "text": "", "font": "heygo_display_20", "color": "muted"},
-        {"id": "dest", "type": "label", "x": 14, "y": 36, "w": 150, "text": "END SESSION", "font": "heygo_display_34", "color": "danger", "letter_space": 1},
-        {"id": "title", "type": "label", "x": 14, "y": 126, "w": 212, "text": "退出休息模式？", "font": "heygo_sc_28", "color": "ink"},
-        {"id": "primary", "type": "label", "x": 22, "y": 188, "w": 196, "text": "OK  退出休息模式", "font": "heygo_sc_16", "color": "accent"},
-        {"id": "secondary", "type": "label", "x": 22, "y": 226, "w": 196, "text": "UP / DOWN  返回", "font": "heygo_sc_16", "color": "muted"},
-        {"id": "hint", "type": "label", "x": 22, "y": 280, "w": 196, "align": "top_mid", "text": "短按 OK 确认", "font": "heygo_sc_16", "color": "bg"}
+        {"id": "hint", "type": "label", "x": 22, "y": 280, "w": 196, "align": "top_mid", "text": "长按 OK 问教练", "font": "heygo_sc_16", "color": "bg"}
       ]
     }
   ],
@@ -126,10 +111,9 @@
   ],
 
   "actions": [
-    { "id": "ui_show_ski",            "async": false },
-    { "id": "ui_show_rest",           "async": false },
+    { "id": "ui_show_live",           "async": false },
+    { "id": "ui_show_ready",          "async": false },
     { "id": "ui_show_done",           "async": false },
-    { "id": "ui_show_exit",           "async": false },
     { "id": "ui_show_report",         "async": false },
     { "id": "ui_show_listening",      "async": false },
     { "id": "ui_show_thinking",       "async": false },
@@ -158,10 +142,9 @@
 
   "ui_effects": {
     "comment": "The subject values that each ui_show_* action sets. A value is a key in assets/ui/strings.json, or an empty text. n fills {n}. A missing subject keeps its value.",
-    "ui_show_ski":       {},
-    "ui_show_exit":      {},
+    "ui_show_live":      {},
     "ui_show_report":    {},
-    "ui_show_rest":      { "tag_text": "tag.ready", "state_text": "state.ready",     "body_text": "msg.ready",     "hint_text": "hint.ready",     "icon_state": 0 },
+    "ui_show_ready":     { "tag_text": "tag.ready", "state_text": "state.ready",     "body_text": "msg.ready",     "hint_text": "hint.ready",     "icon_state": 0 },
     "ui_show_done":      { "tag_text": "tag.ready", "state_text": "state.ready",                                    "hint_text": "hint.ready",     "icon_state": 0 },
     "ui_show_listening": { "tag_text": "tag.listening", "state_text": "state.listening", "body_text": "msg.listening", "hint_text": "hint.listening", "icon_state": 1 },
     "ui_show_thinking":  { "tag_text": "tag.thinking", "state_text": "state.thinking",  "body_text": "msg.sent",      "hint_text": "hint.thinking",  "icon_state": 2 },
@@ -182,24 +165,33 @@
   },
 
   "states": [
-    { "id": "SKI",         "screen": "ski",   "initial": true, "root": true },
+    { "id": "LIVE",        "screen": "ski",   "initial": true, "root": true },
+    { "id": "REPORT",      "screen": "report" },
     { "id": "READY",       "screen": "coach" },
     { "id": "CAPTURE",     "screen": "coach" },
     { "id": "WAIT_ANSWER", "screen": "coach" },
-    { "id": "PLAYBACK",    "screen": "coach" },
-    { "id": "REPORT",      "screen": "report" },
-    { "id": "EXIT_Q",      "screen": "exit" }
+    { "id": "PLAYBACK",    "screen": "coach" }
   ],
 
   "transitions": [
-    { "from": "SKI", "on": "OK_HOLD", "to": "READY", "actions": ["ui_show_rest"],
-      "comment": "D-15. This press enters Rest mode. One press gives one OK_HOLD, so it cannot also start capture." },
+    { "from": "LIVE",   "on": "DOWN_SHORT", "to": "REPORT", "actions": ["ui_show_report"],
+      "comment": "D-29. Three flat pages in a loop: LIVE, REPORT, and the Coach page. DOWN goes forward. UP goes back." },
+    { "from": "LIVE",   "on": "UP_SHORT",   "to": "READY",  "actions": ["ui_show_ready"] },
+    { "from": "LIVE",   "on": "OK_HOLD",    "to": "READY",  "actions": ["ui_show_ready"],
+      "comment": "D-29. An OK hold opens the Coach page from every page. This press never starts capture." },
+    { "from": "LIVE",   "on": "SHOW_REPORT", "to": "REPORT", "actions": ["ui_show_report"],
+      "comment": "D-28. The phone sends SHOW_PAGE 3. Only LIVE and READY accept it, so it never stops a question or an answer." },
+
+    { "from": "REPORT", "on": "DOWN_SHORT", "to": "READY",  "actions": ["ui_show_ready"] },
+    { "from": "REPORT", "on": "UP_SHORT",   "to": "LIVE",   "actions": ["ui_show_live"] },
+    { "from": "REPORT", "on": "OK_HOLD",    "to": "READY",  "actions": ["ui_show_ready"] },
 
     { "from": "READY", "on": "OK_HOLD", "to": "CAPTURE",
-      "actions": ["ui_show_listening", "audio_capture_start", "link_send_agent_start"] },
-    { "from": "READY", "on": "DOWN_HOLD", "to": "EXIT_Q", "actions": ["ui_show_exit"] },
-    { "from": "READY", "on": "DOWN_SHORT", "to": "REPORT", "actions": ["ui_show_report"],
-      "comment": "D-25. Only the idle Coach page opens the Report page. A short press during audio changes no page." },
+      "actions": ["ui_show_listening", "audio_capture_start", "link_send_agent_start"],
+      "comment": "On the Coach page, the OK hold is push-to-talk. A release sends the question." },
+    { "from": "READY", "on": "DOWN_SHORT", "to": "LIVE",   "actions": ["ui_show_live"] },
+    { "from": "READY", "on": "UP_SHORT",   "to": "REPORT", "actions": ["ui_show_report"] },
+    { "from": "READY", "on": "SHOW_REPORT", "to": "REPORT", "actions": ["ui_show_report"] },
     { "from": "READY", "on": "ASK_BLOCKED", "to": "READY", "actions": ["ui_show_blocked"],
       "comment": "The glue sends ASK_BLOCKED in place of OK_HOLD while voice is not available. The ui_why_* text gives the cause." },
     { "from": "READY", "on": "LINK_LOST", "to": "READY", "actions": ["ui_show_link_lost"] },
@@ -208,8 +200,11 @@
       "actions": ["audio_capture_stop", "link_send_agent_end", "ui_show_thinking"] },
     { "from": "CAPTURE", "on": "CAPTURE_LIMIT", "to": "WAIT_ANSWER",
       "actions": ["audio_capture_stop", "link_send_agent_end", "ui_show_limit"] },
-    { "from": "CAPTURE", "on": "UP_HOLD", "to": "READY",
-      "actions": ["audio_capture_stop", "link_send_agent_cancel", "ui_show_rest"] },
+    { "from": "CAPTURE", "on": "DOWN_SHORT", "to": "LIVE",
+      "actions": ["audio_capture_stop", "link_send_agent_cancel", "ui_show_live"],
+      "comment": "D-29. A page change cancels the question first. The three buttons share one ADC, so this needs the OK release first." },
+    { "from": "CAPTURE", "on": "UP_SHORT", "to": "REPORT",
+      "actions": ["audio_capture_stop", "link_send_agent_cancel", "ui_show_report"] },
     { "from": "CAPTURE", "on": "LINK_LOST", "to": "READY",
       "actions": ["audio_capture_stop", "ui_show_link_lost"] },
 
@@ -217,35 +212,28 @@
       "actions": ["ui_show_answering", "audio_play_start"] },
     { "from": "WAIT_ANSWER", "on": "ANSWER_FAILED", "to": "READY", "actions": ["ui_show_retry"] },
     { "from": "WAIT_ANSWER", "on": "AGENT_TIMEOUT", "to": "READY", "actions": ["ui_show_timeout"] },
-    { "from": "WAIT_ANSWER", "on": "UP_HOLD", "to": "READY",
-      "actions": ["link_send_agent_cancel", "ui_show_rest"] },
     { "from": "WAIT_ANSWER", "on": "OK_HOLD", "to": "CAPTURE",
       "actions": ["link_send_agent_cancel", "ui_show_listening", "audio_capture_start", "link_send_agent_start"],
       "comment": "A new question cancels the open exchange. A late answer then carries a stale xid." },
+    { "from": "WAIT_ANSWER", "on": "DOWN_SHORT", "to": "LIVE",
+      "actions": ["link_send_agent_cancel", "ui_show_live"],
+      "comment": "D-29. A page change cancels the open exchange." },
+    { "from": "WAIT_ANSWER", "on": "UP_SHORT", "to": "REPORT",
+      "actions": ["link_send_agent_cancel", "ui_show_report"] },
     { "from": "WAIT_ANSWER", "on": "LINK_LOST", "to": "READY", "actions": ["ui_show_link_lost"] },
 
     { "from": "PLAYBACK", "on": "ANSWER_END", "to": "READY",
       "actions": ["audio_play_stop", "ui_show_done"],
       "comment": "ui_show_done keeps the answer text on the screen until the next action." },
-    { "from": "PLAYBACK", "on": "UP_HOLD", "to": "READY",
-      "actions": ["audio_play_stop", "link_send_agent_cancel", "ui_show_rest"] },
     { "from": "PLAYBACK", "on": "OK_HOLD", "to": "CAPTURE",
       "actions": ["audio_play_stop", "link_send_agent_cancel", "ui_show_listening", "audio_capture_start", "link_send_agent_start"],
       "comment": "Playback stops before the microphone starts. The device never records and plays together." },
+    { "from": "PLAYBACK", "on": "DOWN_SHORT", "to": "LIVE",
+      "actions": ["audio_play_stop", "link_send_agent_cancel", "ui_show_live"],
+      "comment": "D-29. A page change stops the speaker and cancels the answer." },
+    { "from": "PLAYBACK", "on": "UP_SHORT", "to": "REPORT",
+      "actions": ["audio_play_stop", "link_send_agent_cancel", "ui_show_report"] },
     { "from": "PLAYBACK", "on": "LINK_LOST", "to": "READY",
-      "actions": ["audio_play_stop", "ui_show_link_lost"] },
-
-    { "from": "REPORT", "on": "UP_SHORT",  "to": "READY",  "actions": ["ui_show_rest"] },
-    { "from": "REPORT", "on": "DOWN_HOLD", "to": "EXIT_Q", "actions": ["ui_show_exit"],
-      "comment": "As on the Coach page. An OK hold on the Report page does nothing (D-25)." },
-    { "from": "SKI",   "on": "SHOW_REPORT", "to": "REPORT", "actions": ["ui_show_report"],
-      "comment": "D-28. The phone sends SHOW_PAGE 3. Only SKI and READY go to the Report page. From SKI the device also enters Rest mode. Every other state ignores the request, so it never stops a question or an answer." },
-    { "from": "READY", "on": "SHOW_REPORT", "to": "REPORT", "actions": ["ui_show_report"] },
-    { "from": "EXIT_Q", "on": "OK_SHORT",   "to": "SKI",   "actions": ["ui_show_ski"] },
-    { "from": "EXIT_Q", "on": "UP_SHORT",   "to": "READY", "actions": ["ui_show_rest"] },
-    { "from": "EXIT_Q", "on": "DOWN_SHORT", "to": "READY", "actions": ["ui_show_rest"] },
-    { "from": "EXIT_Q", "on": "UP_HOLD",    "to": "READY", "actions": ["ui_show_rest"] },
-    { "from": "EXIT_Q", "on": "DOWN_HOLD",  "to": "READY", "actions": ["ui_show_rest"] },
-    { "from": "EXIT_Q", "on": "OK_HOLD",    "to": "READY", "actions": ["ui_show_rest"] }
+      "actions": ["audio_play_stop", "ui_show_link_lost"] }
   ]
 }

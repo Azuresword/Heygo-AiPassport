@@ -73,22 +73,21 @@ python3 tools/check_glyphs.py
 
 | 图片 | 状态 |
 | --- | --- |
-| `01-ski.png` | 滑行模式 |
-| `02-ready.png` | 休息模式，就绪 |
+| `01-ski.png` | 实时数据页，还没有数据 |
+| `02-ready.png` | 教练页，就绪 |
 | `03-listening.png` | 设备正在录制问题 |
 | `04-thinking.png` | 手机已收到问题，正在等回答 |
 | `05-answering.png` | 设备正在播放回答 |
 | `06-answer-max.png` | 超过四行的回答以三个点结尾 |
 | `07-failed.png` | 语音识别失败 |
 | `08-link-lost.png` | 与手机的连接断开 |
-| `09-exit.png` | 退出确认 |
 | `10-ski-live.png` | 滑行中的实时数据 |
 | `11-ski-stale.png` | 5 秒没有数据包：速度显示"--" |
 | `12-ski-report.png` | 一趟结束后：滑行页显示报告，含最长文本 |
 | `13-report-empty.png` | 还没有报告时的报告页 |
 | `14-report.png` | 有报告的报告页 |
 | `15-report-max.png` | 最长文本和报告时间的报告页 |
-| `contact-sheet.png` | 全部十五张图，放大 2 倍 |
+| `contact-sheet.png` | 全部十四张图，放大 2 倍 |
 
 ## 模拟器
 

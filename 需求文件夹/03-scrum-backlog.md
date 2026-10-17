@@ -49,10 +49,10 @@ The user made every scope decision so far, including D-17.
 | US-07 Speech playback | REQ-07 | P0 | 3–5 | Firmware | Sprints 0–1 code, Sprint 6 acceptance |
 | US-08 Button Agent exchange | REQ-08 | P0 | Re-estimate | Phone and firmware | Sprint 1 code, Sprint 8 acceptance |
 | US-15 Gloves and Chinese text | REQ-15 | P0 | Re-estimate | Firmware | Sprint 1 code, Sprint 9 acceptance |
-| US-17 Explicit modes | REQ-17 | P0 | Re-estimate | Firmware | Sprint 0 code, Sprint 5 acceptance |
+| US-17 Page navigation | REQ-17 | P0 | Re-estimate | Firmware | Sprint 0 code, D-29 rewrite, Sprint 5 acceptance |
 | US-20 Recovery | REQ-20 | P0 | Re-estimate | Firmware and phone | Sprint 1 code, Sprint 6 acceptance |
 | US-02 Data sync | REQ-02 | P1, Increment 2 | 3–5 | Phone and firmware | Sprint 2 code, Sprint 7 acceptance |
-| US-21 Live data on the Ski page | REQ-21 | P1, Increment 2 | 5–8 | Firmware and design | Sprint 3 code, Sprints 7 and 9 acceptance |
+| US-21 Live data on the live data page | REQ-21 | P1, Increment 2 | 5–8 | Firmware and design | Sprint 3 code, Sprints 7 and 9 acceptance |
 | US-03 Run report | REQ-03 | P1, Increment 2 | 3–5 | Firmware and design | Sprint 4 code, Sprint 7 acceptance |
 | US-04 Metric charts | REQ-04 | P1 | 3–5 | Firmware | Later |
 | US-09 Human push-to-talk | REQ-09 | P1 | 8–13 | Phone and firmware | Later |
@@ -77,7 +77,7 @@ Per section 9, each story needs device tests. Some stories also need the real ph
 | Story | Device code | Host evidence | Acceptance test | Still needed to close |
 |---|---|---|---|---|
 | US-01 | Committed. `ble_link.c` advertises as `HeygoPP-XXXX` and accepts one phone at a time. | `test_link_core.c`, `test_phone_sim.py` | TC-01 NOT RUN | The board, and a phone application that follows doc 07. |
-| US-06 | Committed. `voice.c` encodes the capture to ADPCM blocks and sends each block at once. 20 s limit. A long UP press cancels. | `test_coach_paths.c`, `test_ima_adpcm.c` | TC-06 NOT RUN | The board, and a phone application that accepts streamed audio. |
+| US-06 | Committed. `voice.c` encodes the capture to ADPCM blocks and sends each block at once. 20 s limit. A short UP or DOWN press cancels and changes the page (D-29). | `test_coach_paths.c`, `test_ima_adpcm.c` | TC-06 NOT RUN | The board, and a phone application that accepts streamed audio. |
 | US-07 | Committed. Playback follows the playback start rules. A playback stop waits for the speaker. | `test_play_gate.c`, `test_coach_paths.c` | TC-07 NOT RUN | The board, and a phone application that supplies speech. |
 | US-08 | Device part only: the 10 s wait and the AGENT_STATE text on the screen. The phone and the Agent own the session context and the evidence labels. | `test_link_core.c` | TC-08 NOT RUN | HeygoAI coaching tools (Q-01). |
 | US-15 | Committed. `coach_input.c` maps the three buttons. The Chinese fonts and screens are in place. | `test_coach_input.c`, glyph check, host screen check | TC-15 NOT RUN | A glyph check on the board, and the U1 usability test. |
@@ -86,9 +86,8 @@ Per section 9, each story needs device tests. Some stories also need the real ph
 
 The simulator and `phone_sim` show protocol behavior only. They cannot satisfy a device test.
 
-Known gaps, from section 10 of the [firmware change notes](../Firmware/docs/heygo-changes.md):
+Known gaps, from section 11 of the [firmware change notes](../Firmware/docs/heygo-changes.md):
 
-- During capture, wait, or playback, the device ignores a long DOWN press. D-19 accepts this behavior. The code needs no change.
 - A PLAY_START that arrives during capture is lost. The device then shows a timeout. D-20 forbids the phone to send it at that time. The code needs no change. The phone application team must still accept this rule.
 - The battery label on the screen stays empty. D-18 keeps the battery level on the screen.
 - The body label shows four lines. Longer text ends with three dots. The device speaks the full answer.
@@ -113,7 +112,7 @@ As a skier, I want to hold one button and ask a question, so that the Agent hear
 - Acceptance: On the Coach page, a 500 ms OK hold starts the microphone. The screen shows that the microphone works.
 - Acceptance: The device streams each 20 ms block to the phone at once. It does not wait for the gateway.
 - Acceptance: Release stops capture within 100 ms. The device tells the phone that the question ended. One question lasts at most 20 seconds.
-- Acceptance: A 500 ms UP hold cancels the question. Capture then stops within 100 ms. The device tells the phone to drop the audio.
+- Acceptance: A short UP or DOWN press cancels the question and changes the page. Capture then stops within 100 ms. The device tells the phone to drop the audio.
 - Acceptance: A recognition failure from the phone produces a short retry message.
 - Dependency: US-17, and a phone application that accepts streamed audio.
 - Verification: TC-06.
@@ -123,7 +122,7 @@ As a skier, I want to hold one button and ask a question, so that the Agent hear
 As a skier, I want to hear the answer and stop it at once, so that I control the device.
 
 - Acceptance: The device plays each block as it arrives, and shows that playback runs.
-- Acceptance: A 500 ms UP hold stops playback within 200 ms. The device tells the phone.
+- Acceptance: A short UP or DOWN press stops playback within 200 ms, and then changes the page. The device tells the phone.
 - Acceptance: A canceled answer never resumes, even after a late block or a reconnect.
 - Dependency: US-17, and a phone application that supplies synthesized speech.
 - Verification: TC-07.
@@ -146,13 +145,13 @@ As a skier, I want to use the device with gloves and read every status in Chines
 - Acceptance: Every Chinese status string shows without a missing glyph or clipping.
 - Verification: TC-15.
 
-### US-17: Explicit modes
+### US-17: Page navigation
 
-As a skier, I want to know whether voice works now, so that I never talk to the device by accident while I ski.
+As a skier, I want to move between three pages with UP and DOWN. I also want to reach the coach with an OK hold at any time. Then I never talk to the device by accident while I ski.
 
-- Acceptance: The device starts in Ski mode. Voice stays off in Ski mode.
-- Acceptance: An OK hold in Ski mode enters Rest mode on the Coach page. That press never starts capture.
-- Acceptance: A DOWN hold and then a short OK return to Ski mode. The return stops all audio.
+- Acceptance: The device starts on the live data page. The pages loop in the order live data, report, and coach. A short DOWN goes forward. A short UP goes back.
+- Acceptance: An OK hold on the live data page or the Report page opens the Coach page. That press never starts capture.
+- Acceptance: A page change during audio stops all audio first (D-29).
 - Verification: TC-17.
 
 ### US-20: Recovery
@@ -180,13 +179,13 @@ As a skier, I want the numbers on the device to match the numbers on the phone, 
 - Dependency: the phone application supports protocol 0.2 and accepts the LIVE_STATS and RUN_REPORT fields (Q-16).
 - Verification: TC-02.
 
-### US-21: live data on the Ski page
+### US-21: live data on the live data page
 
 As a skier, I want to read my speed and this run at a glance. Then I need not take out the phone.
 
-- Acceptance: during a run, the Ski page shows the speed, vertical drop, distance, turn count, run time, and run number. The phone sends one packet each second.
+- Acceptance: during a run, the live data page shows the speed, vertical drop, distance, turn count, run time, and run number. The phone sends one packet each second.
 - Acceptance: the speed is the largest number on the page.
-- Acceptance: after a run ends, the Ski page shows the Heygo IQ, the core problem, and the tip of that run. They stay until the next run starts (D-27).
+- Acceptance: after a run ends, the live data page shows the Heygo IQ, the core problem, and the tip of that run. They stay until the next run starts (D-27).
 - Acceptance: before any data arrives, the page shows "Waiting for phone data".
 - Acceptance: no color, animation, or sound marks a high speed.
 - Dependency: US-02.
@@ -196,13 +195,13 @@ As a skier, I want to read my speed and this run at a glance. Then I need not ta
 
 As a skier, I want the problem of each run and one tip after the run. Then I know what to change on the next run.
 
-- Acceptance: on the idle Coach page, a short DOWN press opens the Report page. A short UP press returns to the Coach page.
+- Acceptance: a short DOWN on the live data page, or a short UP on the Coach page, opens the Report page (D-29).
 - Acceptance: the Report page shows the distance, turn count, Heygo IQ, core problem, and tip of the last run.
 - Acceptance: the core problem holds at most 12 Chinese characters, and the tip at most 20. Both show in full, with no cut.
 - Acceptance: before the first report arrives, the Report page shows "The report shows after a run".
 - Acceptance: after a link loss, the Report page keeps the last report and shows its receive time.
-- Acceptance: while audio runs, a short press changes no page.
-- Acceptance: when the phone sends SHOW_PAGE, the device opens the Report page from the Ski page or the idle Coach page. During capture, the wait, the playback, and the exit question, the page does not change (D-28).
+- Acceptance: an OK hold on the Report page opens the Coach page, as on every page.
+- Acceptance: when the phone sends SHOW_PAGE, the device opens the Report page from the live data page or the idle Coach page. During capture, the wait, and the playback, the page does not change (D-28).
 - Dependency: US-02 and US-17.
 - Verification: TC-03.
 
@@ -219,7 +218,7 @@ Each Sprint lasts four hours. The [Four-hour Sprint roadmap](08-sprint-roadmap.m
 |---|---|---|
 | 0 | Build the device logic for one Coach question. | Done, commit `a917aaa`. |
 | 1 | Connect voice and the BLE link. | Code done, commits `941f4e7` and `11b10cc`. The planned hardware acceptance moves to Sprints 5 to 8. |
-| 2 to 4 | Increment 2: data layer, Ski page, Report page. Host only. | Code committed and merged into `main`. Device tests NOT RUN. |
+| 2 to 4 | Increment 2: data layer, live data page, Report page. Host only. | Code committed and merged into `main`. Device tests NOT RUN. |
 | 5 | Board smoke test, with `phone_sim` as the phone. | Not started. Needs the board. |
 | 6 to 9 | Accept both increments with the real phone application, the real service, and test users. | Not started. Needs a phone application with protocol 0.2. |
 | 10 | Fix defects, and review both increments. | Not started. |

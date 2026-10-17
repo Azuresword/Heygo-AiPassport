@@ -59,13 +59,8 @@ def check_effects(flow, strings):
 
 
 def static_issues(flow):
-    issues = []
-    table = {(t["from"], t["on"]) for t in flow["transitions"]}
-    busy = [s for s in ("CAPTURE", "WAIT_ANSWER", "PLAYBACK") if (s, "DOWN_HOLD") not in table]
-    if busy:
-        issues.append("在 " + "、".join(busy) + " 状态下长按 DOWN 会被忽略。"
-                      "D-19 确认了这个行为：先长按 UP 取消，再长按 DOWN 退出。")
-    return issues
+    """Notes for the open issues panel. D-29 left no known gap in the flow graph."""
+    return []
 
 
 def build(flow_path, selftest=False):

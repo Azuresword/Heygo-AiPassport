@@ -149,7 +149,7 @@ class GeneratorTest(unittest.TestCase):
 
     def test_ui_effect_names_must_exist(self):
         g = copy.deepcopy(GOOD)
-        g["ui_effects"]["ui_show_rest"]["no_such_subject"] = "state.ready"
+        g["ui_effects"]["ui_show_ready"]["no_such_subject"] = "state.ready"
         g["ui_effects"]["ui_show_nothing"] = {}
         with self.assertRaises(flowc.FlowError) as ctx:
             check(g)

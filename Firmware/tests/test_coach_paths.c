@@ -36,15 +36,19 @@ static owner_t apply(owner_t owner, const coach_step_t *s) {
 
 static coach_step_t step(coach_flow_t *f, coach_event_t e) { return coach_flow_step(f, e); }
 
-// Path 1: the press that enters Rest mode never starts capture.
-static void path_enter_rest(void) {
+// Path 1 (D-29): an OK hold opens the Coach page from every page, and never starts capture there.
+static void path_ok_hold_opens_coach(void) {
+    const coach_state_t pages[] = { COACH_STATE_LIVE, COACH_STATE_REPORT };
+    for (size_t i = 0; i < sizeof pages / sizeof pages[0]; i++) {
+        coach_flow_t f; coach_flow_init(&f); f.state = pages[i];
+        coach_step_t s = step(&f, COACH_EVENT_OK_HOLD);
+        assert(f.state == COACH_STATE_READY);
+        assert(!has_action(&s, COACH_ACTION_AUDIO_CAPTURE_START));
+        s = step(&f, COACH_EVENT_OK_RELEASE);      // the same press ends
+        assert(!s.handled && f.state == COACH_STATE_READY);
+    }
     coach_flow_t f; coach_flow_init(&f);
-    assert(f.state == COACH_STATE_SKI);
-    coach_step_t s = step(&f, COACH_EVENT_OK_HOLD);
-    assert(f.state == COACH_STATE_READY);
-    assert(!has_action(&s, COACH_ACTION_AUDIO_CAPTURE_START));
-    s = step(&f, COACH_EVENT_OK_RELEASE);          // the same press ends
-    assert(!s.handled && f.state == COACH_STATE_READY);
+    assert(f.state == COACH_STATE_LIVE);           // the device starts on the live data page
 }
 
 // Paths 2 and 3: a new hold starts capture. Release or the 20 s limit ends it.
@@ -65,24 +69,28 @@ static void path_capture_and_end(void) {
     assert(has_action(&s, COACH_ACTION_AUDIO_CAPTURE_STOP));
 }
 
-// Path 4: an UP hold cancels capture and cancels playback.
+// Path 4 (D-29): a page change cancels capture, the wait, and playback, and then moves.
 static void path_cancel(void) {
-    coach_flow_t f; coach_flow_init(&f);
-    f.state = COACH_STATE_CAPTURE;
-    coach_step_t s = step(&f, COACH_EVENT_UP_HOLD);
-    assert(f.state == COACH_STATE_READY);
-    assert(has_action(&s, COACH_ACTION_AUDIO_CAPTURE_STOP));
-    assert(has_action(&s, COACH_ACTION_LINK_SEND_AGENT_CANCEL));
-
-    f.state = COACH_STATE_PLAYBACK;
-    s = step(&f, COACH_EVENT_UP_HOLD);
-    assert(f.state == COACH_STATE_READY);
-    assert(has_action(&s, COACH_ACTION_AUDIO_PLAY_STOP));
-    assert(has_action(&s, COACH_ACTION_LINK_SEND_AGENT_CANCEL));
-
-    f.state = COACH_STATE_READY;                    // nothing runs: no action
-    s = step(&f, COACH_EVENT_UP_HOLD);
-    assert(!s.handled && f.state == COACH_STATE_READY);
+    const coach_state_t busy[] = { COACH_STATE_CAPTURE, COACH_STATE_WAIT_ANSWER, COACH_STATE_PLAYBACK };
+    for (size_t i = 0; i < sizeof busy / sizeof busy[0]; i++) {
+        for (int up = 0; up < 2; up++) {
+            coach_flow_t f; coach_flow_init(&f); f.state = busy[i];
+            const owner_t before = busy[i] == COACH_STATE_CAPTURE ? OWNER_CAPTURE
+                                 : busy[i] == COACH_STATE_PLAYBACK ? OWNER_PLAYBACK : OWNER_NONE;
+            coach_step_t s = step(&f, up ? COACH_EVENT_UP_SHORT : COACH_EVENT_DOWN_SHORT);
+            assert(f.state == (up ? COACH_STATE_REPORT : COACH_STATE_LIVE));
+            assert(has_action(&s, COACH_ACTION_LINK_SEND_AGENT_CANCEL));
+            assert(apply(before, &s) == OWNER_NONE);
+        }
+    }
+    // No hold other than the OK hold has a meaning now.
+    const coach_state_t all[] = { COACH_STATE_LIVE, COACH_STATE_REPORT, COACH_STATE_READY,
+                                  COACH_STATE_CAPTURE, COACH_STATE_WAIT_ANSWER, COACH_STATE_PLAYBACK };
+    for (size_t i = 0; i < sizeof all / sizeof all[0]; i++) {
+        coach_flow_t f; coach_flow_init(&f); f.state = all[i];
+        assert(!step(&f, COACH_EVENT_UP_HOLD).handled);
+        assert(!step(&f, COACH_EVENT_DOWN_HOLD).handled);
+    }
 }
 
 // Path 5: an OK hold during playback stops playback before capture starts.
@@ -95,21 +103,29 @@ static void path_barge_in(void) {
     assert(stop >= 0 && start >= 0 && stop < start);
 }
 
-// Path 6: a DOWN hold and a short OK return to Ski mode.
-static void path_exit(void) {
-    coach_flow_t f; coach_flow_init(&f); f.state = COACH_STATE_READY;
-    step(&f, COACH_EVENT_DOWN_HOLD);
-    assert(f.state == COACH_STATE_EXIT_Q);
-    step(&f, COACH_EVENT_OK_SHORT);
-    assert(f.state == COACH_STATE_SKI);
-
-    f.state = COACH_STATE_EXIT_Q;                   // any other input closes it
-    step(&f, COACH_EVENT_UP_SHORT);
-    assert(f.state == COACH_STATE_READY);
-
-    f.state = COACH_STATE_CAPTURE;                  // DOWN does nothing while audio runs
-    coach_step_t s = step(&f, COACH_EVENT_DOWN_HOLD);
-    assert(!s.handled && f.state == COACH_STATE_CAPTURE);
+// Path 6 (D-29): three flat pages in a loop. DOWN goes forward. UP goes back.
+static void path_pages(void) {
+    coach_flow_t f; coach_flow_init(&f);
+    const coach_state_t order[] = { COACH_STATE_LIVE, COACH_STATE_REPORT, COACH_STATE_READY, COACH_STATE_LIVE };
+    for (size_t i = 1; i < sizeof order / sizeof order[0]; i++) {
+        step(&f, COACH_EVENT_DOWN_SHORT);
+        assert(f.state == order[i]);
+    }
+    for (size_t i = sizeof order / sizeof order[0] - 1; i > 0; i--) {
+        f.state = order[i];
+        step(&f, COACH_EVENT_UP_SHORT);
+        assert(f.state == order[i - 1] || (i == 1 && f.state == COACH_STATE_READY) ||
+               (order[i] == COACH_STATE_LIVE && f.state == COACH_STATE_READY));
+    }
+    f.state = COACH_STATE_LIVE;  step(&f, COACH_EVENT_UP_SHORT);  assert(f.state == COACH_STATE_READY);
+    f.state = COACH_STATE_READY; step(&f, COACH_EVENT_UP_SHORT);  assert(f.state == COACH_STATE_REPORT);
+    f.state = COACH_STATE_REPORT; step(&f, COACH_EVENT_UP_SHORT); assert(f.state == COACH_STATE_LIVE);
+    // A short OK is free for actions inside a page. No page uses it yet.
+    const coach_state_t pages[] = { COACH_STATE_LIVE, COACH_STATE_REPORT, COACH_STATE_READY };
+    for (size_t i = 0; i < sizeof pages / sizeof pages[0]; i++) {
+        f.state = pages[i];
+        assert(!step(&f, COACH_EVENT_OK_SHORT).handled);
+    }
 }
 
 // Path 7: link loss stops capture and playback.
@@ -124,26 +140,27 @@ static void path_link_loss(void) {
 }
 
 // Invariants over a long, deterministic random walk.
-// D-28: the phone opens the Report page from SKI and READY only.
+// D-28: the phone opens the Report page from LIVE and READY only.
 // Every other state ignores it, so it never stops a question or an answer.
 static void path_show_report(void) {
-    const coach_state_t go[] = { COACH_STATE_SKI, COACH_STATE_READY };
+    const coach_state_t go[] = { COACH_STATE_LIVE, COACH_STATE_READY };
     for (size_t i = 0; i < sizeof go / sizeof go[0]; i++) {
         coach_flow_t f; coach_flow_init(&f); f.state = go[i];
         coach_step_t s = step(&f, COACH_EVENT_SHOW_REPORT);
         assert(s.handled && f.state == COACH_STATE_REPORT);
         assert(apply(OWNER_NONE, &s) == OWNER_NONE);
     }
-    const coach_state_t stay[] = { COACH_STATE_CAPTURE, COACH_STATE_WAIT_ANSWER, COACH_STATE_PLAYBACK,
-                                   COACH_STATE_EXIT_Q };
+    const coach_state_t stay[] = { COACH_STATE_CAPTURE, COACH_STATE_WAIT_ANSWER, COACH_STATE_PLAYBACK };
     for (size_t i = 0; i < sizeof stay / sizeof stay[0]; i++) {
         coach_flow_t f; coach_flow_init(&f); f.state = stay[i];
         assert(!step(&f, COACH_EVENT_SHOW_REPORT).handled && f.state == stay[i]);
     }
-    // On the Report page, a second request changes nothing, and an OK hold starts no capture.
+    // On the Report page, a second request changes nothing.
+    // An OK hold there opens the Coach page and starts no capture (D-29).
     coach_flow_t f; coach_flow_init(&f); f.state = COACH_STATE_REPORT;
     assert(!step(&f, COACH_EVENT_SHOW_REPORT).handled);
-    assert(!step(&f, COACH_EVENT_OK_HOLD).handled && f.state == COACH_STATE_REPORT);
+    coach_step_t s = step(&f, COACH_EVENT_OK_HOLD);
+    assert(f.state == COACH_STATE_READY && !has_action(&s, COACH_ACTION_AUDIO_CAPTURE_START));
 }
 
 static void walk_invariants(void) {
@@ -155,8 +172,8 @@ static void walk_invariants(void) {
         coach_event_t e = (coach_event_t)((seed >> 16) % COACH_EVENT_COUNT);
         coach_step_t s = step(&f, e);
         owner = apply(owner, &s);
-        if (f.state == COACH_STATE_SKI || f.state == COACH_STATE_READY ||
-            f.state == COACH_STATE_EXIT_Q || f.state == COACH_STATE_WAIT_ANSWER ||
+        if (f.state == COACH_STATE_LIVE || f.state == COACH_STATE_READY ||
+            f.state == COACH_STATE_WAIT_ANSWER ||
             f.state == COACH_STATE_REPORT) {
             assert(owner == OWNER_NONE);           // no audio outside capture and playback
         }
@@ -166,11 +183,11 @@ static void walk_invariants(void) {
 }
 
 int main(void) {
-    path_enter_rest();
+    path_ok_hold_opens_coach();
     path_capture_and_end();
     path_cancel();
     path_barge_in();
-    path_exit();
+    path_pages();
     path_link_loss();
     path_show_report();
     walk_invariants();

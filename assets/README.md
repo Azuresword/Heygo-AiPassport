@@ -73,22 +73,21 @@ To make the images again, run `python3 tools/host_render/render.py` from `../Fir
 
 | Image | State |
 | --- | --- |
-| `01-ski.png` | Ski mode |
-| `02-ready.png` | Rest mode, ready |
+| `01-ski.png` | The live data page with no data yet |
+| `02-ready.png` | The Coach page, ready |
 | `03-listening.png` | The device records a question |
 | `04-thinking.png` | The phone has the question and waits for the answer |
 | `05-answering.png` | The device plays the answer |
 | `06-answer-max.png` | An answer longer than four lines ends with three dots |
 | `07-failed.png` | Speech recognition failed |
 | `08-link-lost.png` | The phone link is lost |
-| `09-exit.png` | The exit question |
 | `10-ski-live.png` | Ski data during a run |
 | `11-ski-stale.png` | 5 seconds with no packet: the speed shows "--" |
 | `12-ski-report.png` | After a run: the report on the Ski page, with the longest texts |
 | `13-report-empty.png` | The Report page before the first report |
 | `14-report.png` | The Report page with a report |
 | `15-report-max.png` | The Report page with the longest texts and the report age |
-| `contact-sheet.png` | All fifteen images at 2x scale |
+| `contact-sheet.png` | All fourteen images at 2x scale |
 
 ## Simulator
 

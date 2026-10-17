@@ -47,10 +47,12 @@ static void test_map(void) {
 static void test_flow_by_keys(void) {
     coach_input_init(&s_in);
     coach_flow_init(&s_flow);
-    CHECK(s_flow.state == COACH_STATE_SKI, "starts in SKI");
+    CHECK(s_flow.state == COACH_STATE_LIVE, "starts on the live data page");
 
+    short_press(COACH_KEY_DOWN);
+    CHECK(s_flow.state == COACH_STATE_REPORT, "a short DOWN goes to the Report page");
     hold_press(COACH_KEY_OK);
-    CHECK(s_flow.state == COACH_STATE_READY, "the hold enters READY and its release starts nothing");
+    CHECK(s_flow.state == COACH_STATE_READY, "an OK hold opens the Coach page, and its release starts nothing");
 
     key(COACH_KEY_OK, COACH_KEY_EV_PRESS);
     key(COACH_KEY_OK, COACH_KEY_EV_LONG);
@@ -58,19 +60,18 @@ static void test_flow_by_keys(void) {
     key(COACH_KEY_OK, COACH_KEY_EV_RELEASE);
     CHECK(s_flow.state == COACH_STATE_WAIT_ANSWER, "release ends the question");
 
+    short_press(COACH_KEY_DOWN);
+    CHECK(s_flow.state == COACH_STATE_LIVE, "a short DOWN cancels the question and goes to the next page");
+
+    short_press(COACH_KEY_OK);
+    CHECK(s_flow.state == COACH_STATE_LIVE, "a short OK changes no page");
     hold_press(COACH_KEY_UP);
-    CHECK(s_flow.state == COACH_STATE_READY, "an UP hold cancels");
-
-    short_press(COACH_KEY_OK);
-    CHECK(s_flow.state == COACH_STATE_READY, "a short OK in READY does nothing");
-
-    hold_press(COACH_KEY_DOWN);
-    CHECK(s_flow.state == COACH_STATE_EXIT_Q, "a DOWN hold opens the exit question");
-    short_press(COACH_KEY_OK);
-    CHECK(s_flow.state == COACH_STATE_SKI, "a short OK returns to SKI");
-    CHECK(coach_state_screen(s_flow.state) == COACH_SCREEN_SKI, "SKI uses the ski screen");
+    CHECK(s_flow.state == COACH_STATE_LIVE, "an UP hold does nothing");
+    short_press(COACH_KEY_UP);
+    CHECK(s_flow.state == COACH_STATE_READY, "a short UP on the first page goes to the last page");
+    CHECK(coach_state_screen(COACH_STATE_LIVE) == COACH_SCREEN_SKI, "LIVE uses the ski screen");
     CHECK(coach_state_screen(COACH_STATE_CAPTURE) == COACH_SCREEN_COACH, "CAPTURE uses the coach screen");
-    CHECK(coach_state_screen(COACH_STATE_EXIT_Q) == COACH_SCREEN_EXIT, "EXIT_Q uses the exit screen");
+    CHECK(coach_state_screen(COACH_STATE_REPORT) == COACH_SCREEN_REPORT, "REPORT uses the report screen");
 }
 
 int main(void) {

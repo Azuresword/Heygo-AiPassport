@@ -64,43 +64,67 @@ D-14 limits the device to four tasks:
 | Passport application | The four device tasks, the modes, button state, and audio ownership | Local speech recognition or a local language model |
 | Passport BSP | Screen, buttons, audio format, volume, and buses | Product pages or coaching logic |
 
-## 3. Modes, buttons, and screen
+## 3. Pages, buttons, and screen
 
-### Modes
+### Pages (D-29)
 
-D-15 sets two modes.
+The device has no Ski mode and no Rest mode. Three pages sit at one level and form a loop:
 
-- **Ski mode.** The device starts here. It shows the link state, the battery, and the live data. Voice stays off.
-- **Rest mode.** The user enters it on purpose. It opens on the Coach page. Voice works only here.
+| Order | Page | States | Content |
+|---|---|---|---|
+| 1 | Live data page | LIVE | The page after start. Ski data, or the report summary after a run. |
+| 2 | Report page | REPORT | The full report of the last run. |
+| 3 | Coach page | READY, CAPTURE, WAIT_ANSWER, PLAYBACK | Questions to the AI coach. Voice works only on this page. |
 
-The device cannot check whether the user stopped moving.
-A hold enters Rest mode, because a gloved hand can press a button by accident while skiing.
+The device cannot check whether the user stopped moving. So an OK hold on another page only opens the Coach page, and never starts capture.
+Capture needs one more OK hold on the Coach page.
 
-The press that enters Rest mode never starts capture.
-Capture needs a new OK press that starts in Rest mode.
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> LIVE
+    LIVE --> REPORT: DOWN / SHOW_PAGE
+    REPORT --> READY: DOWN
+    READY --> LIVE: DOWN
+    LIVE --> READY: UP / OK hold
+    READY --> REPORT: UP / SHOW_PAGE
+    REPORT --> LIVE: UP
+    REPORT --> READY: OK hold
+    READY --> CAPTURE: OK hold
+    CAPTURE --> WAIT_ANSWER: OK release / 20 s
+    WAIT_ANSWER --> PLAYBACK: answer starts
+    PLAYBACK --> READY: answer ends
+    WAIT_ANSWER --> READY: failed / timeout
+    WAIT_ANSWER --> CAPTURE: OK hold
+    PLAYBACK --> CAPTURE: OK hold
+    CAPTURE --> LIVE: DOWN, cancel
+    WAIT_ANSWER --> LIVE: DOWN, cancel
+    PLAYBACK --> LIVE: DOWN, cancel
+    CAPTURE --> REPORT: UP, cancel
+    WAIT_ANSWER --> REPORT: UP, cancel
+    PLAYBACK --> REPORT: UP, cancel
+```
+
+The interactive simulator gives the full state diagram from `flows/coach.flow.json`. See `assets/sim/coach-flow.html`.
 
 ### Buttons
 
 | Where | Input | Behavior |
 |---|---|---|
-| Ski mode | Hold OK for 500 ms | Enter Rest mode on the Coach page. |
-| Coach page | Hold OK for 500 ms | Start capture. Stream each block to the phone. |
+| Any page | Short DOWN press | Go to the next page. After the Coach page comes the live data page. |
+| Any page | Short UP press | Go to the previous page. Before the live data page comes the Coach page. |
+| Live data page, Report page | Hold OK for 500 ms | Open the Coach page. This press never starts capture. |
+| Coach page, idle | Hold OK for 500 ms | Start capture. Stream each block to the phone. |
 | Coach page, capture runs | Release OK | Stop capture within 100 ms. Tell the phone that the question ended. |
 | Coach page, capture runs | Reach 20 seconds | Stop capture. Show the limit. |
-| Coach page, playback runs | Hold OK for 500 ms | Stop playback. Then start capture. |
-| Any page | Hold UP for 500 ms | Cancel the active capture or playback. Do nothing when neither runs. |
-| Coach page, idle | Hold DOWN for 500 ms | Open the exit question. A short OK returns to Ski mode. Any other input closes the question. |
-| Coach page, capture, wait, or playback runs | Hold DOWN for 500 ms | Do nothing (D-19). Hold UP to cancel first. Then hold DOWN to exit. |
-| Coach page, idle | Short DOWN press | Open the Report page (D-21). |
-| Report page | Short UP press | Return to the Coach page. |
-| Report page | Hold DOWN for 500 ms | Open the exit question, as on the Coach page. |
-| Report page | Hold OK for 500 ms | Do nothing. |
-| Any page | Other short presses | No action, except OK in the exit question. |
+| Coach page, wait or playback runs | Hold OK for 500 ms | Stop playback and cancel the last exchange. Then start capture. |
+| Coach page, capture, wait, or playback runs | Short UP or DOWN press | Cancel the question and stop the audio first. Then change the page. |
+| Any page | Short OK press | Kept for actions inside a page. No page uses it yet. |
+| Any page | UP hold or DOWN hold | No action. |
 
+The three buttons share one ADC input. So while the user holds OK, the device cannot read UP or DOWN. To change the page during capture, the user releases OK first.
 A hold never also triggers a short press.
-The cancel command appears when the UP hold reaches 500 ms.
-Playback stops within 200 ms of that command. Capture stops within 100 ms of that command.
-The total target is 700 ms from the first UP press to silence.
+The cancel command comes with the short UP or DOWN press. Playback stops within 200 ms of that command. Capture stops within 100 ms of that command.
 
 Button callbacks queue an event and return at once. A task handles the link and the audio.
 
@@ -111,7 +135,7 @@ The screen has a corner mask with a 30-pixel radius. Key text stays out of the m
 
 | Area | Range | Content |
 |---|---|---|
-| Status bar | `x=32..207, y=0..35` | Mode, link state, battery |
+| Status bar | `x=32..207, y=0..35` | Page name, link state, battery |
 | Destination | `x=12..227, y=36..67` | The words "AI coach" |
 | State | `x=12..227, y=68..187` | Ready, listening, thinking, answering, or failed, with an icon |
 | Text | `x=12..227, y=188..283` | A short transcript, a short answer, or a retry message |
@@ -120,9 +144,9 @@ The screen has a corner mask with a 30-pixel radius. Key text stays out of the m
 The page uses a new design. It does not reuse the demo menu or its frame.
 Check the glyph coverage of every Chinese string. A successful build does not prove that Chinese text shows.
 
-### Ski page layout
+### Live data page layout
 
-D-21 replaces the Ski page body with ski data. The status bar and the button hints use the same areas as on the Coach page.
+D-21 replaces the live data page body with ski data. The status bar and the button hints use the same areas as on the Coach page.
 The positions come from `flows/coach.flow.json`, and the host screen check passes. `main/ui/ski_view.c` makes the texts.
 
 | Widget | Position | Font | Content |
@@ -139,7 +163,7 @@ The positions come from `flows/coach.flow.json`, and the host screen check passe
 | `problem`, `tip` | `x=22`, `y=180` and `y=204` | 16 px Chinese | Hidden until the report arrives. Then they replace the four cells |
 
 - Each value sits 2 pixels below its name, so that the two baselines align.
-- The Ski page has no state icon and no ridge line. With both, it had 23 widgets, the host render used all of the LVGL pool, and the drawing hung. Without them, the peak is 18,752 of 21,656 bytes (86%).
+- The live data page has no state icon and no ridge line. With both, it had 23 widgets, the host render used all of the LVGL pool, and the drawing hung. Without them, the peak is 18,752 of 21,656 bytes (86%).
 - The 48-pixel font is Staatliches from brand version B. It holds all ASCII characters. It stays in Flash, with a bitmap of 26,115 bytes.
 - No color marks a fast or slow speed.
 
@@ -155,8 +179,8 @@ The positions come from `flows/coach.flow.json`, and the host screen check passe
 | `problem` | `x=22, y=182` | 16 px Chinese | The core problem, at most 12 Chinese characters, on one line |
 | `tip` | `x=22, y=206`, height 50 | 16 px Chinese, at most two lines | The tip, at most 20 Chinese characters |
 
-D-28: when the phone sends SHOW_PAGE 3, the state machine goes to REPORT from SKI and READY only.
-CAPTURE, WAIT_ANSWER, PLAYBACK, and EXIT_Q have no such transition. They ignore it, so the user is never stopped.
+D-28: when the phone sends SHOW_PAGE 3, the state machine goes to REPORT from LIVE and READY only.
+CAPTURE, WAIT_ANSWER, and PLAYBACK have no such transition. They ignore it, so the user is never stopped.
 
 Only one screen exists at a time. On a page change, the task deletes the old screen first and then builds the new screen.
 Images 10 to 15 in `assets/mockups` come from the host renderer. They include the longest texts.
@@ -266,7 +290,7 @@ Commit `970bb8e` holds the version 0.3 design for these items.
 
 1. Select a transport. D-08 closed this gate.
 2. Agree the BLE protocol with the phone application team. Doc 07 holds the device draft.
-3. Accept the Rest mode pilot on real hardware.
+3. Accept the three-page pilot on real hardware.
 4. The phone application team accepts the LIVE_STATS fields of protocol 0.2 (Q-16).
 
 Open items: the review of doc 07, the phone platform, the HeygoAI coaching tools, the run detection rules, and the cold limits.

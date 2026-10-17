@@ -6,13 +6,11 @@
 
 bool coach_ui_apply(coach_action_t action) {
     switch (action) {
-    case COACH_ACTION_UI_SHOW_SKI:
-        return true;
-    case COACH_ACTION_UI_SHOW_EXIT:
+    case COACH_ACTION_UI_SHOW_LIVE:
         return true;
     case COACH_ACTION_UI_SHOW_REPORT:
         return true;
-    case COACH_ACTION_UI_SHOW_REST:
+    case COACH_ACTION_UI_SHOW_READY:
         coach_set_tag_text("READY");
         coach_set_state_text("就绪");
         coach_set_body_text("按住说话，松开发送");
@@ -36,13 +34,13 @@ bool coach_ui_apply(coach_action_t action) {
         coach_set_tag_text("THINKING");
         coach_set_state_text("思考中");
         coach_set_body_text("问题已发送，正在分析");
-        coach_set_hint_text("长按 UP 取消");
+        coach_set_hint_text("按 UP/DOWN 取消");
         coach_set_icon_state(2);
         return true;
     case COACH_ACTION_UI_SHOW_ANSWERING:
         coach_set_tag_text("ANSWERING");
         coach_set_state_text("回答中");
-        coach_set_hint_text("长按 UP 停止");
+        coach_set_hint_text("按 UP/DOWN 停止");
         coach_set_icon_state(3);
         return true;
     case COACH_ACTION_UI_SHOW_RETRY:
@@ -63,7 +61,7 @@ bool coach_ui_apply(coach_action_t action) {
         coach_set_tag_text("THINKING");
         coach_set_state_text("思考中");
         coach_set_body_text("已到 20 秒上限");
-        coach_set_hint_text("长按 UP 取消");
+        coach_set_hint_text("按 UP/DOWN 取消");
         coach_set_icon_state(2);
         return true;
     case COACH_ACTION_UI_SHOW_LINK_LOST:

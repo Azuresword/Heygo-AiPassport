@@ -66,7 +66,6 @@ static coach_input_t s_input;
 static coach_screen_coach_t s_coach;
 static coach_screen_ski_t s_ski;
 static coach_screen_report_t s_report;
-static coach_screen_exit_t s_exit;
 static esp_timer_handle_t s_capture_timer;
 static esp_timer_handle_t s_answer_timer;
 static esp_timer_handle_t s_play_watch;
@@ -97,7 +96,6 @@ static const char *screen_name(coach_screen_id_t id) {
     case COACH_SCREEN_COACH: return "coach";
     case COACH_SCREEN_SKI: return "ski";
     case COACH_SCREEN_REPORT: return "report";
-    case COACH_SCREEN_EXIT: return "exit";
     default: return "?";
     }
 }
@@ -210,7 +208,6 @@ static void show_screen(coach_screen_id_t id) {
     case COACH_SCREEN_COACH: coach_teardown(&s_coach); break;
     case COACH_SCREEN_SKI: coach_screen_ski_destroy(&s_ski); break;
     case COACH_SCREEN_REPORT: coach_screen_report_destroy(&s_report); break;
-    case COACH_SCREEN_EXIT: coach_screen_exit_destroy(&s_exit); break;
     default: break;
     }
     switch (id) {
@@ -226,10 +223,6 @@ static void show_screen(coach_screen_id_t id) {
     case COACH_SCREEN_REPORT:
         coach_screen_report_build(&s_report);
         lv_screen_load(s_report.screen);
-        break;
-    case COACH_SCREEN_EXIT:
-        coach_screen_exit_build(&s_exit);
-        lv_screen_load(s_exit.screen);
         break;
     default:
         break;
@@ -258,11 +251,12 @@ static void run_action(coach_action_t a) {
 
 // Doc 07 field values for CONTEXT and DEVICE_STATUS.
 static void send_context(coach_state_t st) {
-    const uint8_t mode = st == COACH_STATE_SKI ? BP_MODE_SKI : BP_MODE_REST;
-    const uint8_t page = st == COACH_STATE_SKI      ? BP_PAGE_SKI
-                       : st == COACH_STATE_EXIT_Q   ? BP_PAGE_EXIT
-                       : st == COACH_STATE_REPORT   ? BP_PAGE_REPORT
-                                                    : BP_PAGE_COACH;
+    // D-29 has no Ski or Rest mode. The mode field tells the phone whether the Coach page is on.
+    const bool coach = st != COACH_STATE_LIVE && st != COACH_STATE_REPORT;
+    const uint8_t mode = coach ? BP_MODE_REST : BP_MODE_SKI;
+    const uint8_t page = st == COACH_STATE_LIVE   ? BP_PAGE_SKI
+                       : st == COACH_STATE_REPORT ? BP_PAGE_REPORT
+                                                  : BP_PAGE_COACH;
     ble_link_set_context(mode, page);
 }
 
@@ -410,7 +404,7 @@ static void link_data(void) {
 }
 static void link_live_stats(const bp_live_stats_t *s) { (void)s; link_data(); }
 static void link_run_report(const link_report_t *r) { (void)r; link_data(); }
-// D-28: the phone opens the Report page. The flow accepts it in SKI and READY only.
+// D-28: the phone opens the Report page. The flow accepts it in LIVE and READY only.
 static void link_show_page(uint8_t page) {
     if (page == BP_PAGE_REPORT) post_event(COACH_EVENT_SHOW_REPORT);
 }

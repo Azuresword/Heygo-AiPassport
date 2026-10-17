@@ -33,7 +33,7 @@ Rules:
 | 0 | 1 | Build the device logic for one Coach question. | None | Done, commit `a917aaa` |
 | 1 | 1 | Connect voice and the BLE link. | None | Code done, commits `941f4e7` and `11b10cc`. The planned hardware acceptance moves to Sprints 5 to 8 |
 | 2 | 2 | The device receives LIVE_STATS and RUN_REPORT and parses each field as doc 07 defines. | None | Code committed. Section 3 gives the result |
-| 3 | 2 | The Ski page shows live data and passes the host screen check. | Sprint 2 | Code committed. Section 3 gives the result |
+| 3 | 2 | The live data page shows live data and passes the host screen check. | Sprint 2 | Code committed. Section 3 gives the result |
 | 4 | 2 | Rest mode switches between the Coach page and the Report page. The Report page passes the host screen check. | Sprint 3 | Code committed. Section 3 gives the result |
 | 5 | 1, 2 | On the board, run a question and one run of ski data with `phone_sim`, and record the measurements. | The board at hand | Not started |
 | 6 | 1 | Pass TC-01, TC-06, TC-07, and TC-20 with the real phone application. | Sprint 5. A phone application with protocol 0.2 | Not started |
@@ -72,29 +72,29 @@ Sprints 6 to 8 need a phone application build with protocol 0.2.
 **Result.** The team finished all four tasks. The cut line did not apply. Nobody recorded the actual time.
 Section 8 of the [firmware change notes](../Firmware/docs/heygo-changes.md) lists the firmware changes. The commit message gives the gate result.
 
-### Sprint 3: Ski page
+### Sprint 3: live data page
 
-**Sprint Goal.** The Ski page shows live data and passes the host screen check.
+**Sprint Goal.** The live data page shows live data and passes the host screen check.
 
 **Story.** US-21.
 
 | Order | Task | Time box |
 | --- | --- | --- |
 | 1 | Make the 48-pixel digit font subset. Record its Flash size. | 40 min |
-| 2 | Add the Ski page bindings and texts to `coach.flow.json` and `strings.json`. | 60 min |
+| 2 | Add the live data page bindings and texts to `coach.flow.json` and `strings.json`. | 60 min |
 | 3 | Add the "Waiting for phone data" and "Data out of date" states. | 40 min |
-| 4 | Render the five Ski page states on the host, and run the glyph check. | 40 min |
+| 4 | Render the five live data page states on the host, and run the glyph check. | 40 min |
 | 5 | Update the flow simulator. | 20 min |
 
 **Exit check.**
 
-- The host renders five Ski page images: skiing, the report after a run, waiting for data, out of date, and a missing field.
+- The host renders five live data page images: skiing, the report after a run, waiting for data, out of date, and a missing field.
 - The screen check passes: no missing glyph, no overlap, and no pool growth in the second pass.
 - The report states the LVGL pool peak and the Flash size of the font.
 
 **Cut line.** If task 1 takes more than 60 minutes, use the current 28-pixel font. Move the large font to Sprint 4.
 
-**Result.** The 48-pixel font exists, with a bitmap of 26,115 bytes. The host renders 4 Ski page images: 01, 10, 11, and 12. A missing field and out-of-date data both show "--". `tests/test_ski_view.c` covers both. The LVGL pool peak is 17,584 of 21,656 bytes (81%). Nobody recorded the actual time.
+**Result.** The 48-pixel font exists, with a bitmap of 26,115 bytes. The host renders 4 live data page images: 01, 10, 11, and 12. A missing field and out-of-date data both show "--". `tests/test_ski_view.c` covers both. The LVGL pool peak is 17,584 of 21,656 bytes (81%). Nobody recorded the actual time.
 
 ### Sprint 4: Report page
 
@@ -132,7 +132,7 @@ Section 8 of the [firmware change notes](../Firmware/docs/heygo-changes.md) list
 | --- | --- | --- |
 | 1 | Flash the firmware. Record the free heap after start. | 30 min |
 | 2 | Ask 30 questions in the `phone_sim` echo mode. Use `analyze_log.py` to count the capture stop and playback stop times. | 80 min |
-| 3 | Do the 50 mode changes of TC-17. | 40 min |
+| 3 | Do the 50 page changes and Coach page openings of TC-17 (D-29). | 40 min |
 | 4 | Send one run of ski data with a `phone_sim` script. Count the screen update times from the log. Check the glyphs on the board. | 50 min |
 
 **Exit check.**

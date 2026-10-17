@@ -132,7 +132,6 @@ def frames(s):
                              "hint_text": s["hint.ready"], "icon_state": "4"}),
         ("08-link-lost", None, {"status_text": rest_down, "link_state": "0",
                                 "body_text": s["msg.link_lost"], "icon_state": "7"}),
-        ("09-exit", "exit", {}),
         # Ski data (Increment 2). A key that starts with @ sets a label, as the Coach task does.
         ("10-ski-live", "ski", {"@sub": "第 4 趟 · " + s["msg.skiing"], "@big": "38", "@drop": "312 m",
                                 "@dist": "1.9 km", "@turns": "24", "@time": "02:31"}),

@@ -331,7 +331,7 @@ const DATA = __DATA__;
 const F = DATA.flow, S = DATA.strings, C = DATA.colors;
 const HOLD_MS = DATA.hold_ms, CAPTURE_LIMIT_MS = 20000, AGENT_TIMEOUT_MS = 10000;
 
-const STATE_NAME = { SKI: "滑行", READY: "就绪", CAPTURE: "录音", WAIT_ANSWER: "等回答", PLAYBACK: "播放回答", REPORT: "报告页", EXIT_Q: "退出确认" };
+const STATE_NAME = { LIVE: "实时数据", REPORT: "本趟报告", READY: "教练·就绪", CAPTURE: "录音", WAIT_ANSWER: "等回答", PLAYBACK: "播放回答" };
 const EVENT_NAME = {
   OK_HOLD: "长按 OK", OK_SHORT: "短按 OK", OK_RELEASE: "松开 OK",
   UP_HOLD: "长按 UP", UP_SHORT: "短按 UP", DOWN_HOLD: "长按 DOWN", DOWN_SHORT: "短按 DOWN",
@@ -340,11 +340,17 @@ const EVENT_NAME = {
   SHOW_REPORT: "App 跳到报告页",
 };
 // The main path runs left to right. Returns to READY arc below it. A new question arcs above it.
-const POS = { SKI: [80, 80], EXIT_Q: [80, 350], READY: [290, 210], REPORT: [430, 410], CAPTURE: [500, 210], WAIT_ANSWER: [710, 210], PLAYBACK: [912, 210] };
+// D-29: the live data page (top left) and the Report page (bottom left) loop with the Coach page.
+// The Coach page states run left to right. Page changes from the Coach page arc above (DOWN, to
+// live data) and below (UP, to the report). Returns inside the Coach page stay close to the row.
+const POS = { LIVE: [110, 90], REPORT: [110, 420], READY: [330, 255], CAPTURE: [520, 255], WAIT_ANSWER: [710, 255], PLAYBACK: [900, 255] };
 const BEND = {
+  "LIVE>REPORT": [-95, 0], "REPORT>LIVE": [95, 0],
   "READY>CAPTURE": [0, 0], "CAPTURE>WAIT_ANSWER": [0, 0], "WAIT_ANSWER>PLAYBACK": [0, 0],
-  "CAPTURE>READY": [0, 70], "WAIT_ANSWER>READY": [0, 190], "PLAYBACK>READY": [0, 300],
-  "WAIT_ANSWER>CAPTURE": [0, -80], "PLAYBACK>CAPTURE": [0, -190],
+  "WAIT_ANSWER>CAPTURE": [0, -55], "PLAYBACK>CAPTURE": [0, -90],
+  "CAPTURE>READY": [0, 55], "WAIT_ANSWER>READY": [0, 95], "PLAYBACK>READY": [0, 135],
+  "CAPTURE>LIVE": [40, -110], "WAIT_ANSWER>LIVE": [60, -130], "PLAYBACK>LIVE": [80, -150],
+  "CAPTURE>REPORT": [40, 110], "WAIT_ANSWER>REPORT": [60, 120], "PLAYBACK>REPORT": [80, 125],
 };
 const EVENT_SHORT = {
   OK_HOLD: "长按 OK", OK_SHORT: "短按 OK", OK_RELEASE: "松开 OK", UP_HOLD: "长按 UP", UP_SHORT: "短按 UP",
@@ -521,7 +527,7 @@ function runAction(a) {
   if (ACTIONS[a]) return ACTIONS[a]();
   const eff = F.ui_effects && F.ui_effects[a];
   if (eff) for (const [k, v] of Object.entries(eff)) subj[k] = resolve(v);
-  if (a === "ui_show_rest" || a === "ui_show_done") subj.status_text = statusText();
+  if (a === "ui_show_ready" || a === "ui_show_done") subj.status_text = statusText();
 }
 const statusText = () => link ? S["status.link_up"] : S["status.link_down"];
 
@@ -726,7 +732,7 @@ function skiEnd() {
     paintData();
   });
 }
-// D-28: the phone opens the Report page. Only SKI and READY accept it.
+// D-28: the phone opens the Report page. Only LIVE and READY accept it.
 function showReport() {
   if (!link) return toast("蓝牙未连接");
   ble("pd", "SHOW_PAGE", "page=3（报告页）");
@@ -745,7 +751,7 @@ function buildSki() {
     skiPaused = !skiPaused; $("skiPauseBtn").textContent = skiPaused ? "恢复发送" : "暂停发送";
   }, "skiPauseBtn");
   add("结束这一趟", "结束帧 + 2 秒后 RUN_REPORT", skiEnd, "skiEndBtn");
-  add("跳到报告页", "SHOW_PAGE 3：滑行页或教练页空闲时打开报告页", showReport, "showBtn");
+  add("跳到报告页", "SHOW_PAGE 3：实时数据页或教练页空闲时打开报告页", showReport, "showBtn");
   const lab = document.createElement("label");
   lab.className = "switch-label"; lab.innerHTML = '<input type="checkbox" id="noSpeed"> 速度未知';
   box.appendChild(lab);

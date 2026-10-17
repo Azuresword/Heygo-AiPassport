@@ -2,7 +2,7 @@
 
 # BLE Protocol Draft
 
-Version: 0.7. Date: 2026-10-17. Status: the phone application team accepted protocol 0.2. That team must accept SHOW_PAGE, which version 0.7 adds.
+Version: 0.8. Date: 2026-10-17. Status: the phone application team accepted protocol 0.2. That team must accept SHOW_PAGE from version 0.7 and the field meanings from version 0.8.
 
 ## 1. Purpose and scope
 
@@ -27,6 +27,9 @@ Section 14 gives this rule.
 
 Version 0.6 adds the two Increment 2 ski data messages LIVE_STATS and RUN_REPORT, from D-23, D-24, and D-26. The protocol version becomes 0.2.
 Section 15 lists these changes.
+
+Version 0.8 removes Ski mode and Rest mode, per D-29. The mode and page fields keep their values but change their meaning. The protocol version stays 0.2.
+Section 16 lists these changes.
 
 The draft follows three rules:
 
@@ -164,8 +167,8 @@ D means the device. P means the phone.
 
 | Field | Size | Values |
 | --- | --- | --- |
-| Mode | 1 byte | 0 Ski mode. 1 Rest mode. |
-| Page | 1 byte | 0 Ski status page. 1 Coach page. 2 Exit question. 3 Report page, Increment 2. 4 Team page, P1. |
+| Mode | 1 byte | 0 live data page or Report page. 1 Coach page. Before D-29, the values meant Ski mode and Rest mode. |
+| Page | 1 byte | 0 live data page. 1 Coach page. 2 no longer used (the old exit question). 3 Report page. 4 Team page, P1. |
 | Codec | 1 byte | 0 IMA ADPCM. 1 Raw PCM. |
 | Codec mask | 1 byte | Bit 0 IMA ADPCM. Bit 1 raw PCM. Bit n matches codec value n. |
 | Sample rate | 1 byte | 16, in kHz. No other value is valid. |
@@ -204,7 +207,7 @@ The device needs the UTC time from the phone, because it has no other clock sour
 
 | Type | Name | Direction | Payload | When |
 | --- | --- | --- | --- | --- |
-| 0x10 | CONTEXT | D to P | Mode (1), page (1) | On each change of mode or page |
+| 0x10 | CONTEXT | D to P | Mode (1), page (1) | On each page change |
 
 In P0 the phone attaches the current ski session to each Agent request.
 On the Report page, the page field of CONTEXT is 3.
@@ -215,7 +218,7 @@ On the Report page, the page field of CONTEXT is 3.
 | --- | --- | --- | --- | --- |
 | 0x20 | AGENT_START | D to P | Codec (1), sample rate in kHz (1) | At the 500 ms OK hold on the Coach page |
 | 0x21 | AGENT_END | D to P | Reason (1): 0 release, 1 the 20-second limit | When capture stops |
-| 0x22 | AGENT_CANCEL | D to P | None | At an UP hold, a page change, or a mode change |
+| 0x22 | AGENT_CANCEL | D to P | None | At a page change, or when a new question cancels the open exchange |
 | 0x23 | AGENT_STATE | P to D | State (1), failure code (1), text (optional) | On each change of the exchange state |
 
 AGENT_START uses a new device `xid`. AUDIO_UP packets follow at once. The device does not wait for an answer.
@@ -246,12 +249,12 @@ With an MTU of 172, the text holds at most 163 bytes.
 | 0x31 | AUDIO_DOWN | P to D | One audio block | At real-time pace during playback |
 | 0x32 | PLAY_START | P to D | Channel (1): 0 Agent, 1 Team. Codec (1). Speaker name (text, Team only). | Before the first AUDIO_DOWN of an answer or a Team speech |
 | 0x33 | PLAY_END | P to D | None | After the last AUDIO_DOWN |
-| 0x34 | PLAY_STOP | D to P | None | At an UP hold during Team playback. P1. |
+| 0x34 | PLAY_STOP | D to P | None | At a page change during Team playback. P1. |
 
 Each audio packet carries the `xid` of its exchange. `seq` increases by one for each block.
 After PLAY_END, the device plays the frames in its queue, and then frees the audio owner.
-At an UP hold during Agent playback, the device sends AGENT_CANCEL.
-At an UP hold during Team playback, the device sends PLAY_STOP.
+At a page change during Agent playback, the device sends AGENT_CANCEL.
+At a page change during Team playback, the device sends PLAY_STOP.
 In both cases the device stops the speaker at once. It does not wait for the phone.
 
 The first version offers only IMA ADPCM in HELLO. The device answers a PLAY_START with codec 1 with ERROR code 7.
@@ -360,14 +363,13 @@ The message uses `xid` 0 and `seq` 0. The device sends no acknowledgment.
 
 The device follows these rules:
 
-- On the Ski page (SKI) or the idle Coach page (READY), SHOW_PAGE 3 changes the device to the Report page.
-- In Ski mode, the device also enters Rest mode. This is the only exception to the rule that the user enters Rest mode by hand (REQ-17).
-- During capture, the wait, the playback, or the exit question, the device ignores SHOW_PAGE, so it never stops the user. It sends no ERROR for it.
+- On the live data page (LIVE) or the idle Coach page (READY), SHOW_PAGE 3 changes the device to the Report page.
+- During capture, the wait, or the playback, the device ignores SHOW_PAGE, so it never stops the user. It sends no ERROR for it.
 - On the Report page, the device does nothing.
 - For a page value other than 3, the device sends ERROR with code 7 and stays on its page.
 - The device accepts SHOW_PAGE only after a HELLO_ACK with the same protocol version.
 
-After the change, CONTEXT reports mode 1 and page 3.
+After the change, CONTEXT reports mode 0 and page 3.
 
 ## 7. Audio blocks
 
@@ -528,7 +530,7 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 12. Send major 0 and minor 2 in HELLO_ACK.
 13. Fill the last downlink block with silence to the full block size.
 14. Before the answer starts, send an AGENT_STATE at least every 10 seconds.
-15. To show the Report page on the device, send SHOW_PAGE 3. The device changes only from the Ski page or the idle Coach page.
+15. To show the Report page on the device, send SHOW_PAGE 3. The device changes only from the live data page or the idle Coach page.
 
 ## 12. Open items
 
@@ -572,7 +574,7 @@ The phone application team must accept this rule.
 | 3 | Change the protocol version from 0.1 to 0.2. HELLO and HELLO_ACK carry minor 2. | 5 |
 | 4 | Add four timing rules for the ski data. | 8 |
 | 5 | Remove the report page buffer of 8,192 bytes from the device memory cost. Add 128 bytes. | 10 |
-| 6 | Version 0.7 adds SHOW_PAGE (0x62), from the phone to the device. Per D-28, the device opens the Report page from the Ski page or the idle Coach page. | 6 |
+| 6 | Version 0.7 adds SHOW_PAGE (0x62), from the phone to the device. Per D-28, the device opens the Report page from the live data page or the idle Coach page. | 6 |
 
 The major version is still 0, so both sides must use the same minor.
 If a phone application that supports only 0.1 connects to 0.2 firmware, the device sends code 3 and disables voice.
@@ -581,7 +583,20 @@ The phone application team and the firmware must therefore change to 0.2 togethe
 SHOW_PAGE adds one message and changes no current packet, so the protocol version stays 0.2.
 A phone application that never sends SHOW_PAGE sees no change. Firmware at commit `31e511c` or older answers SHOW_PAGE with ERROR code 1.
 
-## 16. Related documents
+## 16. Changes in version 0.8
+
+D-29 replaces Ski mode and Rest mode with three pages at one level. No packet format or value changes.
+
+| No. | Change | Section |
+| --- | --- | --- |
+| 1 | Mode field: 0 means the live data page or the Report page. 1 means the Coach page. | 6 |
+| 2 | Page field: 0 live data page, 1 Coach page, 3 Report page. The device no longer sends 2, the old exit question. | 6 |
+| 3 | The device sends AGENT_CANCEL at a page change, not at an UP hold. | 6 |
+| 4 | SHOW_PAGE works only on the live data page and on the idle Coach page. | 6 |
+
+The phone application team must read CONTEXT and DEVICE_STATUS with the new meanings.
+
+## 17. Related documents
 
 - [System Architecture](02-architecture.md).
 - [Validation and Decisions](04-validation-and-decisions.md).

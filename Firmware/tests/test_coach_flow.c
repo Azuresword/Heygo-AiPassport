@@ -9,11 +9,47 @@
 int main(void) {
     coach_flow_t flow;
     coach_flow_init(&flow);
-    assert(flow.state == COACH_STATE_SKI);
+    assert(flow.state == COACH_STATE_LIVE);
 
     // every transition in the graph must fire from its source state
     coach_flow_init(&flow);
-    flow.state = COACH_STATE_SKI;
+    flow.state = COACH_STATE_LIVE;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_REPORT);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_LIVE;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_READY);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_LIVE;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_OK_HOLD);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_READY);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_LIVE;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_SHOW_REPORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_REPORT);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_REPORT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_READY);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_REPORT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_LIVE);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_REPORT;
     { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_OK_HOLD);
       assert(s.handled);
       assert(s.to == COACH_STATE_READY);
@@ -26,13 +62,19 @@ int main(void) {
       assert(s.action_count == 3); }
     coach_flow_init(&flow);
     flow.state = COACH_STATE_READY;
-    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_HOLD);
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_SHORT);
       assert(s.handled);
-      assert(s.to == COACH_STATE_EXIT_Q);
+      assert(s.to == COACH_STATE_LIVE);
       assert(s.action_count == 1); }
     coach_flow_init(&flow);
     flow.state = COACH_STATE_READY;
-    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_SHORT);
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_REPORT);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_READY;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_SHOW_REPORT);
       assert(s.handled);
       assert(s.to == COACH_STATE_REPORT);
       assert(s.action_count == 1); }
@@ -62,9 +104,15 @@ int main(void) {
       assert(s.action_count == 3); }
     coach_flow_init(&flow);
     flow.state = COACH_STATE_CAPTURE;
-    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_HOLD);
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_SHORT);
       assert(s.handled);
-      assert(s.to == COACH_STATE_READY);
+      assert(s.to == COACH_STATE_LIVE);
+      assert(s.action_count == 3); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_CAPTURE;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_REPORT);
       assert(s.action_count == 3); }
     coach_flow_init(&flow);
     flow.state = COACH_STATE_CAPTURE;
@@ -92,16 +140,22 @@ int main(void) {
       assert(s.action_count == 1); }
     coach_flow_init(&flow);
     flow.state = COACH_STATE_WAIT_ANSWER;
-    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_HOLD);
-      assert(s.handled);
-      assert(s.to == COACH_STATE_READY);
-      assert(s.action_count == 2); }
-    coach_flow_init(&flow);
-    flow.state = COACH_STATE_WAIT_ANSWER;
     { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_OK_HOLD);
       assert(s.handled);
       assert(s.to == COACH_STATE_CAPTURE);
       assert(s.action_count == 4); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_WAIT_ANSWER;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_LIVE);
+      assert(s.action_count == 2); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_WAIT_ANSWER;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_REPORT);
+      assert(s.action_count == 2); }
     coach_flow_init(&flow);
     flow.state = COACH_STATE_WAIT_ANSWER;
     { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_LINK_LOST);
@@ -116,82 +170,28 @@ int main(void) {
       assert(s.action_count == 2); }
     coach_flow_init(&flow);
     flow.state = COACH_STATE_PLAYBACK;
-    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_HOLD);
-      assert(s.handled);
-      assert(s.to == COACH_STATE_READY);
-      assert(s.action_count == 3); }
-    coach_flow_init(&flow);
-    flow.state = COACH_STATE_PLAYBACK;
     { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_OK_HOLD);
       assert(s.handled);
       assert(s.to == COACH_STATE_CAPTURE);
       assert(s.action_count == 5); }
     coach_flow_init(&flow);
     flow.state = COACH_STATE_PLAYBACK;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_LIVE);
+      assert(s.action_count == 3); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_PLAYBACK;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_REPORT);
+      assert(s.action_count == 3); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_PLAYBACK;
     { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_LINK_LOST);
       assert(s.handled);
       assert(s.to == COACH_STATE_READY);
       assert(s.action_count == 2); }
-    coach_flow_init(&flow);
-    flow.state = COACH_STATE_REPORT;
-    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_SHORT);
-      assert(s.handled);
-      assert(s.to == COACH_STATE_READY);
-      assert(s.action_count == 1); }
-    coach_flow_init(&flow);
-    flow.state = COACH_STATE_REPORT;
-    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_HOLD);
-      assert(s.handled);
-      assert(s.to == COACH_STATE_EXIT_Q);
-      assert(s.action_count == 1); }
-    coach_flow_init(&flow);
-    flow.state = COACH_STATE_SKI;
-    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_SHOW_REPORT);
-      assert(s.handled);
-      assert(s.to == COACH_STATE_REPORT);
-      assert(s.action_count == 1); }
-    coach_flow_init(&flow);
-    flow.state = COACH_STATE_READY;
-    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_SHOW_REPORT);
-      assert(s.handled);
-      assert(s.to == COACH_STATE_REPORT);
-      assert(s.action_count == 1); }
-    coach_flow_init(&flow);
-    flow.state = COACH_STATE_EXIT_Q;
-    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_OK_SHORT);
-      assert(s.handled);
-      assert(s.to == COACH_STATE_SKI);
-      assert(s.action_count == 1); }
-    coach_flow_init(&flow);
-    flow.state = COACH_STATE_EXIT_Q;
-    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_SHORT);
-      assert(s.handled);
-      assert(s.to == COACH_STATE_READY);
-      assert(s.action_count == 1); }
-    coach_flow_init(&flow);
-    flow.state = COACH_STATE_EXIT_Q;
-    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_SHORT);
-      assert(s.handled);
-      assert(s.to == COACH_STATE_READY);
-      assert(s.action_count == 1); }
-    coach_flow_init(&flow);
-    flow.state = COACH_STATE_EXIT_Q;
-    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_HOLD);
-      assert(s.handled);
-      assert(s.to == COACH_STATE_READY);
-      assert(s.action_count == 1); }
-    coach_flow_init(&flow);
-    flow.state = COACH_STATE_EXIT_Q;
-    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_HOLD);
-      assert(s.handled);
-      assert(s.to == COACH_STATE_READY);
-      assert(s.action_count == 1); }
-    coach_flow_init(&flow);
-    flow.state = COACH_STATE_EXIT_Q;
-    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_OK_HOLD);
-      assert(s.handled);
-      assert(s.to == COACH_STATE_READY);
-      assert(s.action_count == 1); }
 
     // an event with no transition must leave the state untouched
     coach_flow_init(&flow);

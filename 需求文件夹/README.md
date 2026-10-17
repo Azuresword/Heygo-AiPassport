@@ -13,10 +13,10 @@ No evidence shows a working HeygoAI integration.
 | Document | Purpose |
 | --- | --- |
 | [Product requirements](01-product-requirements.md) | Goal, priorities, 21 requirements, and acceptance targets. |
-| [System architecture](02-architecture.md) | Components, modes, buttons, page layouts, the Coach audio flow, and device limits. |
+| [System architecture](02-architecture.md) | Components, pages, buttons, the state diagram, page layouts, the Coach audio flow, and device limits. |
 | [Scrum backlog](03-scrum-backlog.md) | User stories, priorities, Sprint order, and the Definition of Done. |
 | [Validation and decisions](04-validation-and-decisions.md) | Test cases, open questions, the decision log, and risks. |
-| [Decision amendments](05-decision-amendments.md) | The reasons behind D-08 to D-28. |
+| [Decision amendments](05-decision-amendments.md) | The reasons behind D-08 to D-29. |
 | [Sprint 0 plan](06-sprint-0-plan.md) | Four hours of host-only work for the first Coach question. Done. |
 | [BLE protocol draft](07-ble-protocol-draft.md) | The device side of the BLE link, with the live data message. |
 | [Four-hour Sprint roadmap](08-sprint-roadmap.md) | The goal, tasks, inputs, and cut line of Sprints 0 to 10. |
@@ -25,15 +25,15 @@ No evidence shows a working HeygoAI integration.
 
 Two increments form the first version:
 
-- **Increment 1, the Coach voice chain.** The skier stops for a rest break, holds OK, asks the AI coach a question, and hears the answer.
-- **Increment 2, live data and reports.** During a run, the Ski page shows the speed, vertical drop, distance, turn count, and run time. After each run, the device shows the report of that run: distance, turn count, Heygo IQ, the core problem, and a short tip.
+- **Increment 1, the Coach voice chain.** An OK hold on any page opens the Coach page. Another OK hold asks the AI coach a question, and the skier hears the answer.
+- **Increment 2, live data and reports.** During a run, the live data page shows the speed, vertical drop, distance, turn count, and run time. After each run, the device shows the report of that run: distance, turn count, Heygo IQ, the core problem, and a short tip.
 
 The phone stays in a pocket. The skier keeps the gloves on. The phone calculates all data. The device only shows it.
 
 D-17, D-18, and D-22 set the priorities:
 
-- **P0, Increment 1:** device connection, the voice question, the spoken answer, and the Agent exchange. P0 also covers the modes, gloves and Chinese text, and recovery.
-- **P1, Increment 2:** data sync, live data on the Ski page, and the Report page.
+- **P0, Increment 1:** device connection, the voice question, the spoken answer, and the Agent exchange. P0 also covers page navigation, gloves and Chinese text, and recovery.
+- **P1, Increment 2:** data sync, live data on the live data page, and the Report page.
 - **P1, after Increment 2:** metric charts, the offline report cache, and human intercom.
 - **P2, later candidates:** practice goals, quests, a reflection journal, session comparison, and report sharing.
 - **Deferred:** turn visualization, privacy and authorization, and power management.
@@ -43,7 +43,7 @@ D-17, D-18, and D-22 set the priorities:
 Sprint 0 ended. The Sprint 1 device code is in the repository. Device tests are NOT RUN. The team closed no story.
 Section 4.1 of the [backlog](03-scrum-backlog.md) gives the progress of each story.
 
-The user accepted D-08 to D-15 and D-17 to D-28. The phone application team accepted protocol 0.2 (D-16).
+The user accepted D-08 to D-15 and D-17 to D-29. The phone application team accepted protocol 0.2 (D-16). D-29 changes the meaning of two protocol fields, so that team must accept it again.
 A phone application already exists. Another team develops it.
 No person accepted a Scrum role or a delivery date.
 

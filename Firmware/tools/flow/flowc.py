@@ -254,7 +254,8 @@ def emit_flow(g, src):
     app = ident(g["app"])
     P = app.upper()
     states = [s["id"] for s in g["states"]]
-    events = sorted({t["on"] for t in g["transitions"]})
+    # input.extra_events lists events that the input code makes but no transition uses yet.
+    events = sorted({t["on"] for t in g["transitions"]} | set(g.get("input", {}).get("extra_events", [])))
     actions = [a["id"] for a in g["actions"]]
     initial = next(s["id"] for s in g["states"] if s.get("initial"))
 

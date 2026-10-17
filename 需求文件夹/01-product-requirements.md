@@ -33,17 +33,16 @@ The pilot uses existing boards. It needs no new circuit board or enclosure.
 ## 3. Product journey
 
 1. The user connects the device to the existing phone application.
-2. The device starts in Ski mode. The Ski page shows the live data from the phone.
-3. The user holds OK to enter Rest mode. Rest mode opens on the Coach page.
-4. The user holds OK again and asks a question.
-5. The user releases OK. The device ends the question.
+2. The device starts on the live data page. During a run, this page shows the live data from the phone.
+3. Three pages sit at one level: live data, run report, and AI coach. A short DOWN press goes forward. A short UP press goes back. The last page leads to the first page.
+4. On every page, an OK hold opens the Coach page. That press never starts capture.
+5. On the Coach page, the user holds OK to ask a question, and releases OK to send it.
 6. The Agent answers through speech, with short text on the screen.
-7. The user can hold UP to stop the answer.
-8. When the Coach page is idle, a short DOWN press opens the Report page. It shows the report of the last run. A short UP press returns to the Coach page.
-9. Before the next run, the user holds DOWN and then presses OK to return to Ski mode.
+7. During the wait or the answer, a short UP or DOWN press cancels the question and changes the page.
+8. After a run ends, the live data page shows the report of that run. The Report page shows the full report.
 
-Rest mode means that the user states they stopped.
-The device cannot check motion. Rest mode never claims that the surroundings are safe.
+D-29 removes Ski mode and Rest mode. The device cannot check motion, so voice works only on the Coach page.
+After the Coach page opens, the user must hold OK again to start capture. An accidental OK press during a run can only open the Coach page.
 
 ## 4. Scope and priorities
 
@@ -102,7 +101,7 @@ Each row has test stage Prototype. Owners are roles with no assigned person.
 | REQ-07 | Play the spoken answer as it arrives. Allow the user to stop it. | Firmware and phone. | TC-07: playback stops within 200 ms of the cancel command in 30 trials. No canceled answer resumes. | The phone must supply synthesized speech. |
 | REQ-08 | Ask the Agent with a button. The phone attaches the current ski session. | Agent, phone, and firmware. | TC-08: the first audible answer starts within 5 seconds of release at the 95th percentile. The Agent marks claims that lack evidence. | HeygoAI coaching tools remain open. |
 | REQ-15 | Support three buttons, gloves, and readable Chinese status text. | Design and firmware. | TC-15: every required glyph shows. At least 4 of 5 users complete each core task. | Test gloves and readability on hardware. |
-| REQ-17 | Keep Ski mode and Rest mode distinct. Require manual entry before any voice use. | Firmware and design. | TC-17: 50 transition trials keep the mode clear. The press that enters Rest mode never starts capture. | No automatic motion detection exists. D-28 exception: the phone can change the device to the Report page. That enters Rest mode but never starts capture. |
+| REQ-17 | Three pages at one level, with UP and DOWN to change the page. An OK hold on any page opens the Coach page. Capture runs only while the user holds OK on the Coach page. | Firmware and design. | TC-17: in 50 page changes and Coach page openings, each page is as expected. The hold that opens the Coach page never starts capture. | No automatic motion detection exists. D-28: the phone can change the device to the Report page. That never starts capture. |
 | REQ-20 | Explain link failures. Support recovery. | Firmware and phone. | TC-20: 10 reconnect trials create no duplicate question. No stale answer plays. | Test link loss and phone background behavior. |
 
 ### P1, Increment 2
@@ -110,7 +109,7 @@ Each row has test stage Prototype. Owners are roles with no assigned person.
 | ID | Value and required behavior | Owner | Acceptance target | Dependency |
 | --- | --- | --- | --- | --- |
 | REQ-02 | Show the latest ski data packet from the phone. A missing field shows "--" and never 0. Mark data that is out of date. | Phone and firmware. | TC-02: in 300 data packets, the device shows the latest packet each time. Each missing field shows "--". | The phone application sends LIVE_STATS as doc 07 defines. |
-| REQ-21 | During a run, show live data on the Ski page: speed, vertical drop, distance, turn count, and run time. The phone sends one packet each second. | Firmware and design. | TC-21: the screen updates within 300 ms of the packet at the 95th percentile. At least 4 of 5 users read the speed correctly within 2 seconds. | REQ-02. |
+| REQ-21 | During a run, show live data on the live data page: speed, vertical drop, distance, turn count, and run time. The phone sends one packet each second. | Firmware and design. | TC-21: the screen updates within 300 ms of the packet at the 95th percentile. At least 4 of 5 users read the speed correctly within 2 seconds. | REQ-02. |
 | REQ-03 | After each run, show the report of that run. It holds the distance, the turn count, the Heygo IQ, the core problem, and a tip of at most 20 characters. | Firmware and design. | TC-03: in 30 short DOWN presses on the Coach page, the Report page shows within 500 ms each time. Every value matches the phone log. | REQ-02. |
 
 ### P1, after Increment 2
@@ -157,12 +156,13 @@ The screen can show a short transcript or a short answer.
 If recognition fails, the screen asks the user to repeat the question.
 The device offers no transcript editor. Three buttons cannot edit text.
 
-### Cancel and exit
+### Page change and cancel
 
-An UP hold of 500 ms cancels the active capture or playback.
+A short UP or DOWN press changes the page. The three pages form a loop.
+During capture, the wait, or the playback, a short UP or DOWN press cancels the question first, and then changes the page (D-29).
 Playback stops within 200 ms of that command. Capture stops within 100 ms of that command.
-The total target is 700 ms from the first UP press to silence.
-A DOWN hold of 500 ms opens the exit question. A short OK then returns to Ski mode.
+An UP hold and a DOWN hold have no action.
+Actions inside a page will use a short OK press. No page uses it yet.
 A hold never also triggers a short press.
 
 ### Audio rules
@@ -172,9 +172,9 @@ An OK hold during playback stops the playback first. The microphone starts after
 If the link fails, the device stops capture and shows the failure.
 A canceled answer never resumes.
 
-### Ski page
+### Live data page
 
-D-21 puts live data on the Ski page. During a run, the eyes belong on the slope. So the speed is the largest number, and each other number has a name.
+D-21 puts live data on the live data page. During a run, the eyes belong on the slope. So the speed is the largest number, and each other number has a name.
 
 | Area | Content | Example |
 | --- | --- | --- |
@@ -195,8 +195,8 @@ D-21 puts live data on the Ski page. During a run, the eyes belong on the slope.
 
 D-26: after each run, the phone sends the report of that run. D-27 sets two places for the report:
 
-- **The Ski page on the lift.** After a run ends, the Ski page shows the Heygo IQ, the core problem, and the tip of that run until the next run starts.
-- **The Report page in Rest mode.** On the idle Coach page, a short DOWN press opens the Report page. A short UP press returns to the Coach page.
+- **The live data page.** After a run ends, this page shows the Heygo IQ, the core problem, and the tip of that run until the next run starts.
+- **The Report page.** Use UP and DOWN to go to the Report page and read the full report.
 
 | Field | Format | Example |
 | --- | --- | --- |
@@ -207,9 +207,8 @@ D-26: after each run, the phone sends the report of that run. D-27 sets two plac
 | Core problem | At most 12 Chinese characters | Weight too far back |
 | Short tip | At most 20 Chinese characters | Next run, keep both hands in front |
 
-- On the Report page, an OK hold does nothing. The button hint shows "Press UP for coach".
-- D-28: when the phone sends SHOW_PAGE, the device changes to the Report page from the Ski page or the idle Coach page. In Ski mode, it also enters Rest mode. During capture, the wait, the playback, and the exit question, the device ignores the message, so it never stops the user.
-- On the Report page, a DOWN hold opens the exit question, as on the Coach page.
+- On the Report page, an OK hold opens the Coach page, as on every page. The button hint shows "Hold OK for the coach".
+- D-28: when the phone sends SHOW_PAGE, the device changes to the Report page from the live data page or the idle Coach page. During capture, the wait, and the playback, the device ignores the message, so it never stops the user.
 - Before the first report arrives, the Report page shows "The report shows after a run".
 - 60 seconds after a report arrives, the Report page shows "N MIN AGO".
 - After a link loss, the device keeps the last report from RAM on the screen.

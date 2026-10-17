@@ -5,13 +5,14 @@
 # Heygo AI Passport
 
 This is the project repository of Heygo AI Passport.
+The device has three pages at one level: live data, run report, and AI coach. Short UP and DOWN presses change the page. An OK hold on any page opens the Coach page.
 The device connects to a phone over BLE. The phone does speech recognition, speech synthesis, the ski data, and the AI coach. The device does the buttons, the microphone, the speaker, and the screen.
 
 ## What the device does
 
 | Increment | Function | Status |
 | --- | --- | --- |
-| Increment 1: Coach voice | During a rest break, hold OK to ask the AI coach. The device plays the answer. | Code done. Device tests NOT RUN. |
+| Increment 1: Coach voice | An OK hold on any page opens the Coach page. Another OK hold asks the AI coach. The device plays the answer. | Code done. Device tests NOT RUN. |
 | Increment 2: ski data and reports | During a run, show the speed, vertical drop, distance, turns, and time. After each run, show the Heygo IQ, the core problem, and one short tip. | Code done. Device tests NOT RUN. |
 
 The BLE protocol is version 0.2. The phone application team accepted it.
@@ -41,12 +42,12 @@ The browser draws the screen with system fonts. The images in `assets/mockups` s
 
 ## Screen images
 
-LVGL draws the 15 images in `assets/mockups` on a computer with the device settings. They are not drawings.
+LVGL draws the 14 images in `assets/mockups` on a computer with the device settings. They are not drawings.
 [contact-sheet.png](assets/mockups/contact-sheet.png) shows all of them in one image.
 
 | Images | Content |
 | --- | --- |
-| 01–09 | The Ski page, each Coach page state, and the exit question |
+| 01–08 | The live data page with no data, and each Coach page state |
 | 10–12 | Ski data during a run, out-of-date data, and the report after a run |
 | 13–15 | The Report page: no report, a report, and the longest texts |
 

@@ -51,6 +51,8 @@ typedef enum {
     BP_ERR_FIELD        = 7,
 } bp_err_t;
 
+// D-29 has no Ski or Rest mode. The wire values stay: mode 0 means the live data page or the
+// Report page, and mode 1 means the Coach page. Page 2, the exit question, is no longer sent.
 enum { BP_MODE_SKI = 0, BP_MODE_REST = 1 };
 enum { BP_PAGE_SKI = 0, BP_PAGE_COACH = 1, BP_PAGE_EXIT = 2, BP_PAGE_REPORT = 3, BP_PAGE_TEAM = 4 };
 enum { BP_CODEC_ADPCM = 0, BP_CODEC_PCM = 1 };

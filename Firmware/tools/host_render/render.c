@@ -3,7 +3,7 @@
 // Host program that draws the generated coach screens with the device LVGL
 // configuration. render.py builds it and sends commands on stdin:
 //
-//   screen coach|ski|report|exit   Delete the current screen and build this one.
+//   screen coach|ski|report   Delete the current screen and build this one.
 //   set <subject> <value>   Call the generated setter. The value is the rest of the line.
 //   label <widget> <text>   Set a label of the Ski or Report page, as the Coach task does.
 //   panel metrics|report    Show the metric cells or the report lines of the Ski page.
@@ -30,11 +30,10 @@ static uint16_t s_draw_buf[HOR * VER];
 static uint16_t s_frame[HOR * VER];
 static const char *s_outdir;
 
-static enum { NONE, COACH, SKI, REPORT, EXIT } s_kind = NONE;
+static enum { NONE, COACH, SKI, REPORT } s_kind = NONE;
 static coach_screen_coach_t s_coach;
 static coach_screen_ski_t s_ski;
 static coach_screen_report_t s_report;
-static coach_screen_exit_t s_exit;
 static lv_obj_t *s_blank;
 
 static int s_takes, s_gives;
@@ -87,7 +86,6 @@ static void drop_screen(void)
     case COACH: coach_teardown(&s_coach); break;
     case SKI: coach_screen_ski_destroy(&s_ski); break;
     case REPORT: coach_screen_report_destroy(&s_report); break;
-    case EXIT: coach_screen_exit_destroy(&s_exit); break;
     case NONE: break;
     }
     s_kind = NONE;
@@ -109,10 +107,6 @@ static void load_screen(const char *name)
         coach_screen_report_build(&s_report);
         lv_screen_load(s_report.screen);
         s_kind = REPORT;
-    } else if (strcmp(name, "exit") == 0) {
-        coach_screen_exit_build(&s_exit);
-        lv_screen_load(s_exit.screen);
-        s_kind = EXIT;
     } else {
         printf("ERR unknown screen %s\n", name);
     }
@@ -196,12 +190,6 @@ static void snap(const char *name)
         print_box("age", s_report.age);
         print_box("problem", s_report.problem); print_box("tip", s_report.tip);
         print_box("hint", s_report.hint);
-        break;
-    case EXIT:
-        print_box("mode", s_exit.mode); print_box("battery", s_exit.battery);
-        print_box("dest", s_exit.dest); print_box("icon", s_exit.icon);
-        print_box("title", s_exit.title); print_box("primary", s_exit.primary);
-        print_box("secondary", s_exit.secondary); print_box("hint", s_exit.hint);
         break;
     case NONE: break;
     }

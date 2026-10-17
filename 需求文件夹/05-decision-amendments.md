@@ -1,10 +1,10 @@
 [简体中文](05-decision-amendments.zh_CN.md) · **English**
 
-# Decision amendments: D-08 to D-28
+# Decision amendments: D-08 to D-29
 
-Version: 0.6. Date: 2026-10-17. Status: D-08 to D-15 and D-17 to D-28 accepted by the user. The phone application team accepted D-16.
+Version: 0.6. Date: 2026-10-17. Status: D-08 to D-15 and D-17 to D-29 accepted by the user. The phone application team accepted D-16.
 
-This document gives the reasons behind D-08 to D-28.
+This document gives the reasons behind D-08 to D-29.
 [Validation and decisions](04-validation-and-decisions.md) holds the short log.
 Requirement numbers stay stable. This document deletes no requirement.
 
@@ -74,6 +74,8 @@ Opus returns only after ADPCM works and the team measures its cost.
 
 ## 5. D-10: separate cancel and exit holds
 
+**Status.** Replaced by D-29 on 2026-10-17. The text below keeps the old decision as a record.
+
 **Superseded proposal.** One UP hold cancels or goes back, and the result depends on hidden state.
 
 **Decision.** An UP hold cancels the active audio. A DOWN hold goes back. In P0 the DOWN hold opens the exit question for Rest mode.
@@ -116,6 +118,8 @@ Early capture would add the grant delay to every word. That delay can reach 800 
 **Cost.** The device protocol depends on an interface that this project does not own.
 
 ## 10. D-15: two modes
+
+**Status.** Replaced by D-29 on 2026-10-17. The text below keeps the old decision as a record.
 
 **Decision.**
 
@@ -163,6 +167,8 @@ Doc 07, section 4, lists the link settings: the shortest interval, no peripheral
 
 ## 13. D-19: ignore a long DOWN press while audio runs
 
+**Status.** Replaced by D-29 on 2026-10-17. The text below keeps the old decision as a record.
+
 **Problem.** The requirements define a long DOWN press only on the idle Coach page. They do not define it during capture, wait, or playback.
 
 **Decision.** In these three states, the device ignores a long DOWN press.
@@ -193,15 +199,15 @@ During capture, the device still drops a PLAY_START.
 
 **Cost.** The phone application team must accept this rule. Doc 07, section 14, gives the rule.
 
-## 15. D-21: live data on the Ski page, and a Report page in Rest mode
+## 15. D-21: live data on the live data page, and a Report page in Rest mode
 
-**Problem.** In Increment 1, the Ski page shows one fixed sentence. During a run, the skier wants the speed and the progress on this run.
+**Problem.** In Increment 1, the live data page shows one fixed sentence. During a run, the skier wants the speed and the progress on this run.
 
-**Decision.** The Ski page shows five live numbers. Rest mode adds a Report page with the report of the last run.
+**Decision.** The live data page shows five live numbers. Rest mode adds a Report page with the report of the last run.
 
 **Reason.**
 
-- The "LIVE RUN" title and the body area of the Ski page hold these numbers. No new page is necessary.
+- The "LIVE RUN" title and the body area of the live data page hold these numbers. No new page is necessary.
 - The skier reads the summary during a rest break, so it belongs in Rest mode. During a run, the screen gives only content that one look can read.
 
 **Cost.** A look at the screen during a run takes attention from the slope. The risk log records the mitigations.
@@ -250,6 +256,8 @@ After Sprint 4, the branch `feat/report-live-data` merges into `main`. At the sa
 
 ## 19. D-25: the change between the Coach page and the Report page
 
+**Status.** Replaced by D-29 on 2026-10-17. The text below keeps the old decision as a record.
+
 **Decision.** On the idle Coach page, a short DOWN press opens the Report page. On the Report page, a short UP press returns to the Coach page. An OK hold on the Report page does nothing.
 
 **Reason.**
@@ -280,7 +288,7 @@ After Sprint 4, the branch `feat/report-live-data` merges into `main`. At the sa
 
 - The Heygo IQ is an integer from 0 to 100, in 1 byte.
 - The phone sends the core problem as text of at most 12 Chinese characters.
-- The report shows on the Ski page on the lift and on the Report page in Rest mode.
+- The report shows on the live data page on the lift and on the Report page in Rest mode.
 
 **Reason.** The three items change only the screen. They do not change the rest of the protocol. A later change costs little.
 
@@ -288,21 +296,47 @@ After Sprint 4, the branch `feat/report-live-data` merges into `main`. At the sa
 
 ## 22. D-28: the phone opens the Report page
 
-**Decision.** When the phone sends SHOW_PAGE 3, the device changes to the Report page from the Ski page (SKI) or the idle Coach page (READY).
+**Decision.** When the phone sends SHOW_PAGE 3, the device changes to the Report page from the live data page (LIVE) or the idle Coach page (READY). During capture, the wait, and the playback, the device ignores the message.
 
-- In Ski mode, the device also enters Rest mode.
-- During capture, the wait, the playback, and the exit question, the device ignores the message.
-
-**Reason.** The user wants the phone to trigger the change only in SKI and READY. The phone can then show the report after a run, and it never stops a question or an answer of the user.
+**Reason.** The user wants the phone to trigger the change only in these two states. The phone can then show the report after a run, and it never stops a question or an answer of the user.
 
 **Cost.**
 
-- This is the only exception to the rule that the user enters Rest mode by hand (REQ-17). The Report page starts no capture, and an OK hold on it does nothing.
 - After a request, the device can stay on its page. The phone application trusts the page in CONTEXT.
-- SHOW_PAGE is a new message. Only firmware from this commit or later can handle it. Older firmware answers with ERROR code 1.
+- SHOW_PAGE is a new message. Firmware at commit `31e511c` or older answers with ERROR code 1.
 
-**Status.** Accepted by the user on 2026-10-17. The phone application team must accept this message.
+**Status.** Accepted by the user on 2026-10-17. After D-29, the old rule "in Ski mode, also enter Rest mode" no longer applies. The phone application team must accept this message.
 
+## 23. D-29: three pages at one level
+
+**Problem.** With two modes, the user must remember the current mode and the action of each button in each mode. The Report page sat below Rest mode, one more level down.
+
+**Decision.**
+
+- Ski mode, Rest mode, and the exit question go away.
+- Three pages sit at one level: live data, run report, and AI coach. A short DOWN press goes forward. A short UP press goes back. The last page leads to the first page. The device starts on the live data page.
+- On every page, an OK hold opens the Coach page. That press never starts capture.
+- On the Coach page, the user holds OK to ask a question, and releases OK to send it.
+- During capture, the wait, or the playback, a short UP or DOWN press cancels the question first, and then changes the page.
+- Actions inside a page will use a short OK press. No page uses it yet.
+- An UP hold and a DOWN hold have no action.
+
+**Reason.**
+
+- Only two rules stay: UP and DOWN change the page, and an OK hold finds the coach. Users with gloves can remember them.
+- The device cannot check whether the user stopped. Capture needs one more OK hold after the Coach page opens, so an accidental OK press during a run never opens the microphone.
+- The user selected "cancel the audio and change the page at once". So one press can leave the Coach page at any time.
+
+**Cost.**
+
+- D-29 replaces D-10, D-15, D-19, and D-25. TC-17, US-17, and the U1 tasks need new text.
+- With no Rest mode as a gate, an accidental press changes the page more easily. The risk log asks U1 to record each accidental press.
+- The three buttons share one ADC. While the user holds OK to record, the device cannot read UP or DOWN. The user must release OK first, and that sends the question.
+- The mode and page fields of the protocol change their meaning. The phone application team must accept them (doc 07, section 16).
+
+**Status.** Accepted by the user on 2026-10-17.
+
+## 24. Related documents
 ## 23. Related documents
 
 - [Product requirements](01-product-requirements.md).

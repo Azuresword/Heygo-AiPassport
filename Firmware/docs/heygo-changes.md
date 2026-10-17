@@ -251,9 +251,22 @@ Data changes only the screen texts. It never changes the state of the state mach
 flowc makes data bindings for the first screen only. The Coach task therefore writes the texts of the Ski page and the Report page into their labels.
 flowc estimates 18,960 bytes of LVGL pool for all four screens. Only one screen exists at run time. The host measures a peak of 17,584 of 21,656 bytes.
 
-## 10. Open items
+## 10. D-29: three pages at one level
 
-- During capture, wait, or playback, the state machine ignores a DOWN hold. D-19 accepts this behavior.
+With D-29, Ski mode, Rest mode, and the exit question go away. Three pages sit at one level.
+
+| File | Change |
+| --- | --- |
+| `flows/coach.flow.json` | The state SKI becomes LIVE. EXIT_Q and the exit screen go away. Short UP and DOWN presses move through the three pages in a loop. An OK hold on any page goes to READY. A page change during capture, the wait, or the playback cancels the question first. |
+| `tools/flow/flowc.py` | Add `input.extra_events`: events that the buttons make but no transition uses yet (OK_SHORT, UP_HOLD, and DOWN_HOLD). |
+| `main/coach_app.c` | No exit screen. The mode field of CONTEXT is 1 on the Coach page and 0 on the other pages. |
+| `tests/test_coach_paths.c`, `tests/test_coach_input.c` | The page loop, the OK hold on every page, and the cancel at a page change during audio. |
+| `tools/flow/flow_sim.*` | A new state diagram layout and 55 self-test items. |
+
+The top left of each page shows the page name in Chinese: live data, run report, or AI coach.
+
+## 11. Open items
+
 - Device tests: NOT RUN. The board is not at hand, and no phone application build follows doc 07 yet.
 - The phone application team must review doc 07 version 0.6. It adds the protocol notes and the two data messages in section 6.
 - The battery label on the screen stays empty. DEVICE_STATUS carries the battery level.
