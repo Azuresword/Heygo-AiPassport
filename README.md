@@ -4,24 +4,67 @@
 
 # Heygo AI Passport
 
-This is the repository for Heygo AI Passport.
+This is the project repository of Heygo AI Passport.
+The device connects to a phone over BLE. The phone does speech recognition, speech synthesis, the ski data, and the AI coach. The device does the buttons, the microphone, the speaker, and the screen.
 
-## Project status
+## What the device does
 
-The project contains draft requirements, the firmware for Sprint 0, and the screen assets.
-Device tests have not run yet.
+| Increment | Function | Status |
+| --- | --- | --- |
+| Increment 1: Coach voice | During a rest break, hold OK to ask the AI coach. The device plays the answer. | Code done. Device tests NOT RUN. |
+| Increment 2: ski data and reports | During a run, show the speed, vertical drop, distance, turns, and time. After each run, show the Heygo IQ, the core problem, and one short tip. | Code done. Device tests NOT RUN. |
+
+The BLE protocol is version 0.2. The phone application team accepted it.
+On `main`, the firmware gate `./tools/validate.sh` gives exit code 0.
+
+## Interactive simulator
+
+![Interactive simulator](assets/sim/preview.png)
+
+`assets/sim/coach-flow.html` is a single web page. Use it on a computer to try the buttons and the pages of the device.
+It needs no server and no network.
+
+- On the left are the device screen and the three buttons. A press of 500 ms is a hold. The keys Up, Space, and Down are UP, OK, and DOWN.
+- The phone panel can send an answer, cut the BLE link, start a run, end the run, or open the Report page.
+- In the middle are the state diagram and the trigger matrix. They show the current state and the target of each button.
+- On the right are the state machine log and the BLE messages.
+
+To open it:
+
+```bash
+open assets/sim/coach-flow.html
+```
+
+The flow graph `Firmware/flows/coach.flow.json` makes the page. The firmware uses the same state machine.
+Do not edit the page by hand. After a change to the flow graph, run `python3 tools/flow/flow_sim.py` in `Firmware`.
+The browser draws the screen with system fonts. The images in `assets/mockups` show the real pixels.
+
+## Screen images
+
+LVGL draws the 15 images in `assets/mockups` on a computer with the device settings. They are not drawings.
+[contact-sheet.png](assets/mockups/contact-sheet.png) shows all of them in one image.
+
+| Images | Content |
+| --- | --- |
+| 01–09 | The Ski page, each Coach page state, and the exit question |
+| 10–12 | Ski data during a run, out-of-date data, and the report after a run |
+| 13–15 | The Report page: no report, a report, and the longest texts |
 
 ## Folders
 
 | Folder | Content |
 | --- | --- |
-| [需求文件夹](%E9%9C%80%E6%B1%82%E6%96%87%E4%BB%B6%E5%A4%B9/README.md) | Requirements, architecture, backlog, Sprint 0 plan, and the BLE protocol draft. |
-| [Firmware](Firmware/docs/heygo-changes.md) | ESP-IDF firmware, based on FoloToy/ai-passport. Start with `docs/heygo-changes.md`. |
-| [assets](assets/README.md) | Screen text, Chinese fonts, and screen mockups. |
+| [需求文件夹](%E9%9C%80%E6%B1%82%E6%96%87%E4%BB%B6%E5%A4%B9/README.md) | Requirements, architecture, backlog, decisions, the BLE protocol, and the four-hour Sprint roadmap. |
+| [Firmware](Firmware/docs/heygo-changes.md) | ESP-IDF firmware based on FoloToy/ai-passport. Read `docs/heygo-changes.md` first. |
+| [assets](assets/README.md) | Screen texts, fonts, screen images, and the interactive simulator. |
 
-## Get the repository
+## Get and check the code
 
 ```bash
 git clone https://github.com/Azuresword/Heygo-AiPassport.git
-cd Heygo-AiPassport
+cd Heygo-AiPassport/Firmware
+. ~/esp/esp-idf-v5.5.3/export.sh
+./tools/validate.sh
 ```
+
+The last line must be `Firmware build: PASS`.
