@@ -92,6 +92,9 @@ run_static_checks() {
     "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain \
         tests/test_play_gate.c main/audio/play_gate.c -o "${test_dir}/test_play_gate"
     "${test_dir}/test_play_gate"
+    "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain \
+        tests/test_play_envelope.c main/audio/play_envelope.c -o "${test_dir}/test_play_envelope"
+    "${test_dir}/test_play_envelope"
     "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain -Imain/generated \
         tests/test_coach_paths.c main/generated/coach_flow.c -o "${test_dir}/test_coach_paths"
     "${test_dir}/test_coach_paths"

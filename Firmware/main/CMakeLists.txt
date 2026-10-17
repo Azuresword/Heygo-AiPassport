@@ -28,6 +28,7 @@ idf_component_register(
          "generated/coach_bindings.c"
          "generated/coach_ui.c"
          "audio/play_gate.c"
+         "audio/play_envelope.c"
          "audio/ima_adpcm.c"
          "protocol/ble_proto.c"
          "${HEYGO_FONTS}/heygo_sc_16.c"

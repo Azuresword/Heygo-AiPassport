@@ -15,6 +15,7 @@ void play_gate_on_block(play_gate_t *gate, uint32_t now_ms) {
     }
     if (gate->queued < UINT8_MAX) gate->queued++;
     gate->last_rx_ms = now_ms;
+    gate->empty = false;
 }
 
 void play_gate_on_end(play_gate_t *gate, uint32_t now_ms) {
@@ -25,6 +26,10 @@ void play_gate_on_end(play_gate_t *gate, uint32_t now_ms) {
 
 void play_gate_on_played(play_gate_t *gate) {
     if (gate && gate->queued > 0) gate->queued--;
+}
+
+void play_gate_on_written(play_gate_t *gate) {
+    if (gate && gate->written < PLAY_GATE_GRACE_WRITES) gate->written++;
 }
 
 play_gate_action_t play_gate_poll(play_gate_t *gate, uint32_t now_ms) {
@@ -45,5 +50,16 @@ play_gate_action_t play_gate_poll(play_gate_t *gate, uint32_t now_ms) {
     if (gate->queued > 0) return PLAY_GATE_PLAY;
     if (gate->ended) return PLAY_GATE_DONE;
     if ((uint32_t)(now_ms - gate->last_rx_ms) >= PLAY_GATE_STALL_MS) return PLAY_GATE_DONE;
+    // Three 320-frame writes fill four 240-frame DMA descriptors.
+    // Earlier waits can leave a partial descriptor behind the DMA write position.
+    if (gate->written < PLAY_GATE_GRACE_WRITES) return PLAY_GATE_SILENCE;
+
+    // I2S can accept the initial blocks before their sound reaches the speaker.
+    // Give the next packet one block period before inserting silence.
+    if (!gate->empty) {
+        gate->empty = true;
+        gate->empty_ms = now_ms;
+    }
+    if ((uint32_t)(now_ms - gate->empty_ms) < PLAY_GATE_GRACE_MS) return PLAY_GATE_WAIT;
     return PLAY_GATE_SILENCE;
 }

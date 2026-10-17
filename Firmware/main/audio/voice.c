@@ -12,6 +12,7 @@
 #include "freertos/task.h"
 #include "ima_adpcm.h"
 #include "play_gate.h"
+#include "play_envelope.h"
 
 static const char *TAG = "voice";
 
@@ -20,7 +21,8 @@ static const char *TAG = "voice";
 #define STOP_WAIT_MS     200
 #define TASK_STACK       4096
 #define TASK_PRIO        7        // Above the Coach task, so a block is never late.
-#define VOLUME           80
+// The codec curve maps 90 to -5 dB, before the board's hardware compensation.
+#define VOLUME           90
 
 typedef enum { MODE_IDLE = 0, MODE_CAPTURE, MODE_PLAY } voice_mode_t;
 
@@ -30,6 +32,7 @@ static QueueHandle_t s_down_q;      // Items: IMA_BLOCK_BYTES.
 static SemaphoreHandle_t s_gate_mu;
 static SemaphoreHandle_t s_stopped;
 static play_gate_t s_gate;
+static unsigned s_down_dropped;   // Protected by s_gate_mu.
 static volatile voice_mode_t s_mode;
 static volatile bool s_stop;
 static volatile uint32_t s_progress_ms;   // Last speaker write, or the playback start.
@@ -40,6 +43,7 @@ static void flush_down(void) {
     xSemaphoreTake(s_gate_mu, portMAX_DELAY);
     xQueueReset(s_down_q);
     play_gate_reset(&s_gate);
+    s_down_dropped = 0;
     xSemaphoreGive(s_gate_mu);
 }
 
@@ -49,6 +53,7 @@ static void capture_loop(void) {
     ima_state_t enc;
     ima_state_init(&enc);
     unsigned blocks = 0;
+    unsigned near_full_scale = 0;
     int peak = 0;
     while (!s_stop) {
         // One block takes 20 ms, so the stop check runs every 20 ms.
@@ -59,6 +64,7 @@ static void capture_loop(void) {
         for (size_t i = 0; i < IMA_BLOCK_SAMPLES; i++) {
             const int a = pcm[i] < 0 ? -pcm[i] : pcm[i];
             if (a > peak) peak = a;
+            if (a >= 32700) near_full_scale++;
         }
         ima_encode_block(&enc, pcm, IMA_BLOCK_SAMPLES, block);
         if (s_cb.up_block) s_cb.up_block(block);
@@ -66,11 +72,21 @@ static void capture_loop(void) {
     }
     // A peak near 0 means that the microphone path gives silence.
     ESP_LOGI(TAG, "capture: %u blocks (%u ms), peak %d of 32767", blocks, blocks * 20, peak);
+    ESP_LOGI(TAG, "capture level: %u samples near full scale", near_full_scale);
 }
 
 static void play_loop(void) {
     static int16_t pcm[IMA_BLOCK_SAMPLES];
     static uint8_t block[IMA_BLOCK_BYTES];
+    // Count decoded input and attempted writes, not measured speaker output.
+    unsigned blocks = 0, underruns = 0, invalid = 0, near_full_scale = 0;
+    unsigned fades = 0, write_errors = 0;
+    uint32_t max_write_ms = 0, first_silence_ms = 0;
+    const uint32_t feed_start_ms = now_ms();
+    play_envelope_t envelope;
+    play_envelope_reset(&envelope);
+    int peak = 0;
+    bool completed = false;
     while (!s_stop) {
         xSemaphoreTake(s_gate_mu, portMAX_DELAY);
         const play_gate_action_t act = play_gate_poll(&s_gate, now_ms());
@@ -82,26 +98,61 @@ static void play_loop(void) {
         xSemaphoreGive(s_gate_mu);
 
         if (act == PLAY_GATE_DONE) {
-            if (s_cb.play_done) s_cb.play_done();
-            return;
+            completed = true;
+            break;
         }
         if (act == PLAY_GATE_WAIT) {
-            s_progress_ms = now_ms();   // Waiting for the first blocks is progress too.
+            s_progress_ms = now_ms();   // The gate bounds the wait for more data.
             vTaskDelay(pdMS_TO_TICKS(5));
             continue;
         }
+        bool valid_pcm = false;
         if (have) {
-            if (ima_decode_block(block, pcm) == 0) memset(pcm, 0, sizeof pcm);   // A bad header plays silence.
+            valid_pcm = ima_decode_block(block, pcm) != 0;
+            if (!valid_pcm) {
+                memset(pcm, 0, sizeof pcm);   // A bad header plays silence.
+                invalid++;
+            }
+            blocks++;
+            for (size_t i = 0; i < IMA_BLOCK_SAMPLES; i++) {
+                const int a = pcm[i] < 0 ? -pcm[i] : pcm[i];
+                if (a > peak) peak = a;
+                if (a >= 32700) near_full_scale++;
+            }
         } else {
-            memset(pcm, 0, sizeof pcm);   // The queue ran empty: one block of silence.
+            if (underruns == 0) first_silence_ms = now_ms() - feed_start_ms;
+            underruns++;
         }
-        if (bsp_audio_write(pcm, sizeof pcm) != ESP_OK) {
+        if (play_envelope_apply(&envelope, pcm, IMA_BLOCK_SAMPLES, valid_pcm)) fades++;
+        const uint32_t write_start_ms = now_ms();
+        const esp_err_t write_result = bsp_audio_write(pcm, sizeof pcm);
+        const uint32_t write_ms = now_ms() - write_start_ms;
+        if (write_ms > max_write_ms) max_write_ms = write_ms;
+        if (write_result != ESP_OK) {
+            write_errors++;
             ESP_LOGE(TAG, "speaker write failed");
-            if (s_cb.play_done) s_cb.play_done();
-            return;
+            completed = true;
+            break;
         }
+        xSemaphoreTake(s_gate_mu, portMAX_DELAY);
+        play_gate_on_written(&s_gate);
+        xSemaphoreGive(s_gate_mu);
         s_progress_ms = now_ms();
     }
+    xSemaphoreTake(s_gate_mu, portMAX_DELAY);
+    const unsigned dropped = s_down_dropped;
+    xSemaphoreGive(s_gate_mu);
+    // One summary per answer avoids logs in the real-time speaker feed.
+    ESP_LOGI(TAG, "playback: %u blocks, peak %d of 32767, %u samples near full scale, "
+             "%u underruns, %u dropped, %u invalid", blocks, peak, near_full_scale,
+             underruns, dropped, invalid);
+    // These times measure software writes. They do not measure the DMA output.
+    ESP_LOGI(TAG, "playback feed: %lu ms, first silence %ld ms, max write %lu ms, "
+             "%u write errors, %u fades",
+             (unsigned long)(now_ms() - feed_start_ms),
+             underruns ? (long)first_silence_ms : -1L,
+             (unsigned long)max_write_ms, write_errors, fades);
+    if (completed && s_cb.play_done) s_cb.play_done();
 }
 
 static void voice_task(void *arg) {
@@ -131,6 +182,7 @@ esp_err_t voice_start(const voice_cb_t *cb) {
         return e;
     }
     bsp_audio_set_volume(VOLUME);
+    ESP_LOGI(TAG, "output volume: %u", (unsigned)VOLUME);
     s_down_q = xQueueCreate(DOWN_QUEUE_DEPTH, IMA_BLOCK_BYTES);
     s_gate_mu = xSemaphoreCreateMutex();
     s_stopped = xSemaphoreCreateBinary();
@@ -180,6 +232,7 @@ void voice_down_push(const uint8_t *block, size_t len) {
     if (xQueueSend(s_down_q, block, 0) != pdTRUE) {
         uint8_t old[IMA_BLOCK_BYTES];
         (void)xQueueReceive(s_down_q, old, 0);   // Drop the oldest block.
+        s_down_dropped++;
         play_gate_on_played(&s_gate);
         (void)xQueueSend(s_down_q, block, 0);
     }
