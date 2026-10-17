@@ -60,6 +60,7 @@ static const bool ACTION_ASYNC[] = {
     false,
     false,
     false,
+    false,
     true,
     true,
     true,
@@ -168,6 +169,7 @@ const char *coach_action_name(coach_action_t v) {
     case COACH_ACTION_UI_WHY_PHONE_SILENT: return "UI_WHY_PHONE_SILENT";
     case COACH_ACTION_UI_WHY_VERSION: return "UI_WHY_VERSION";
     case COACH_ACTION_UI_WHY_MTU: return "UI_WHY_MTU";
+    case COACH_ACTION_UI_WHY_AUDIO: return "UI_WHY_AUDIO";
     case COACH_ACTION_AUDIO_CAPTURE_START: return "AUDIO_CAPTURE_START";
     case COACH_ACTION_AUDIO_CAPTURE_STOP: return "AUDIO_CAPTURE_STOP";
     case COACH_ACTION_AUDIO_PLAY_START: return "AUDIO_PLAY_START";

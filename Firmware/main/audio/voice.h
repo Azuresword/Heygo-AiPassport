@@ -21,6 +21,8 @@ typedef struct {
 } voice_cb_t;
 
 esp_err_t voice_start(const voice_cb_t *cb);
+// False when voice_start() failed. Then capture and playback do nothing.
+bool voice_ready(void);
 
 void voice_capture_start(void);
 // Block until the task sends the last block. Returns false after 200 ms without an answer.
@@ -34,6 +36,8 @@ void voice_down_end(void);
 void voice_play_enable(void);
 // Block until the speaker stops. Returns false after 200 ms without an answer.
 bool voice_play_stop(void);
+// Milliseconds since the playback last made progress. The Coach task uses it as a watchdog.
+uint32_t voice_play_idle_ms(void);
 
 #ifdef __cplusplus
 }

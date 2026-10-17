@@ -32,6 +32,7 @@ static SemaphoreHandle_t s_stopped;
 static play_gate_t s_gate;
 static volatile voice_mode_t s_mode;
 static volatile bool s_stop;
+static volatile uint32_t s_progress_ms;   // Last speaker write, or the playback start.
 
 static uint32_t now_ms(void) { return (uint32_t)(esp_timer_get_time() / 1000); }
 
@@ -47,15 +48,24 @@ static void capture_loop(void) {
     static uint8_t block[IMA_BLOCK_BYTES];
     ima_state_t enc;
     ima_state_init(&enc);
+    unsigned blocks = 0;
+    int peak = 0;
     while (!s_stop) {
         // One block takes 20 ms, so the stop check runs every 20 ms.
         if (bsp_audio_read(pcm, sizeof pcm) != ESP_OK) {
             ESP_LOGE(TAG, "microphone read failed");
             break;
         }
+        for (size_t i = 0; i < IMA_BLOCK_SAMPLES; i++) {
+            const int a = pcm[i] < 0 ? -pcm[i] : pcm[i];
+            if (a > peak) peak = a;
+        }
         ima_encode_block(&enc, pcm, IMA_BLOCK_SAMPLES, block);
         if (s_cb.up_block) s_cb.up_block(block);
+        blocks++;
     }
+    // A peak near 0 means that the microphone path gives silence.
+    ESP_LOGI(TAG, "capture: %u blocks (%u ms), peak %d of 32767", blocks, blocks * 20, peak);
 }
 
 static void play_loop(void) {
@@ -76,6 +86,7 @@ static void play_loop(void) {
             return;
         }
         if (act == PLAY_GATE_WAIT) {
+            s_progress_ms = now_ms();   // Waiting for the first blocks is progress too.
             vTaskDelay(pdMS_TO_TICKS(5));
             continue;
         }
@@ -89,6 +100,7 @@ static void play_loop(void) {
             if (s_cb.play_done) s_cb.play_done();
             return;
         }
+        s_progress_ms = now_ms();
     }
 }
 
@@ -110,8 +122,14 @@ static void voice_task(void *arg) {
 esp_err_t voice_start(const voice_cb_t *cb) {
     if (s_task) return ESP_ERR_INVALID_STATE;
     if (cb) s_cb = *cb;
-    esp_err_t e = bsp_audio_set_format(SAMPLE_RATE, 16, 1);
-    if (e != ESP_OK) return e;
+    // bsp_audio_init() allows a repeated call. Call it here, so the start order of the app
+    // cannot leave the codec closed.
+    esp_err_t e = bsp_audio_init();
+    if (e == ESP_OK) e = bsp_audio_set_format(SAMPLE_RATE, 16, 1);
+    if (e != ESP_OK) {
+        ESP_LOGE(TAG, "codec start failed: %s. Voice stays off.", esp_err_to_name(e));
+        return e;
+    }
     bsp_audio_set_volume(VOLUME);
     s_down_q = xQueueCreate(DOWN_QUEUE_DEPTH, IMA_BLOCK_BYTES);
     s_gate_mu = xSemaphoreCreateMutex();
@@ -171,7 +189,20 @@ void voice_down_end(void) {
     xSemaphoreGive(s_gate_mu);
 }
 
-void voice_play_enable(void) { start_mode(MODE_PLAY); }
+bool voice_ready(void) { return s_task != NULL; }
+
+void voice_play_enable(void) {
+    if (!s_task) {
+        // Without the voice task, no block can play. End the answer at once, so the
+        // flow does not wait in PLAYBACK.
+        if (s_cb.play_done) s_cb.play_done();
+        return;
+    }
+    s_progress_ms = now_ms();
+    start_mode(MODE_PLAY);
+}
+
+uint32_t voice_play_idle_ms(void) { return now_ms() - s_progress_ms; }
 
 bool voice_play_stop(void) {
     const bool ok = stop_mode(MODE_PLAY);

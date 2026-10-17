@@ -117,7 +117,14 @@ class Phone:
         return hl.encode_stream(list(struct.unpack(f"<{len(raw) // 2}h", raw)))
 
     async def answer(self, xid, blocks):
+        if not blocks:
+            # No audio: an empty playback would hide the fault. Report a failure instead.
+            log("question has 0 audio blocks: send AGENT_STATE failed (recognition)")
+            await self.send(hl.agent_state(xid, hl.FAILED, hl.FAIL_RECOGNITION))
+            return
         pcm = self.save_question(xid, blocks)
+        peak = max(abs(v) for v in pcm)
+        log(f"question level: peak {peak} of 32767" + ("  (near silence: check the microphone path)" if peak < 300 else ""))
         await self.send(hl.agent_state(xid, hl.RECOGNIZING, text="（模拟）收到问题"))
         if self.args.mode == "silent":
             log("silent mode: no answer")

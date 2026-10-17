@@ -111,6 +111,7 @@
     { "id": "ui_why_phone_silent",    "async": false },
     { "id": "ui_why_version",         "async": false },
     { "id": "ui_why_mtu",             "async": false },
+    { "id": "ui_why_audio",           "async": false },
     { "id": "audio_capture_start",    "async": true },
     { "id": "audio_capture_stop",     "async": true },
     { "id": "audio_play_start",       "async": true },
@@ -140,7 +141,8 @@
     "ui_why_link_down":    { "body_text": "msg.link_lost" },
     "ui_why_phone_silent": { "body_text": "msg.phone_silent" },
     "ui_why_version":      { "body_text": "msg.version" },
-    "ui_why_mtu":          { "body_text": "msg.voice_off" }
+    "ui_why_mtu":          { "body_text": "msg.voice_off" },
+    "ui_why_audio":        { "body_text": "msg.voice_off" }
   },
 
   "states": [

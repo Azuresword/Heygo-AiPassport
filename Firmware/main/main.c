@@ -73,6 +73,12 @@ void app_main(void) {
     }
     bsp_display_backlight(100);
 
+    // The Coach app starts the voice task and the BLE link. Both need the codec and the
+    // battery gauge, so initialize them first. (An earlier order started the voice task
+    // before the codec. The voice task then never ran, and no audio block went out.)
+    const bool audio_ok = bsp_audio_init() == ESP_OK;
+    const bool battery_ok = bsp_battery_init() == ESP_OK;
+
     esp_err_t e = coach_app_start();
     if (e != ESP_OK) {
         ESP_LOGE(TAG, "Coach app start failed: %s", esp_err_to_name(e));
@@ -92,9 +98,5 @@ void app_main(void) {
         }
     }
     s_input_ready = (e == ESP_OK);
-
-    // Sprint 1 connects audio. Initialize it now so that the log shows a hardware fault early.
-    const bool audio_ok = bsp_audio_init() == ESP_OK;
-    const bool battery_ok = bsp_battery_init() == ESP_OK;
     ESP_LOGI(TAG, "就绪:Button=%d Audio=%d Battery=%d", s_input_ready, audio_ok, battery_ok);
 }

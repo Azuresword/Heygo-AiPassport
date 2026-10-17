@@ -36,6 +36,8 @@ static const char *TAG = "coach";
 #define LVGL_LOCK_MS 500
 #define CAPTURE_LIMIT_US (20LL * 1000 * 1000)   // Document 01: one question lasts at most 20 s.
 #define AGENT_TIMEOUT_US (10LL * 1000 * 1000)   // Document 07: the first answer comes within 10 s.
+#define PLAY_WATCH_US    (1000LL * 1000)         // Check the playback once a second.
+#define PLAY_STUCK_MS    3000                    // No progress for 3 s ends the answer.
 
 typedef enum { MSG_KEY, MSG_EVENT, MSG_LINK, MSG_AGENT_STATE } msg_kind_t;
 
@@ -57,6 +59,7 @@ static coach_screen_ski_t s_ski;
 static coach_screen_exit_t s_exit;
 static esp_timer_handle_t s_capture_timer;
 static esp_timer_handle_t s_answer_timer;
+static esp_timer_handle_t s_play_watch;
 static coach_screen_id_t s_shown = COACH_SCREEN_COUNT;   // COUNT: no screen yet
 static lv_obj_t *s_blank;   // Active while the old screen is deleted. LVGL must not delete the active screen.
 static link_voice_t s_voice = LINK_VOICE_NO_LINK;
@@ -86,6 +89,17 @@ static void post_msg(const msg_t *m) {
 
 static void on_capture_limit(void *arg) { (void)arg; post_event(COACH_EVENT_CAPTURE_LIMIT); }
 static void on_answer_timeout(void *arg) { (void)arg; post_event(COACH_EVENT_AGENT_TIMEOUT); }
+
+// The voice task ends a stalled stream after 2 s. This watchdog covers a voice task
+// that stops itself, for example in a blocked speaker write. The answer then ends,
+// and the user can ask again.
+static void on_play_watch(void *arg) {
+    (void)arg;
+    if (voice_play_idle_ms() >= PLAY_STUCK_MS) {
+        ESP_LOGW(TAG, "playback made no progress for %d ms: end the answer", PLAY_STUCK_MS);
+        post_event(COACH_EVENT_ANSWER_END);
+    }
+}
 
 // Only one screen exists at a time. All three together do not fit the 24 KB LVGL pool.
 // Load the blank screen, delete the old screen, then build the new one. The peak stays
@@ -170,6 +184,8 @@ static coach_action_t status_action(link_voice_t v) {
 static void update_timers(coach_state_t from, coach_state_t to) {
     if (from == COACH_STATE_CAPTURE && to != COACH_STATE_CAPTURE) esp_timer_stop(s_capture_timer);
     if (from == COACH_STATE_WAIT_ANSWER && to != COACH_STATE_WAIT_ANSWER) esp_timer_stop(s_answer_timer);
+    if (from == COACH_STATE_PLAYBACK && to != COACH_STATE_PLAYBACK) esp_timer_stop(s_play_watch);
+    if (to == COACH_STATE_PLAYBACK && from != COACH_STATE_PLAYBACK) esp_timer_start_periodic(s_play_watch, PLAY_WATCH_US);
     if (to == COACH_STATE_CAPTURE && from != COACH_STATE_CAPTURE) {
         esp_timer_start_once(s_capture_timer, CAPTURE_LIMIT_US);
     }
@@ -180,8 +196,10 @@ static void update_timers(coach_state_t from, coach_state_t to) {
 
 static void handle(coach_event_t event) {
     // The guard: without voice, a question cannot start. The screen names the cause.
-    if (event == COACH_EVENT_OK_HOLD && s_flow.state == COACH_STATE_READY && s_voice != LINK_VOICE_OK) {
-        coach_ui_apply(why_action(s_voice));
+    // Voice needs two parts: the BLE link and the voice task.
+    if (event == COACH_EVENT_OK_HOLD && s_flow.state == COACH_STATE_READY &&
+        (s_voice != LINK_VOICE_OK || !voice_ready())) {
+        coach_ui_apply(!voice_ready() ? COACH_ACTION_UI_WHY_AUDIO : why_action(s_voice));
         event = COACH_EVENT_ASK_BLOCKED;
     }
     s_event = event;
@@ -289,8 +307,10 @@ esp_err_t coach_app_start(void) {
 
     const esp_timer_create_args_t cap = { .callback = on_capture_limit, .name = "coach_cap" };
     const esp_timer_create_args_t ans = { .callback = on_answer_timeout, .name = "coach_ans" };
+    const esp_timer_create_args_t watch = { .callback = on_play_watch, .name = "coach_play" };
     esp_err_t e = esp_timer_create(&cap, &s_capture_timer);
     if (e == ESP_OK) e = esp_timer_create(&ans, &s_answer_timer);
+    if (e == ESP_OK) e = esp_timer_create(&watch, &s_play_watch);
     if (e != ESP_OK) return e;
 
     coach_bindings_init();
