@@ -3,8 +3,8 @@
 
 It connects to an AI Passport over BLE and speaks protocol 0.2 of doc 07.
 It saves each question that the device sends as a WAV file, and then answers.
-With --runs N, it also sends N simulated runs of ski data: LIVE_STATS once each
-second during a run, then one RUN_REPORT and one TURN_SHAPE after the run ends.
+With --runs N, it also sends N simulated runs of ski data: RUN_START at the start
+of each run (D-32), LIVE_STATS once each second during a run, then one RUN_REPORT and one TURN_SHAPE after the run ends.
 It answers each TURN_REQUEST of the device with the asked groups of 8 turns.
 With --turns N, every run has N turns, so a test can check many groups.
 With --jump, it also sends SHOW_PAGE after each report. The device opens the
@@ -202,6 +202,8 @@ class Phone:
         for run_no in range(1, runs + 1):
             drop = dist = turns = 0
             log(f"run {run_no}: start, {run_s} s")
+            await self.send(hl.run_start(run_no))
+            log(f"-> RUN_START run {run_no}. The device opens the live data page.")
             for t in range(run_s):
                 stopped = run_s >= 20 and run_s // 2 <= t < run_s // 2 + 3     # A short stop mid-run.
                 speed = 0 if stopped else 250 + (t * 37) % 200                    # 25.0 to 44.9 km/h

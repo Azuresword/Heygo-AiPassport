@@ -303,9 +303,25 @@ The Turns page uses 16,824 bytes of the LVGL pool. The page and the data use abo
 Results on the host: the host tests pass, and the flow simulator self-test passes 104 of 104. Device tests: NOT RUN.
 The popup page uses at most 13,288 bytes of the LVGL pool (image 26). The peak of the whole run stays 18,760 of 21,656 bytes.
 
-## 13. Open items
+## 13. Increment 2: the phone starts a run (D-32)
+
+| File | Change |
+| --- | --- |
+| `main/protocol/ble_proto.*` | Parse and build RUN_START (0x68). The payload is the run number. Run number 0 or 0xFF gives ERROR code 7 (field). The protocol version stays 0.2. |
+| `main/link/link_core.*`, `main/link/ble_link.*` | `on_run_start` accepts RUN_START only after HELLO_ACK. It puts the run in the live data at once: run state skiing, and each value unknown. A RUN_START for the live run that did not end keeps the data. The log line "phone starts run N" marks the packet. |
+| `flows/coach.flow.json` | Add the RUN_START transitions. REPORT, TURNS, and READY go to LIVE. LIVE ignores the event. CAPTURE, WAIT_ANSWER, and PLAYBACK keep their state and run `run_after_coach`. The popup states keep their state and run `popup_back_live`. |
+| `main/coach_app.c` | `s_run_pending` keeps the run start during a talk with the coach. When the talk ends, the device sends RUN_START again in the same step and opens the live data page. A popup that stops the talk takes over the run start and closes to the live data page. |
+| `tools/phone_sim/` | `phone_sim.py --runs` sends RUN_START at the start of each run. `analyze_log.py` gives a RUN_START row: the time from "phone starts run N" to the first screen line. |
+| `tools/flow/flow_sim.*` | The button that starts a run sends RUN_START first, then LIVE_STATS each second. |
+
+Results on the host: the host tests pass, and the flow simulator self-test passes 117 of 117. Device tests: NOT RUN.
+The run start adds one flag of static RAM. It adds no screen and no string.
+
+## 14. Open items
 
 - Device tests: NOT RUN. The board is not at hand, and no phone application build follows doc 07 yet.
+- The run start (D-32): measure TC-23 on the board with `phone_sim.py --runs` and `analyze_log.py`. Check by hand a run start during a talk and during a popup. Sprint 15 holds this test.
+- The phone application team must accept RUN_START of doc 07 version 0.12, and send it at the start of each run.
 - Popups (D-31): check on the board that the first blocks of the popup audio play when a popup interrupts an answer. Sprint 14 holds this test.
 - Popups (D-31): a fall popup closes after 10 seconds with no user action. The phone application team must build the escalation of a fall alert.
 - The phone application team must accept POPUP, POPUP_END, and channel 2 of doc 07 version 0.11.

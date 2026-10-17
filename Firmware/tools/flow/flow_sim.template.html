@@ -310,7 +310,7 @@
       <div class="row" style="margin-top:12px" id="popupBtns"></div>
       <p class="note">App 弹窗（D-31）：任何状态收到 POPUP 都立即打断，录音、等回答、播放都会取消。有语音时先播完，再倒计时 10 秒；没有语音直接倒计时。任何键都只关闭弹窗，回到弹窗前的页面（教练页的各状态回到就绪）。新弹窗替换旧弹窗。</p>
       <div class="row" style="margin-top:12px" id="skiBtns"></div>
-      <p class="note">滑行数据：开始后手机每秒发一个 LIVE_STATS。暂停 5 秒后速度显示"--"。结束一趟后 2 秒发 RUN_REPORT 和 TURN_SHAPE。设备按组（8 弯一组）发 TURN_REQUEST，手机用 TURN_GROUP 回复，设备缓存前中后 3 组。弯型页：短按 OK 下一弯，长按 UP 上一弯，长按 DOWN 下一页（8 弯）；短按 UP/DOWN 换页面。打开时第一页每 40 ms 画一个点。"弯数"填数字可模拟弯很多的一趟。第 3 趟的弯型是示意。数据只改屏幕文字，不改状态。</p>
+      <p class="note">开始滑行（D-32）：手机先发 RUN_START。报告页、弯型页、教练就绪时立即跳到实时数据页；和教练对话中，等对话结束再跳；弹窗中，弹窗关闭后回实时数据页。滑行数据：开始后手机每秒发一个 LIVE_STATS。暂停 5 秒后速度显示"--"。结束一趟后 2 秒发 RUN_REPORT 和 TURN_SHAPE。设备按组（8 弯一组）发 TURN_REQUEST，手机用 TURN_GROUP 回复，设备缓存前中后 3 组。弯型页：短按 OK 下一弯，长按 UP 上一弯，长按 DOWN 下一页（8 弯）；短按 UP/DOWN 换页面。打开时第一页每 40 ms 画一个点。"弯数"填数字可模拟弯很多的一趟。第 3 趟的弯型是示意。数据只改屏幕文字，不改状态。</p>
     </div>
     <div class="card">
       <div class="section-head">
@@ -358,6 +358,7 @@ const POPUP_STATES = new Set(["POPUP_WAIT", "POPUP_PLAY", "POPUP_HOLD"]);
 const POPUP_EVENT_NAME = {
   POPUP_SHOW: "App 弹窗", POPUP_NO_AUDIO: "无语音", POPUP_AUDIO_START: "弹窗语音开始", POPUP_AUDIO_END: "弹窗语音结束",
   POPUP_TIMEOUT: "倒计时结束", RETURN_LIVE: "回实时数据", RETURN_REPORT: "回报告", RETURN_TURNS: "回弯型", RETURN_READY: "回教练",
+  RUN_START: "App 开始滑行",
 };
 const EVENT_NAME = {
   OK_HOLD: "长按 OK", OK_SHORT: "短按 OK", OK_RELEASE: "松开 OK",
@@ -557,6 +558,9 @@ const ACTIONS = {
     clearTimer("hold");
     startTimer("hold", POPUP_HOLD_MS, () => fire("POPUP_TIMEOUT", "设备计时"));
   },
+  // D-32. The same as run_action in main/coach_app.c.
+  run_after_coach() { runPending = true; },
+  popup_back_live() { popupReturn = "RETURN_LIVE"; },
   popup_close() {
     const reason = ctxEvent === "POPUP_TIMEOUT" ? "0（倒计时结束）" : "1（按键）";
     if (link && popupOpen) ble("dp", "POPUP_END", `xid=${hex(popupOpen)} reason=${reason}`);
@@ -601,7 +605,11 @@ const statusText = () => link ? S["status.link_up"] : S["status.link_down"];
 function fire(ev, src) {
   if (ev === "POPUP_SHOW") {
     // Keep the page before the first popup. A new popup keeps it.
-    if (!POPUP_STATES.has(st)) popupReturn = RETURN_OF[st] || "RETURN_READY";
+    if (!POPUP_STATES.has(st)) {
+      popupReturn = RETURN_OF[st] || "RETURN_READY";
+      if (runPending) popupReturn = "RETURN_LIVE";   // D-32: the popup ends the talk with the coach.
+      runPending = false;
+    }
     clearTimer("pwait"); clearTimer("hold");
   }
   // The same guard as main/coach_app.c: without the link, a question cannot start.
@@ -625,8 +633,13 @@ function fire(ev, src) {
     `<span class="acts">${(t.actions || []).map(chip).join("")}</span>`);
   render();
   // The same as handle() in main/coach_app.c: these steps run at once, with no event between them.
+  // D-32: the talk with the coach ended, so the kept run start opens the live data page now.
+  const talkEnded = ["READY", "REPORT", "TURNS", "LIVE"].includes(t.to);
+  const runNow = runPending && talkEnded && t.to !== "LIVE";
+  if (talkEnded) runPending = false;
   if (afterEvent) { const e = afterEvent; afterEvent = null; fire(e, "设备"); }
   else if (ev === "POPUP_SHOW" && popup && !popup.audio) fire("POPUP_NO_AUDIO", "设备");
+  else if (runNow) fire("RUN_START", "设备：对话已结束");
   return true;
 }
 const RETURN_OF = { LIVE: "RETURN_LIVE", REPORT: "RETURN_REPORT", TURNS: "RETURN_TURNS" };
@@ -718,6 +731,7 @@ function buildPhone() {
 
 // ---------------------------------------------------------------- popups (D-31)
 // The same texts as main/ui/popup_view.c. The Chinese texts come from assets/ui/strings.json.
+let runPending = false;   // D-32: a run started during a talk with the coach.
 let popup, popupIn, popupOpen, popupNext, popupReturn, afterEvent, popupAnimate = false, popupFrame = 0;
 const POPUP_KINDS = {
   1: ["popup.fall", "FALL ALERT", "popup.title_fall"], 2: ["popup.voice", "BROADCAST", "popup.title_voice"],
@@ -1080,6 +1094,10 @@ function skiStart() {
   live = { run_no: runNo, state: RUN_SKIING, speed_dkmh: U16, drop_m: 0, distance_m: 0, turns: 0, time_s: 0 };
   liveLine = null; liveCount = 0; skiPaused = false;
   addLog("bleLog", `<b>第 ${runNo} 趟开始</b>：手机判定开始滑行`);
+  // D-32: RUN_START first. The device opens the live data page, or keeps the start for later.
+  ble("pd", "RUN_START", `run=${runNo}`);
+  liveAt = performance.now();
+  fire("RUN_START", "手机");
   skiStep();
   skiTimer = setInterval(skiStep, 1000);
 }
@@ -1116,7 +1134,7 @@ function buildSki() {
     b.type = "button"; b.className = "ctl"; b.textContent = label; b.title = title; if (id) b.id = id; b.onclick = fn;
     box.appendChild(b);
   };
-  add("开始滑行", "LIVE_STATS 每秒一帧", skiStart, "skiStartBtn");
+  add("开始滑行", "RUN_START，然后 LIVE_STATS 每秒一帧", skiStart, "skiStartBtn");
   add("暂停发送", "停发 LIVE_STATS，5 秒后数据过期", () => {
     if (!skiTimer) return toast("没有进行中的一趟");
     skiPaused = !skiPaused; $("skiPauseBtn").textContent = skiPaused ? "恢复发送" : "暂停发送";
@@ -1314,6 +1332,7 @@ function reset() {
   mic = spk = false; link = false; xidNext = 1; xid = 0; last = null; timers = {}; phoneTimers = [];
   upCount = downCount = 0; upLine = downLine = null; seenIssues = new Set();
   if (typeof skiTimer !== "undefined") skiStop();
+  runPending = false;
   popup = popupIn = null; popupOpen = 0; popupNext = 0x80; popupReturn = "RETURN_READY"; afterEvent = null;
   live = report = phoneRun = dev = null; turnSel = turnDrawnPts = 0; turnDrawn = ""; turnPrevDrawing = false; liveAt = reportAt = 0; runNo = 0; skiPaused = false; liveLine = null; liveCount = 0;
   t0 = performance.now();

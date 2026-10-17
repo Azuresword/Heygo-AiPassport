@@ -2,7 +2,7 @@
 
 # Scrum backlog and delivery plan
 
-Version: 0.10. Date: 2026-10-17. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. Increment 2 is in the backlog. The team closed no story.
+Version: 0.11. Date: 2026-10-17. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. Increment 2 is in the backlog. The team closed no story.
 
 Related documents: [Requirements](01-product-requirements.md), [Architecture](02-architecture.md), [Validation and decisions](04-validation-and-decisions.md), [Decision amendments](05-decision-amendments.md), [Sprint 0 plan](06-sprint-0-plan.md), [BLE protocol draft](07-ble-protocol-draft.md), and [Four-hour Sprint roadmap](08-sprint-roadmap.md).
 
@@ -14,7 +14,7 @@ The skier keeps the phone in a pocket and the gloves on.
 Two increments move toward this goal:
 
 - **Increment 1, the Coach voice chain.** P0 stories US-01, US-06, US-07, US-08, US-15, US-17, and US-20.
-- **Increment 2, live data and reports.** P1 stories US-02, US-21, and US-03. D-22 lets the team develop it in parallel with the device acceptance of Increment 1.
+- **Increment 2, live data and reports.** P1 stories US-02, US-21, US-23, and US-03. D-22 lets the team develop it in parallel with the device acceptance of Increment 1.
 
 ## 2. Planning assumptions
 
@@ -53,6 +53,7 @@ The user made every scope decision so far, including D-17.
 | US-20 Recovery | REQ-20 | P0 | Re-estimate | Firmware and phone | Sprint 1 code, Sprint 6 acceptance |
 | US-02 Data sync | REQ-02 | P1, Increment 2 | 3–5 | Phone and firmware | Sprint 2 code, Sprint 7 acceptance |
 | US-21 Live data on the live data page | REQ-21 | P1, Increment 2 | 5–8 | Firmware and design | Sprint 3 code, Sprints 7 and 9 acceptance |
+| US-23 Run start opens the live data page | REQ-23 | P1, Increment 2 (D-32) | 2–3 | Phone and firmware | Sprint 15 code and acceptance |
 | US-03 Run report | REQ-03 | P1, Increment 2 | 3–5 | Firmware and design | Sprint 4 code, Sprint 7 acceptance |
 | US-05 Turn shape and replay | REQ-05 | P1, Increment 3 (D-30) | 5–8 | Phone, firmware, and design | Sprint 11 code, Sprint 12 acceptance |
 | US-22 Phone popups | REQ-22 | P1, Increment 4 (D-31) | 5–8 | Phone and firmware | Sprint 13 code, Sprint 14 acceptance |
@@ -87,7 +88,7 @@ Per section 9, each story needs device tests. Some stories also need the real ph
 
 The simulator and `phone_sim` show protocol behavior only. They cannot satisfy a device test.
 
-Known gaps, from section 13 of the [firmware change notes](../Firmware/docs/heygo-changes.md):
+Known gaps, from section 14 of the [firmware change notes](../Firmware/docs/heygo-changes.md):
 
 - A PLAY_START that arrives during capture is lost. The device then shows a timeout. D-20 forbids the phone to send it at that time. The code needs no change. The phone application team must still accept this rule.
 - The battery label on the screen stays empty. D-18 keeps the battery level on the screen.
@@ -192,6 +193,20 @@ As a skier, I want to read my speed and this run at a glance. Then I need not ta
 - Dependency: US-02.
 - Verification: TC-21.
 
+### US-23: the run start opens the live data page
+
+As a skier, I want to see the live data page when I start a run. Then I need not press a key with gloves on the slope.
+
+- Acceptance: when the phone detects the start of a run, it sends RUN_START with the run number (D-32).
+- Acceptance: on the Report page, the Turns page, or the idle Coach page, the device opens the live data page at once. On the live data page, only the data changes.
+- Acceptance: before the first LIVE_STATS, the page shows "第 N 趟 · 滑行中" and "--" for each value. A RUN_START for the run on the screen keeps the data.
+- Acceptance: during a talk with the coach, the talk continues. The device opens the live data page when the talk ends, or when the user leaves with a short UP or DOWN press.
+- Acceptance: during a popup, the popup stays. When it closes, the device opens the live data page, not the page before the popup.
+- Acceptance: a popup that stops a talk with a kept run start also closes to the live data page.
+- Acceptance: run number 0 or 0xFF gets ERROR code 7. The page and the data do not change.
+- Dependency: US-21 and US-22.
+- Verification: TC-23.
+
 ### US-03: run report
 
 As a skier, I want the problem of each run and one tip after the run. Then I know what to change on the next run.
@@ -259,6 +274,7 @@ Each Sprint lasts four hours. The [Four-hour Sprint roadmap](08-sprint-roadmap.m
 | 12 | Accept Increment 3 on the board with `phone_sim`, then with the real phone application. | Not started. Needs the board and a phone application that answers TURN_REQUEST. |
 | 13 | Increment 4: the popup page and the two popup messages. Host only. | Code on the branch `feat/app-popups`. Host tests pass. Device tests NOT RUN. |
 | 14 | Accept Increment 4 on the board with `phone_sim --popups`. | Not started. Needs the board. |
+| 15 | The run start (D-32): the phone starts a run, and the device opens the live data page. | Code on the branch `feat/run-start`. Host tests pass. Device test of TC-23 NOT RUN. |
 
 ## 9. Definition of Done
 

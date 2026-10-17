@@ -1,7 +1,7 @@
 {
   "app": "coach",
 
-  "title": "Four flat pages: live data, run report, turn shape, and AI coach (D-29, D-30), with phone popups (D-31)",
+  "title": "Four flat pages: live data, run report, turn shape, and AI coach (D-29, D-30), with phone popups (D-31) and the run start (D-32)",
 
   "strings_file": "../../assets/ui/strings.json",
 
@@ -220,7 +220,9 @@
     {"id": "ui_show_popup", "async": false, "comment": "D-31. coach_app.c writes the popup texts from main/ui/popup_view.c."},
     {"id": "popup_countdown", "async": false, "comment": "Start the 10-second timer of the popup."},
     {"id": "popup_close", "async": true, "comment": "Send POPUP_END, then run the RETURN_* event of the saved page in the same step."},
-    {"id": "audio_play_cut", "async": true, "comment": "Stop the speaker. Unlike audio_play_stop, keep the queued blocks."}
+    {"id": "audio_play_cut", "async": true, "comment": "Stop the speaker. Unlike audio_play_stop, keep the queued blocks."},
+    {"id": "run_after_coach", "async": false, "comment": "D-32. Keep the run start. coach_app.c opens the live data page when the talk with the coach ends."},
+    {"id": "popup_back_live", "async": false, "comment": "D-32. After the popup, go to the live data page, not to the saved page."}
   ],
 
   "ui_effects": {
@@ -415,6 +417,15 @@
     {"from": "POPUP_HOLD", "on": "RETURN_LIVE", "to": "LIVE", "actions": ["ui_show_live"], "comment": "popup_close sends one RETURN_* event: the page before the popup. The Coach page states go back to READY."},
     {"from": "POPUP_HOLD", "on": "RETURN_REPORT", "to": "REPORT", "actions": ["ui_show_report"]},
     {"from": "POPUP_HOLD", "on": "RETURN_TURNS", "to": "TURNS", "actions": ["ui_show_turns"]},
-    {"from": "POPUP_HOLD", "on": "RETURN_READY", "to": "READY", "actions": [], "comment": "No action: the Coach page keeps its texts."}
+    {"from": "POPUP_HOLD", "on": "RETURN_READY", "to": "READY", "actions": [], "comment": "No action: the Coach page keeps its texts."},
+    {"from": "REPORT", "on": "RUN_START", "to": "LIVE", "actions": ["ui_show_live"], "comment": "D-32. The phone starts a run. The device opens the live data page. LIVE ignores the event, and the data refresh shows the new run."},
+    {"from": "TURNS", "on": "RUN_START", "to": "LIVE", "actions": ["ui_show_live"]},
+    {"from": "READY", "on": "RUN_START", "to": "LIVE", "actions": ["ui_show_live"]},
+    {"from": "CAPTURE", "on": "RUN_START", "to": "CAPTURE", "actions": ["run_after_coach"], "comment": "D-32. The talk with the coach goes on. coach_app.c opens the live data page when the talk ends."},
+    {"from": "WAIT_ANSWER", "on": "RUN_START", "to": "WAIT_ANSWER", "actions": ["run_after_coach"]},
+    {"from": "PLAYBACK", "on": "RUN_START", "to": "PLAYBACK", "actions": ["run_after_coach"]},
+    {"from": "POPUP_WAIT", "on": "RUN_START", "to": "POPUP_WAIT", "actions": ["popup_back_live"], "comment": "D-32. The popup stays. After it closes, the device goes to the live data page."},
+    {"from": "POPUP_PLAY", "on": "RUN_START", "to": "POPUP_PLAY", "actions": ["popup_back_live"]},
+    {"from": "POPUP_HOLD", "on": "RUN_START", "to": "POPUP_HOLD", "actions": ["popup_back_live"]}
   ]
 }

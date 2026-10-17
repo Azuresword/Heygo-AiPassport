@@ -275,6 +275,28 @@
   ok(st === "READY" && /PLAY_END xid=0x85 → 设备丢弃/.test(bleLog()), "25 the late popup audio is dropped");
   ok(!both, "25 capture and playback never run together");
 
+  // D-32: RUN_START opens the live data page. A talk with the coach and a popup go on first.
+  await tap("UP"); await tap("UP");
+  ok(st === "REPORT", "26 on the Report page");
+  skiStart(); await sleep(50);
+  ok(st === "LIVE" && /RUN_START run=2/.test(bleLog()) && shown("ski.sub").startsWith("第 2 趟"), "26 RUN_START opens the live data page with the new run");
+  skiEnd(); await sleep(2200);
+  await hold("OK"); await hold("OK", 1200); await sleep(2600);
+  ok(st === "PLAYBACK" && spk, "27 the answer plays");
+  skiStart(); await sleep(50);
+  ok(st === "PLAYBACK" && spk && !/AGENT_CANCEL/.test(bleLog().split("RUN_START").pop()), "27 RUN_START does not stop the answer");
+  await sleep(6000);
+  ok(st === "LIVE" && !spk, "27 after the answer, the device opens the live data page");
+  skiEnd(); await sleep(2200);
+  await tap("DOWN"); await tap("DOWN");
+  ok(st === "TURNS", "28 on the Turns page");
+  phonePopup(4, false); await sleep(50);
+  skiStart(); await sleep(50);
+  ok(st === "POPUP_HOLD", "28 RUN_START keeps the popup");
+  await tap("OK");
+  ok(st === "LIVE", "28 after the popup, the device opens the live data page, not the Turns page");
+  skiEnd(); await sleep(2200);
+
   const pre = document.createElement("pre");
   pre.id = "selftest";
   pre.textContent = out.join("\n") + `\nRESULT ${fails ? "FAIL" : "PASS"} ${out.length - fails}/${out.length}`;

@@ -2,7 +2,7 @@
 
 # BLE Protocol Draft
 
-Version: 0.11. Date: 2026-10-17. Status: the phone application team accepted protocol 0.2. That team must accept SHOW_PAGE from version 0.7, the field meanings from version 0.8, and the three turn messages from version 0.9. Version 0.10 adds the device rules that the phone application team asked for. That team must also accept the popup messages from version 0.11.
+Version: 0.12. Date: 2026-10-17. Status: the phone application team accepted protocol 0.2. That team must accept SHOW_PAGE from version 0.7, the field meanings from version 0.8, and the three turn messages from version 0.9. Version 0.10 adds the device rules that the phone application team asked for. That team must also accept the popup messages from version 0.11 and RUN_START from version 0.12.
 
 ## 1. Purpose and scope
 
@@ -34,7 +34,10 @@ Version 0.9 adds the Increment 3 messages TURN_SHAPE, TURN_GROUP, and TURN_REQUE
 Section 17 lists these changes.
 
 Version 0.11 adds the Increment 4 messages POPUP and POPUP_END, the popup audio channel, and the popup page, per D-31. The protocol version stays 0.2.
-Section 18 lists these changes.
+Section 19 lists these changes.
+
+Version 0.12 adds RUN_START, per D-32. When the phone starts a run, the device opens the live data page. The protocol version stays 0.2.
+Section 20 lists these changes.
 
 The draft follows three rules:
 
@@ -311,6 +314,8 @@ No side built those three messages.
 | 0x60 | LIVE_STATS | P to D | The 12 bytes in the next table | Once each second from the start of a run, until the run ends |
 | 0x61 | RUN_REPORT | P to D | 7 fixed bytes, then two texts | Once after each run |
 
+RUN_START (0x68) marks the start of a run. The section "Run start (D-32)" gives it.
+
 Both messages use `xid` 0 and `seq` 0. The device sends no acknowledgment.
 
 **LIVE_STATS payload**
@@ -344,6 +349,7 @@ One RUN_REPORT holds at most 107 bytes. It needs an MTU of 110 or more.
 The phone follows these rules:
 
 - A run starts when the phone detects skiing. It ends when the phone detects the end of the run. The phone application team sets the detection rules.
+- At the start of a run, the phone sends RUN_START first (D-32).
 - During a run, the phone sends one LIVE_STATS each second.
 - When a run ends, the phone sends one LIVE_STATS with run state 3. It then sends no LIVE_STATS until the next run starts.
 - After a run ends, the phone sends the RUN_REPORT of that run. The report can arrive later than the end packet.
@@ -533,6 +539,37 @@ The device follows these rules:
 - After each ERROR, the device shows nothing new. A popup that shows already stays.
 - The device accepts POPUP only after a HELLO_ACK with the same protocol version. Before that, it ignores the packet and sends no ERROR.
 
+### Run start (D-32)
+
+| Type | Name | Direction | Payload | When |
+| --- | --- | --- | --- | --- |
+| 0x68 | RUN_START | P to D | Run number (1) | When the phone detects the start of a run, before the first LIVE_STATS of that run |
+
+The message uses `xid` 0 and `seq` 0. The device sends no acknowledgment.
+
+**RUN_START payload**
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 1 | Run number today, from 1 to 254, as in LIVE_STATS. 0 and 0xFF are not valid. |
+
+The phone follows these rules:
+
+- At the start of each run, the phone sends one RUN_START. Then it sends LIVE_STATS once each second, as before.
+- The run number of RUN_START is the run number of the LIVE_STATS packets that follow.
+- The phone can send RUN_START on every page and in every state. The device decides when the page changes.
+
+The device follows these rules:
+
+- The device puts the run in its live data at once. It sets run state 1 (skiing), the run number, and the unknown value in each other field. The live data page shows "第 N 趟 · 滑行中" and "--".
+- If the live data holds the same run number already, and that run did not end, the device keeps the data.
+- On the Report page, the Turns page, or the idle Coach page, the device opens the live data page at once. On the live data page, only the data changes.
+- During capture, the wait, or the playback, the device keeps the run start and cancels nothing. When the talk with the coach ends, the device opens the live data page.
+- During a popup, the popup stays. When it closes, the device opens the live data page, not the page before the popup.
+- After the page change, CONTEXT reports mode 0 and page 0.
+- Run number 0 or 0xFF gets ERROR code 7. An empty payload gets code 2. After each ERROR, the page and the data do not change.
+- The device accepts RUN_START only after a HELLO_ACK with the same protocol version. Before that, it ignores the packet and sends no ERROR.
+
 ## 7. Audio blocks
 
 ### IMA ADPCM block
@@ -605,6 +642,7 @@ If no block and no PLAY_END arrive for 2 seconds, the device ends playback and f
 | Silence before the device marks data out of date during a run | 5 seconds with no LIVE_STATS | Device |
 | Time before the report shows its receive time | 60 seconds after RUN_REPORT arrives | Device |
 | Screen update after a LIVE_STATS or RUN_REPORT packet arrives | At most 300 ms at the 95th percentile | Device |
+| Change to the live data page after RUN_START arrives, with no talk and no popup | At most 300 ms at the 95th percentile | Device |
 | P1: TEAM_GRANT or TEAM_DENY after TEAM_REQUEST | At most 1,500 ms. After that, the device treats the request as a timeout. | Device |
 | Before the answer starts: from AGENT_END to the first AGENT_STATE, and between two AGENT_STATE packets | At most 10 seconds. After that, the device shows a timeout and sends AGENT_CANCEL. | Device |
 | Capture stop after OK release or cancellation | At most 100 ms | Device |
@@ -730,6 +768,7 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 17. Keep every group of the last run. Answer each TURN_REQUEST with one TURN_GROUP for each asked group.
 18. Increment 4: to show a popup, send POPUP with a new phone `xid`. For a popup with audio, send PLAY_START on channel 2 within 5 seconds.
 19. Read POPUP_END. A fall alert can end with reason 0 and no key press. Start the escalation of a fall alert on the phone.
+20. At the start of each run, send RUN_START with the run number, before the first LIVE_STATS (D-32).
 
 ## 12. Open items
 
@@ -742,6 +781,7 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 - The phone application team finds a source of measured track data, and sets the scale of each group. Q-02 tracks this item.
 - The phone application team decides when to send each popup kind, and how to escalate a fall alert.
 - Measure on the board whether the first blocks of the popup audio play when a popup interrupts an answer.
+- Measure on the board the time from RUN_START to the live data page (TC-23).
 
 ## 13. Changes in version 0.4
 
@@ -843,7 +883,20 @@ D-31 adds phone popups for Increment 4.
 The popup messages add messages and a channel value. They change no current packet, so the protocol version stays 0.2.
 Firmware at commit `421b15c` or older answers POPUP with ERROR code 1, and ignores a PLAY_START on channel 2. A phone application that does not know page 6 treats it as an unknown page.
 
-## 20. Related documents
+## 20. Changes in version 0.12
+
+D-32 lets the phone start a run on the device. This change belongs to Increment 2.
+
+| No. | Change | Section |
+| --- | --- | --- |
+| 1 | Add RUN_START (0x68), from the phone to the device, with the run number. | 6 |
+| 2 | The device opens the live data page at RUN_START. During a talk with the coach, it opens the page after the talk ends. During a popup, the popup closes to the live data page. | 6 |
+| 3 | Add the 300 ms limit for the screen change after RUN_START. | 8 |
+
+RUN_START adds one message and changes no current packet, so the protocol version stays 0.2.
+Firmware at commit `8515ef3` or older answers RUN_START with ERROR code 1 (unknown type). The phone application can ignore that error. The page then changes only with the keys.
+
+## 21. Related documents
 
 - [System Architecture](02-architecture.md).
 - [Validation and Decisions](04-validation-and-decisions.md).

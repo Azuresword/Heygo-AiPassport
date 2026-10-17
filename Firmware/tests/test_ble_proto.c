@@ -412,7 +412,23 @@ static void popup(void) {
     assert(strcmp(bp_type_name(BP_POPUP), "POPUP") == 0 && strcmp(bp_type_name(BP_POPUP_END), "POPUP_END") == 0);
 }
 
+static void run_start(void) {
+    uint8_t buf[8];
+    bp_packet_t p;
+    uint8_t run = 0;
+    size_t n = bp_build_run_start(buf, sizeof buf, 4);
+    assert(n == 5 && buf[0] == BP_RUN_START && buf[2] == 0 && buf[4] == 4);
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_run_start(&p, &run) == BP_OK && run == 4);
+    assert(bp_build_run_start(buf, sizeof buf, 0) == 0 && bp_build_run_start(buf, sizeof buf, 0xFF) == 0);
+    n = bp_build_run_start(buf, sizeof buf, 1);
+    buf[4] = 0;
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_run_start(&p, &run) == BP_ERR_FIELD);
+    assert(bp_parse(buf, 4, &p) == BP_ERR_LENGTH);
+    assert(strcmp(bp_type_name(BP_RUN_START), "RUN_START") == 0);
+}
+
 int main(void) {
+    run_start();
     popup();
     type_names();
     turn_shape();

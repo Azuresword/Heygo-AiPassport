@@ -100,6 +100,12 @@ class PacketTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             hl.show_page(1)
 
+    def test_run_start(self):
+        self.assertEqual(hl.run_start(4), c_build("bp_build_run_start", ctypes.c_uint8(4)))
+        for bad in (0, 255):
+            with self.assertRaises(ValueError):
+                hl.run_start(bad)
+
     def test_popup(self):
         c = c_build("bp_build_popup", ctypes.c_uint8(0x81), ctypes.c_uint8(1), ctypes.c_bool(True),
                     "检测到摔倒".encode(), "需要帮助吗".encode())

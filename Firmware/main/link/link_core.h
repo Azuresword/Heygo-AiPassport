@@ -118,6 +118,9 @@ typedef struct {
     void (*popup)(void *ctx, const link_popup_t *p);
     // The popup audio starts. audio_down and play_end follow.
     void (*popup_play_start)(void *ctx);
+    // D-32: the phone started run run_no. The core already put it in the live data, with
+    // every value unknown, so the Ski page shows the run before the first LIVE_STATS.
+    void (*run_start)(void *ctx, uint8_t run_no);
 } link_io_t;
 
 typedef struct {

@@ -43,6 +43,7 @@ typedef enum {
     BP_TURN_REQUEST  = 0x65,
     BP_POPUP         = 0x66,
     BP_POPUP_END     = 0x67,
+    BP_RUN_START     = 0x68,
 } bp_type_t;
 
 typedef enum {
@@ -195,6 +196,8 @@ typedef struct {
 // Gives BP_ERR_FIELD for an unknown kind, a bad audio flag, or bad UTF-8, and BP_ERR_TOO_LARGE for a long text.
 bp_err_t bp_read_popup(const bp_packet_t *p, bp_popup_t *out);
 bp_err_t bp_read_popup_end(const bp_packet_t *p, uint8_t *reason);
+// D-32: the phone starts a run. Gives BP_ERR_FIELD for run number 0 or 0xFF.
+bp_err_t bp_read_run_start(const bp_packet_t *p, uint8_t *run_no);
 
 // Each builder returns the packet length, or 0 when `cap` is too small or a value is invalid.
 size_t bp_build_hello(uint8_t *out, size_t cap, uint8_t codec_mask, uint16_t mtu, const char *fw);
@@ -223,6 +226,7 @@ size_t bp_build_turn_group(uint8_t *out, size_t cap, uint8_t run_no, uint8_t gro
 size_t bp_build_turn_request(uint8_t *out, size_t cap, uint8_t run_no, uint8_t first_group, uint8_t count);
 size_t bp_build_popup(uint8_t *out, size_t cap, uint8_t xid, uint8_t kind, bool audio, const char *title, const char *body);
 size_t bp_build_popup_end(uint8_t *out, size_t cap, uint8_t xid, uint8_t reason);
+size_t bp_build_run_start(uint8_t *out, size_t cap, uint8_t run_no);
 
 // The name of a type, for logs. Returns "?" for an unknown type.
 const char *bp_type_name(uint8_t type);

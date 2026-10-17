@@ -302,11 +302,26 @@ D-29 去掉滑行模式、休息模式和退出确认，改为三个平级页面
 
 主机上的结果：主机测试通过，流程模拟器自测 104/104 通过。设备测试：未运行。
 弹窗页最多占用 LVGL 内存池 13,288 字节（26 号图）。整个运行的峰值仍为 18,760 / 21,656 字节。
-本文没有记录弹窗页占用的 LVGL 内存池大小。
 
-## 13. 待定事项
+## 13. 增量 2：手机开始滑行（D-32）
+
+| 文件 | 改动 |
+| --- | --- |
+| `main/protocol/ble_proto.*` | 解析和生成 RUN_START（0x68）。负载是趟数。趟数为 0 或 0xFF 时给出错误码 7（字段错误）。协议版本保持 0.2。 |
+| `main/link/link_core.*`、`main/link/ble_link.*` | `on_run_start` 只在 HELLO_ACK 之后接受 RUN_START。它立即把这一趟写进实时数据：滑行状态为滑行中，所有数值为未知。实时数据里已经是这一趟且还没结束时，数据不变。日志行"phone starts run N"标记这个包。 |
+| `flows/coach.flow.json` | 新增 RUN_START 转移。REPORT、TURNS、READY 进入 LIVE。LIVE 忽略这个事件。CAPTURE、WAIT_ANSWER、PLAYBACK 状态不变，执行 `run_after_coach`。弹窗状态不变，执行 `popup_back_live`。 |
+| `main/coach_app.c` | `s_run_pending` 在和教练对话时记下开始滑行。对话结束时，设备在同一步再发一次 RUN_START，打开实时数据页。弹窗打断对话时，接过记下的开始滑行，关闭后回到实时数据页。 |
+| `tools/phone_sim/` | `phone_sim.py --runs` 在每趟开始时发送 RUN_START。`analyze_log.py` 输出 RUN_START 行：从"phone starts run N"到第一行屏幕日志的时间。 |
+| `tools/flow/flow_sim.*` | "开始滑行"按钮先发 RUN_START，然后每秒发 LIVE_STATS。 |
+
+主机上的结果：主机测试通过，流程模拟器自测 117/117 通过。设备测试：未运行。
+开始滑行只多了一个静态标志位，没有新界面，也没有新文字。
+
+## 14. 待定事项
 
 - 设备测试：未运行。板子不在手边，也还没有符合文档 07 的手机应用版本。
+- 开始滑行（D-32）：在开发板上用 `phone_sim.py --runs` 和 `analyze_log.py` 测 TC-23。手动检查对话中和弹窗中开始滑行。这项测试在 Sprint 15。
+- 手机应用团队需要确认文档 07 的 0.12 版中的 RUN_START，并在每趟开始时发送。
 - 弹窗（D-31）：在开发板上确认，弹窗打断回答时，弹窗语音的开头几块能播出。这项测试在 Sprint 14。
 - 弹窗（D-31）：摔倒弹窗在 10 秒后自动关闭，不需要用户操作。手机应用团队必须实现摔倒提醒的升级处理。
 - 手机应用团队需要确认文档 07 的 0.11 版中的 POPUP、POPUP_END 和通道 2。

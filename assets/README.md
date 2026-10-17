@@ -114,6 +114,7 @@ Open `sim/coach-flow.html` in a browser. It needs no server and no network.
 - The phone panel answers each question automatically. Select a scenario, or turn off the automatic answer and send each phone event by hand.
 - The logs show each transition, its actions, and each BLE message.
 - The ski data buttons start a run, pause the packets, and end the run. LIVE_STATS comes once each second, and RUN_REPORT comes 2 seconds after the end.
+- The start of a run sends RUN_START first (D-32). The device opens the live data page at once, or after the talk with the coach or the popup ends.
 - A short DOWN press on the idle Coach page opens the Report page. A short UP press returns.
 - The popup buttons send a popup of each kind, with or without audio (D-31). A bar shows the 10-second countdown. The diagram shows the three popup states in a zone of their own.
 

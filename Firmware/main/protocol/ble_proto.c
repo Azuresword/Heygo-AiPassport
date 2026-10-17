@@ -37,6 +37,7 @@ static int min_payload(uint8_t type) {
     case BP_TURN_REQUEST:  return BP_TURN_REQUEST_SIZE;
     case BP_POPUP:         return BP_POPUP_FIXED;
     case BP_POPUP_END:     return 1;
+    case BP_RUN_START:     return 1;
     default:               return -1;
     }
 }
@@ -536,6 +537,22 @@ size_t bp_build_popup_end(uint8_t *out, size_t cap, uint8_t xid, uint8_t reason)
     return n;
 }
 
+bp_err_t bp_read_run_start(const bp_packet_t *p, uint8_t *run_no) {
+    bp_err_t e = expect(p, BP_RUN_START);
+    if (e) return e;
+    if (p->payload[0] == 0 || p->payload[0] == BP_U8_UNKNOWN) return BP_ERR_FIELD;
+    *run_no = p->payload[0];
+    return BP_OK;
+}
+
+size_t bp_build_run_start(uint8_t *out, size_t cap, uint8_t run_no) {
+    if (run_no == 0 || run_no == BP_U8_UNKNOWN) return 0;
+    size_t n = header(out, cap, 1, BP_RUN_START, 0, 0);
+    if (!n) return 0;
+    out[4] = run_no;
+    return n;
+}
+
 bp_err_t bp_check_version(uint8_t major, uint8_t minor) {
     return (major == BP_PROTO_MAJOR && minor == BP_PROTO_MINOR) ? BP_OK : BP_ERR_VERSION;
 }
@@ -596,6 +613,7 @@ const char *bp_type_name(uint8_t type) {
     case BP_TURN_REQUEST: return "TURN_REQUEST";
     case BP_POPUP: return "POPUP";
     case BP_POPUP_END: return "POPUP_END";
+    case BP_RUN_START: return "RUN_START";
     default: return "?";
     }
 }

@@ -46,15 +46,16 @@ python3 tools/phone_sim/phone_sim.py --mode wav --wav /tmp/a.wav
 python3 tools/phone_sim/phone_sim.py --runs 3 --run-s 30
 ```
 
-1. 滑行中，每秒发送一个 LIVE_STATS。
-2. 一趟不少于 20 秒时，中间发送 3 秒的"静止"状态。
-3. 第 2 趟没有速度。设备必须把速度显示为"--"，绝不显示 0。
-4. 一趟结束时，发送一个"本趟结束"状态的 LIVE_STATS。
-5. 2 秒后，发送一个 RUN_REPORT。
-6. 然后发送一个 TURN_SHAPE，内容是这一趟的弯数（D-30）。第 3 趟发送示意弯型。
+1. 每趟开始时，发送一个 RUN_START，带趟数（D-32）。设备打开实时数据页。和教练对话中或弹窗中，设备稍后再打开。
+2. 滑行中，每秒发送一个 LIVE_STATS。
+3. 一趟不少于 20 秒时，中间发送 3 秒的"静止"状态。
+4. 第 2 趟没有速度。设备必须把速度显示为"--"，绝不显示 0。
+5. 一趟结束时，发送一个"本趟结束"状态的 LIVE_STATS。
+6. 2 秒后，发送一个 RUN_REPORT。
+7. 然后发送一个 TURN_SHAPE，内容是这一趟的弯数（D-30）。第 3 趟发送示意弯型。
    设备每发一个 TURN_REQUEST，就为每个请求的组回复一个 TURN_GROUP。
    加上 `--turns 44` 时，每趟都有 44 个弯，设备上就有 6 组。加上 `--turns 0` 时，发送没有弯型数据的一趟。
-7. 接着 10 秒不发送任何数据，模拟坐缆车。5 秒后，设备标明数据过期。
+8. 接着 10 秒不发送任何数据，模拟坐缆车。5 秒后，设备标明数据过期。
 
 加上 `--jump` 时，每份报告之后再发送 SHOW_PAGE。设备在滑行页或教练页空闲时打开报告页（D-28）。
 
@@ -102,6 +103,7 @@ python3 tools/phone_sim/phone_sim.py --popups 6 --popup-gap 5
 | 8 | 启动 `phone_sim.py --runs 2 --jump`。第 1 趟停在滑行页。第 2 趟结束时提一个问题。 | 第 1 趟打开报告页。第 2 趟提问时页面不变。 | TC-03 |
 | 9 | 启动 `phone_sim.py --runs 3 --turns 44`。每趟结束后进入弯型页：在实时数据页短按两次 DOWN。短按几次 OK，长按 UP，再长按 DOWN。 | 弯型页画出 8 个弯。OK 选中下一弯，长按 UP 选中上一弯，长按 DOWN 跳到下一页，提示条显示每个按键的作用。第 3 趟之后页面显示"示意"。 | TC-05 |
 | 10 | 启动 `phone_sim.py --popups 8`，用按键关闭其中一个弹窗。再启动 `phone_sim.py --popups 6 --popup-gap 5`。 | 每个弹窗都立即显示。日志显示 POPUP_END，原因为 `timeout`、`key` 或 `replaced`。每个弹窗结束后，设备显示弹窗前的页面。 | TC-22 |
+| 11 | 启动 `phone_sim.py --runs 20 --run-s 20`。每趟开始前，翻到报告页、弯型页或教练页。其中 3 趟开始时正在提问。再启动 `phone_sim.py --runs 5 --popups 10 --popup-gap 7`，找一次弹窗中开始滑行。 | 每趟都打开实时数据页，显示"第 N 趟 · 滑行中"。提问中，回答结束后才换页。弹窗关闭后回到实时数据页。`analyze_log.py` 的 RUN_START 行第 95 百分位不超过 300 ms。 | TC-23 |
 
 ## 日志分析
 
@@ -116,9 +118,10 @@ python3 tools/phone_sim/analyze_log.py /tmp/monitor.log --csv /tmp/questions.csv
 汇总部分检查两个上限：录音停止 100 ms（TC-06），播放停止 200 ms（TC-07）。
 播放停止时间会加上 90 ms，因为停止后 I2S DMA 里还留有这么长的声音。
 
-对于滑行数据，工具为每个 LIVE_STATS、RUN_REPORT 和 SHOW_PAGE 输出一行。
+对于滑行数据，工具为每个 LIVE_STATS、RUN_REPORT、SHOW_PAGE 和 RUN_START 输出一行。
+RUN_START 的计时从日志行"phone starts run N"开始（D-32）。
 每行给出从收到数据包到屏幕第一次变化的时间，以及变化的是哪个标签。
-汇总部分给出第 95 百分位，并对照 300 ms 的上限（TC-21 和 TC-03）。
+汇总部分给出第 95 百分位，并对照 300 ms 的上限（TC-21、TC-03 和 TC-23）。
 屏幕没有变化的数据包单独计数，例如和上一包数值完全相同的 LIVE_STATS。
 
 ## 限制

@@ -456,6 +456,60 @@ int main(void) {
       assert(s.handled);
       assert(s.to == COACH_STATE_READY);
       assert(s.action_count == 0); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_REPORT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_RUN_START);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_LIVE);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_TURNS;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_RUN_START);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_LIVE);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_READY;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_RUN_START);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_LIVE);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_CAPTURE;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_RUN_START);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_CAPTURE);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_WAIT_ANSWER;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_RUN_START);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_WAIT_ANSWER);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_PLAYBACK;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_RUN_START);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_PLAYBACK);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_WAIT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_RUN_START);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_WAIT);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_PLAY;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_RUN_START);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_PLAY);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_HOLD;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_RUN_START);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 1); }
 
     // an event with no transition must leave the state untouched
     coach_flow_init(&flow);

@@ -46,15 +46,16 @@ The log shows each packet, the MTU, the number of blocks, the missing blocks, an
 python3 tools/phone_sim/phone_sim.py --runs 3 --run-s 30
 ```
 
-1. During a run, it sends one LIVE_STATS each second.
-2. In a run of 20 seconds or more, it sends 3 seconds of the stopped state in the middle.
-3. Run 2 has no speed. The device must show "--" for the speed, never 0.
-4. When a run ends, it sends one LIVE_STATS with the ended state.
-5. After 2 seconds, it sends one RUN_REPORT.
-6. Then it sends one TURN_SHAPE with the turn count of the run (D-30). Run 3 sends a schematic shape.
+1. At the start of each run, it sends one RUN_START with the run number (D-32). The device opens the live data page. During a talk with the coach or a popup, the device opens it later.
+2. During a run, it sends one LIVE_STATS each second.
+3. In a run of 20 seconds or more, it sends 3 seconds of the stopped state in the middle.
+4. Run 2 has no speed. The device must show "--" for the speed, never 0.
+5. When a run ends, it sends one LIVE_STATS with the ended state.
+6. After 2 seconds, it sends one RUN_REPORT.
+7. Then it sends one TURN_SHAPE with the turn count of the run (D-30). Run 3 sends a schematic shape.
    It answers each TURN_REQUEST of the device with one TURN_GROUP for each asked group.
    Add `--turns 44` to give each run 44 turns, so that the device has 6 groups. Add `--turns 0` to send a run with no turn data.
-7. It then sends nothing for 10 seconds, as on a lift. The device marks the data out of date after 5 seconds.
+8. It then sends nothing for 10 seconds, as on a lift. The device marks the data out of date after 5 seconds.
 
 Add `--jump` to send SHOW_PAGE after each report. The device opens the Report page from the Ski page or the idle Coach page (D-28).
 
@@ -102,6 +103,7 @@ Record the phone, the log, and the result of each step.
 | 8 | Start `phone_sim.py --runs 2 --jump`. Stay on the Ski page for run 1. Ask a question when run 2 ends. | Run 1 opens the Report page. During the question in run 2, the page does not change. | TC-03 |
 | 9 | Start `phone_sim.py --runs 3 --turns 44`. After each run, go to the Turns page: two short DOWN presses from the live data page. Press OK a few times, hold UP, and hold DOWN. | The Turns page draws 8 turns. OK selects the next turn. The UP hold selects the previous turn. The DOWN hold goes to the next page. The key bar shows each action. After run 3, the page shows the schematic tag. | TC-05 |
 | 10 | Start `phone_sim.py --popups 8`. Close one popup with a key. Then start `phone_sim.py --popups 6 --popup-gap 5`. | Each popup shows at once. The log shows POPUP_END with `timeout`, `key`, or `replaced`. After each popup, the device shows the page before the popup. | TC-22 |
+| 11 | Start `phone_sim.py --runs 20 --run-s 20`. Before each run, go to the Report page, the Turns page, or the Coach page. At the start of 3 runs, ask a question. Then start `phone_sim.py --runs 5 --popups 10 --popup-gap 7`, and find a run start during a popup. | Each run opens the live data page with the run number and the skiing state. During a question, the page changes after the answer. A popup closes to the live data page. The RUN_START row of `analyze_log.py` shows a 95th percentile of 300 ms or less. | TC-23 |
 
 ## Log analysis
 
@@ -116,9 +118,10 @@ The tool prints one row for each question: hold time, blocks, peak level, stop t
 The summary checks two limits: 100 ms for the capture stop (TC-06), and 200 ms for the playback stop (TC-07).
 The playback figure adds 90 ms, because the I2S DMA still holds that much sound after the stop.
 
-For ski data, the tool prints one row for each LIVE_STATS, RUN_REPORT, and SHOW_PAGE packet.
+For ski data, the tool prints one row for each LIVE_STATS, RUN_REPORT, SHOW_PAGE, and RUN_START packet.
+For RUN_START, the time starts at the log line "phone starts run N" (D-32).
 Each row gives the time from the packet to the first screen change, and the name of that change.
-The summary gives the 95th percentile and checks it against 300 ms (TC-21 and TC-03).
+The summary gives the 95th percentile and checks it against 300 ms (TC-21, TC-03, and TC-23).
 A packet with no screen change counts apart. An example is a LIVE_STATS with the same values as the last one.
 
 ## Limits

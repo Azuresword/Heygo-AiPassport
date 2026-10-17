@@ -106,6 +106,7 @@ static volatile uint8_t s_popup_no;    // Counts the popups. A timer event of an
 static coach_event_t s_popup_return = COACH_EVENT_RETURN_READY;   // The page before the popup.
 static int64_t s_popup_deadline_us;    // The end of the countdown.
 static bool s_popup_close;             // Set by popup_close. The return runs after the step.
+static bool s_run_pending;             // D-32: a run started during a talk with the coach.
 
 _Static_assert((int)COACH_KEY_UP == (int)BSP_BTN_UP && (int)COACH_KEY_DOWN == (int)BSP_BTN_DOWN &&
                (int)COACH_KEY_OK == (int)BSP_BTN_OK, "coach_key_t must match bsp_btn_t");
@@ -403,6 +404,8 @@ static void run_action(coach_action_t a) {
         s_popup_close = true;
         break;
     case COACH_ACTION_AUDIO_PLAY_CUT: voice_play_cut(); break;
+    case COACH_ACTION_RUN_AFTER_COACH: s_run_pending = true; break;
+    case COACH_ACTION_POPUP_BACK_LIVE: s_popup_return = COACH_EVENT_RETURN_LIVE; break;
     case COACH_ACTION_AUDIO_CAPTURE_START: s_start_capture = true; break;
     case COACH_ACTION_TURN_NEXT:
     case COACH_ACTION_TURN_PREV:
@@ -506,6 +509,9 @@ static void handle(coach_event_t event) {
                            : before == COACH_STATE_REPORT ? COACH_EVENT_RETURN_REPORT
                            : before == COACH_STATE_TURNS  ? COACH_EVENT_RETURN_TURNS
                                                           : COACH_EVENT_RETURN_READY;
+            // D-32: the popup ends the talk with the coach, so a kept run start goes to the popup.
+            if (s_run_pending) s_popup_return = COACH_EVENT_RETURN_LIVE;
+            s_run_pending = false;
         }
         esp_timer_stop(s_popup_wait_timer);
         esp_timer_stop(s_popup_hold_timer);
@@ -547,10 +553,17 @@ static void handle(coach_event_t event) {
     }
 
     // The steps below run in this call, so that no queued event comes between them.
+    // D-32: the talk with the coach ended, so the kept run start opens the live data page now.
+    const bool talk_ended = step.to == COACH_STATE_READY || step.to == COACH_STATE_REPORT ||
+                            step.to == COACH_STATE_TURNS || step.to == COACH_STATE_LIVE;
+    const bool run_now = s_run_pending && talk_ended && step.to != COACH_STATE_LIVE;
+    if (talk_ended) s_run_pending = false;
     if (s_popup_close) {
         handle(s_popup_return);
     } else if (event == COACH_EVENT_POPUP_SHOW && !s_popup.audio) {
         handle(COACH_EVENT_POPUP_NO_AUDIO);
+    } else if (run_now) {
+        handle(COACH_EVENT_RUN_START);
     }
 }
 
@@ -667,6 +680,13 @@ static void link_popup_play_start(void) {
     post_event(COACH_EVENT_POPUP_AUDIO_START);
 }
 
+// D-32: the phone started a run. The link already holds it in the live data.
+static void link_run_start(uint8_t run_no) {
+    (void)run_no;
+    post_event(COACH_EVENT_RUN_START);
+    link_data();
+}
+
 static void voice_up_block(const uint8_t *block) { ble_link_audio_up(block); }
 static void voice_play_done(void) { post_event(COACH_EVENT_ANSWER_END); }
 
@@ -716,6 +736,7 @@ esp_err_t coach_app_start(void) {
         .play_start = link_play_start, .audio_down = link_audio_down, .play_end = link_play_end,
         .live_stats = link_live_stats, .run_report = link_run_report, .show_page = link_show_page,
         .turn_shape = link_turn_shape, .popup = link_popup, .popup_play_start = link_popup_play_start,
+        .run_start = link_run_start,
     };
     esp_err_t le = ble_link_start(&app);
     if (le != ESP_OK) ESP_LOGE(TAG, "BLE link start failed: %s", esp_err_to_name(le));

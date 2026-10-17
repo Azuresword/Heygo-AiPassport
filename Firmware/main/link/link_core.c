@@ -400,6 +400,26 @@ void link_popup_end(link_core_t *l, uint8_t reason) {
     l->popup.xid = 0;
 }
 
+// D-32: a new run. A LIVE_STATS of the same run that is already here stays.
+static void on_run_start(link_core_t *l, const bp_packet_t *p, uint32_t now_ms) {
+    if (!data_allowed(l)) return;
+    uint8_t run_no;
+    const bp_err_t err = bp_read_run_start(p, &run_no);
+    if (err != BP_OK) {
+        send_error(l, (uint8_t)err, p->type, p->xid);
+        return;
+    }
+    const bool same = l->has_live && l->live.run_no == run_no && l->live.run_state != BP_RUN_ENDED;
+    if (!same) {
+        l->live.run_state = BP_RUN_SKIING;
+        l->live.run_no = run_no;
+        l->live.speed_dkmh = l->live.drop_m = l->live.distance_m = l->live.turns = l->live.time_s = BP_U16_UNKNOWN;
+        l->has_live = true;
+        l->live_ms = now_ms;
+    }
+    if (l->io.run_start) l->io.run_start(l->io.ctx, run_no);
+}
+
 void link_on_rx(link_core_t *l, const uint8_t *buf, size_t len, uint32_t now_ms) {
     if (!l->connected) return;
     l->last_rx_ms = now_ms;
@@ -431,6 +451,7 @@ void link_on_rx(link_core_t *l, const uint8_t *buf, size_t len, uint32_t now_ms)
     case BP_TURN_SHAPE: on_turn_shape(l, &p, now_ms); break;
     case BP_TURN_GROUP: on_turn_group(l, &p, now_ms); break;
     case BP_POPUP: on_popup(l, &p); break;
+    case BP_RUN_START: on_run_start(l, &p, now_ms); break;
     default:
         // A device-to-phone type that arrives from the phone.
         send_error(l, BP_ERR_STATE, p.type, p.xid);

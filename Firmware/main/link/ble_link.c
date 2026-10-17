@@ -284,6 +284,11 @@ static void io_popup(void *ctx, const link_popup_t *p) {
     (void)ctx;
     if (s_app.popup) s_app.popup(p);
 }
+static void io_run_start(void *ctx, uint8_t run_no) {
+    (void)ctx;
+    ESP_LOGI(TAG, "phone starts run %u", run_no);
+    if (s_app.run_start) s_app.run_start(run_no);
+}
 static void io_popup_play_start(void *ctx) {
     (void)ctx;
     s_down_blocks = 0;
@@ -523,7 +528,7 @@ esp_err_t ble_link_start(const ble_link_app_t *app) {
 
     const link_io_t io = { NULL, io_send, io_drop_audio, io_voice, io_state, io_play_start, io_down,
                            io_play_end, io_dropped, io_live, io_report, io_page, io_turns, io_popup,
-                           io_popup_play_start };
+                           io_popup_play_start, io_run_start };
     link_init(&s_core, &io, s_fw);
 
     esp_err_t err = demo_radio_nvs_prepare();

@@ -52,6 +52,9 @@ I (4021) screen: ski.dest = "REPORT"
 I (5000) ble_link: phone asks for page 3
 I (5002) coach: SKI --SHOW_REPORT--> REPORT
 I (5010) screen: show report screen
+I (6000) ble_link: phone starts run 2
+I (6003) coach: REPORT --RUN_START--> LIVE
+I (6015) screen: show ski screen
 """
 
 
@@ -60,10 +63,11 @@ class DataTest(unittest.TestCase):
         self.p = al.parse_data(DATA_LOG.splitlines())
 
     def test_one_row_for_each_packet(self):
-        self.assertEqual([p["kind"] for p in self.p], ["LIVE_STATS"] * 3 + ["RUN_REPORT", "SHOW_PAGE"])
+        self.assertEqual([p["kind"] for p in self.p], ["LIVE_STATS"] * 3 + ["RUN_REPORT", "SHOW_PAGE", "RUN_START"])
 
     def test_delays(self):
-        self.assertEqual([p["delay_ms"] for p in self.p], [12, 410, None, 21, 10])
+        self.assertEqual([p["delay_ms"] for p in self.p], [12, 410, None, 21, 10, 15])
+        self.assertEqual(self.p[5]["first"], "show ski")
         self.assertEqual(self.p[0]["first"], "ski.sub")
         self.assertEqual(self.p[4]["first"], "show report")
 

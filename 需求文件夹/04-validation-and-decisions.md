@@ -2,7 +2,7 @@
 
 # Validation, open questions, and decisions
 
-Version: 0.10. Date: 2026-10-17. Status: Draft for review.
+Version: 0.11. Date: 2026-10-17. Status: Draft for review.
 Every product test below has status NOT RUN.
 Document checks do not count as firmware or device tests.
 
@@ -67,11 +67,12 @@ Measure the release latency from the release itself.
 | --- | --- | --- | --- |
 | TC-02 | The real phone application sends 300 LIVE_STATS packets. 30 packets hold unknown values. 10 packets have a short payload. | The device always shows the latest valid packet. Each unknown value shows "--", never 0. Each short packet gets ERROR code 2, and the screen keeps the old values. | Protocol test and screen log. Firmware and phone. |
 | TC-21 | Under N1, send 300 packets. Read the receive time and the screen update time from the log. Also run task 5 of U1. | The screen update stays within 300 ms at the 95th percentile. At least 4 of 5 users read the speed correctly within 2 seconds. | Log timing and usability test. Firmware and design. |
+| TC-23 | `phone_sim --runs 20` sends RUN_START at the start of each run. Start 5 runs on each of these pages: the live data page, the Report page, the Turns page, and the idle Coach page. Read the times with `analyze_log.py`. By hand: start 3 runs in each of CAPTURE, WAIT_ANSWER, and PLAYBACK, and 3 runs during a popup. Send 3 RUN_START packets with run number 0. | The screen changes to the live data page within 300 ms of RUN_START at the 95th percentile. Before the first LIVE_STATS, the page shows "第 N 趟 · 滑行中" and "--" for each value. During a talk, the talk continues, and the live data page opens when the talk ends. During a popup, the popup stays and closes to the live data page. Each bad packet gets ERROR code 7. | The RUN_START row of `analyze_log.py`, the screen log, and a hardware demonstration. Firmware and phone. |
 | TC-03 | The phone sends 30 RUN_REPORT packets. 5 hold texts at the limit, and 3 hold texts above the limit. On the live data page, press DOWN 30 times. Cover three cases: no report yet, link loss, and a report older than 60 seconds. | The Report page shows within 500 ms each time. The values and texts match the phone log. Texts at the limit show in full. A report above the limit gets ERROR code 4, and the screen keeps the old report. | Screen log and hardware demonstration. Firmware. |
 
 TC-03 adds one more set: send SHOW_PAGE 5 times in each of the 5 states. Pass rule: on the live data page and the idle Coach page, the Report page shows within 500 ms each time. During capture, the wait, and the playback, the page and the audio do not change.
 
-`phone_sim` can check these three tests in Sprint 5, but it cannot pass them.
+`phone_sim` can check these four tests in Sprint 5, but it cannot pass them.
 
 ### Increment 4 acceptance matrix
 
@@ -147,6 +148,7 @@ The user parked these questions. The user will share answers after a review with
 | D-29 | Remove Ski mode and Rest mode. Three pages at one level (live data, report, and coach) loop with short UP and DOWN presses. An OK hold on any page opens the Coach page with no capture. On the Coach page, the user holds OK to ask. A page change during capture, the wait, or the playback cancels the question first. Actions inside a page will use a short OK. | Accepted by the user on 2026-10-17. |
 | D-30 | REQ-05 becomes Increment 3. The page loop of D-29 gets a fourth page, the Turns page, between the Report page and the Coach page. It shows 8 turns at a time. Inside the page, OK selects the next turn, an UP hold the previous turn, and a DOWN hold the next page. The device keeps 3 groups and asks the phone for the others in TURN_REQUEST. A bar of two rows names the keys. The protocol version stays 0.2. | Accepted by the user on 2026-10-17. On the same day, the firmware team accepted a change request of the phone application team. The Turns page shows the run of the last RUN_REPORT (doc 07 version 0.10). |
 | D-31 | The phone can show a popup on the device at any time: a fall alert, a voice message, a problem report, or an achievement. A popup interrupts every state at once and cancels the open question. The device plays the popup audio on channel 2, then counts down 10 seconds. Any key only closes the popup. Then the device goes back to the page before the popup, or to READY from the Coach page. A new popup replaces the old one. POPUP (0x66) and POPUP_END (0x67) are new. The protocol version stays 0.2. | Accepted by the user on 2026-10-17. Waits for the phone application team. |
+| D-32 | When the phone detects the start of a run, it sends RUN_START (0x68) with the run number. The device shows the new run in the live data at once. On the Report page, the Turns page, or the idle Coach page, the device opens the live data page at once. During a talk with the coach, the device keeps the run start and opens the live data page when the talk ends. During a popup, the popup stays and closes to the live data page. The run start cancels nothing. The protocol version stays 0.2. | Accepted by the user on 2026-10-17. Waits for the phone application team. |
 
 ## 7. Risks
 
@@ -167,6 +169,7 @@ The user parked these questions. The user will share answers after a review with
 | The change to protocol 0.2 is not at the same time on both sides. | A phone application with 0.1 only gets no voice with the new firmware. | Change both sides together per D-24. Tell the phone application team at the end of Sprint 4. | Firmware and phone application team. |
 | A fall popup closes after 10 seconds with no user action (D-31). | A real fall alert goes away while the user cannot press a key. Nobody gets help. | The phone owns the escalation, for example a call to an emergency contact. The device only shows the alert. POPUP_END reason 0 tells the phone that nobody pressed a key. | Phone application team and Product Owner. |
 | Popup audio arrives before the old answer stops (D-31). | The device drops the first blocks of the popup audio, or plays a part of the old answer. | `audio_play_cut` stops the speaker and keeps the queued blocks. The link core accepts AUDIO_DOWN only with the xid of the open stream. Check the start of the popup audio during PLAYBACK in TC-22. | Firmware. |
+| The phone detects a run start too early or by error (D-32). | The device leaves the Report page or the Turns page while the user reads it. | The phone owns the detection. The device cancels nothing. A short DOWN press on the live data page opens the Report page again. | Phone application team. |
 
 ## 8. Delivery evidence
 

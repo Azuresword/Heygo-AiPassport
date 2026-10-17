@@ -2,7 +2,7 @@
 
 # HeygoAI and AI Passport: product requirements
 
-Version: 0.8. Date: 2026-10-17. Status: Draft for review.
+Version: 0.9. Date: 2026-10-17. Status: Draft for review.
 The Product Owner role has no assigned person.
 This document defines a concept. It does not describe a working integration.
 
@@ -42,6 +42,7 @@ The pilot uses existing boards. It needs no new circuit board or enclosure.
 8. After a run ends, the live data page shows the report of that run. The Report page shows the full report.
 9. The Turns page, between the Report page and the Coach page, shows the turns of the last run, 8 at a time (D-30).
 10. The phone can show a popup on the device at any time: a fall alert, a voice message, a problem report, or an achievement (D-31). Any key closes it, and the device goes back to the page before the popup.
+11. When the phone detects the start of a run, the device opens the live data page (D-32). During a talk with the coach or a popup, the device opens the page after the talk or the popup ends.
 
 D-29 removes Ski mode and Rest mode. The device cannot check motion, so voice works only on the Coach page.
 After the Coach page opens, the user must hold OK again to start capture. An accidental OK press during a run can only open the Coach page.
@@ -53,7 +54,7 @@ D-17, D-18, and D-22 set these priorities. [Decision amendments](05-decision-ame
 | Priority | Increment | Requirements |
 | --- | --- | --- |
 | P0 | Increment 1: the Coach voice chain | REQ-01, REQ-06, REQ-07, REQ-08, REQ-15, REQ-17, REQ-20 |
-| P1 | Increment 2: live data and reports | REQ-02, REQ-03, REQ-21 |
+| P1 | Increment 2: live data and reports | REQ-02, REQ-03, REQ-21, REQ-23 |
 | P1 | Increment 3: the turn shape (D-30) | REQ-05 |
 | P1 | Increment 4: phone popups (D-31) | REQ-22 |
 | P1 | After Increment 2 | REQ-04, REQ-09, REQ-13 |
@@ -114,6 +115,7 @@ Each row has test stage Prototype. Owners are roles with no assigned person.
 | --- | --- | --- | --- | --- |
 | REQ-02 | Show the latest ski data packet from the phone. A missing field shows "--" and never 0. Mark data that is out of date. | Phone and firmware. | TC-02: in 300 data packets, the device shows the latest packet each time. Each missing field shows "--". | The phone application sends LIVE_STATS as doc 07 defines. |
 | REQ-21 | During a run, show live data on the live data page: speed, vertical drop, distance, turn count, and run time. The phone sends one packet each second. | Firmware and design. | TC-21: the screen updates within 300 ms of the packet at the 95th percentile. At least 4 of 5 users read the speed correctly within 2 seconds. | REQ-02. |
+| REQ-23 | When the phone starts a run, open the live data page at once. Show the run number and "--" for each value until the first packet. During a talk with the coach, open the page after the talk ends. During a popup, open the page after the popup closes. | Phone and firmware. | TC-23: in 20 runs with phone_sim, the screen changes to the live data page within 300 ms of RUN_START at the 95th percentile. A run start during a talk or a popup opens the live data page after the talk or the popup ends, each time. | REQ-21. RUN_START as doc 07 defines (D-32). |
 | REQ-03 | After each run, show the report of that run. It holds the distance, the turn count, the Heygo IQ, the core problem, and a tip of at most 20 characters. | Firmware and design. | TC-03: in 30 short DOWN presses on the Coach page, the Report page shows within 500 ms each time. Every value matches the phone log. | REQ-02. |
 | REQ-05 | After each run, show the shape of that run in groups of 8 turns, and replay one turn. The user moves from turn to turn with the keys. The page shows the action of each key. Each turn shows its side, speed, edge angle, and radius. A schematic shape shows "示意". | Firmware and design. | TC-05: in 20 runs with phone_sim and up to 255 turns, each key press shows its turn within 500 milliseconds. Each turn value matches the phone log. A schematic shape shows "示意" each time. | REQ-03. TURN_SHAPE, TURN_GROUP, and TURN_REQUEST as doc 07 defines. |
 | REQ-22 | Show a popup from the phone at once, on every page and in every state. Four kinds: fall alert, voice message, problem report, and achievement. Play the popup audio, then count down 10 seconds. Any key closes the popup. Then go back to the page before the popup. | Phone and firmware. | TC-22: in 40 popups with phone_sim, each popup shows within 500 ms on every page and in every Coach state. Each popup closes after its audio and 10 seconds, or at a key press. The device then shows the page before the popup each time. | POPUP and POPUP_END as doc 07 defines. The phone owns the escalation of a fall alert. |
@@ -189,7 +191,11 @@ D-21 puts live data on the live data page. During a run, the eyes belong on the 
 | Data panel | Four cells, each with a name and a value | 落差 312 m, 距离 1.9 km, 转弯 24, 时间 02:31 |
 | Button hint | No change | Hold OK to rest |
 
-- After the phone detects the start of a run, it sends one packet each second. The device updates the screen for each packet.
+- After the phone detects the start of a run, it sends RUN_START (D-32). Then it sends one packet each second. The device updates the screen for each packet.
+- At RUN_START, the status line shows the new run at once, for example "第 5 趟 · 滑行中". Each number shows "--" until the first packet. A RUN_START for the run on the screen keeps the data.
+- RUN_START on the Report page, the Turns page, or the idle Coach page opens the live data page. On the live data page, only the data changes.
+- During a talk with the coach, the device keeps the run start. When the talk ends, or the user changes the page, the device opens the live data page. The run start cancels nothing.
+- During a popup, the popup stays. When the popup closes, the device opens the live data page, not the page before the popup.
 - The status line shows "skiing" or "stopped". After 5 seconds with no new packet, it shows "data out of date", the speed shows "--", and the panel keeps its numbers.
 - Before any data arrives, the status line shows "waiting for phone data", and each number shows "--".
 - After a run ends, the status line shows "report on the way". When the report arrives, the main number changes to the Heygo IQ, and the panel shows the core problem and the tip.
@@ -254,6 +260,7 @@ D-31 lets the phone show a popup on the device at any time. The popup page is no
 - Any key only closes the popup. It does not change the page and does not start capture. The release of an OK hold that started before the popup does not close it.
 - After the countdown, or at a key press, the device goes back to the page before the popup. That is the live data page, the Report page, or the Turns page. From the Coach page, the device goes back to the ready state.
 - A new popup replaces the old one. The device keeps the page from before the first popup.
+- The phone can start a run during the popup, or during the talk that the popup stopped. Then the popup closes to the live data page (D-32).
 - A fall popup also closes after 10 seconds with no user action. The phone must start the escalation, for example a call to an emergency contact. The device only shows the alert.
 
 ### Data fields

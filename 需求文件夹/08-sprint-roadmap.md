@@ -2,7 +2,7 @@
 
 # Four-hour Sprint roadmap
 
-Version: 0.4. Date: 2026-10-17. Status: In progress. The code of Sprints 2 to 4 is in the repository and merged into `main`. Device tests are NOT RUN.
+Version: 0.5. Date: 2026-10-17. Status: In progress. The code of Sprints 2 to 4 is in the repository and merged into `main`. Device tests are NOT RUN.
 
 This document divides the remaining work of Increments 1 to 4 in the [backlog](03-scrum-backlog.md) into four-hour Sprints.
 Each Sprint has one Sprint Goal.
@@ -45,6 +45,7 @@ Rules:
 | 12 | 3 | Pass TC-05 on the board with `phone_sim`, and then with the real phone application. | Sprint 11. The board. A phone application that answers TURN_REQUEST | Not started |
 | 13 | 4 | The device shows the popups from the phone, and the popup page passes the host screen check. | Sprint 11 | Code on the branch `feat/app-popups`. Section 4 gives the result |
 | 14 | 4 | Run the device tests of the phone popups (D-31) on the board with `phone_sim --popups`. | Sprint 13. The board | Not started |
+| 15 | 2 | When the phone starts a run, the device opens the live data page (D-32). | Sprint 13. The board for task 4 | Code on the branch `feat/run-start`. Host tasks done. Device test of TC-23 NOT RUN. Section 4 gives the result |
 
 Sprints 2 to 4 run on the host only. They can start now.
 Sprint 5 is the first Sprint that needs the board.
@@ -285,6 +286,21 @@ Section 8 of the [firmware change notes](../Firmware/docs/heygo-changes.md) list
 - TC-22 records measurements only. Per the Definition of Done, a stub phone cannot pass it. The real phone application must run it again.
 
 **Cut line.** If time runs out, drop task 5 first, and then task 4. Each dropped task goes back to the backlog.
+
+### Sprint 15: the run start
+
+**Sprint Goal.** When the phone starts a run, the device opens the live data page (D-32).
+
+**Story.** US-23. D-32 sets the scope.
+
+| Order | Task | Time box | Status |
+| --- | --- | --- | --- |
+| 1 | RUN_START in the packet layer and the link core. The run goes into the live data at once. Host tests. | 40 min | Done |
+| 2 | The RUN_START transitions in the flow. The kept run start for a talk with the coach, and the return to the live data page after a popup. Host tests. | 50 min | Done |
+| 3 | `phone_sim --runs` sends RUN_START. `analyze_log.py` gives a RUN_START row. The simulator button "开始滑行" sends RUN_START first. | 40 min | Done |
+| 4 | On the board, run `phone_sim.py --runs 20` and measure TC-23 with `analyze_log.py`. By hand, start runs during a talk and during a popup. | 60 min | NOT RUN |
+
+**Result.** Host tests pass. The flow simulator self-test passes 117 of 117. The protocol version stays 0.2. Nobody recorded the actual time. Task 4 needs the board. Device tests are NOT RUN.
 
 ## 5. Evidence format
 

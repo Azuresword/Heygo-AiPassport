@@ -32,6 +32,8 @@ typedef struct {
     // D-31: a popup, and the start of its audio. audio_down and play_end carry the audio.
     void (*popup)(const link_popup_t *p);
     void (*popup_play_start)(void);
+    // D-32: the phone started a run.
+    void (*run_start)(uint8_t run_no);
 } ble_link_app_t;
 
 // Start NimBLE, register the service, and advertise. Call once.

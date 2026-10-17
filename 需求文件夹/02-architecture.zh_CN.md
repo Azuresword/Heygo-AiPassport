@@ -2,7 +2,7 @@
 
 # HeygoAI × AI Passport：架构方案
 
-版本：0.9。日期：2026-10-17。状态：工程评审草案。
+版本：0.10。日期：2026-10-17。状态：工程评审草案。
 
 本文针对[产品需求](01-product-requirements.zh_CN.md)中的增量 1 至 4 提出设计方案。
 本文不代表联动功能已经实现。
@@ -147,6 +147,40 @@ stateDiagram-v2
 - 弹窗定时器事件带有弹窗序号。被替换的弹窗的定时器事件，设备直接丢弃。
 - 弹窗期间，CONTEXT 和 DEVICE_STATUS 发送 mode 0、page 6。
 
+### 开始滑行（D-32）
+
+手机判定开始滑行时，发送 RUN_START，带趟数。
+链路核心立即把这一趟写进实时数据：滑行状态为滑行中，所有数值为未知。然后教练任务收到 RUN_START 事件。
+
+| 收到 RUN_START 时的状态 | 设备动作 |
+|---|---|
+| LIVE | 不换页。数据刷新后显示"第 N 趟 · 滑行中"，每个数值显示"--"。 |
+| REPORT、TURNS、READY | 立即进入 LIVE。 |
+| CAPTURE、WAIT_ANSWER、PLAYBACK | 状态不变。记下开始滑行（`run_after_coach`），不取消任何操作。 |
+| POPUP_WAIT、POPUP_PLAY、POPUP_HOLD | 状态不变。把保存的页面改成 LIVE（`popup_back_live`）。 |
+
+- 状态回到 READY，就算和教练的对话结束：回答播完、提问失败、超时或链路中断。设备在同一步再发一次 RUN_START 事件，进入 LIVE。
+- 用户短按 UP 或 DOWN 离开对话时，设备照常取消提问，然后进入 LIVE。短按 UP 也一样。
+- 在 WAIT_ANSWER 或 PLAYBACK 中再长按 OK，开始新的提问。开始滑行继续保留。
+- 对话中已记下开始滑行，这时弹窗打断对话，弹窗前的页面保存为 LIVE。记下的开始滑行随之清除。
+- 屏幕上已经是这一趟且还没结束时，收到 RUN_START，数据保留不动。
+- RUN_START 的 `xid` 为 0，设备不回复确认。HELLO_ACK 之前，设备忽略这个包。
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant P as Passport
+    participant A as 手机应用
+    Note over P: PLAYBACK，回答播放中
+    A->>P: RUN_START，第 5 趟
+    Note over P: 记下开始滑行，回答继续
+    A->>P: LIVE_STATS，第 5 趟
+    A->>P: PLAY_END
+    P-->>U: 回答播完
+    P-->>U: 显示实时数据页，第 5 趟
+    P->>A: CONTEXT mode 0, page 0
+```
+
 状态图由 `flows/coach.flow.json` 生成的交互模拟器给出完整版本，见 `assets/sim/coach-flow.html`。
 
 ### 按键
@@ -166,6 +200,7 @@ stateDiagram-v2
 | 弯型页 | 长按 DOWN 500 ms | 跳到下一页（8 个弯）的第 1 弯，最后一页之后回到第 1 页。 |
 | 其他页面 | 短按 OK、长按 UP 或长按 DOWN | 没有动作。 |
 | 弹窗页 | 任何短按或长按 | 关闭弹窗，回到保存的页面（D-31）。不翻页，也不录音。 |
+| 任意页面或状态 | 手机发来 RUN_START | 打开实时数据页（D-32）。和教练对话中，对话结束后再打开。弹窗中，弹窗关闭后再打开。 |
 
 三个按键共用一个 ADC 输入，所以按住 OK 时读不到 UP 或 DOWN。采集中要翻页，需要先松开 OK。
 长按之后不会再触发短按。
@@ -417,6 +452,7 @@ D-18 把功耗管理推迟。首版不使用休眠模式，并申请 07 号文�
 | 弹窗期间链路中断 | 保留弹窗，停止它的语音，开始 10 秒倒计时。不发送 POPUP_END。 | 新连接会重置所有 xid。把这个弹窗当作已关闭。 |
 | 带语音的弹窗 5 秒内没有 PLAY_START | 开始倒计时。 | 尽快发送语音，或者把语音标志设为 0。 |
 | POPUP 字段错误 | 回复错误码 7、4 或 2。不显示。 | 发送字段正确的包。 |
+| RUN_START 趟数为 0 或 0xFF | 回复错误码 7。页面和数据不变。 | 趟数用 1 到 254。 |
 
 D-12 和 D-13 排除了安全和隐私工作。设备不保存账号数据，也不保存令牌。
 

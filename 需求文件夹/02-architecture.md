@@ -2,7 +2,7 @@
 
 # HeygoAI × AI Passport: architecture
 
-Version: 0.9. Date: 2026-10-17. Status: Draft for engineering review.
+Version: 0.10. Date: 2026-10-17. Status: Draft for engineering review.
 
 This document proposes a design for Increments 1 to 4 in [product requirements](01-product-requirements.md).
 It does not describe a working integration.
@@ -147,6 +147,40 @@ stateDiagram-v2
 - Each popup timer event carries the popup number. The device drops the timer event of a replaced popup.
 - During a popup, CONTEXT and DEVICE_STATUS send mode 0 and page 6.
 
+### Run start (D-32)
+
+When the phone detects the start of a run, it sends RUN_START with the run number.
+The link core puts the run in the live data at once: run state skiing, and each value unknown. Then the Coach task gets the RUN_START event.
+
+| State when RUN_START arrives | Device action |
+|---|---|
+| LIVE | No page change. The data refresh shows "第 N 趟 · 滑行中" and "--" for each value. |
+| REPORT, TURNS, READY | Go to LIVE at once. |
+| CAPTURE, WAIT_ANSWER, PLAYBACK | Stay in the state. Keep the run start (`run_after_coach`). Cancel nothing. |
+| POPUP_WAIT, POPUP_PLAY, POPUP_HOLD | Stay in the state. Change the saved page to LIVE (`popup_back_live`). |
+
+- The talk with the coach ends when the state goes to READY. The answer ends, the question fails, a timeout comes, or the link goes down. In the same step, the device sends the RUN_START event again and goes to LIVE.
+- If the user leaves the talk with a short UP or DOWN press, the device cancels the question as before. Then it goes to LIVE, also after a short UP press.
+- A new OK hold in WAIT_ANSWER or PLAYBACK starts a new question. The device keeps the run start.
+- A popup that interrupts a talk with a kept run start saves LIVE as the page before the popup. The kept run start then ends.
+- A RUN_START for the run that shows already, and that did not end, keeps the data.
+- RUN_START uses `xid` 0. The device sends no acknowledgment. Before HELLO_ACK, it ignores the packet.
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant P as Passport
+    participant A as Phone application
+    Note over P: PLAYBACK, the answer plays
+    A->>P: RUN_START, run 5
+    Note over P: Keep the run start. The answer continues.
+    A->>P: LIVE_STATS, run 5
+    A->>P: PLAY_END
+    P-->>U: The answer ends
+    P-->>U: Show the live data page, run 5
+    P->>A: CONTEXT mode 0, page 0
+```
+
 The interactive simulator gives the full state diagram from `flows/coach.flow.json`. See `assets/sim/coach-flow.html`.
 
 ### Buttons
@@ -166,6 +200,7 @@ The interactive simulator gives the full state diagram from `flows/coach.flow.js
 | Turns page | Hold DOWN for 500 ms | Go to turn 1 of the next page of 8 turns. After the last page, go to page 1. |
 | Other pages | Short OK press, UP hold, or DOWN hold | No action. |
 | Popup page | Any short press or hold | Close the popup and go back to the saved page (D-31). No page change and no capture. |
+| Any page or state | RUN_START from the phone | Open the live data page (D-32). During a talk with the coach, open it after the talk ends. During a popup, open it after the popup closes. |
 
 The three buttons share one ADC input. So while the user holds OK, the device cannot read UP or DOWN. To change the page during capture, the user releases OK first.
 A hold never also triggers a short press.
@@ -417,6 +452,7 @@ Raw PCM stays a fallback for diagnostics. Opus waits until ADPCM works and the t
 | Link loss during a popup | Keep the popup. Stop its audio. Start the 10-second countdown. Send no POPUP_END. | A new connection resets every xid. Treat the popup as closed. |
 | No PLAY_START within 5 seconds of a popup with audio | Start the countdown. | Send the audio sooner, or send the popup with audio flag 0. |
 | POPUP with a bad field | Send ERROR code 7, 4, or 2. Show nothing. | Send a packet with valid fields. |
+| RUN_START with run number 0 or 0xFF | Send ERROR code 7. Keep the page and the data. | Send a run number from 1 to 254. |
 
 D-12 and D-13 exclude security and privacy work. The device stores no account data and no token.
 

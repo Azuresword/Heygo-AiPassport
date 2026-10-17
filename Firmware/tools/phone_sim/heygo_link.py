@@ -23,6 +23,7 @@ AGENT_START, AGENT_END, AGENT_CANCEL, AGENT_STATE = 0x20, 0x21, 0x22, 0x23
 AUDIO_UP, AUDIO_DOWN, PLAY_START, PLAY_END = 0x30, 0x31, 0x32, 0x33
 LIVE_STATS, RUN_REPORT, SHOW_PAGE, TURN_SHAPE, TURN_GROUP, TURN_REQUEST = 0x60, 0x61, 0x62, 0x63, 0x64, 0x65
 POPUP, POPUP_END = 0x66, 0x67
+RUN_START = 0x68
 PAGE_REPORT = 3
 
 TYPE_NAMES = {
@@ -32,7 +33,7 @@ TYPE_NAMES = {
     AGENT_STATE: "AGENT_STATE", AUDIO_UP: "AUDIO_UP", AUDIO_DOWN: "AUDIO_DOWN",
     PLAY_START: "PLAY_START", PLAY_END: "PLAY_END",
     LIVE_STATS: "LIVE_STATS", RUN_REPORT: "RUN_REPORT", SHOW_PAGE: "SHOW_PAGE", TURN_SHAPE: "TURN_SHAPE",
-    TURN_GROUP: "TURN_GROUP", TURN_REQUEST: "TURN_REQUEST", POPUP: "POPUP", POPUP_END: "POPUP_END",
+    TURN_GROUP: "TURN_GROUP", TURN_REQUEST: "TURN_REQUEST", POPUP: "POPUP", POPUP_END: "POPUP_END", RUN_START: "RUN_START",
 }
 
 ACCEPTED, RECOGNIZING, THINKING, ANSWERING, DONE, FAILED = 1, 2, 3, 4, 5, 6
@@ -127,6 +128,13 @@ def popup(xid, kind, audio, title="", body=""):
     if len(t) > POPUP_TITLE_MAX or len(b) > POPUP_BODY_MAX:
         raise ValueError("title holds at most 36 bytes, body at most 120 bytes")
     return packet(POPUP, xid, payload=bytes([kind, 1 if audio else 0, len(t)]) + t + b)
+
+
+def run_start(run_no):
+    """D-32: the phone starts run run_no, 1 to 254. The device opens the live data page."""
+    if not 1 <= run_no <= 254:
+        raise ValueError("run_no is 1 to 254")
+    return packet(RUN_START, payload=bytes([run_no]))
 
 
 def turn_shape(run_no, source, n_turns):

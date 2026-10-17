@@ -1,10 +1,10 @@
 [简体中文](05-decision-amendments.zh_CN.md) · **English**
 
-# Decision amendments: D-08 to D-31
+# Decision amendments: D-08 to D-32
 
-Version: 0.10. Date: 2026-10-17. Status: D-08 to D-15 and D-17 to D-31 accepted by the user. The phone application team accepted D-16. It must accept D-29, the three turn messages of D-30, and the two popup messages of D-31.
+Version: 0.11. Date: 2026-10-17. Status: D-08 to D-15 and D-17 to D-32 accepted by the user. The phone application team accepted D-16. It must accept D-29, the three turn messages of D-30, the two popup messages of D-31, and the run start message of D-32.
 
-This document gives the reasons behind D-08 to D-31.
+This document gives the reasons behind D-08 to D-32.
 [Validation and decisions](04-validation-and-decisions.md) holds the short log.
 Requirement numbers stay stable. This document deletes no requirement.
 
@@ -422,7 +422,41 @@ The user made four choices on 2026-10-17:
 
 **Status.** The user accepted the popups and the four choices on 2026-10-17. The phone application team must accept POPUP and POPUP_END. Device tests are NOT RUN.
 
-## 26. Related documents
+## 26. D-32: the phone starts a run
+
+**Decision.** When the phone application detects the start of a run, it sends RUN_START (0x68) with the run number. REQ-23 belongs to Increment 2.
+RUN_START goes from the phone to the device. Its payload is 1 byte: the run number, from 1 to 254. It uses `xid` 0 and `seq` 0. The device sends no acknowledgment.
+
+- The device puts the run in its live data at once. The run state is skiing, and each value is unknown. The live data page shows "第 N 趟 · 滑行中" and "--" before the first LIVE_STATS.
+- A RUN_START for the run that shows already, and that did not end, keeps the data.
+- On the Report page, the Turns page, and the idle Coach page, the device opens the live data page at once. On the live data page, only the data changes.
+- During a talk with the coach (CAPTURE, WAIT_ANSWER, PLAYBACK), the device keeps the run start. It opens the live data page when the talk ends.
+- During a popup, the popup stays. It closes to the live data page.
+- The run start cancels nothing.
+
+The user made three choices on 2026-10-17:
+
+1. **The live data page at once.** On a page with no talk and no popup, the device changes the page at once. It shows the new run before the first LIVE_STATS.
+2. **No interrupt of a talk.** The talk with the coach continues. When the talk ends, the device opens the live data page. The talk ends when the state goes back to READY: the answer ends, the question fails, a timeout comes, or the link goes down. If the user leaves the talk with a short UP or DOWN press, the device also opens the live data page.
+3. **The popup stays.** A popup does not close at RUN_START. When it closes, the device goes to the live data page, not to the saved page. If a popup stops a talk with a kept run start, the popup also closes to the live data page.
+
+**Reason.**
+
+- At the start of a run, the skier wants the speed. With gloves on the slope, a key press is difficult. So the device changes the page without a key.
+- The new run shows at once. The skier sees that the device knows about the run, also before the first LIVE_STATS.
+- A question to the coach is a deliberate action. A run start must not cancel it. The live data page can wait until the answer ends.
+- A popup can be a fall alert. The run start must not hide it. After the popup, the live data page is the right page, because the run started.
+- RUN_START is a new message. It changes no current packet, so the protocol version stays 0.2, as for D-28, D-30, and D-31.
+
+**Cost.**
+
+- The phone owns the detection of the run start. A run start that comes too early changes the page while the user reads the Report page. A short DOWN press opens the Report page again.
+- A long answer delays the live data page. The live data stays up to date during the talk, so the page shows the latest values when it opens.
+- Firmware at commit `8515ef3` or older answers RUN_START with ERROR code 1 (unknown type). The phone application can ignore that error. The page then changes only with the keys, as before.
+
+**Status.** The user accepted the run start and the three choices on 2026-10-17. The phone application team must accept RUN_START. Host tests pass. Device tests are NOT RUN.
+
+## 27. Related documents
 
 - [Product requirements](01-product-requirements.md).
 - [System architecture](02-architecture.md).

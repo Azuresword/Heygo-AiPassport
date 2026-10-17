@@ -51,8 +51,12 @@ static link_popup_t s_popup;
 static void io_popup(void *c, const link_popup_t *p) { (void)c; s_popups++; s_popup = *p; }
 static void io_popup_play(void *c) { (void)c; s_popup_play++; }
 
+static int s_run_starts;
+static uint8_t s_run_start_no;
+static void io_run_start(void *c, uint8_t run) { (void)c; s_run_starts++; s_run_start_no = run; }
+
 static const link_io_t IO = { NULL, io_send, io_drop, io_voice, io_state, io_play_start, io_down, io_play_end, io_dropped,
-                              io_live, io_report, io_page, io_turns, io_popup, io_popup_play };
+                              io_live, io_report, io_page, io_turns, io_popup, io_popup_play, io_run_start };
 
 static void clear(void) { s_nsent = 0; }
 static const sent_t *last(void) { return s_nsent ? &s_sent[s_nsent - 1] : NULL; }
@@ -618,6 +622,46 @@ static void test_turn_report_sync(void) {
     CHECK(got->n_turns == 5, "a shape after the time limit still arrives");
 }
 
+// D-32: RUN_START puts the new run in the live data at once, with every value unknown.
+static void test_run_start(void) {
+    link_core_t l;
+    uint8_t p[32];
+    bool stale = true;
+    link_init(&l, &IO, "fw");
+    link_on_connect(&l, 0);
+    link_on_subscribe(&l, true, 0);
+    rx(&l, p, bp_build_run_start(p, sizeof p, 3), 5);
+    CHECK(s_run_starts == 0 && !link_live(&l, 5, NULL), "no RUN_START before HELLO_ACK");
+
+    uint32_t t = ready(&l, 100);
+    rx(&l, p, bp_build_run_start(p, sizeof p, 3), t + 1);
+    const bp_live_stats_t *s = link_live(&l, t + 2, &stale);
+    CHECK(s_run_starts == 1 && s_run_start_no == 3, "RUN_START reaches the app");
+    CHECK(s && s->run_no == 3 && s->run_state == BP_RUN_SKIING && s->speed_dkmh == BP_U16_UNKNOWN &&
+          s->time_s == BP_U16_UNKNOWN && !stale, "the live data shows run 3 with unknown values");
+
+    bp_live_stats_t ls = { BP_RUN_SKIING, 3, 300, 40, 120, 2, 9 };
+    size_t n = bp_build_live_stats(p, sizeof p, &ls);
+    rx(&l, p, n, t + 1000);
+    rx(&l, p, bp_build_run_start(p, sizeof p, 3), t + 1100);
+    s = link_live(&l, t + 1100, NULL);
+    CHECK(s_run_starts == 2 && s->speed_dkmh == 300 && s->time_s == 9, "a second RUN_START of the same run keeps the data");
+
+    const bp_live_stats_t end = { BP_RUN_ENDED, 3, BP_U16_UNKNOWN, 80, 400, 5, 60 };
+    n = bp_build_live_stats(p, sizeof p, &end);
+    rx(&l, p, n, t + 2000);
+    rx(&l, p, bp_build_run_start(p, sizeof p, 4), t + 2100);
+    s = link_live(&l, t + 2100, NULL);
+    CHECK(s->run_no == 4 && s->run_state == BP_RUN_SKIING && s->drop_m == BP_U16_UNKNOWN, "a new run clears the old values");
+
+    clear();
+    n = bp_build_run_start(p, sizeof p, 5);
+    p[4] = 0;
+    rx(&l, p, n, t + 2200);
+    CHECK(s_run_starts == 3 && last() && last()->buf[0] == BP_ERROR && last()->buf[4] == BP_ERR_FIELD &&
+          last()->buf[5] == BP_RUN_START, "run number 0 gets ERROR 7");
+}
+
 int main(void) {
     test_handshake();
     test_version();
@@ -630,6 +674,7 @@ int main(void) {
     test_turn_shape();
     test_turn_report_sync();
     test_popup();
+    test_run_start();
     if (s_fail) return EXIT_FAILURE;
     printf("link core tests: PASS\n");
     return EXIT_SUCCESS;

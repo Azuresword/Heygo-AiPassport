@@ -14,7 +14,7 @@ The device connects to a phone over BLE. The phone does speech recognition, spee
 | Increment | Function | Status |
 | --- | --- | --- |
 | Increment 1: Coach voice | An OK hold on any page opens the Coach page. Another OK hold asks the AI coach. The device plays the answer. | Code done. Device tests NOT RUN. |
-| Increment 2: ski data and reports | During a run, show the speed, vertical drop, distance, turns, and time. After each run, show the Heygo IQ (0 to 200), the core problem, and one short tip. | Code done. Device tests NOT RUN. |
+| Increment 2: ski data and reports | During a run, show the speed, vertical drop, distance, turns, and time. After each run, show the Heygo IQ (0 to 200), the core problem, and one short tip. When the phone starts a run, the device opens the live data page (D-32). | Code done. The run start: host tests pass. Device tests NOT RUN. |
 | Increment 3: turn shape | After each run, draw the line of the run, 8 turns at a time. OK selects the next turn. An UP hold selects the previous turn. A DOWN hold goes to the next page. | Code done. Device tests NOT RUN. |
 | Increment 4: phone popups (D-31) | The phone shows a fall alert, a voice message, a problem report, or an achievement at once. The device plays the popup audio, then counts down 10 seconds. Any key closes the popup. | Code done. Host tests pass. Device tests NOT RUN. |
 
@@ -35,6 +35,7 @@ It needs no server and no network.
 
 - On the left are the device screen and the three buttons. A press of 500 ms is a hold. The keys Up, Space, and Down are UP, OK, and DOWN.
 - The phone panel can send an answer, cut the BLE link, start a run, end the run, or open the Report page.
+- The button "开始滑行" (start a run) sends RUN_START first. The device opens the live data page at once, or after the talk with the coach or the popup ends (D-32).
 - The phone panel can also send a popup of each kind, with or without audio. A bar shows the 10-second countdown of the popup.
 - In the middle are the state diagram and the trigger matrix. They show the current state and the target of each button. A zone in the diagram holds the three popup states.
 - On the right are the state machine log and the BLE messages.

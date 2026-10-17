@@ -250,6 +250,33 @@ static void path_popup(void) {
     }
 }
 
+// Path 9 (D-32): the phone starts a run. Idle pages open the live data page. A talk with the
+// coach and a popup go on: they keep the run start, and coach_app.c opens the page later.
+static void path_run_start(void) {
+    const coach_state_t go[] = { COACH_STATE_REPORT, COACH_STATE_TURNS, COACH_STATE_READY };
+    for (size_t i = 0; i < 3; i++) {
+        coach_flow_t f; coach_flow_init(&f); f.state = go[i];
+        coach_step_t s = step(&f, COACH_EVENT_RUN_START);
+        assert(s.handled && f.state == COACH_STATE_LIVE && apply(OWNER_NONE, &s) == OWNER_NONE);
+    }
+    coach_flow_t f; coach_flow_init(&f);
+    assert(!step(&f, COACH_EVENT_RUN_START).handled && f.state == COACH_STATE_LIVE);
+    const coach_state_t talk[] = { COACH_STATE_CAPTURE, COACH_STATE_WAIT_ANSWER, COACH_STATE_PLAYBACK };
+    for (size_t i = 0; i < 3; i++) {
+        f.state = talk[i];
+        const owner_t o = talk[i] == COACH_STATE_CAPTURE ? OWNER_CAPTURE : talk[i] == COACH_STATE_PLAYBACK ? OWNER_PLAYBACK : OWNER_NONE;
+        coach_step_t s = step(&f, COACH_EVENT_RUN_START);
+        assert(s.handled && f.state == talk[i] && has_action(&s, COACH_ACTION_RUN_AFTER_COACH));
+        assert(!has_action(&s, COACH_ACTION_LINK_SEND_AGENT_CANCEL) && apply(o, &s) == o);   // nothing stops
+    }
+    const coach_state_t popups[] = { COACH_STATE_POPUP_WAIT, COACH_STATE_POPUP_PLAY, COACH_STATE_POPUP_HOLD };
+    for (size_t i = 0; i < 3; i++) {
+        f.state = popups[i];
+        coach_step_t s = step(&f, COACH_EVENT_RUN_START);
+        assert(s.handled && f.state == popups[i] && s.action_count == 1 && has_action(&s, COACH_ACTION_POPUP_BACK_LIVE));
+    }
+}
+
 static void walk_invariants(void) {
     coach_flow_t f; coach_flow_init(&f);
     owner_t owner = OWNER_NONE;
@@ -279,6 +306,7 @@ int main(void) {
     path_link_loss();
     path_show_report();
     path_popup();
+    path_run_start();
     walk_invariants();
     printf("coach path tests: PASS\n");
     return 0;

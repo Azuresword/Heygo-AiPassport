@@ -4,7 +4,7 @@
 It reads the lines that the Coach task and the voice task write, and prints one row
 for each question, then a summary for the TC-06 and TC-07 limits.
 
-It also reads the ski data lines. For each LIVE_STATS, RUN_REPORT, and SHOW_PAGE,
+It also reads the ski data lines. For each LIVE_STATS, RUN_REPORT, SHOW_PAGE, and RUN_START,
 it finds the first screen change after the packet and gives the time between them.
 The summary compares the 95th percentile with the 300 ms limit of TC-21.
 
@@ -25,6 +25,7 @@ STOP = re.compile(r"^(capture|playback) stop: (\d+) ms")
 
 RX = re.compile(r"^rx (LIVE_STATS|RUN_REPORT)\b(.*)$")
 PAGE_ASK = re.compile(r"^phone asks for page (\d+)")
+RUN_ASK = re.compile(r"^phone starts run (\d+)")         # D-32
 SCREEN = re.compile(r'^(ski|report)\.(\w+) = "(.*)"$|^show (\w+) screen$')
 
 CAPTURE_STOP_LIMIT_MS = 100    # TC-06
@@ -119,6 +120,8 @@ def parse_data(lines):
                 kind = r.group(1)
             elif PAGE_ASK.match(msg):
                 kind = "SHOW_PAGE"
+            elif RUN_ASK.match(msg):
+                kind = "RUN_START"
         if kind:
             packets.append({"kind": kind, "rx_ms": t, "screen_ms": None, "first": ""})
             continue
@@ -140,7 +143,7 @@ def p95(values):
 
 def summary_data(packets):
     out = []
-    for kind in ("LIVE_STATS", "RUN_REPORT", "SHOW_PAGE"):
+    for kind in ("LIVE_STATS", "RUN_REPORT", "SHOW_PAGE", "RUN_START"):
         group = [p for p in packets if p["kind"] == kind]
         if not group:
             continue
