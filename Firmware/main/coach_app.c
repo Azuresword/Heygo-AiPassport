@@ -14,6 +14,11 @@
 // Ski data (Increment 2): the link keeps the last LIVE_STATS and RUN_REPORT. A data
 // message, or the 1-second tick, asks this task to copy the texts from main/ui/ski_view.c
 // into the labels of the Ski page or the Report page. Data never changes the state.
+//
+// Popups (D-31): a POPUP from the phone stops everything at once and shows the popup page.
+// The popup audio plays, then a 10-second countdown runs. Any key, or the end of the
+// countdown, sends POPUP_END and goes back to the page before the popup. The Coach page
+// states go back to READY. A new popup replaces the old one and keeps the saved page.
 #include "coach_app.h"
 
 #include <stdio.h>
@@ -26,6 +31,7 @@
 #include "coach_input.h"
 #include "coach_screens.h"
 #include "coach_ui.h"
+#include "popup_view.h"
 #include "ski_view.h"
 #include "turn_page.h"
 #include "turn_view.h"
@@ -59,7 +65,7 @@ typedef struct {
     bsp_btn_ev_t ev;
     coach_event_t event;
     link_voice_t voice;
-    uint8_t state;
+    uint8_t state;      // MSG_AGENT_STATE: the Agent state. A popup timer event: the popup number.
     uint8_t failure;
 } msg_t;
 
@@ -70,10 +76,13 @@ static coach_screen_coach_t s_coach;
 static coach_screen_ski_t s_ski;
 static coach_screen_report_t s_report;
 static coach_screen_turns_t s_turns;
+static coach_screen_popup_t s_popup_scr;
 static esp_timer_handle_t s_capture_timer;
 static esp_timer_handle_t s_answer_timer;
 static esp_timer_handle_t s_play_watch;
 static esp_timer_handle_t s_data_tick;
+static esp_timer_handle_t s_popup_wait_timer;   // 5 s for the popup audio to start.
+static esp_timer_handle_t s_popup_hold_timer;   // The 10-second countdown.
 static ski_view_t s_ski_view;          // The texts on the Ski page now.
 static report_view_t s_report_view;    // The texts on the Report page now.
 static turn_view_t s_turn_view;        // The shape and the texts on the Turns page now.
@@ -88,6 +97,14 @@ static lv_obj_t *s_blank;   // Active while the old screen is deleted. LVGL must
 static link_voice_t s_voice = LINK_VOICE_NO_LINK;
 static coach_event_t s_event;          // The event of the step that runs now.
 static bool s_start_capture;           // Set by audio_capture_start. Runs after the step.
+static portMUX_TYPE s_popup_mux = portMUX_INITIALIZER_UNLOCKED;
+static link_popup_t s_popup_in;        // The last POPUP from the link. Guarded by s_popup_mux.
+static link_popup_t s_popup;           // The popup on the screen.
+static popup_view_t s_popup_view;      // The texts on the popup page now.
+static volatile uint8_t s_popup_no;    // Counts the popups. A timer event of an old popup is dropped.
+static coach_event_t s_popup_return = COACH_EVENT_RETURN_READY;   // The page before the popup.
+static int64_t s_popup_deadline_us;    // The end of the countdown.
+static bool s_popup_close;             // Set by popup_close. The return runs after the step.
 
 _Static_assert((int)COACH_KEY_UP == (int)BSP_BTN_UP && (int)COACH_KEY_DOWN == (int)BSP_BTN_DOWN &&
                (int)COACH_KEY_OK == (int)BSP_BTN_OK, "coach_key_t must match bsp_btn_t");
@@ -108,6 +125,7 @@ static const char *screen_name(coach_screen_id_t id) {
     case COACH_SCREEN_SKI: return "ski";
     case COACH_SCREEN_REPORT: return "report";
     case COACH_SCREEN_TURNS: return "turns";
+    case COACH_SCREEN_POPUP: return "popup";
     default: return "?";
     }
 }
@@ -134,6 +152,17 @@ static void on_data_tick(void *arg) {
     post_msg(&m);
 }
 static void on_answer_timeout(void *arg) { (void)arg; post_event(COACH_EVENT_AGENT_TIMEOUT); }
+// The popup timers carry the popup number, so that the event of a replaced popup is dropped.
+static void post_popup_timer(coach_event_t event) {
+    const msg_t m = { .kind = MSG_EVENT, .event = event, .state = s_popup_no };
+    post_msg(&m);
+}
+static void on_popup_wait(void *arg) { (void)arg; post_popup_timer(COACH_EVENT_POPUP_NO_AUDIO); }
+static void on_popup_hold(void *arg) { (void)arg; post_popup_timer(COACH_EVENT_POPUP_TIMEOUT); }
+
+static bool is_popup(coach_state_t st) {
+    return st == COACH_STATE_POPUP_WAIT || st == COACH_STATE_POPUP_PLAY || st == COACH_STATE_POPUP_HOLD;
+}
 
 // The voice task ends a stalled stream after 2 s. This watchdog covers a voice task
 // that stops itself, for example in a blocked speaker write. The answer then ends,
@@ -216,11 +245,41 @@ static void turn_draw_step(void) {
     }
 }
 
+// The popup page. The countdown text changes each second with the data tick.
+// The caller holds the LVGL lock.
+static void refresh_popup(bool force) {
+    const coach_state_t st = s_flow.state;
+    const popup_phase_t phase = st == COACH_STATE_POPUP_PLAY ? POPUP_PHASE_PLAY
+                              : st == COACH_STATE_POPUP_HOLD ? POPUP_PHASE_HOLD
+                                                             : POPUP_PHASE_WAIT;
+    const int64_t left_us = s_popup_deadline_us - esp_timer_get_time();
+    popup_view_t v;
+    popup_view_build(&v, &s_popup, phase, left_us > 0 ? (uint32_t)(left_us / 1000) : 0);
+    PUT("popup", s_popup_scr, s_popup_view, mode, v, force);
+    PUT("popup", s_popup_scr, s_popup_view, dest, v, force);
+    PUT("popup", s_popup_scr, s_popup_view, title, v, force);
+    PUT("popup", s_popup_scr, s_popup_view, body, v, force);
+    PUT("popup", s_popup_scr, s_popup_view, foot, v, force);
+    PUT("popup", s_popup_scr, s_popup_view, hint, v, force);
+    if (force || v.danger != s_popup_view.danger) {
+        s_popup_view.danger = v.danger;
+        const lv_color_t c = v.danger ? ui_color_danger() : ui_color_accent();
+        if (s_popup_scr.mode_dot) lv_obj_set_style_bg_color(s_popup_scr.mode_dot, c, 0);
+        if (s_popup_scr.hint_panel) lv_obj_set_style_bg_color(s_popup_scr.hint_panel, c, 0);
+        if (s_popup_scr.dest) lv_obj_set_style_text_color(s_popup_scr.dest, c, 0);
+        if (s_popup_scr.title) lv_obj_set_style_text_color(s_popup_scr.title, c, 0);
+    }
+}
+
 // Copy the ski data texts into the screen that is on now. force: the screen is new.
 // The caller holds the LVGL lock.
 static void refresh_data(bool force) {
     if (s_shown == COACH_SCREEN_TURNS) {
         refresh_turns(force, false);
+        return;
+    }
+    if (s_shown == COACH_SCREEN_POPUP) {
+        refresh_popup(force);
         return;
     }
     if (s_shown != COACH_SCREEN_SKI && s_shown != COACH_SCREEN_REPORT) return;
@@ -277,6 +336,7 @@ static void show_screen(coach_screen_id_t id) {
     case COACH_SCREEN_SKI: coach_screen_ski_destroy(&s_ski); break;
     case COACH_SCREEN_REPORT: coach_screen_report_destroy(&s_report); break;
     case COACH_SCREEN_TURNS: coach_screen_turns_destroy(&s_turns); break;
+    case COACH_SCREEN_POPUP: coach_screen_popup_destroy(&s_popup_scr); break;
     default: break;
     }
     switch (id) {
@@ -299,6 +359,10 @@ static void show_screen(coach_screen_id_t id) {
         memset(&s_turn_view, 0, sizeof s_turn_view);
         turn_group_show(0);
         break;
+    case COACH_SCREEN_POPUP:
+        coach_screen_popup_build(&s_popup_scr);
+        lv_screen_load(s_popup_scr.screen);
+        break;
     default:
         break;
     }
@@ -307,8 +371,30 @@ static void show_screen(coach_screen_id_t id) {
 }
 
 static void run_action(coach_action_t a) {
+    if (a == COACH_ACTION_UI_SHOW_POPUP) {
+        // A new popup. On the popup page already, write the new texts at once.
+        taskENTER_CRITICAL(&s_popup_mux);
+        s_popup = s_popup_in;
+        taskEXIT_CRITICAL(&s_popup_mux);
+        ESP_LOGI(TAG, "popup xid=0x%02x kind=%u audio=%u", s_popup.xid, s_popup.kind, s_popup.audio);
+        if (s_shown == COACH_SCREEN_POPUP && lvgl_lock()) {
+            refresh_popup(true);
+            lvgl_unlock();
+        }
+        return;
+    }
     if (coach_ui_apply(a)) return;
     switch (a) {
+    case COACH_ACTION_POPUP_COUNTDOWN:
+        s_popup_deadline_us = esp_timer_get_time() + POPUP_HOLD_MS * 1000LL;
+        esp_timer_stop(s_popup_hold_timer);
+        esp_timer_start_once(s_popup_hold_timer, POPUP_HOLD_MS * 1000LL);
+        break;
+    case COACH_ACTION_POPUP_CLOSE:
+        ble_link_popup_end(s_event == COACH_EVENT_POPUP_TIMEOUT ? BP_POPUP_END_TIMEOUT : BP_POPUP_END_KEY);
+        s_popup_close = true;
+        break;
+    case COACH_ACTION_AUDIO_PLAY_CUT: voice_play_cut(); break;
     case COACH_ACTION_AUDIO_CAPTURE_START: s_start_capture = true; break;
     case COACH_ACTION_TURN_NEXT:
     case COACH_ACTION_TURN_PREV:
@@ -351,11 +437,12 @@ static void run_action(coach_action_t a) {
 // Doc 07 field values for CONTEXT and DEVICE_STATUS.
 static void send_context(coach_state_t st) {
     // D-29 has no Ski or Rest mode. The mode field tells the phone whether the Coach page is on.
-    const bool coach = st != COACH_STATE_LIVE && st != COACH_STATE_REPORT && st != COACH_STATE_TURNS;
+    const bool coach = st != COACH_STATE_LIVE && st != COACH_STATE_REPORT && st != COACH_STATE_TURNS && !is_popup(st);
     const uint8_t mode = coach ? BP_MODE_REST : BP_MODE_SKI;
     const uint8_t page = st == COACH_STATE_LIVE   ? BP_PAGE_SKI
                        : st == COACH_STATE_REPORT ? BP_PAGE_REPORT
                        : st == COACH_STATE_TURNS  ? BP_PAGE_TURNS
+                       : is_popup(st)             ? BP_PAGE_POPUP
                                                   : BP_PAGE_COACH;
     ble_link_set_context(mode, page);
 }
@@ -384,8 +471,14 @@ static coach_action_t status_action(link_voice_t v) {
 static void update_timers(coach_state_t from, coach_state_t to) {
     if (from == COACH_STATE_CAPTURE && to != COACH_STATE_CAPTURE) esp_timer_stop(s_capture_timer);
     if (from == COACH_STATE_WAIT_ANSWER && to != COACH_STATE_WAIT_ANSWER) esp_timer_stop(s_answer_timer);
-    if (from == COACH_STATE_PLAYBACK && to != COACH_STATE_PLAYBACK) esp_timer_stop(s_play_watch);
-    if (to == COACH_STATE_PLAYBACK && from != COACH_STATE_PLAYBACK) esp_timer_start_periodic(s_play_watch, PLAY_WATCH_US);
+    // The watchdog covers the answer and the popup audio.
+    const bool play_from = from == COACH_STATE_PLAYBACK || from == COACH_STATE_POPUP_PLAY;
+    const bool play_to = to == COACH_STATE_PLAYBACK || to == COACH_STATE_POPUP_PLAY;
+    if (play_from && (!play_to || from != to)) esp_timer_stop(s_play_watch);
+    if (play_to && (!play_from || from != to)) esp_timer_start_periodic(s_play_watch, PLAY_WATCH_US);
+    if (from == COACH_STATE_POPUP_WAIT) esp_timer_stop(s_popup_wait_timer);
+    if (to == COACH_STATE_POPUP_WAIT && s_popup.audio) esp_timer_start_once(s_popup_wait_timer, POPUP_AUDIO_WAIT_MS * 1000LL);
+    if (!is_popup(to)) esp_timer_stop(s_popup_hold_timer);
     if (to == COACH_STATE_CAPTURE && from != COACH_STATE_CAPTURE) {
         esp_timer_start_once(s_capture_timer, CAPTURE_LIMIT_US);
     }
@@ -395,6 +488,21 @@ static void update_timers(coach_state_t from, coach_state_t to) {
 }
 
 static void handle(coach_event_t event) {
+    const coach_state_t before = s_flow.state;
+    // The answer end and the play watchdog post ANSWER_END. In a popup, that is the end of the popup audio.
+    if (event == COACH_EVENT_ANSWER_END && before == COACH_STATE_POPUP_PLAY) event = COACH_EVENT_POPUP_AUDIO_END;
+    if (event == COACH_EVENT_POPUP_SHOW) {
+        // Keep the page before the first popup. A new popup replaces the old one and keeps it.
+        if (!is_popup(before)) {
+            s_popup_return = before == COACH_STATE_LIVE   ? COACH_EVENT_RETURN_LIVE
+                           : before == COACH_STATE_REPORT ? COACH_EVENT_RETURN_REPORT
+                           : before == COACH_STATE_TURNS  ? COACH_EVENT_RETURN_TURNS
+                                                          : COACH_EVENT_RETURN_READY;
+        }
+        esp_timer_stop(s_popup_wait_timer);
+        esp_timer_stop(s_popup_hold_timer);
+        s_popup_no++;
+    }
     // The guard: without voice, a question cannot start. The screen names the cause.
     // Voice needs two parts: the BLE link and the voice task.
     if (event == COACH_EVENT_OK_HOLD && s_flow.state == COACH_STATE_READY &&
@@ -404,6 +512,7 @@ static void handle(coach_event_t event) {
     }
     s_event = event;
     s_start_capture = false;
+    s_popup_close = false;
     const coach_step_t step = coach_flow_step(&s_flow, event);
     if (!step.handled) {
         ESP_LOGD(TAG, "%s ignores %s", coach_state_name(step.from), coach_event_name(event));
@@ -424,6 +533,16 @@ static void handle(coach_event_t event) {
     if (screen != s_shown && lvgl_lock()) {
         show_screen(screen);
         lvgl_unlock();
+    } else if (screen == COACH_SCREEN_POPUP && step.state_changed && lvgl_lock()) {
+        refresh_popup(false);   // The footer follows the popup phase.
+        lvgl_unlock();
+    }
+
+    // The steps below run in this call, so that no queued event comes between them.
+    if (s_popup_close) {
+        handle(s_popup_return);
+    } else if (event == COACH_EVENT_POPUP_SHOW && !s_popup.audio) {
+        handle(COACH_EVENT_POPUP_NO_AUDIO);
     }
 }
 
@@ -461,7 +580,11 @@ static void coach_task(void *arg) {
             continue;
         }
         switch (m.kind) {
-        case MSG_EVENT: handle(m.event); break;
+        case MSG_EVENT:
+            // A timer event of a replaced popup.
+            if ((m.event == COACH_EVENT_POPUP_NO_AUDIO || m.event == COACH_EVENT_POPUP_TIMEOUT) && m.state != s_popup_no) break;
+            handle(m.event);
+            break;
         case MSG_LINK: on_link_msg(m.voice); break;
         case MSG_AGENT_STATE: on_agent_state_msg(m.state, m.failure); break;
         case MSG_DATA:
@@ -523,6 +646,19 @@ static void link_show_page(uint8_t page) {
     if (page == BP_PAGE_REPORT) post_event(COACH_EVENT_SHOW_REPORT);
 }
 
+// D-31: a popup. Copy it now: the link keeps only the last one.
+static void link_popup(const link_popup_t *p) {
+    taskENTER_CRITICAL(&s_popup_mux);
+    s_popup_in = *p;
+    taskEXIT_CRITICAL(&s_popup_mux);
+    post_event(COACH_EVENT_POPUP_SHOW);
+}
+
+static void link_popup_play_start(void) {
+    voice_down_open();
+    post_event(COACH_EVENT_POPUP_AUDIO_START);
+}
+
 static void voice_up_block(const uint8_t *block) { ble_link_audio_up(block); }
 static void voice_play_done(void) { post_event(COACH_EVENT_ANSWER_END); }
 
@@ -541,10 +677,14 @@ esp_err_t coach_app_start(void) {
     const esp_timer_create_args_t ans = { .callback = on_answer_timeout, .name = "coach_ans" };
     const esp_timer_create_args_t watch = { .callback = on_play_watch, .name = "coach_play" };
     const esp_timer_create_args_t data = { .callback = on_data_tick, .name = "coach_data" };
+    const esp_timer_create_args_t pwait = { .callback = on_popup_wait, .name = "popup_wait" };
+    const esp_timer_create_args_t phold = { .callback = on_popup_hold, .name = "popup_hold" };
     esp_err_t e = esp_timer_create(&cap, &s_capture_timer);
     if (e == ESP_OK) e = esp_timer_create(&ans, &s_answer_timer);
     if (e == ESP_OK) e = esp_timer_create(&watch, &s_play_watch);
     if (e == ESP_OK) e = esp_timer_create(&data, &s_data_tick);
+    if (e == ESP_OK) e = esp_timer_create(&pwait, &s_popup_wait_timer);
+    if (e == ESP_OK) e = esp_timer_create(&phold, &s_popup_hold_timer);
     if (e != ESP_OK) return e;
 
     coach_bindings_init();
@@ -567,7 +707,7 @@ esp_err_t coach_app_start(void) {
         .voice_changed = link_voice_changed, .agent_state = link_agent_state,
         .play_start = link_play_start, .audio_down = link_audio_down, .play_end = link_play_end,
         .live_stats = link_live_stats, .run_report = link_run_report, .show_page = link_show_page,
-        .turn_shape = link_turn_shape,
+        .turn_shape = link_turn_shape, .popup = link_popup, .popup_play_start = link_popup_play_start,
     };
     esp_err_t le = ble_link_start(&app);
     if (le != ESP_OK) ESP_LOGE(TAG, "BLE link start failed: %s", esp_err_to_name(le));

@@ -2,9 +2,9 @@
 
 # Four-hour Sprint roadmap
 
-Version: 0.3. Date: 2026-10-17. Status: In progress. The code of Sprints 2 to 4 is in the repository and merged into `main`. Device tests are NOT RUN.
+Version: 0.4. Date: 2026-10-17. Status: In progress. The code of Sprints 2 to 4 is in the repository and merged into `main`. Device tests are NOT RUN.
 
-This document divides the remaining work of Increments 1, 2, and 3 in the [backlog](03-scrum-backlog.md) into four-hour Sprints.
+This document divides the remaining work of Increments 1 to 4 in the [backlog](03-scrum-backlog.md) into four-hour Sprints.
 Each Sprint has one Sprint Goal.
 The minutes are planning limits, not measurements. The team has no velocity data yet.
 
@@ -43,6 +43,8 @@ Rules:
 | 10 | 1, 2 | Fix defects, and review whether the two increments meet the Definition of Done. | Sprint 9 | Not started |
 | 11 | 3 | The device asks for and receives the turn groups, and the Turns page passes the host screen check. | Sprint 4 | Code on the branch `feat/turn-view`. Section 4 gives the result |
 | 12 | 3 | Pass TC-05 on the board with `phone_sim`, and then with the real phone application. | Sprint 11. The board. A phone application that answers TURN_REQUEST | Not started |
+| 13 | 4 | The device shows the popups from the phone, and the popup page passes the host screen check. | Sprint 11 | Code on the branch `feat/app-popups`. Section 4 gives the result |
+| 14 | 4 | Run the device tests of the phone popups (D-31) on the board with `phone_sim --popups`. | Sprint 13. The board | Not started |
 
 Sprints 2 to 4 run on the host only. They can start now.
 Sprint 5 is the first Sprint that needs the board.
@@ -239,6 +241,50 @@ Section 8 of the [firmware change notes](../Firmware/docs/heygo-changes.md) list
 | 1 | Flash the board. Run three runs with `phone_sim`. Run 3 sends a schematic shape. | 60 min |
 | 2 | Check the page on the screen: the live line, the rider, the turn values, and "示意". | 60 min |
 | 3 | Run the same check with the real phone application. | 80 min |
+
+### Sprint 13: popups (host)
+
+**Sprint Goal.** The device shows the popups from the phone, and the popup page passes the host screen check.
+
+**Story.** US-22. D-31 sets the scope.
+
+| Order | Task | Time box |
+| --- | --- | --- |
+| 1 | POPUP and POPUP_END in the packet layer. Channel 2 and the replace rule in the link core. Host tests for each error code. | 50 min |
+| 2 | The states POPUP_WAIT, POPUP_PLAY, and POPUP_HOLD. A POPUP from every state. The return to the saved page. | 50 min |
+| 3 | The popup page and its texts in `popup_view.c`. The 5-second and 10-second timers. Host tests. | 50 min |
+| 4 | `phone_sim --popups` and the popup buttons of the flow simulator. The host renders the page. | 50 min |
+
+**Exit check.**
+
+- The packet layer, the link core, and the view have host tests. The Python packet matches the C packet byte for byte.
+- The host renders the popup page for each kind, and for the longest texts.
+- The layout check passes.
+- The gate gives exit code 0.
+
+**Result.** Images 22 to 26 show the popup page. The flow simulator self-test passes 102 of 102. The protocol version stays 0.2. Nobody recorded the actual time. Device tests are NOT RUN.
+
+### Sprint 14: phone popups on the board
+
+**Sprint Goal.** Run the device tests of the phone popups (D-31) on the board with `phone_sim --popups`.
+
+**Input.** The board at hand. The firmware of Sprint 13.
+
+| Order | Task | Time box |
+| --- | --- | --- |
+| 1 | Flash the board. Start `phone_sim.py --popups 8`. Stay on the live data page. Check the name, the color, the audio, the countdown, and POPUP_END reason 0 of each kind. | 40 min |
+| 2 | Receive at least 3 popups in each state: LIVE, REPORT, TURNS, READY, CAPTURE, WAIT_ANSWER, and PLAYBACK. Use `--mode silent` for WAIT_ANSWER. Check the cancel and the return page. | 70 min |
+| 3 | Close popups with each key, as a short press and as a hold. Check reason 1, no page change, and no capture. Hold OK before a popup, and release OK during it. The popup must stay. | 40 min |
+| 4 | Start `phone_sim.py --popups 6 --popup-gap 5`. Check reason 2 and the saved page. Stop `phone_sim.py` during a popup. Check the countdown and the page after it. | 30 min |
+| 5 | Send a popup with audio during an answer. Record whether the first blocks of the popup audio play. | 20 min |
+
+**Exit check.**
+
+- The measurement table states the firmware version, the `phone_sim` version, and the result of each step.
+- The `phone_sim` log shows each POPUP_END with its reason and the time after the POPUP.
+- TC-22 records measurements only. Per the Definition of Done, a stub phone cannot pass it. The real phone application must run it again.
+
+**Cut line.** If time runs out, drop task 5 first, and then task 4. Each dropped task goes back to the backlog.
 
 ## 5. Evidence format
 

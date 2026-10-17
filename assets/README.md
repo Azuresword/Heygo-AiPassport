@@ -9,7 +9,7 @@ The firmware in `../Firmware` compiles the fonts from this folder.
 
 | Path | Content |
 | --- | --- |
-| `ui/strings.json` | The 38 strings that the P0 screen shows, in Chinese and English. |
+| `ui/strings.json` | The 71 strings that the device screen shows, in Chinese and English. The `popup.*` strings and `hint.popup` belong to the popup page (D-31). |
 | `fonts/heygo_sc_16.c` | 16 px font for status, hints, and phone text. 3,869 glyphs. |
 | `fonts/heygo_sc_28.c` | 28 px bold font for state words and titles. 185 glyphs. |
 | `fonts/heygo_display_20.c`, `fonts/heygo_display_34.c`, `fonts/heygo_display_48.c` | Staatliches headline font, 20 px, 34 px, and 48 px. ASCII only. The 48 px font shows the speed. |
@@ -95,7 +95,12 @@ To make the images again, run `python3 tools/host_render/render.py` from `../Fir
 | `19-turns-schematic.png` | The Turns page: the last group of a schematic run of 255 turns, with the schematic tag |
 | `20-turns-loading.png` | The Turns page while a page is still on its way from the phone |
 | `21-turns-short.png` | A run of one page, on turn 2: the second row names the UP hold |
-| `contact-sheet.png` | All 20 images at 2x scale |
+| `22-popup-fall.png` | A fall alert in red, with the default title, while its audio plays (D-31) |
+| `23-popup-voice.png` | A voice message that waits for its audio |
+| `24-popup-issue.png` | A problem report during the countdown: "8 秒后返回" (back in 8 seconds) |
+| `25-popup-badge.png` | An achievement at the start of the countdown |
+| `26-popup-max.png` | A popup with the longest title and body |
+| `contact-sheet.png` | All 25 images at 2x scale |
 
 ## Simulator
 
@@ -107,6 +112,7 @@ Open `sim/coach-flow.html` in a browser. It needs no server and no network.
 - The logs show each transition, its actions, and each BLE message.
 - The ski data buttons start a run, pause the packets, and end the run. LIVE_STATS comes once each second, and RUN_REPORT comes 2 seconds after the end.
 - A short DOWN press on the idle Coach page opens the Report page. A short UP press returns.
+- The popup buttons send a popup of each kind, with or without audio (D-31). A bar shows the 10-second countdown. The diagram shows the three popup states in a zone of their own.
 
 The browser draws the screen with system fonts. The images in `mockups/` show the real pixels.
 Do not edit the page by hand. Run `python3 tools/flow/flow_sim.py` from `../Firmware`.

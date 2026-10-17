@@ -228,6 +228,234 @@ int main(void) {
       assert(s.handled);
       assert(s.to == COACH_STATE_READY);
       assert(s.action_count == 2); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_LIVE;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_POPUP_SHOW);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_WAIT);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_REPORT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_POPUP_SHOW);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_WAIT);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_TURNS;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_POPUP_SHOW);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_WAIT);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_READY;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_POPUP_SHOW);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_WAIT);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_CAPTURE;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_POPUP_SHOW);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_WAIT);
+      assert(s.action_count == 4); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_WAIT_ANSWER;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_POPUP_SHOW);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_WAIT);
+      assert(s.action_count == 3); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_PLAYBACK;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_POPUP_SHOW);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_WAIT);
+      assert(s.action_count == 4); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_WAIT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_POPUP_SHOW);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_WAIT);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_PLAY;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_POPUP_SHOW);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_WAIT);
+      assert(s.action_count == 2); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_HOLD;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_POPUP_SHOW);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_WAIT);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_WAIT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_POPUP_NO_AUDIO);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_WAIT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_POPUP_AUDIO_START);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_PLAY);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_WAIT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_LINK_LOST);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_PLAY;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_POPUP_AUDIO_END);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 2); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_PLAY;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_LINK_LOST);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 2); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_WAIT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_OK_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_WAIT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_OK_HOLD);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_WAIT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_WAIT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_HOLD);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_WAIT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_WAIT;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_HOLD);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_PLAY;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_OK_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 2); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_PLAY;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_OK_HOLD);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 2); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_PLAY;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 2); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_PLAY;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_HOLD);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 2); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_PLAY;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 2); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_PLAY;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_HOLD);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 2); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_HOLD;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_OK_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_HOLD;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_OK_HOLD);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_HOLD;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_HOLD;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_HOLD);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_HOLD;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_HOLD;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_HOLD);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_HOLD;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_POPUP_TIMEOUT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_POPUP_HOLD);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_HOLD;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_RETURN_LIVE);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_LIVE);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_HOLD;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_RETURN_REPORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_REPORT);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_HOLD;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_RETURN_TURNS);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_TURNS);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_POPUP_HOLD;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_RETURN_READY);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_READY);
+      assert(s.action_count == 0); }
 
     // an event with no transition must leave the state untouched
     coach_flow_init(&flow);

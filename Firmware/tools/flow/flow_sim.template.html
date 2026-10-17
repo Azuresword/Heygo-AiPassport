@@ -160,6 +160,9 @@
   .node.cur text { fill: var(--text); } .node.cur text.id { fill: var(--accent); }
   .node.init rect { stroke-dasharray: 0; stroke-width: 2.5; }
   .edge path { fill: none; stroke: #304650; stroke-width: 1.6; transition: stroke .2s, opacity .2s; }
+  .zone rect { fill: color-mix(in srgb, var(--danger) 5%, transparent); stroke: color-mix(in srgb, var(--danger) 45%, transparent); stroke-width: 1.2; stroke-dasharray: 6 5; }
+  .zone text { font: 600 12px var(--cjk); fill: var(--sub); }
+  .zone path { fill: none; stroke: color-mix(in srgb, var(--danger) 60%, transparent); stroke-width: 1.6; stroke-dasharray: 6 5; }
   .edge .pill rect { fill: #0d1b23; stroke: #2b414b; }
   .edge .pill text { font: 11.5px var(--cjk); fill: var(--sub); }
   .edge.out path { stroke: var(--sub); }
@@ -269,6 +272,7 @@
     </div>
     <div class="timer"><div class="lbl"><span>录音上限</span><span id="capT">—</span></div><div class="track"><b id="capBar"></b></div></div>
     <div class="timer"><div class="lbl"><span>等待回答超时</span><span id="waitT">—</span></div><div class="track"><b id="waitBar"></b></div></div>
+    <div class="timer"><div class="lbl"><span>弹窗倒计时</span><span id="popT">—</span></div><div class="track"><b id="popBar"></b></div></div>
     <p class="note">浏览器按同一份流程与坐标绘制。最终像素效果以 <code>assets/mockups</code> 的 LVGL 渲染为准。</p>
   </section>
 
@@ -289,6 +293,8 @@
       </div>
       <div class="row" id="phoneBtns"></div>
       <p class="note">自动模式会在 AGENT_END 后按所选场景回应。关闭后可手动发送手机事件。</p>
+      <div class="row" style="margin-top:12px" id="popupBtns"></div>
+      <p class="note">App 弹窗（D-31）：任何状态收到 POPUP 都立即打断，录音、等回答、播放都会取消。有语音时先播完，再倒计时 10 秒；没有语音直接倒计时。任何键都只关闭弹窗，回到弹窗前的页面（教练页的各状态回到就绪）。新弹窗替换旧弹窗。</p>
       <div class="row" style="margin-top:12px" id="skiBtns"></div>
       <p class="note">滑行数据：开始后手机每秒发一个 LIVE_STATS。暂停 5 秒后速度显示"--"。结束一趟后 2 秒发 RUN_REPORT 和 TURN_SHAPE。设备按组（8 弯一组）发 TURN_REQUEST，手机用 TURN_GROUP 回复，设备缓存前中后 3 组。弯型页：短按 OK 下一弯，长按 UP 上一弯，长按 DOWN 下一页（8 弯）；短按 UP/DOWN 换页面。打开时第一页每 40 ms 画一个点。"弯数"填数字可模拟弯很多的一趟。第 3 趟的弯型是示意。数据只改屏幕文字，不改状态。</p>
     </div>
@@ -297,7 +303,7 @@
         <div><span class="section-kicker">State topology</span><h2>状态流转</h2></div>
         <button type="button" class="ctl" id="reset">重置流程</button>
       </div>
-      <svg id="graph" viewBox="0 20 990 440" role="img" aria-label="状态流转图"></svg>
+      <svg id="graph" viewBox="0 20 990 715" role="img" aria-label="状态流转图"></svg>
       <div class="legend"><span>当前状态可走的转换</span><span class="l2">刚刚走过的转换</span><span class="l3">其他转换</span></div>
     </div>
     <div class="card">
@@ -330,21 +336,31 @@
 const DATA = __DATA__;
 const F = DATA.flow, S = DATA.strings, C = DATA.colors;
 const HOLD_MS = DATA.hold_ms, CAPTURE_LIMIT_MS = 20000, AGENT_TIMEOUT_MS = 10000;
+const POPUP_AUDIO_WAIT_MS = 5000, POPUP_HOLD_MS = 10000;   // main/ui/popup_view.h
 
-const STATE_NAME = { LIVE: "实时数据", REPORT: "本趟报告", TURNS: "弯型", READY: "教练·就绪", CAPTURE: "录音", WAIT_ANSWER: "等回答", PLAYBACK: "播放回答" };
+const STATE_NAME = { LIVE: "实时数据", REPORT: "本趟报告", TURNS: "弯型", READY: "教练·就绪", CAPTURE: "录音", WAIT_ANSWER: "等回答", PLAYBACK: "播放回答",
+  POPUP_WAIT: "弹窗·等语音", POPUP_PLAY: "弹窗·播报", POPUP_HOLD: "弹窗·倒计时" };
+const POPUP_STATES = new Set(["POPUP_WAIT", "POPUP_PLAY", "POPUP_HOLD"]);
+const POPUP_EVENT_NAME = {
+  POPUP_SHOW: "App 弹窗", POPUP_NO_AUDIO: "无语音", POPUP_AUDIO_START: "弹窗语音开始", POPUP_AUDIO_END: "弹窗语音结束",
+  POPUP_TIMEOUT: "倒计时结束", RETURN_LIVE: "回实时数据", RETURN_REPORT: "回报告", RETURN_TURNS: "回弯型", RETURN_READY: "回教练",
+};
 const EVENT_NAME = {
   OK_HOLD: "长按 OK", OK_SHORT: "短按 OK", OK_RELEASE: "松开 OK",
   UP_HOLD: "长按 UP", UP_SHORT: "短按 UP", DOWN_HOLD: "长按 DOWN", DOWN_SHORT: "短按 DOWN",
   CAPTURE_LIMIT: "录满 20 秒", AGENT_TIMEOUT: "10 秒无回应",
   ANSWER_START: "回答开始", ANSWER_END: "回答结束", ANSWER_FAILED: "识别失败", LINK_LOST: "蓝牙断开",
-  SHOW_REPORT: "App 跳到报告页",
+  SHOW_REPORT: "App 跳到报告页", ...POPUP_EVENT_NAME,
 };
 // The main path runs left to right. Returns to READY arc below it. A new question arcs above it.
 // D-29: the live data page (top left) and the Report page (bottom left) loop with the Coach page.
 // D-30: the Turns page sits between the Report page and the Coach page, below the Coach page.
 // The Coach page states run left to right. Page changes from the Coach page arc above (DOWN, to
 // live data) and below (UP, to the report). Returns inside the Coach page stay close to the row.
-const POS = { LIVE: [110, 90], REPORT: [110, 420], TURNS: [330, 420], READY: [330, 255], CAPTURE: [520, 255], WAIT_ANSWER: [710, 255], PLAYBACK: [900, 255] };
+// D-31: the popup states sit in their own row. Every state enters it, so the graph draws one
+// entry arrow and one exit arrow for the zone, not one edge for each state.
+const POS = { LIVE: [110, 90], REPORT: [110, 420], TURNS: [330, 420], READY: [330, 255], CAPTURE: [520, 255], WAIT_ANSWER: [710, 255], PLAYBACK: [900, 255],
+              POPUP_WAIT: [500, 590], POPUP_PLAY: [700, 590], POPUP_HOLD: [900, 590] };
 const BEND = {
   "LIVE>REPORT": [-95, 0], "REPORT>LIVE": [95, 0],
   "READY>CAPTURE": [0, 0], "CAPTURE>WAIT_ANSWER": [0, 0], "WAIT_ANSWER>PLAYBACK": [0, 0],
@@ -353,12 +369,16 @@ const BEND = {
   "CAPTURE>LIVE": [40, -110], "WAIT_ANSWER>LIVE": [60, -130], "PLAYBACK>LIVE": [80, -150],
   "CAPTURE>TURNS": [30, 70], "WAIT_ANSWER>TURNS": [50, 95], "PLAYBACK>TURNS": [70, 115],
   "REPORT>TURNS": [0, -22], "TURNS>REPORT": [0, 22], "READY>TURNS": [-28, 0], "TURNS>READY": [28, 0],
+  "POPUP_WAIT>POPUP_PLAY": [0, 0], "POPUP_PLAY>POPUP_HOLD": [0, 0], "POPUP_WAIT>POPUP_HOLD": [0, 95],
 };
+// The graph hides the popup entries from the other states and the returns. The zone shows them.
+// The zone text names the replacement, so the POPUP_SHOW edges inside the zone are hidden too.
+const graphHides = t => t.from === t.to || t.on.startsWith("RETURN_") || t.on === "POPUP_SHOW";
 const EVENT_SHORT = {
   OK_HOLD: "长按 OK", OK_SHORT: "短按 OK", OK_RELEASE: "松开 OK", UP_HOLD: "长按 UP", UP_SHORT: "短按 UP",
   DOWN_HOLD: "长按 DOWN", DOWN_SHORT: "短按 DOWN", CAPTURE_LIMIT: "录满 20 秒", AGENT_TIMEOUT: "10 秒超时",
   ANSWER_START: "回答开始", ANSWER_END: "回答结束", ANSWER_FAILED: "识别失败", LINK_LOST: "蓝牙断开",
-  SHOW_REPORT: "App 跳转",
+  SHOW_REPORT: "App 跳转", ...POPUP_EVENT_NAME,
 };
 const sname = id => STATE_NAME[id] || id;
 const ename = id => EVENT_NAME[id] || id;
@@ -512,6 +532,19 @@ const ACTIONS = {
     spk = true; downCount = 0; downLine = null; spkStart = performance.now();
   },
   audio_play_stop() { spk = false; },
+  audio_play_cut() { spk = false; },
+  // D-31. The same as run_action in main/coach_app.c.
+  ui_show_popup() { popup = popupIn; },
+  popup_countdown() {
+    clearTimer("hold");
+    startTimer("hold", POPUP_HOLD_MS, () => fire("POPUP_TIMEOUT", "设备计时"));
+  },
+  popup_close() {
+    const reason = ctxEvent === "POPUP_TIMEOUT" ? "0（倒计时结束）" : "1（按键）";
+    if (link && popupOpen) ble("dp", "POPUP_END", `xid=${hex(popupOpen)} reason=${reason}`);
+    popupOpen = 0;
+    afterEvent = popupReturn;
+  },
   link_send_agent_start() {
     xid = xidNext; xidNext = xidNext >= 0x7F ? 1 : xidNext + 1;
     if (!link) {
@@ -548,6 +581,11 @@ const statusText = () => link ? S["status.link_up"] : S["status.link_down"];
 
 // ---------------------------------------------------------------- engine
 function fire(ev, src) {
+  if (ev === "POPUP_SHOW") {
+    // Keep the page before the first popup. A new popup keeps it.
+    if (!POPUP_STATES.has(st)) popupReturn = RETURN_OF[st] || "RETURN_READY";
+    clearTimer("pwait"); clearTimer("hold");
+  }
   // The same guard as main/coach_app.c: without the link, a question cannot start.
   if (ev === "OK_HOLD" && !link && (table[st] || {}).ASK_BLOCKED) {
     runAction("ui_why_link_down");
@@ -568,12 +606,19 @@ function fire(ev, src) {
   addLog("fsmLog", `<b>${sname(from)}</b> —${ename(ev)}→ <b>${sname(t.to)}</b>${src ? ` <span class="ign">${src}</span>` : ""}` +
     `<span class="acts">${(t.actions || []).map(chip).join("")}</span>`);
   render();
+  // The same as handle() in main/coach_app.c: these steps run at once, with no event between them.
+  if (afterEvent) { const e = afterEvent; afterEvent = null; fire(e, "设备"); }
+  else if (ev === "POPUP_SHOW" && popup && !popup.audio) fire("POPUP_NO_AUDIO", "设备");
   return true;
 }
+const RETURN_OF = { LIVE: "RETURN_LIVE", REPORT: "RETURN_REPORT", TURNS: "RETURN_TURNS" };
 function onEnter(s, from) {
   if (s !== from || s === "CAPTURE") { clearTimer("cap"); clearTimer("wait"); }
   if (s === "CAPTURE") startTimer("cap", CAPTURE_LIMIT_MS, () => fire("CAPTURE_LIMIT", "设备计时"));
   if (s === "WAIT_ANSWER") startTimer("wait", AGENT_TIMEOUT_MS, () => fire("AGENT_TIMEOUT", "设备计时"));
+  if (!POPUP_STATES.has(s) || s !== from) clearTimer("pwait");
+  if (!POPUP_STATES.has(s)) clearTimer("hold");
+  if (s === "POPUP_WAIT" && popup && popup.audio) startTimer("pwait", POPUP_AUDIO_WAIT_MS, () => fire("POPUP_NO_AUDIO", "设备计时"));
 }
 function startTimer(k, ms, cb) { timers[k] = { start: performance.now(), ms, id: setTimeout(() => { delete timers[k]; cb(); }, ms) }; }
 function clearTimer(k) { if (timers[k]) { clearTimeout(timers[k].id); delete timers[k]; } }
@@ -628,6 +673,7 @@ function setLink(up) {
   }
   else {
     phoneTimers.forEach(clearTimeout); phoneTimers = []; skiStop();
+    popupOpen = 0;   // The same as link_on_disconnect: a new connection resets every xid.
     addLog("bleLog", "<b>蓝牙断开</b>", "bad"); fire("LINK_LOST", "蓝牙");
   }
   render();
@@ -650,6 +696,78 @@ function buildPhone() {
   lb.type = "button"; lb.className = "ctl"; lb.id = "linkBtn";
   lb.onclick = () => setLink(!link);
   box.appendChild(lb);
+}
+
+// ---------------------------------------------------------------- popups (D-31)
+// The same texts as main/ui/popup_view.c. The Chinese texts come from assets/ui/strings.json.
+let popup, popupIn, popupOpen, popupNext, popupReturn, afterEvent;
+const POPUP_KINDS = {
+  1: ["popup.fall", "FALL ALERT", "popup.title_fall"], 2: ["popup.voice", "BROADCAST", "popup.title_voice"],
+  3: ["popup.issue", "RUN ISSUE", "popup.title_issue"], 4: ["popup.badge", "ACHIEVED", "popup.title_badge"],
+};
+const POPUP_SAMPLES = {
+  1: ["", "需要帮助吗？60 秒内无操作，手机会通知紧急联系人。"],
+  2: ["队友消息", "小王：我们在 3 号缆车下面集合。"],
+  3: ["第 2 弯重心偏后", "入弯时上身后坐，雪板容易甩尾。下一趟把重心放到前脚。"],
+  4: ["今天完成 10 趟", "换刃比上午更稳，继续保持。"],
+};
+function popupView(now) {
+  const p = popup || { kind: 2, title: "", body: "" };
+  const k = POPUP_KINDS[p.kind] || POPUP_KINDS[2];
+  const v = { mode: S[k[0]], dest: k[1], title: p.title || S[k[2]], body: p.body, hint: S["hint.popup"], danger: p.kind === 1 };
+  if (st === "POPUP_PLAY") v.foot = S["popup.playing"];
+  else if (st === "POPUP_HOLD" && timers.hold) {
+    const left = Math.max(0, timers.hold.start + timers.hold.ms - now);
+    v.foot = S["popup.back"].replace("{n}", Math.ceil(left / 1000) || 1);
+  } else v.foot = S["popup.wait"];
+  return v;
+}
+function paintPopup(now) {
+  if (!POPUP_STATES.has(st)) return;
+  const v = popupView(now);
+  for (const id of ["mode", "dest", "title", "body", "foot", "hint"]) widgetEls["popup." + id].textContent = v[id];
+  const c = v.danger ? C.danger : C.accent;
+  widgetEls["popup.mode_dot"].style.background = c; widgetEls["popup.hint_panel"].style.background = c;
+  widgetEls["popup.dest"].style.color = c; widgetEls["popup.title"].style.color = c;
+}
+// The phone sends POPUP. With audio, PLAY_START on channel 2 and the audio follow.
+function phonePopup(kind, audio, sendAudio = true) {
+  if (!link) return toast("蓝牙未连接");
+  const x = popupNext; popupNext = popupNext >= 0xFE ? 0x80 : popupNext + 1;
+  const [title, body] = POPUP_SAMPLES[kind];
+  // The same as on_popup in main/link/link_core.c: the old popup ends with reason 2.
+  if (popupOpen) ble("dp", "POPUP_END", `xid=${hex(popupOpen)} reason=2（被替换）`);
+  popupOpen = x;
+  popupIn = { xid: x, kind, audio, title, body };
+  ble("pd", "POPUP", `xid=${hex(x)} kind=${kind}（${S[POPUP_KINDS[kind][0]]}）audio=${audio ? 1 : 0}` + (title ? ` "${title}"` : ""));
+  fire("POPUP_SHOW", "手机");
+  if (!audio || !sendAudio) return;
+  later(400, () => {
+    if (!link) return;
+    if (popupOpen !== x) { ble("pd", "PLAY_START", `channel=2 xid=${hex(x)} → 设备丢弃：弹窗已关闭`, "ign"); return; }
+    ble("pd", "PLAY_START", `channel=2（弹窗）xid=${hex(x)} codec=ADPCM`);
+    fire("POPUP_AUDIO_START", "手机");
+    later(3000, () => {
+      if (!link) return;
+      if (popupOpen !== x || st !== "POPUP_PLAY") { ble("pd", "PLAY_END", `xid=${hex(x)} → 设备丢弃：弹窗已关闭`, "ign"); return; }
+      ble("pd", "PLAY_END", `xid=${hex(x)}`);
+      fire("POPUP_AUDIO_END", "手机");
+    });
+  });
+}
+function buildPopup() {
+  const box = $("popupBtns"); box.innerHTML = "";
+  const sel = document.createElement("select");
+  sel.className = "ctl"; sel.id = "popupKind"; sel.setAttribute("aria-label", "弹窗类型");
+  for (const k of [1, 2, 3, 4]) { const o = document.createElement("option"); o.value = k; o.textContent = S[POPUP_KINDS[k][0]]; sel.appendChild(o); }
+  box.appendChild(sel);
+  const lab = document.createElement("label");
+  lab.className = "switch-label"; lab.innerHTML = '<input type="checkbox" id="popupAudio" checked> 带语音';
+  box.appendChild(lab);
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "ctl"; b.id = "popupBtn"; b.textContent = "发送弹窗"; b.title = "POPUP 0x66";
+  b.onclick = () => phonePopup(Number($("popupKind").value), $("popupAudio").checked);
+  box.appendChild(b);
 }
 
 // ---------------------------------------------------------------- ski data (Increment 2)
@@ -880,6 +998,7 @@ function paintTurns(now) {
 function paintData() {
   const now = performance.now();
   paintTurns(now);
+  paintPopup(now);
   for (const [scr, view] of [["ski", skiView(now)], ["report", reportView(now)]]) {
     for (const [k, v] of Object.entries(view)) if (typeof v === "string" && widgetEls[scr + "." + k]) widgetEls[scr + "." + k].textContent = v;
     // The Ski panel shows the four metric cells, or the problem and the tip of the report.
@@ -1022,7 +1141,15 @@ function buildGraph() {
     el("path", { d: "M0,0 L10,5 L0,10 z", fill: color }, m);
   }
   const pairs = {};
-  for (const t of F.transitions) (pairs[t.from + ">" + t.to] ||= []).push(t.on);
+  for (const t of F.transitions) if (!graphHides(t)) (pairs[t.from + ">" + t.to] ||= []).push(t.on);
+  // D-31: the popup zone. One arrow in from every state, and one arrow back to the saved page.
+  const zone = el("g", { class: "zone" }, g);
+  el("rect", { x: 405, y: 512, width: 575, height: 168, rx: 18 }, zone);
+  el("text", { x: 421, y: 534 }, zone).textContent = "App 弹窗（D-31）· 任何状态立即打断 · 新弹窗替换旧弹窗，回到“等语音”";
+  el("path", { d: "M215,590 L435,590", "marker-end": "url(#a0)" }, zone);
+  el("text", { x: 215, y: 578 }, zone).textContent = "任何状态 · App 弹窗";
+  el("path", { d: "M958,590 C990,590 990,700 940,700 L215,700", "marker-end": "url(#a0)" }, zone);
+  el("text", { x: 215, y: 720 }, zone).textContent = "按键或倒计时结束：回到弹窗前的页面 · 教练页各状态回到就绪";
   const eg = el("g", {}, g), ng = el("g", {}, g), lg = el("g", {}, g);
   for (const [key, evs] of Object.entries(pairs)) {
     const [a, b] = key.split(">");
@@ -1035,9 +1162,10 @@ function buildGraph() {
     const [sx, sy] = border(ax, ay, cx, cy), [ex, ey] = border(bx, by, cx, cy);
     const grp = el("g", { class: "edge", "data-key": key, "data-from": a }, eg);
     el("path", { d: `M${sx},${sy} Q${cx},${cy} ${ex},${ey}`, "marker-end": "url(#a0)" }, grp);
-    // Collapse a long list only when every event is a button event.
-    const keysOnly = evs.every(e => BUTTON_EVENTS.includes(e));
-    const lines = keysOnly && evs.length > 3 ? [`其他键 ×${evs.length}`] : evs.map(e => EVENT_SHORT[e] || e);
+    // Collapse the button events when more than 3 share an edge.
+    const keys = evs.filter(e => BUTTON_EVENTS.includes(e));
+    const lines = keys.length > 3 ? [...evs.filter(e => !keys.includes(e)).map(e => EVENT_SHORT[e] || e), `任意键 ×${keys.length}`]
+                                  : evs.map(e => EVENT_SHORT[e] || e);
     const lx = 0.25 * sx + 0.5 * cx + 0.25 * ex, ly = 0.25 * sy + 0.5 * cy + 0.25 * ey;
     const w = Math.max(...lines.map(textW)) + 16, h = lines.length * 16 + 6;
     const pill = el("g", { class: "pill", transform: `translate(${lx - w / 2},${ly - h / 2})` }, grp);
@@ -1105,7 +1233,7 @@ function render() {
 }
 function tick() {
   const now = performance.now();
-  for (const [k, bar, lbl] of [["cap", "capBar", "capT"], ["wait", "waitBar", "waitT"]]) {
+  for (const [k, bar, lbl] of [["cap", "capBar", "capT"], ["wait", "waitBar", "waitT"], ["hold", "popBar", "popT"]]) {
     const t = timers[k];
     const f = t ? Math.min(1, (now - t.start) / t.ms) : 0;
     $(bar).style.width = (f * 100) + "%";
@@ -1138,6 +1266,7 @@ function reset() {
   mic = spk = false; link = false; xidNext = 1; xid = 0; last = null; timers = {}; phoneTimers = [];
   upCount = downCount = 0; upLine = downLine = null; seenIssues = new Set();
   if (typeof skiTimer !== "undefined") skiStop();
+  popup = popupIn = null; popupOpen = 0; popupNext = 0x80; popupReturn = "RETURN_READY"; afterEvent = null;
   live = report = phoneRun = dev = null; turnSel = turnDrawnPts = 0; turnDrawn = ""; turnPrevDrawing = false; liveAt = reportAt = 0; runNo = 0; skiPaused = false; liveLine = null; liveCount = 0;
   t0 = performance.now();
   $("fsmLog").innerHTML = ""; $("bleLog").innerHTML = ""; $("issues").innerHTML = "";
@@ -1147,7 +1276,7 @@ function reset() {
   setLink(true);
   render();
 }
-buildPhone(); buildSki(); buildGraph(); buildMatrix();
+buildPhone(); buildPopup(); buildSki(); buildGraph(); buildMatrix();
 $("reset").onclick = reset;
 reset();
 requestAnimationFrame(tick);

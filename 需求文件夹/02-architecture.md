@@ -2,9 +2,9 @@
 
 # HeygoAI × AI Passport: architecture
 
-Version: 0.8. Date: 2026-10-17. Status: Draft for engineering review.
+Version: 0.9. Date: 2026-10-17. Status: Draft for engineering review.
 
-This document proposes a design for Increments 1, 2, and 3 in [product requirements](01-product-requirements.md).
+This document proposes a design for Increments 1 to 4 in [product requirements](01-product-requirements.md).
 It does not describe a working integration.
 [Decision amendments](05-decision-amendments.md) gives the reason behind each decision.
 The [BLE protocol draft](07-ble-protocol-draft.md) defines the packets.
@@ -110,6 +110,43 @@ stateDiagram-v2
     PLAYBACK --> TURNS: UP, cancel
 ```
 
+### Popups (D-31)
+
+The phone can send a popup (POPUP) at any time. The popup page is not in the page loop. Three states belong to it:
+
+| State | Screen | Meaning |
+|---|---|---|
+| POPUP_WAIT | Popup page | The popup shows. Its audio did not start yet. |
+| POPUP_PLAY | Popup page | The popup audio plays. |
+| POPUP_HOLD | Popup page | The 10-second countdown runs. |
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    state "Any page or Coach state" as ANY
+    ANY --> POPUP_WAIT: POPUP, cancel and stop audio
+    POPUP_WAIT --> POPUP_PLAY: PLAY_START on channel 2
+    POPUP_WAIT --> POPUP_HOLD: no audio / 5 s / link lost
+    POPUP_PLAY --> POPUP_HOLD: audio ends / link lost
+    POPUP_WAIT --> POPUP_WAIT: new POPUP
+    POPUP_PLAY --> POPUP_WAIT: new POPUP
+    POPUP_HOLD --> POPUP_WAIT: new POPUP
+    POPUP_HOLD --> SAVED: 10 s / any key, POPUP_END
+    POPUP_WAIT --> SAVED: any key, POPUP_END
+    POPUP_PLAY --> SAVED: any key, POPUP_END
+    state "Saved page: LIVE, REPORT, TURNS, or READY" as SAVED
+```
+
+- A POPUP moves every state to POPUP_WAIT at once. In CAPTURE, the device stops capture and sends AGENT_CANCEL. In WAIT_ANSWER, it sends AGENT_CANCEL. In PLAYBACK, it stops the speaker and sends AGENT_CANCEL.
+- Before the first popup, the device saves the page: LIVE, REPORT, or TURNS. The Coach page states save READY.
+- A popup with no audio goes to POPUP_HOLD in the same step. A popup with audio waits 5 seconds for PLAY_START on channel 2.
+- In POPUP_HOLD, a timer runs for 10 seconds. A link loss in POPUP_WAIT or POPUP_PLAY also starts the countdown.
+- Each key event closes the popup: a short press or a hold of UP, DOWN, or OK. The device sends POPUP_END with reason 0 (timeout) or 1 (key), and goes to the saved page in the same step.
+- The OK release has no transition in the popup states. So the release of an OK hold that started before the popup does not close it.
+- A new POPUP replaces the old one. The link core sends POPUP_END with reason 2 (replaced) for the old one. The saved page does not change.
+- Each popup timer event carries the popup number. The device drops the timer event of a replaced popup.
+- During a popup, CONTEXT and DEVICE_STATUS send mode 0 and page 6.
+
 The interactive simulator gives the full state diagram from `flows/coach.flow.json`. See `assets/sim/coach-flow.html`.
 
 ### Buttons
@@ -128,6 +165,7 @@ The interactive simulator gives the full state diagram from `flows/coach.flow.js
 | Turns page | Hold UP for 500 ms | Select the previous turn. |
 | Turns page | Hold DOWN for 500 ms | Go to turn 1 of the next page of 8 turns. After the last page, go to page 1. |
 | Other pages | Short OK press, UP hold, or DOWN hold | No action. |
+| Popup page | Any short press or hold | Close the popup and go back to the saved page (D-31). No page change and no capture. |
 
 The three buttons share one ADC input. So while the user holds OK, the device cannot read UP or DOWN. To change the page during capture, the user releases OK first.
 A hold never also triggers a short press.
@@ -216,8 +254,24 @@ It rounds the corners of the line twice (Chaikin), so 33 points become 132 point
 The key hints sit left to right in the order of the keys from top to bottom: UP, OK, DOWN.
 The rider is a sprite sheet of 16 frames, one frame for each 22.5 degrees. The device picks a frame. It does not rotate an image.
 
+### Popup page layout
+
+| Widget | Position | Font | Content |
+|---|---|---|---|
+| `mode_dot`, `mode` | `x=14..136, y=10` | 16 px Chinese | The kind: "摔倒提醒", "语音播报", "问题报告", or "成就报告" |
+| `dest` | `x=14, y=36` | 34 px brand font | "FALL ALERT", "BROADCAST", "RUN ISSUE", or "ACHIEVED" |
+| `body_panel` | `x=10, y=80`, 220 × 152 | None | The box of the texts |
+| `title` | `x=22, y=92`, height 20 | 16 px Chinese, one line | The title from the phone, at most 12 Chinese characters. With no title, a default title for the kind |
+| `body` | `x=22, y=118`, height 104 | 16 px Chinese, more than one line | The body from the phone, at most 40 Chinese characters |
+| `foot` | `y=242`, centered | 16 px Chinese | "等待语音" (waiting for audio), "正在播报" (playing), or "N 秒后返回" (back in N seconds) |
+| `hint_panel`, `hint` | `x=10, y=272`, 220 × 38 | 16 px Chinese, on the colored bar | "按任意键关闭" (any key closes) |
+
+A fall alert uses the danger color (red) for the dot, `dest`, `title`, and the bar. The other kinds use the accent color.
+The countdown text changes each second with the data tick. It rounds up, so the first second shows "10".
+`main/ui/popup_view.c` makes all texts. The host test `tests/test_popup_view.c` checks them.
+
 Only one screen exists at a time. On a page change, the task deletes the old screen first and then builds the new screen.
-Images 10 to 21 in `assets/mockups` come from the host renderer. Image 9 no longer exists, because D-29 deleted the exit question. They include the longest texts.
+Images 10 to 26 in `assets/mockups` come from the host renderer. Images 22 to 26 show the popup page (D-31). Image 9 no longer exists, because D-29 deleted the exit question. They include the longest texts.
 
 ## 4. Audio state
 
@@ -257,6 +311,37 @@ The phone runs speech recognition and speech synthesis.
 A cancel ends the exchange. The device drops every later block of that exchange.
 A reconnect cancels the open exchange.
 
+### Popup audio (D-31)
+
+The popup audio uses the same downlink path as the answer, on channel 2 (BP_CHANNEL_POPUP).
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant P as Passport
+    participant A as Phone application
+    A->>P: POPUP xid 0x81, kind 1, audio 1
+    P->>A: AGENT_CANCEL, if a question was open
+    P-->>U: Show the popup page
+    A->>P: PLAY_START xid 0x81, channel 2
+    loop Popup audio
+        A->>P: AUDIO_DOWN xid 0x81
+    end
+    A->>P: PLAY_END xid 0x81
+    P-->>U: Play the audio, then count down 10 s
+    alt 10 s end
+        P->>A: POPUP_END xid 0x81, reason 0
+    else User presses a key
+        P->>A: POPUP_END xid 0x81, reason 1
+    end
+    P-->>U: Show the saved page
+```
+
+- The device accepts PLAY_START on channel 2 only for the current popup xid, and only if the popup audio flag is 1.
+- AUDIO_DOWN and PLAY_END must have the xid of the open stream. The stream is the answer or the popup audio, never both.
+- When a popup interrupts PLAYBACK, the device stops the speaker with `audio_play_cut`. Unlike `audio_play_stop`, it keeps the queued blocks. The popup audio can already be in the queue before the Coach task stops the old answer.
+- A key press or a new popup closes the popup audio stream. The device drops its later blocks.
+
 ## 5. Resources
 
 ### Memory budget
@@ -271,6 +356,7 @@ The device has no PSRAM. Streaming makes a full recording unnecessary.
 | BLE packet queues | 3,440 bytes | Doc 07, section 10. |
 | The last LIVE_STATS and RUN_REPORT | 128 bytes | Doc 07, section 10. The struct sizes measured on the host. |
 | The last TURN_SHAPE, 3 cached groups, and the Turns page | About 4.0 KB | Doc 07, section 10. The symbol table of the firmware build. |
+| The current popup and the popup page texts | About 0.7 KB | D-31. Estimated from the struct sizes: three copies of the popup and one set of page texts. Not measured. |
 | Rider sprite | 25.6 KB in Flash, not in RAM | `assets/sprites`, made by `assets/tools/gen_sprite.py`. |
 | 48-pixel digit font | In Flash, not in RAM | Measure the size in Sprint 3. |
 | ADPCM codec state | A few bytes in each direction | D-09. |
@@ -308,6 +394,9 @@ Raw PCM stays a fallback for diagnostics. Opus waits until ADPCM works and the t
 | No LIVE_STATS for 5 seconds | Show the speed as "--". Keep the other numbers with an out-of-date mark. | Send again. |
 | LIVE_STATS with a wrong length | Send ERROR code 2. Keep the old packet. | Send a packet of the right length. |
 | The phone cannot calculate a field | Show "--" for that field. | Send the unknown value, never 0. |
+| Link loss during a popup | Keep the popup. Stop its audio. Start the 10-second countdown. Send no POPUP_END. | A new connection resets every xid. Treat the popup as closed. |
+| No PLAY_START within 5 seconds of a popup with audio | Start the countdown. | Send the audio sooner, or send the popup with audio flag 0. |
+| POPUP with a bad field | Send ERROR code 7, 4, or 2. Show nothing. | Send a packet with valid fields. |
 
 D-12 and D-13 exclude security and privacy work. The device stores no account data and no token.
 
@@ -319,6 +408,7 @@ D-17 moved these items out of P0. Each item needs its own design work before it 
 - **Charts and the offline cache (P1, after Increment 2).** Charts need many data points over time. The offline cache writes the last data to Flash. Neither item has a design yet.
 - **Human intercom (P1).** The Team page waits for a start message from the phone before capture. It reuses the Coach audio path. Each speech path crosses two BLE links. The 500 ms audio target lacks a measurement.
 - **Turn shape (Increment 3, D-30).** Section 3 gives the page design. Doc 07 gives TURN_SHAPE, TURN_GROUP, and TURN_REQUEST. The device keeps at most 3 groups of the last shape, in RAM. Until Q-02 gives a measured track, the phone sends schematic shapes, and the page shows "示意".
+- **Phone popups (Increment 4, D-31).** Section 3 gives the states and the page. Section 4 gives the popup audio. Doc 07 gives POPUP and POPUP_END. The device keeps only the current popup, in RAM. The phone owns the escalation of a fall alert.
 
 Commit `970bb8e` holds the version 0.3 design for these items.
 

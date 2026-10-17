@@ -2,7 +2,7 @@
 
 # Scrum backlog and delivery plan
 
-Version: 0.9. Date: 2026-10-17. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. Increment 2 is in the backlog. The team closed no story.
+Version: 0.10. Date: 2026-10-17. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. Increment 2 is in the backlog. The team closed no story.
 
 Related documents: [Requirements](01-product-requirements.md), [Architecture](02-architecture.md), [Validation and decisions](04-validation-and-decisions.md), [Decision amendments](05-decision-amendments.md), [Sprint 0 plan](06-sprint-0-plan.md), [BLE protocol draft](07-ble-protocol-draft.md), and [Four-hour Sprint roadmap](08-sprint-roadmap.md).
 
@@ -55,6 +55,7 @@ The user made every scope decision so far, including D-17.
 | US-21 Live data on the live data page | REQ-21 | P1, Increment 2 | 5–8 | Firmware and design | Sprint 3 code, Sprints 7 and 9 acceptance |
 | US-03 Run report | REQ-03 | P1, Increment 2 | 3–5 | Firmware and design | Sprint 4 code, Sprint 7 acceptance |
 | US-05 Turn shape and replay | REQ-05 | P1, Increment 3 (D-30) | 5–8 | Phone, firmware, and design | Sprint 11 code, Sprint 12 acceptance |
+| US-22 Phone popups | REQ-22 | P1, Increment 4 (D-31) | 5–8 | Phone and firmware | Sprint 13 code, Sprint 14 acceptance |
 | US-04 Metric charts | REQ-04 | P1 | 3–5 | Firmware | Later |
 | US-09 Human push-to-talk | REQ-09 | P1 | 8–13 | Phone and firmware | Later |
 | US-13 Cached reports | REQ-13 | P1 | 5–8 | Firmware | Later |
@@ -86,7 +87,7 @@ Per section 9, each story needs device tests. Some stories also need the real ph
 
 The simulator and `phone_sim` show protocol behavior only. They cannot satisfy a device test.
 
-Known gaps, from section 11 of the [firmware change notes](../Firmware/docs/heygo-changes.md):
+Known gaps, from section 13 of the [firmware change notes](../Firmware/docs/heygo-changes.md):
 
 - A PLAY_START that arrives during capture is lost. The device then shows a timeout. D-20 forbids the phone to send it at that time. The code needs no change. The phone application team must still accept this rule.
 - The battery label on the screen stays empty. D-18 keeps the battery level on the screen.
@@ -221,6 +222,21 @@ As a skier, I want to see the shape of my last run and each turn in it. Then I c
 - Dependency: US-03. Q-02 for a measured track.
 - Verification: TC-05.
 
+### US-22: phone popups
+
+As a skier, I want the phone to show me an important message on the device at once. Then I do not take out the phone for a fall alert, a voice message, a problem, or an achievement.
+
+- Acceptance: a popup shows at once on every page and in every Coach state. Capture stops and the device cancels the question. The wait stops. An answer that plays stops.
+- Acceptance: the four kinds show their own name and color. The fall alert uses red.
+- Acceptance: a popup with audio plays it, then counts down 10 seconds. A popup with no audio counts down at once. If the audio does not start within 5 seconds, the countdown starts.
+- Acceptance: any key closes the popup. It changes no page and starts no capture. The release of an OK hold that started before the popup does not close it.
+- Acceptance: after the countdown or a key press, the device sends POPUP_END with reason 0 or 1. Then it shows the page before the popup. The Coach page shows its ready state.
+- Acceptance: a new popup replaces the old one. The device sends POPUP_END with reason 2 for the old one and keeps the saved page.
+- Acceptance: a POPUP with a bad field gets ERROR code 7, 4, or 2, and shows nothing.
+- Acceptance: during a popup, CONTEXT and DEVICE_STATUS send mode 0 and page 6.
+- Dependency: US-17 and US-20. The phone owns the escalation of a fall alert.
+- Verification: TC-22.
+
 ## 7. Other P1 stories, P2 stories, and Deferred stories
 
 These stories keep their numbers. Their full text returns when a story enters a Sprint.
@@ -240,6 +256,8 @@ Each Sprint lasts four hours. The [Four-hour Sprint roadmap](08-sprint-roadmap.m
 | 10 | Fix defects, and review both increments. | Not started. |
 | 11 | Increment 3: the Turns page and the three turn messages. Host only. | Code on the branch `feat/turn-view`. Device tests NOT RUN. |
 | 12 | Accept Increment 3 on the board with `phone_sim`, then with the real phone application. | Not started. Needs the board and a phone application that answers TURN_REQUEST. |
+| 13 | Increment 4: the popup page and the two popup messages. Host only. | Code on the branch `feat/app-popups`. Host tests pass. Device tests NOT RUN. |
+| 14 | Accept Increment 4 on the board with `phone_sim --popups`. | Not started. Needs the board. |
 
 ## 9. Definition of Done
 

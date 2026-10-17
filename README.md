@@ -5,7 +5,8 @@
 # Heygo AI Passport
 
 This is the project repository of Heygo AI Passport.
-The device has three pages at one level: live data, run report, and AI coach. Short UP and DOWN presses change the page. An OK hold on any page opens the Coach page.
+The device has four pages at one level: live data, run report, turn shape, and AI coach. Short UP and DOWN presses change the page. An OK hold on any page opens the Coach page.
+The phone can also show a popup on the device at any time. Any key closes it.
 The device connects to a phone over BLE. The phone does speech recognition, speech synthesis, the ski data, and the AI coach. The device does the buttons, the microphone, the speaker, and the screen.
 
 ## What the device does
@@ -14,6 +15,8 @@ The device connects to a phone over BLE. The phone does speech recognition, spee
 | --- | --- | --- |
 | Increment 1: Coach voice | An OK hold on any page opens the Coach page. Another OK hold asks the AI coach. The device plays the answer. | Code done. Device tests NOT RUN. |
 | Increment 2: ski data and reports | During a run, show the speed, vertical drop, distance, turns, and time. After each run, show the Heygo IQ, the core problem, and one short tip. | Code done. Device tests NOT RUN. |
+| Increment 3: turn shape (D-30) | After each run, show the shape of the run, 8 turns at a time. Show the side, speed, edge angle, and radius of each turn. | Code done. Device tests NOT RUN. |
+| Increment 4: phone popups (D-31) | The phone shows a fall alert, a voice message, a problem report, or an achievement at once. The device plays the popup audio, then counts down 10 seconds. Any key closes the popup. | Code done. Host tests pass. Device tests NOT RUN. |
 
 The BLE protocol is version 0.2. The phone application team accepted it.
 On `main`, the firmware gate `./tools/validate.sh` gives exit code 0.
@@ -27,7 +30,8 @@ It needs no server and no network.
 
 - On the left are the device screen and the three buttons. A press of 500 ms is a hold. The keys Up, Space, and Down are UP, OK, and DOWN.
 - The phone panel can send an answer, cut the BLE link, start a run, end the run, or open the Report page.
-- In the middle are the state diagram and the trigger matrix. They show the current state and the target of each button.
+- The phone panel can also send a popup of each kind, with or without audio. A bar shows the 10-second countdown of the popup.
+- In the middle are the state diagram and the trigger matrix. They show the current state and the target of each button. A zone in the diagram holds the three popup states.
 - On the right are the state machine log and the BLE messages.
 
 To open it:
@@ -42,7 +46,7 @@ The browser draws the screen with system fonts. The images in `assets/mockups` s
 
 ## Screen images
 
-LVGL draws the 14 images in `assets/mockups` on a computer with the device settings. They are not drawings.
+LVGL draws the 25 images in `assets/mockups` on a computer with the device settings. They are not drawings.
 [contact-sheet.png](assets/mockups/contact-sheet.png) shows all of them in one image.
 
 | Images | Content |
@@ -50,6 +54,8 @@ LVGL draws the 14 images in `assets/mockups` on a computer with the device setti
 | 01–08 | The live data page with no data, and each Coach page state |
 | 10–12 | Ski data during a run, out-of-date data, and the report after a run |
 | 13–15 | The Report page: no report, a report, and the longest texts |
+| 16–21 | The Turns page: no shape, the first draw, a heel side turn, a schematic shape, a page on its way, and a short run |
+| 22–26 | The popup page: fall alert, voice message, problem report, achievement, and the longest texts (D-31) |
 
 ## Folders
 

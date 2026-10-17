@@ -105,6 +105,23 @@ typedef struct {
 void coach_screen_turns_build(coach_screen_turns_t *out);
 void coach_screen_turns_destroy(coach_screen_turns_t *out);
 
+typedef struct {
+    lv_obj_t *screen;
+    lv_obj_t *body_panel;
+    lv_obj_t *hint_panel;
+    lv_obj_t *mode_dot;
+    lv_obj_t *mode;
+    lv_obj_t *battery;
+    lv_obj_t *dest;
+    lv_obj_t *title;
+    lv_obj_t *body;
+    lv_obj_t *foot;
+    lv_obj_t *hint;
+} coach_screen_popup_t;
+
+void coach_screen_popup_build(coach_screen_popup_t *out);
+void coach_screen_popup_destroy(coach_screen_popup_t *out);
+
 #ifdef __cplusplus
 }
 #endif

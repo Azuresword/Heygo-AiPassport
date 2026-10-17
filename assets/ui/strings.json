@@ -60,6 +60,18 @@
     "msg.run_report":        { "zh": "本趟报告",         "en": "Run report",            "size": 16 },
     "msg.no_report":         { "zh": "滑完一趟后显示报告", "en": "The report shows after a run", "size": 16 },
     "fmt.turns":             { "zh": "{n} 弯",           "en": "{n} turns",             "size": 16 },
-    "fmt.run":               { "zh": "第 {n} 趟",        "en": "Run {n}",               "size": 16 }
+    "fmt.run":               { "zh": "第 {n} 趟",        "en": "Run {n}",               "size": 16 },
+    "popup.fall":            { "zh": "摔倒提醒",         "en": "Fall alert",            "size": 16 },
+    "popup.voice":           { "zh": "语音播报",         "en": "Voice message",         "size": 16 },
+    "popup.issue":           { "zh": "问题报告",         "en": "Problem report",        "size": 16 },
+    "popup.badge":           { "zh": "成就报告",         "en": "Achievement",           "size": 16 },
+    "popup.title_fall":      { "zh": "检测到摔倒",       "en": "Possible fall",         "size": 16 },
+    "popup.title_voice":     { "zh": "手机播报",         "en": "From the phone",        "size": 16 },
+    "popup.title_issue":     { "zh": "发现问题",         "en": "Problem found",         "size": 16 },
+    "popup.title_badge":     { "zh": "获得成就",         "en": "New achievement",       "size": 16 },
+    "popup.wait":            { "zh": "等待语音",         "en": "Waiting for audio",     "size": 16 },
+    "popup.playing":         { "zh": "正在播报",         "en": "Playing",               "size": 16 },
+    "popup.back":            { "zh": "{n} 秒后返回",     "en": "Back in {n} s",         "size": 16 },
+    "hint.popup":            { "zh": "按任意键关闭",     "en": "Any key closes",        "size": 16 }
   }
 }

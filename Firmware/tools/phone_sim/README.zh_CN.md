@@ -13,6 +13,7 @@
 3. 以 AUDIO_UP 块接收每个问题，保存成 WAV 文件。
 4. 按所选模式回答。
 5. 加上 `--runs N` 时，发送 N 趟模拟的滑行数据。见"滑行数据"一节。
+6. 加上 `--popups N` 时，发送 N 个弹窗。见"弹窗"一节。
 
 | 模式 | 回答 |
 | --- | --- |
@@ -57,6 +58,33 @@ python3 tools/phone_sim/phone_sim.py --runs 3 --run-s 30
 
 加上 `--jump` 时，每份报告之后再发送 SHOW_PAGE。设备在滑行页或教练页空闲时打开报告页（D-28）。
 
+## 弹窗
+
+`--popups N` 发送 N 个弹窗（D-31）。`--popup-gap` 设定两个弹窗之间的秒数，默认 20。
+
+```bash
+python3 tools/phone_sim/phone_sim.py --popups 8
+python3 tools/phone_sim/phone_sim.py --popups 6 --popup-gap 5
+```
+
+1. 第一个弹窗在 HELLO_ACK 之后 3 秒发出。
+2. 类型轮流出现：摔倒提醒、语音播报、问题报告、成就报告，然后重新开始。
+3. 摔倒提醒和语音播报带语音。语音是 `--wav` 文件，没有时用一段 2 秒的提示音。
+4. 带语音的弹窗，0.3 秒后在通道 2 发送 PLAY_START，然后发送 AUDIO_DOWN 和 PLAY_END。
+5. 每个弹窗使用新的手机 `xid`，从 0x80 到 0xFE。
+6. 设备关闭弹窗后，停止发送这个弹窗的语音。
+
+日志显示每个 POPUP_END 的原因，以及距 POPUP 的时间：
+
+| 日志里的原因 | 含义 |
+| --- | --- |
+| `timeout` | 原因 0。倒计时结束，没有人按键。 |
+| `key` | 原因 1。用户按了键。 |
+| `replaced` | 原因 2。新弹窗替换了这个弹窗。 |
+
+带 2 秒提示音的弹窗，大约在 POPUP 之后 12 秒关闭。间隔小于 13 秒时，旧弹窗还在显示，新弹窗就到了，设备会替换旧弹窗。
+`--popups` 可以和 `--runs` 以及各种回答模式一起用。
+
 ## 设备测试
 
 在刷了当前固件的板子上按下面的步骤做。
@@ -73,6 +101,7 @@ python3 tools/phone_sim/phone_sim.py --runs 3 --run-s 30
 | 7 | 启动 `phone_sim.py --runs 3`。 | 日志每秒出现一行 LIVE_STATS，每趟结束后出现一行 RUN_REPORT。 | TC-02 |
 | 8 | 启动 `phone_sim.py --runs 2 --jump`。第 1 趟停在滑行页。第 2 趟结束时提一个问题。 | 第 1 趟打开报告页。第 2 趟提问时页面不变。 | TC-03 |
 | 9 | 启动 `phone_sim.py --runs 3 --turns 44`。每趟结束后进入弯型页：在实时数据页短按两次 DOWN。短按几次 OK，长按 UP，再长按 DOWN。 | 弯型页画出 8 个弯。OK 选中下一弯，长按 UP 选中上一弯，长按 DOWN 跳到下一页，提示条显示每个按键的作用。第 3 趟之后页面显示"示意"。 | TC-05 |
+| 10 | 启动 `phone_sim.py --popups 8`，用按键关闭其中一个弹窗。再启动 `phone_sim.py --popups 6 --popup-gap 5`。 | 每个弹窗都立即显示。日志显示 POPUP_END，原因为 `timeout`、`key` 或 `replaced`。每个弹窗结束后，设备显示弹窗前的页面。 | TC-22 |
 
 ## 日志分析
 

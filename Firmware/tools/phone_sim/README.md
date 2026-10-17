@@ -13,6 +13,7 @@ It does no speech recognition and calls no Agent.
 3. It receives each question as AUDIO_UP blocks, and saves it as a WAV file.
 4. It answers in the selected mode.
 5. With `--runs N`, it sends N simulated runs of ski data. See the section "Ski data".
+6. With `--popups N`, it sends N popups. See the section "Popups".
 
 | Mode | Answer |
 | --- | --- |
@@ -57,6 +58,33 @@ python3 tools/phone_sim/phone_sim.py --runs 3 --run-s 30
 
 Add `--jump` to send SHOW_PAGE after each report. The device opens the Report page from the Ski page or the idle Coach page (D-28).
 
+## Popups
+
+`--popups N` sends N popups (D-31). `--popup-gap` sets the seconds from one popup to the next. The default is 20.
+
+```bash
+python3 tools/phone_sim/phone_sim.py --popups 8
+python3 tools/phone_sim/phone_sim.py --popups 6 --popup-gap 5
+```
+
+1. The first popup comes 3 seconds after HELLO_ACK.
+2. The kinds come in turn: fall alert, voice message, problem report, and achievement. Then the turn starts again.
+3. The fall alert and the voice message have audio. The audio is the `--wav` file, or a tone of 2 seconds.
+4. For a popup with audio, it sends PLAY_START on channel 2 after 0.3 seconds, then AUDIO_DOWN and PLAY_END.
+5. Each popup uses a new phone `xid`, from 0x80 to 0xFE.
+6. When the device closes a popup, it stops the audio of that popup.
+
+The log shows each POPUP_END with its reason and the time after the POPUP:
+
+| Reason in the log | Meaning |
+| --- | --- |
+| `timeout` | Reason 0. The countdown ended with no key press. |
+| `key` | Reason 1. The user pressed a key. |
+| `replaced` | Reason 2. A new popup replaced this popup. |
+
+A popup with a tone of 2 seconds closes about 12 seconds after the POPUP. A gap below 13 seconds sends the next popup while the old one shows. The device then replaces it.
+You can use `--popups` together with `--runs` and the answer modes.
+
 ## Device test
 
 Run these steps on a board with the current firmware.
@@ -73,6 +101,7 @@ Record the phone, the log, and the result of each step.
 | 7 | Start `phone_sim.py --runs 3`. | The log shows a LIVE_STATS line each second and a RUN_REPORT line after each run. | TC-02 |
 | 8 | Start `phone_sim.py --runs 2 --jump`. Stay on the Ski page for run 1. Ask a question when run 2 ends. | Run 1 opens the Report page. During the question in run 2, the page does not change. | TC-03 |
 | 9 | Start `phone_sim.py --runs 3 --turns 44`. After each run, go to the Turns page: two short DOWN presses from the live data page. Press OK a few times, hold UP, and hold DOWN. | The Turns page draws 8 turns. OK selects the next turn. The UP hold selects the previous turn. The DOWN hold goes to the next page. The key bar shows each action. After run 3, the page shows the schematic tag. | TC-05 |
+| 10 | Start `phone_sim.py --popups 8`. Close one popup with a key. Then start `phone_sim.py --popups 6 --popup-gap 5`. | Each popup shows at once. The log shows POPUP_END with `timeout`, `key`, or `replaced`. After each popup, the device shows the page before the popup. | TC-22 |
 
 ## Log analysis
 

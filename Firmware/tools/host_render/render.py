@@ -89,6 +89,7 @@ def build(sdkconfig):
         [f"-I{ASSETS / 'fonts'}", f"-I{ASSETS / 'sprites'}"]
     app_src = [HERE / "render.c", FW / "main/ui/ui_theme.c",
                FW / "main/ui/ui_state_icon.c", FW / "main/ui/turn_view.c", FW / "main/ui/turn_page.c",
+               FW / "main/ui/popup_view.c",
                FW / "main/link/link_core.c", FW / "main/protocol/ble_proto.c",
                FW / "main/generated/coach_screens.c", FW / "main/generated/coach_bindings.c",
                ASSETS / "fonts/heygo_sc_16.c", ASSETS / "fonts/heygo_sc_28.c",
@@ -170,6 +171,12 @@ def frames(s):
         ("19-turns-schematic", None, {"!shape": shape(12, 1, 255, 254, permille=1000)}),
         ("20-turns-loading", None, {"!shape": shape(4, 0, 44, 24, cached=False)}),
         ("21-turns-short", None, {"!shape": shape(2, 0, 5, 1, permille=1000)}),
+        # Popups (D-31). The !popup value goes through popup_view.c: kind phase left_ms title|body.
+        ("22-popup-fall", "popup", {"!popup": "1 1 0 |需要帮助吗？60 秒内无操作，手机会通知紧急联系人。"}),
+        ("23-popup-voice", None, {"!popup": "2 0 0 队友消息|小王：我们在 3 号缆车下面集合。"}),
+        ("24-popup-issue", None, {"!popup": "3 2 7400 第 2 弯重心偏后|入弯时上身后坐，雪板容易甩尾。下一趟把重心放到前脚。"}),
+        ("25-popup-badge", None, {"!popup": "4 2 10000 今天完成 10 趟|换刃比上午更稳，继续保持。"}),
+        ("26-popup-max", None, {"!popup": "3 2 1000 第十二弯上身转动过早重心|" + "让雪板先转，上身保持朝向山下。" * 2 + "入弯前先看出口方向。"}),
     ]
 
 
@@ -262,7 +269,7 @@ def main():
         if screen == "coach":
             cmds.append("mem coach_built")
         cmds += [f"label {k[1:]} {v}" if k.startswith("@") else f"panel {v}" if k == "!panel"
-                 else f"shape {v}" if k == "!shape" else f"set {k} {v}"
+                 else f"shape {v}" if k == "!shape" else f"popup {v}" if k == "!popup" else f"set {k} {v}"
                  for k, v in sets.items()]
         cmds.append(f"snap {name}")
     # The body subject holds BODY_SIZE - 1 bytes. One ASCII byte in front of

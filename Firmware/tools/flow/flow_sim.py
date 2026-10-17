@@ -107,9 +107,9 @@ def run_selftest(flow_path):
     with tempfile.TemporaryDirectory() as tmp:
         page = Path(tmp) / "sim.html"
         page.write_text(html, encoding="utf-8")
-        # Virtual time runs the 60 seconds of timers in the test at once.
+        # Virtual time runs the timers of the test at once.
         r = subprocess.run([chrome, "--headless=new", "--disable-gpu", "--no-first-run",
-                            f"--user-data-dir={tmp}/profile", "--virtual-time-budget=120000",
+                            f"--user-data-dir={tmp}/profile", "--virtual-time-budget=180000",
                             "--dump-dom", page.as_uri()], capture_output=True, text=True, timeout=120)
     m = re.search(r'<pre id="selftest">(.*?)</pre>', r.stdout, re.S)
     if not m:

@@ -2,7 +2,7 @@
 
 # BLE Protocol Draft
 
-Version: 0.9. Date: 2026-10-17. Status: the phone application team accepted protocol 0.2. That team must accept SHOW_PAGE from version 0.7, the field meanings from version 0.8, and the three turn messages from version 0.9.
+Version: 0.10. Date: 2026-10-17. Status: the phone application team accepted protocol 0.2. That team must accept SHOW_PAGE from version 0.7 and the field meanings from version 0.8. It must also accept the turn messages from version 0.9 and the popup messages from version 0.10.
 
 ## 1. Purpose and scope
 
@@ -32,6 +32,9 @@ Section 16 lists these changes.
 
 Version 0.9 adds the Increment 3 messages TURN_SHAPE, TURN_GROUP, and TURN_REQUEST, and the Turns page, per D-30. The protocol version stays 0.2.
 Section 17 lists these changes.
+
+Version 0.10 adds the Increment 4 messages POPUP and POPUP_END, the popup audio channel, and the popup page, per D-31. The protocol version stays 0.2.
+Section 18 lists these changes.
 
 The draft follows three rules:
 
@@ -169,8 +172,8 @@ D means the device. P means the phone.
 
 | Field | Size | Values |
 | --- | --- | --- |
-| Mode | 1 byte | 0 live data page, Report page, or Turns page. 1 Coach page. Before D-29, the values meant Ski mode and Rest mode. |
-| Page | 1 byte | 0 live data page. 1 Coach page. 2 no longer used (the old exit question). 3 Report page. 4 Team page, P1. 5 Turns page, Increment 3 (D-30). |
+| Mode | 1 byte | 0 live data page, Report page, Turns page, or popup page. 1 Coach page. Before D-29, the values meant Ski mode and Rest mode. |
+| Page | 1 byte | 0 live data page. 1 Coach page. 2 no longer used (the old exit question). 3 Report page. 4 Team page, P1. 5 Turns page, Increment 3 (D-30). 6 popup page, Increment 4 (D-31). |
 | Codec | 1 byte | 0 IMA ADPCM. 1 Raw PCM. |
 | Codec mask | 1 byte | Bit 0 IMA ADPCM. Bit 1 raw PCM. Bit n matches codec value n. |
 | Sample rate | 1 byte | 16, in kHz. No other value is valid. |
@@ -212,7 +215,7 @@ The device needs the UTC time from the phone, because it has no other clock sour
 | 0x10 | CONTEXT | D to P | Mode (1), page (1) | On each page change |
 
 In P0 the phone attaches the current ski session to each Agent request.
-On the Report page, the page field of CONTEXT is 3. On the Turns page, it is 5.
+On the Report page, the page field of CONTEXT is 3. On the Turns page, it is 5. During a popup, the mode field is 0 and the page field is 6.
 
 ### Agent
 
@@ -249,7 +252,7 @@ With an MTU of 172, the text holds at most 163 bytes.
 | --- | --- | --- | --- | --- |
 | 0x30 | AUDIO_UP | D to P | One audio block | Every 20 ms while capture runs |
 | 0x31 | AUDIO_DOWN | P to D | One audio block | At real-time pace during playback |
-| 0x32 | PLAY_START | P to D | Channel (1): 0 Agent, 1 Team. Codec (1). Speaker name (text, Team only). | Before the first AUDIO_DOWN of an answer or a Team speech |
+| 0x32 | PLAY_START | P to D | Channel (1): 0 Agent, 1 Team, 2 popup (D-31). Codec (1). Speaker name (text, Team only). | Before the first AUDIO_DOWN of an answer, a Team speech, or a popup |
 | 0x33 | PLAY_END | P to D | None | After the last AUDIO_DOWN |
 | 0x34 | PLAY_STOP | D to P | None | At a page change during Team playback. P1. |
 
@@ -262,6 +265,7 @@ In both cases the device stops the speaker at once. It does not wait for the pho
 The first version offers only IMA ADPCM in HELLO. The device answers a PLAY_START with codec 1 with ERROR code 7.
 The phone sends the PLAY_START of an exchange only after it receives AGENT_END. During capture, the device drops a PLAY_START.
 The first version has no Team owner. The device ignores a PLAY_START for the Team channel.
+For the popup channel, the "Popups" section gives the rules.
 
 ### Team (P1)
 
@@ -458,6 +462,58 @@ The device follows these rules:
 - After each ERROR, the device keeps the old shape and the old groups.
 - The device accepts these messages only after a HELLO_ACK with the same protocol version.
 
+### Popups (D-31)
+
+| Type | Name | Direction | Payload | When |
+| --- | --- | --- | --- | --- |
+| 0x66 | POPUP | P to D | 3 fixed bytes, then the title, then the body | When the phone wants the device to show a popup at once |
+| 0x67 | POPUP_END | D to P | Reason (1) | When the popup closes on the device |
+
+POPUP uses a new phone `xid`, from 0x80 to 0xFE, and `seq` 0. POPUP_END uses the `xid` of its POPUP.
+The popup audio uses the same `xid`.
+
+**POPUP payload**
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 1 | Kind: 1 fall alert, 2 voice message, 3 problem report, 4 achievement |
+| 1 | 1 | Audio flag: 0 no audio, 1 a PLAY_START on channel 2 follows |
+| 2 | 1 | Byte count t of the title, at most 36 |
+| 3 | t | Title, UTF-8, at most 12 Chinese characters. If t is 0, the device shows a default title for the kind |
+| 3 + t | The rest | Body, UTF-8, at most 120 bytes or 40 Chinese characters |
+
+One POPUP holds at most 163 bytes. It needs an MTU of 166 or more.
+
+| POPUP_END reason | Meaning |
+| --- | --- |
+| 0 | Timeout. The countdown ended with no key press. |
+| 1 | Key. The user pressed a key. |
+| 2 | Replaced. A new POPUP replaced this popup. |
+
+The phone follows these rules:
+
+- The phone can send POPUP at any time after HELLO_ACK, on every page and in every state.
+- For a popup with audio, the phone sends PLAY_START with channel 2 and the popup `xid`. Then it sends AUDIO_DOWN and PLAY_END with the same `xid`.
+- The phone sends PLAY_START within 5 seconds of the POPUP. After that, the device starts the countdown and drops the audio.
+- After POPUP_END, the phone stops the audio of that popup.
+- The phone owns the escalation of a fall alert. The device closes a fall popup after 10 seconds, as it closes the other kinds.
+
+The device follows these rules:
+
+- A POPUP interrupts every state at once. During capture, the device stops capture and sends AGENT_CANCEL. During the wait, it sends AGENT_CANCEL. During playback, it stops the speaker and sends AGENT_CANCEL.
+- If a popup shows already, the device sends POPUP_END with reason 2 for it. Then it shows the new popup. The link core sends this packet.
+- The device accepts PLAY_START on channel 2 only with the `xid` of the current popup, and only if its audio flag is 1. It drops the other packets and sends no ERROR for them.
+- The device plays the popup audio. After PLAY_END and the last block, it counts down 10 seconds.
+- With audio flag 0, the countdown starts at once. With audio flag 1 and no PLAY_START within 5 seconds, the countdown starts.
+- After the countdown, the device sends POPUP_END with reason 0. At a key press, it sends POPUP_END with reason 1 and stops the popup audio.
+- Then the device shows the page before the popup again. From the Coach page, it shows the ready state.
+- After a link loss, the device keeps the popup and starts the countdown. It sends no POPUP_END. A new connection resets every `xid`, so the phone treats the popup as closed.
+- A kind outside 1 to 4, an audio flag above 1, or text that is not valid UTF-8 gets ERROR code 7.
+- A POPUP with a device `xid` (0x00 to 0x7F) or with `xid` 0xFF also gets code 7.
+- A title above 36 bytes or a body above 120 bytes gets code 4. A title length past the end of the payload, or a payload below 3 bytes, gets code 2.
+- After each ERROR, the device shows nothing new. A popup that shows already stays.
+- The device accepts POPUP only after a HELLO_ACK with the same protocol version. Before that, it ignores the packet and sends no ERROR.
+
 ## 7. Audio blocks
 
 ### IMA ADPCM block
@@ -537,6 +593,8 @@ If no block and no PLAY_END arrive for 2 seconds, the device ends playback and f
 | One capture | At most 20 seconds | Device |
 | Speaker start | Three blocks, PLAY_END, or 60 ms after the first block | Device |
 | Stall during playback | 2 seconds with no block and no PLAY_END ends playback | Device |
+| PLAY_START on channel 2 after a POPUP with audio flag 1 | At most 5 seconds. After that, the device starts the countdown. | Phone |
+| Popup countdown | 10 seconds after the popup audio ends, or 10 seconds after a POPUP with no audio | Device |
 
 The 1,500 ms value comes from the local intercom reference.
 TC-09 targets 800 ms for a grant at the 95th percentile. The timeout covers the slow tail.
@@ -558,6 +616,30 @@ sequenceDiagram
     P-->>D: AUDIO_DOWN xid=05 seq=0..m
     P-->>D: PLAY_END xid=05
 ```
+
+### Popup with audio, during a question (D-31)
+
+```mermaid
+sequenceDiagram
+    participant D as Device
+    participant P as Phone
+    D->>P: AGENT_START xid=05
+    D->>P: AUDIO_UP xid=05 seq=0..n
+    P-->>D: POPUP xid=81 kind=1 audio=1
+    D->>P: AGENT_CANCEL xid=05
+    D->>P: CONTEXT mode=0 page=6
+    P-->>D: PLAY_START xid=81 channel=2
+    P-->>D: AUDIO_DOWN xid=81 seq=0..m
+    P-->>D: PLAY_END xid=81
+    Note over D: Play, then count down 10 s
+    P-->>D: POPUP xid=82 kind=4 audio=0
+    D->>P: POPUP_END xid=81 replaced
+    Note over D: Count down 10 s at once
+    D->>P: POPUP_END xid=82 timeout
+    D->>P: CONTEXT mode=1 page=1
+```
+
+In this example, the popup comes on the Coach page. So the device goes back to the ready state of the Coach page.
 
 ### Team speech, and a late grant (P1)
 
@@ -603,6 +685,8 @@ The Turns page view uses two copies of 816 bytes. The line points and their leng
 The rider sprite uses 25.6 KB of Flash and no RAM.
 The symbol table of the firmware build gives these sizes.
 
+Increment 4 adds about 0.7 KB of static RAM: three copies of the current popup of 161 bytes each, and the popup page texts. This value is an estimate from the struct sizes. Nobody measured it.
+
 The ADPCM codec state adds a few bytes for each direction.
 The NimBLE host and controller need extra memory. Measure them on hardware.
 
@@ -625,6 +709,8 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 15. To show the Report page on the device, send SHOW_PAGE 3. The device changes only from the live data page or the idle Coach page.
 16. Increment 3: after each RUN_REPORT, send the TURN_SHAPE of that run. Set source 1 for a shape that does not come from a measured track.
 17. Keep every group of the last run. Answer each TURN_REQUEST with one TURN_GROUP for each asked group.
+18. Increment 4: to show a popup, send POPUP with a new phone `xid`. For a popup with audio, send PLAY_START on channel 2 within 5 seconds.
+19. Read POPUP_END. A fall alert can end with reason 0 and no key press. Start the escalation of a fall alert on the phone.
 
 ## 12. Open items
 
@@ -635,6 +721,8 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 - Record the interval, the PHY, and the data length that each target phone grants.
 - A later version measures the battery cost of the link settings. D-18 defers this item.
 - The phone application team finds a source of measured track data, and sets the scale of each group. Q-02 tracks this item.
+- The phone application team decides when to send each popup kind, and how to escalate a fall alert.
+- Measure on the board whether the first blocks of the popup audio play when a popup interrupts an answer.
 
 ## 13. Changes in version 0.4
 
@@ -705,7 +793,23 @@ D-30 adds the Turns page and three turn messages for Increment 3.
 The turn messages add messages and change no current packet, so the protocol version stays 0.2.
 Firmware at commit `bedcf1a` or older answers TURN_SHAPE and TURN_GROUP with ERROR code 1. A phone application that does not know page 5 treats it as an unknown page.
 
-## 18. Related documents
+## 18. Changes in version 0.10
+
+D-31 adds phone popups for Increment 4.
+
+| No. | Change | Section |
+| --- | --- | --- |
+| 1 | Add POPUP (0x66), from the phone to the device. | 6 |
+| 2 | Add POPUP_END (0x67), from the device to the phone, with reason 0 timeout, 1 key, or 2 replaced. | 6 |
+| 3 | Add channel 2, the popup audio, to PLAY_START. | 6 |
+| 4 | Add page 6, the popup page. On it, the mode field is 0. | 6 |
+| 5 | Add the 5-second wait for the popup audio and the 10-second countdown. | 8 |
+| 6 | Add about 0.7 KB of static RAM for the popup. | 10 |
+
+The popup messages add messages and a channel value. They change no current packet, so the protocol version stays 0.2.
+Firmware at commit `49573f9` or older answers POPUP with ERROR code 1, and ignores a PLAY_START on channel 2. A phone application that does not know page 6 treats it as an unknown page.
+
+## 19. Related documents
 
 - [System Architecture](02-architecture.md).
 - [Validation and Decisions](04-validation-and-decisions.md).

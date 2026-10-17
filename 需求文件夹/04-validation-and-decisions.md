@@ -2,7 +2,7 @@
 
 # Validation, open questions, and decisions
 
-Version: 0.9. Date: 2026-10-17. Status: Draft for review.
+Version: 0.10. Date: 2026-10-17. Status: Draft for review.
 Every product test below has status NOT RUN.
 Document checks do not count as firmware or device tests.
 
@@ -73,6 +73,14 @@ TC-03 adds one more set: send SHOW_PAGE 5 times in each of the 5 states. Pass ru
 
 `phone_sim` can check these three tests in Sprint 5, but it cannot pass them.
 
+### Increment 4 acceptance matrix
+
+| Test | Condition | Pass rule | Method and owner |
+| --- | --- | --- | --- |
+| TC-22 | `phone_sim --popups 40` sends 40 popups, 10 of each kind. Send at least 3 popups in each state: LIVE, REPORT, TURNS, READY, CAPTURE, WAIT_ANSWER, and PLAYBACK. Close 10 popups with a key. Use `--popup-gap 5` for 10 popups, so that a new popup replaces the old one. Send 5 POPUP packets with a bad field. | Each popup shows within 500 ms. Capture, the wait, or the answer stops at once, and the device sends AGENT_CANCEL. A popup with audio counts down 10 seconds after the audio. A popup with no audio counts down at once. Each POPUP_END has the right reason: 0, 1, or 2. After the popup, the device shows the page before the popup, or the ready state of the Coach page. A key never changes the page or starts capture. Each bad packet gets ERROR code 7, 4, or 2. | Screen log, `phone_sim` log, and hardware demonstration. Firmware and phone. |
+
+A fall popup also closes after 10 seconds with no user action. TC-22 checks only the device. The phone application team must test the escalation of a fall alert.
+
 ## 4. Tests outside Increment 1 and Increment 2
 
 TC-04, TC-09, and TC-13 belong to P1, after Increment 2.
@@ -138,6 +146,7 @@ The user parked these questions. The user will share answers after a review with
 | D-28 | When the phone sends SHOW_PAGE 3, the device changes to the Report page from the live data page or the idle Coach page. During capture, the wait, and the playback, it ignores the message. | Accepted by the user on 2026-10-17. |
 | D-29 | Remove Ski mode and Rest mode. Three pages at one level (live data, report, and coach) loop with short UP and DOWN presses. An OK hold on any page opens the Coach page with no capture. On the Coach page, the user holds OK to ask. A page change during capture, the wait, or the playback cancels the question first. Actions inside a page will use a short OK. | Accepted by the user on 2026-10-17. |
 | D-30 | REQ-05 becomes Increment 3. The page loop of D-29 gets a fourth page, the Turns page, between the Report page and the Coach page. It shows 8 turns at a time. Inside the page, OK selects the next turn, an UP hold the previous turn, and a DOWN hold the next page. The device keeps 3 groups and asks the phone for the others in TURN_REQUEST. A bar of two rows names the keys. The protocol version stays 0.2. | Accepted by the user on 2026-10-17. Waits for the phone application team. |
+| D-31 | The phone can show a popup on the device at any time: a fall alert, a voice message, a problem report, or an achievement. A popup interrupts every state at once and cancels the open question. The device plays the popup audio on channel 2, then counts down 10 seconds. Any key only closes the popup. Then the device goes back to the page before the popup, or to READY from the Coach page. A new popup replaces the old one. POPUP (0x66) and POPUP_END (0x67) are new. The protocol version stays 0.2. | Accepted by the user on 2026-10-17. Waits for the phone application team. |
 
 ## 7. Risks
 
@@ -156,6 +165,8 @@ The user parked these questions. The user will share answers after a review with
 | The phone gives speed and vertical drop with large errors. | Users stop trusting the data. | The phone owns the accuracy. TC-02 checks only that the device matches the phone. Assess the accuracy before a field pilot. | Phone application team. |
 | The phone sends SHOW_PAGE while the user asks a question. | The phone thinks that the device shows the Report page. | The device ignores the message and reports the real page in CONTEXT. The phone application trusts CONTEXT. | Phone application team. |
 | The change to protocol 0.2 is not at the same time on both sides. | A phone application with 0.1 only gets no voice with the new firmware. | Change both sides together per D-24. Tell the phone application team at the end of Sprint 4. | Firmware and phone application team. |
+| A fall popup closes after 10 seconds with no user action (D-31). | A real fall alert goes away while the user cannot press a key. Nobody gets help. | The phone owns the escalation, for example a call to an emergency contact. The device only shows the alert. POPUP_END reason 0 tells the phone that nobody pressed a key. | Phone application team and Product Owner. |
+| Popup audio arrives before the old answer stops (D-31). | The device drops the first blocks of the popup audio, or plays a part of the old answer. | `audio_play_cut` stops the speaker and keeps the queued blocks. The link core accepts AUDIO_DOWN only with the xid of the open stream. Check the start of the popup audio during PLAYBACK in TC-22. | Firmware. |
 
 ## 8. Delivery evidence
 

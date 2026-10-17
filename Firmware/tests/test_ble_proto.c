@@ -371,7 +371,43 @@ static void turn_request(void) {
     assert(strcmp(bp_type_name(BP_TURN_REQUEST), "TURN_REQUEST") == 0);
 }
 
+static void popup(void) {
+    uint8_t buf[200];
+    bp_packet_t p;
+    bp_popup_t r;
+    uint8_t reason = 9;
+    size_t n = bp_build_popup(buf, sizeof buf, 7, BP_POPUP_FALL, true, "检测到摔倒", "需要帮助吗");
+    assert(n == 4 + 3 + 15 + 15 && buf[0] == BP_POPUP && buf[2] == 7);
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_popup(&p, &r) == BP_OK);
+    assert(r.kind == BP_POPUP_FALL && r.audio && r.title.len == 15 && r.body.len == 15);
+    assert(memcmp(r.title.ptr, "检测到摔倒", 15) == 0 && memcmp(r.body.ptr, "需要帮助吗", 15) == 0);
+    n = bp_build_popup(buf, sizeof buf, 8, BP_POPUP_BADGE, false, "", NULL);
+    assert(n == 7 && bp_parse(buf, n, &p) == BP_OK && bp_read_popup(&p, &r) == BP_OK);
+    assert(r.kind == BP_POPUP_BADGE && !r.audio && r.title.len == 0 && r.body.len == 0);
+    assert(bp_build_popup(buf, sizeof buf, 1, 0, false, "a", "b") == 0);
+    assert(bp_build_popup(buf, sizeof buf, 1, 5, false, "a", "b") == 0);
+    char long_title[BP_POPUP_TITLE_MAX + 2];
+    memset(long_title, 'a', sizeof long_title - 1);
+    long_title[sizeof long_title - 1] = 0;
+    assert(bp_build_popup(buf, sizeof buf, 1, 1, false, long_title, "") == 0);
+    n = bp_build_popup(buf, sizeof buf, 1, BP_POPUP_VOICE, false, "ab", "cd");
+    buf[5] = 2;
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_popup(&p, &r) == BP_ERR_FIELD);
+    buf[5] = 0; buf[6] = 9;
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_popup(&p, &r) == BP_ERR_LENGTH);
+    buf[6] = 2; buf[7] = 0xFF;
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_popup(&p, &r) == BP_ERR_FIELD);
+    n = bp_build_popup_end(buf, sizeof buf, 7, BP_POPUP_END_REPLACED);
+    assert(n == 5 && buf[0] == BP_POPUP_END && buf[2] == 7);
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_popup_end(&p, &reason) == BP_OK && reason == BP_POPUP_END_REPLACED);
+    assert(bp_build_popup_end(buf, sizeof buf, 7, 3) == 0);
+    buf[4] = 3;
+    assert(bp_read_popup_end(&p, &reason) == BP_ERR_FIELD);
+    assert(strcmp(bp_type_name(BP_POPUP), "POPUP") == 0 && strcmp(bp_type_name(BP_POPUP_END), "POPUP_END") == 0);
+}
+
 int main(void) {
+    popup();
     type_names();
     turn_shape();
     turn_group();

@@ -2,7 +2,7 @@
 
 # HeygoAI and AI Passport: product requirements
 
-Version: 0.7. Date: 2026-10-17. Status: Draft for review.
+Version: 0.8. Date: 2026-10-17. Status: Draft for review.
 The Product Owner role has no assigned person.
 This document defines a concept. It does not describe a working integration.
 
@@ -41,6 +41,7 @@ The pilot uses existing boards. It needs no new circuit board or enclosure.
 7. During the wait or the answer, a short UP or DOWN press cancels the question and changes the page.
 8. After a run ends, the live data page shows the report of that run. The Report page shows the full report.
 9. The Turns page, between the Report page and the Coach page, shows the turns of the last run, 8 at a time (D-30).
+10. The phone can show a popup on the device at any time: a fall alert, a voice message, a problem report, or an achievement (D-31). Any key closes it, and the device goes back to the page before the popup.
 
 D-29 removes Ski mode and Rest mode. The device cannot check motion, so voice works only on the Coach page.
 After the Coach page opens, the user must hold OK again to start capture. An accidental OK press during a run can only open the Coach page.
@@ -54,6 +55,7 @@ D-17, D-18, and D-22 set these priorities. [Decision amendments](05-decision-ame
 | P0 | Increment 1: the Coach voice chain | REQ-01, REQ-06, REQ-07, REQ-08, REQ-15, REQ-17, REQ-20 |
 | P1 | Increment 2: live data and reports | REQ-02, REQ-03, REQ-21 |
 | P1 | Increment 3: the turn shape (D-30) | REQ-05 |
+| P1 | Increment 4: phone popups (D-31) | REQ-22 |
 | P1 | After Increment 2 | REQ-04, REQ-09, REQ-13 |
 | P2 | Later candidates | REQ-10, REQ-11, REQ-12, REQ-18, REQ-19 |
 | Deferred | No planned increment | REQ-14, REQ-16 |
@@ -65,7 +67,7 @@ D-22 lets the team develop Increment 2 in parallel with the device acceptance of
 ### Exclusions from the first version
 
 - Metric charts, the offline report cache, and human intercom. They come after Increment 2. The turn view is Increment 3.
-- Automatic emergency detection or rescue dispatch.
+- Automatic emergency detection or rescue dispatch. The fall popup (D-31) only shows an alert from the phone. The phone owns the escalation.
 - Certified instruction, medical advice, or injury prevention claims.
 - Native measurement of speed, position, edge angle, or body posture.
 - Speed rankings, speed badges, or any content that rewards high speed.
@@ -106,7 +108,7 @@ Each row has test stage Prototype. Owners are roles with no assigned person.
 | REQ-17 | Three pages at one level, with UP and DOWN to change the page. An OK hold on any page opens the Coach page. Capture runs only while the user holds OK on the Coach page. | Firmware and design. | TC-17: in 50 page changes and Coach page openings, each page is as expected. The hold that opens the Coach page never starts capture. | No automatic motion detection exists. D-28: the phone can change the device to the Report page. That never starts capture. |
 | REQ-20 | Explain link failures. Support recovery. | Firmware and phone. | TC-20: 10 reconnect trials create no duplicate question. No stale answer plays. | Test link loss and phone background behavior. |
 
-### P1, Increments 2 and 3
+### P1, Increments 2 to 4
 
 | ID | Value and required behavior | Owner | Acceptance target | Dependency |
 | --- | --- | --- | --- | --- |
@@ -114,6 +116,7 @@ Each row has test stage Prototype. Owners are roles with no assigned person.
 | REQ-21 | During a run, show live data on the live data page: speed, vertical drop, distance, turn count, and run time. The phone sends one packet each second. | Firmware and design. | TC-21: the screen updates within 300 ms of the packet at the 95th percentile. At least 4 of 5 users read the speed correctly within 2 seconds. | REQ-02. |
 | REQ-03 | After each run, show the report of that run. It holds the distance, the turn count, the Heygo IQ, the core problem, and a tip of at most 20 characters. | Firmware and design. | TC-03: in 30 short DOWN presses on the Coach page, the Report page shows within 500 ms each time. Every value matches the phone log. | REQ-02. |
 | REQ-05 | After each run, show the shape of that run in groups of 8 turns, and replay one turn. The user moves from turn to turn with the keys. The page shows the action of each key. Each turn shows its side, speed, edge angle, and radius. A schematic shape shows "示意". | Firmware and design. | TC-05: in 20 runs with phone_sim and up to 255 turns, each key press shows its turn within 500 milliseconds. Each turn value matches the phone log. A schematic shape shows "示意" each time. | REQ-03. TURN_SHAPE, TURN_GROUP, and TURN_REQUEST as doc 07 defines. |
+| REQ-22 | Show a popup from the phone at once, on every page and in every state. Four kinds: fall alert, voice message, problem report, and achievement. Play the popup audio, then count down 10 seconds. Any key closes the popup. Then go back to the page before the popup. | Phone and firmware. | TC-22: in 40 popups with phone_sim, each popup shows within 500 ms on every page and in every Coach state. Each popup closes after its audio and 10 seconds, or at a key press. The device then shows the page before the popup each time. | POPUP and POPUP_END as doc 07 defines. The phone owns the escalation of a fall alert. |
 
 ### P1, after Increment 2
 
@@ -229,7 +232,27 @@ D-30 adds the Turns page to the page loop of D-29, between the Report page and t
 - Below the shape, the page shows "TOE SIDE" or "HEEL SIDE", the turn number, the speed, the edge angle, and the radius.
 - A shape that does not come from a measured track shows "示意" (schematic).
 - Before the first shape arrives, the page shows "暂无弯型数据" (no turn data yet).
-- An OK hold does nothing. A DOWN hold opens the exit question.
+
+### Popups
+
+D-31 lets the phone show a popup on the device at any time. The popup page is not in the page loop.
+
+| Kind | Screen text | Color | Audio in the phone_sim example |
+| --- | --- | --- | --- |
+| 1, fall alert | 摔倒提醒, FALL ALERT | Red | Yes |
+| 2, voice message | 语音播报, BROADCAST | Accent | Yes |
+| 3, problem report | 问题报告, RUN ISSUE | Accent | No |
+| 4, achievement | 成就报告, ACHIEVED | Accent | No |
+
+- A popup interrupts at once, in every state. Capture stops, and the device cancels the question. The wait stops. An answer that plays stops.
+- The popup shows a title of at most 12 Chinese characters and a body of at most 40 Chinese characters. With no title, the device shows a default title for the kind.
+- If the popup has audio, the device plays it, then counts down 10 seconds. With no audio, the countdown starts at once.
+- If the audio does not start within 5 seconds, the countdown starts.
+- The footer shows "等待语音" (waiting for audio), "正在播报" (playing), or "N 秒后返回" (back in N seconds). The bar at the bottom shows "按任意键关闭" (any key closes).
+- Any key only closes the popup. It does not change the page and does not start capture. The release of an OK hold that started before the popup does not close it.
+- After the countdown, or at a key press, the device goes back to the page before the popup. That is the live data page, the Report page, or the Turns page. From the Coach page, the device goes back to the ready state.
+- A new popup replaces the old one. The device keeps the page from before the first popup.
+- A fall popup also closes after 10 seconds with no user action. The phone must start the escalation, for example a call to an emergency contact. The device only shows the alert.
 
 ### Data fields
 

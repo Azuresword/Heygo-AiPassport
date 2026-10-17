@@ -99,6 +99,21 @@ class PacketTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             hl.show_page(1)
 
+    def test_popup(self):
+        c = c_build("bp_build_popup", ctypes.c_uint8(0x81), ctypes.c_uint8(1), ctypes.c_bool(True),
+                    "检测到摔倒".encode(), "需要帮助吗".encode())
+        self.assertEqual(hl.popup(0x81, hl.POPUP_FALL, True, "检测到摔倒", "需要帮助吗"), c)
+        c = c_build("bp_build_popup", ctypes.c_uint8(0x90), ctypes.c_uint8(4), ctypes.c_bool(False), b"", b"")
+        self.assertEqual(hl.popup(0x90, hl.POPUP_BADGE, False), c)
+        self.assertEqual(hl.play_start(0x81, hl.CHANNEL_POPUP)[4], 2)
+        with self.assertRaises(ValueError):
+            hl.popup(0x80, 5, False)
+        with self.assertRaises(ValueError):
+            hl.popup(0x80, 1, False, "长" * 13)
+        c = c_build("bp_build_popup_end", ctypes.c_uint8(0x81), ctypes.c_uint8(hl.POPUP_END_REPLACED))
+        self.assertEqual(hl.parse(c)[0], hl.POPUP_END)
+        self.assertEqual(hl.parse(c)[4], bytes([hl.POPUP_END_REPLACED]))
+
     def test_turn_shape(self):
         class Turn(ctypes.Structure):
             _fields_ = [(n, ctypes.c_uint8) for n in ("first", "last", "side", "speed", "edge", "radius")]

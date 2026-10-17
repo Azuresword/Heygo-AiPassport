@@ -35,6 +35,8 @@ static int min_payload(uint8_t type) {
     case BP_TURN_SHAPE:    return BP_TURN_SHAPE_SIZE;
     case BP_TURN_GROUP:    return BP_TURN_GROUP_FIXED;
     case BP_TURN_REQUEST:  return BP_TURN_REQUEST_SIZE;
+    case BP_POPUP:         return BP_POPUP_FIXED;
+    case BP_POPUP_END:     return 1;
     default:               return -1;
     }
 }
@@ -170,7 +172,7 @@ bp_err_t bp_read_agent_state(const bp_packet_t *p, bp_agent_state_t *out) {
 bp_err_t bp_read_play_start(const bp_packet_t *p, bp_play_start_t *out) {
     bp_err_t e = expect(p, BP_PLAY_START);
     if (e) return e;
-    if (p->payload[0] > BP_CHANNEL_TEAM || !codec_known(p->payload[1])) return BP_ERR_FIELD;
+    if (p->payload[0] > BP_CHANNEL_POPUP || !codec_known(p->payload[1])) return BP_ERR_FIELD;
     out->channel = p->payload[0];
     out->codec = p->payload[1];
     out->speaker = text_from(p, 2);
@@ -350,7 +352,7 @@ size_t bp_build_audio(uint8_t *out, size_t cap, uint8_t type, uint8_t xid, uint8
 }
 
 size_t bp_build_play_start(uint8_t *out, size_t cap, uint8_t xid, uint8_t channel, uint8_t codec, const char *speaker) {
-    if (channel > BP_CHANNEL_TEAM || !codec_known(codec)) return 0;
+    if (channel > BP_CHANNEL_POPUP || !codec_known(codec)) return 0;
     size_t tl = text_len(speaker);
     size_t n = header(out, cap, 2 + tl, BP_PLAY_START, xid, 0);
     if (!n) return 0;
@@ -488,6 +490,52 @@ size_t bp_build_turn_request(uint8_t *out, size_t cap, uint8_t run_no, uint8_t f
     return n;
 }
 
+bp_err_t bp_read_popup(const bp_packet_t *p, bp_popup_t *out) {
+    bp_err_t e = expect(p, BP_POPUP);
+    if (e) return e;
+    const uint8_t *b = p->payload;
+    if (b[0] < BP_POPUP_FALL || b[0] > BP_POPUP_BADGE || b[1] > 1) return BP_ERR_FIELD;
+    const size_t title_len = b[2];
+    if (title_len > p->payload_len - BP_POPUP_FIXED) return BP_ERR_LENGTH;
+    const size_t body_len = p->payload_len - BP_POPUP_FIXED - title_len;
+    if (title_len > BP_POPUP_TITLE_MAX || body_len > BP_POPUP_BODY_MAX) return BP_ERR_TOO_LARGE;
+    const uint8_t *title = b + BP_POPUP_FIXED, *body = title + title_len;
+    if (!bp_utf8_valid(title, title_len) || !bp_utf8_valid(body, body_len)) return BP_ERR_FIELD;
+    out->kind = b[0];
+    out->audio = b[1];
+    out->title.ptr = title; out->title.len = title_len;
+    out->body.ptr = body;   out->body.len = body_len;
+    return BP_OK;
+}
+
+bp_err_t bp_read_popup_end(const bp_packet_t *p, uint8_t *reason) {
+    bp_err_t e = expect(p, BP_POPUP_END);
+    if (e) return e;
+    if (p->payload[0] > BP_POPUP_END_REPLACED) return BP_ERR_FIELD;
+    *reason = p->payload[0];
+    return BP_OK;
+}
+
+size_t bp_build_popup(uint8_t *out, size_t cap, uint8_t xid, uint8_t kind, bool audio, const char *title, const char *body) {
+    const size_t tl = text_len(title), bl = text_len(body);
+    if (kind < BP_POPUP_FALL || kind > BP_POPUP_BADGE || tl > BP_POPUP_TITLE_MAX || bl > BP_POPUP_BODY_MAX) return 0;
+    size_t n = header(out, cap, BP_POPUP_FIXED + tl + bl, BP_POPUP, xid, 0);
+    if (!n) return 0;
+    uint8_t *b = out + BP_HEADER_SIZE;
+    b[0] = kind; b[1] = audio ? 1 : 0; b[2] = (uint8_t)tl;
+    if (tl) memcpy(b + BP_POPUP_FIXED, title, tl);
+    if (bl) memcpy(b + BP_POPUP_FIXED + tl, body, bl);
+    return n;
+}
+
+size_t bp_build_popup_end(uint8_t *out, size_t cap, uint8_t xid, uint8_t reason) {
+    if (reason > BP_POPUP_END_REPLACED) return 0;
+    size_t n = header(out, cap, 1, BP_POPUP_END, xid, 0);
+    if (!n) return 0;
+    out[4] = reason;
+    return n;
+}
+
 bp_err_t bp_check_version(uint8_t major, uint8_t minor) {
     return (major == BP_PROTO_MAJOR && minor == BP_PROTO_MINOR) ? BP_OK : BP_ERR_VERSION;
 }
@@ -546,6 +594,8 @@ const char *bp_type_name(uint8_t type) {
     case BP_TURN_SHAPE: return "TURN_SHAPE";
     case BP_TURN_GROUP: return "TURN_GROUP";
     case BP_TURN_REQUEST: return "TURN_REQUEST";
+    case BP_POPUP: return "POPUP";
+    case BP_POPUP_END: return "POPUP_END";
     default: return "?";
     }
 }

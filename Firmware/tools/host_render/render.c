@@ -3,7 +3,7 @@
 // Host program that draws the generated coach screens with the device LVGL
 // configuration. render.py builds it and sends commands on stdin:
 //
-//   screen coach|ski|report|turns   Delete the current screen and build this one.
+//   screen coach|ski|report|turns|popup   Delete the current screen and build this one.
 //   set <subject> <value>   Call the generated setter. The value is the rest of the line.
 //   label <widget> <text>   Set a label of the Ski or Report page, as the Coach task does.
 //   panel metrics|report    Show the metric cells or the report lines of the Ski page.
@@ -11,6 +11,9 @@
 //                           Put a TURN_SHAPE and one cached TURN_GROUP on the Turns page through
 //                           turn_view.c and turn_page.c, as the Coach task does. turns -1: no shape.
 //                           group -1: no group in the cache.
+//   popup <kind> <phase> <left_ms> <title>|<body>
+//                           Write the popup page through popup_view.c, as the Coach task does.
+//                           phase: 0 wait, 1 play, 2 hold. An empty title gives the kind default.
 //   snap <name>             Draw the screen and write <outdir>/<name>.rgb565.
 //   drop                    Delete the current screen and load a blank screen.
 //   text body               Write the byte length and the bytes of the body label text.
@@ -28,6 +31,8 @@
 #include "coach_bindings.h"
 #include "turn_page.h"
 #include "turn_view.h"
+#include "popup_view.h"
+#include "ui_theme.h"
 
 #define HOR 240
 #define VER 320
@@ -36,11 +41,12 @@ static uint16_t s_draw_buf[HOR * VER];
 static uint16_t s_frame[HOR * VER];
 static const char *s_outdir;
 
-static enum { NONE, COACH, SKI, REPORT, TURNS } s_kind = NONE;
+static enum { NONE, COACH, SKI, REPORT, TURNS, POPUP } s_kind = NONE;
 static coach_screen_coach_t s_coach;
 static coach_screen_ski_t s_ski;
 static coach_screen_report_t s_report;
 static coach_screen_turns_t s_turns;
+static coach_screen_popup_t s_popup;
 static lv_obj_t *s_blank;
 
 static int s_takes, s_gives;
@@ -94,6 +100,7 @@ static void drop_screen(void)
     case SKI: coach_screen_ski_destroy(&s_ski); break;
     case REPORT: coach_screen_report_destroy(&s_report); break;
     case TURNS: coach_screen_turns_destroy(&s_turns); break;
+    case POPUP: coach_screen_popup_destroy(&s_popup); break;
     case NONE: break;
     }
     s_kind = NONE;
@@ -119,6 +126,10 @@ static void load_screen(const char *name)
         coach_screen_turns_build(&s_turns);
         lv_screen_load(s_turns.screen);
         s_kind = TURNS;
+    } else if (strcmp(name, "popup") == 0) {
+        coach_screen_popup_build(&s_popup);
+        lv_screen_load(s_popup.screen);
+        s_kind = POPUP;
     } else {
         printf("ERR unknown screen %s\n", name);
     }
@@ -159,6 +170,34 @@ static lv_obj_t *data_label(const char *id)
         if (strcmp(id, "tip") == 0) return s_report.tip;
     }
     return NULL;
+}
+
+// The popup page, as refresh_popup() in main/coach_app.c writes it.
+static void put_popup(const char *args)
+{
+    unsigned kind, phase, left;
+    int used = 0;
+    if (sscanf(args, "%u %u %u %n", &kind, &phase, &left, &used) != 3) { printf("ERR popup args\n"); return; }
+    link_popup_t p;
+    memset(&p, 0, sizeof p);
+    p.kind = (uint8_t)kind;
+    const char *text = args + used, *bar = strchr(text, '|');
+    if (!bar) { printf("ERR popup needs title|body\n"); return; }
+    snprintf(p.title, sizeof p.title, "%.*s", (int)(bar - text), text);
+    snprintf(p.body, sizeof p.body, "%s", bar + 1);
+    popup_view_t v;
+    popup_view_build(&v, &p, (popup_phase_t)phase, left);
+    lv_label_set_text(s_popup.mode, v.mode);
+    lv_label_set_text(s_popup.dest, v.dest);
+    lv_label_set_text(s_popup.title, v.title);
+    lv_label_set_text(s_popup.body, v.body);
+    lv_label_set_text(s_popup.foot, v.foot);
+    lv_label_set_text(s_popup.hint, v.hint);
+    const lv_color_t c = v.danger ? ui_color_danger() : ui_color_accent();
+    lv_obj_set_style_bg_color(s_popup.mode_dot, c, 0);
+    lv_obj_set_style_bg_color(s_popup.hint_panel, c, 0);
+    lv_obj_set_style_text_color(s_popup.dest, c, 0);
+    lv_obj_set_style_text_color(s_popup.title, c, 0);
 }
 
 // Read the numbers of a shape command, check the group as link_core.c does, and draw the page
@@ -258,6 +297,12 @@ static void snap(const char *name)
         print_box("key_up", s_turns.key_up); print_box("key_ok", s_turns.key_ok); print_box("key_down", s_turns.key_down);
         print_box("key_hold", s_turns.key_hold);
         break;
+    case POPUP:
+        print_box("mode", s_popup.mode); print_box("battery", s_popup.battery);
+        print_box("dest", s_popup.dest); print_box("title", s_popup.title);
+        print_box("body", s_popup.body); print_box("foot", s_popup.foot);
+        print_box("hint", s_popup.hint);
+        break;
     case NONE: break;
     }
     print_mem(name);
@@ -304,6 +349,11 @@ int main(int argc, char **argv)
             }
             if (report) { lv_obj_remove_flag(s_ski.problem, LV_OBJ_FLAG_HIDDEN); lv_obj_remove_flag(s_ski.tip, LV_OBJ_FLAG_HIDDEN); }
             else { lv_obj_add_flag(s_ski.problem, LV_OBJ_FLAG_HIDDEN); lv_obj_add_flag(s_ski.tip, LV_OBJ_FLAG_HIDDEN); }
+        }
+        else if (strcmp(cmd, "popup") == 0 && s_kind == POPUP) {
+            char buf[512];
+            snprintf(buf, sizeof buf, "%s %s", arg ? arg : "", rest ? rest : "");
+            put_popup(buf);
         }
         else if (strcmp(cmd, "shape") == 0 && s_kind == TURNS) {
             // strtok already cut the line after the first number. Glue it back.

@@ -282,9 +282,29 @@ D-29 去掉滑行模式、休息模式和退出确认，改为三个平级页面
 
 弯型页占用 LVGL 内存池 16,824 字节。页面和数据约占 4.0 KB 静态内存。
 
-## 12. 待定事项
+## 12. 增量 4：手机弹窗（D-31）
+
+| 文件 | 改动 |
+| --- | --- |
+| `main/protocol/ble_proto.*` | 解析和构建 POPUP（0x66）和 POPUP_END（0x67）。新增通道 2（弹窗语音）和页面 6（弹窗页）。标题最多 36 字节，正文最多 120 字节。协议版本保持 0.2。 |
+| `main/link/link_core.*`、`main/link/ble_link.*` | 只在 HELLO_ACK 之后接受 POPUP，`xid` 必须是 0x80 至 0xFE 的手机 xid。取消未完成的提问。被替换的弹窗发送 POPUP_END 原因 2。通道 2 的 PLAY_START 只接受当前带语音的弹窗。设备关闭弹窗时发送 POPUP_END。链路中断时不发送。 |
+| `main/ui/popup_view.*` | 纯 C。按类型和阶段生成弹窗页文字：中文名称、英文大字、默认标题、底部文字和倒计时。摔倒提醒用危险色。 |
+| `main/audio/voice.*` | 新增 `voice_play_cut`。它停止喇叭，但保留队列里的块，因为弹窗语音可能已经进了队列。 |
+| `flows/coach.flow.json` | 新增状态 POPUP_WAIT、POPUP_PLAY、POPUP_HOLD 和界面 `popup`。每个状态收到 POPUP 都进入 POPUP_WAIT。每个按键都关闭弹窗。RETURN_* 事件回到 LIVE、REPORT、TURNS 或 READY。 |
+| `main/coach_app.c` | 保存第一个弹窗之前的页面。运行 5 秒语音等待和 10 秒倒计时。丢弃被替换的弹窗的定时器事件。弹窗期间 CONTEXT 发送 mode 0、page 6。 |
+| `../assets/ui/strings.json` | 新增 12 条弹窗文字。字体里已经有所有字形。 |
+| `tools/phone_sim/`、`tools/flow/flow_sim.*` | `phone_sim.py --popups N --popup-gap S` 发送弹窗，并打印每个 POPUP_END 的原因。模拟器有弹窗按钮、状态图里的弹窗区域和倒计时进度条。 |
+| `tools/host_render/` | 新增 `popup` 命令和 22 至 26 号界面图。 |
+
+主机上的结果：主机测试通过，流程模拟器自测 102/102 通过。设备测试：未运行。
+本文没有记录弹窗页占用的 LVGL 内存池大小。
+
+## 13. 待定事项
 
 - 设备测试：未运行。板子不在手边，也还没有符合文档 07 的手机应用版本。
+- 弹窗（D-31）：在开发板上确认，弹窗打断回答时，弹窗语音的开头几块能播出。这项测试在 Sprint 14。
+- 弹窗（D-31）：摔倒弹窗在 10 秒后自动关闭，不需要用户操作。手机应用团队必须实现摔倒提醒的升级处理。
+- 手机应用团队需要确认文档 07 的 0.10 版中的 POPUP、POPUP_END 和通道 2。
 - 手机应用团队需要评审文档 07 的 0.6 版。它在第 6 节加入了协议说明和两种数据消息。
 - 屏幕上的电量标签一直为空。电量通过 DEVICE_STATUS 发给手机。
 - 录音期间到达的 PLAY_START 会丢失，设备随后显示超时。D-20 规定手机不能在这时发送。

@@ -29,6 +29,9 @@ typedef struct {
     void (*show_page)(uint8_t page);
     // Increment 3 data: the turn shape of a run.
     void (*turn_shape)(const link_turns_t *t);
+    // D-31: a popup, and the start of its audio. audio_down and play_end carry the audio.
+    void (*popup)(const link_popup_t *p);
+    void (*popup_play_start)(void);
 } ble_link_app_t;
 
 // Start NimBLE, register the service, and advertise. Call once.
@@ -40,6 +43,8 @@ void ble_link_audio_up(const uint8_t *block);
 void ble_link_agent_end(uint8_t reason);
 void ble_link_agent_cancel(void);
 void ble_link_agent_done(void);
+// D-31: the popup closed on the device. reason: BP_POPUP_END_TIMEOUT or BP_POPUP_END_KEY.
+void ble_link_popup_end(uint8_t reason);
 // Copy the last ski data under the link lock. live or report can be NULL.
 // Each flag is false when that data never arrived.
 void ble_link_get_data(bp_live_stats_t *live, bool *has_live, bool *stale,

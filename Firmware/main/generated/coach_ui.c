@@ -106,6 +106,8 @@ bool coach_ui_apply(coach_action_t action) {
         return true;
     case COACH_ACTION_UI_SHOW_TURNS:
         return true;
+    case COACH_ACTION_UI_SHOW_POPUP:
+        return true;
     default:
         return false;
     }

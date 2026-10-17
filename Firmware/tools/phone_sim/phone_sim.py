@@ -9,6 +9,10 @@ It answers each TURN_REQUEST of the device with the asked groups of 8 turns.
 With --turns N, every run has N turns, so a test can check many groups.
 With --jump, it also sends SHOW_PAGE after each report. The device opens the
 Report page from the Ski page or the idle Coach page.
+With --popups N, it sends N popups (D-31), one each --popup-gap seconds. The kinds
+go in turn: fall, voice message, problem report, achievement. The fall and the voice
+message have audio: the --wav file, or a 2-second tone. A gap below 13 s sends the
+next popup while the old one shows, so the device replaces it.
 
 Answer modes:
   echo     Play the question back. This tests the full audio path. (Default.)
@@ -20,6 +24,7 @@ Usage:
   pip install bleak
   python3 tools/phone_sim/phone_sim.py [--mode echo|wav|fail|silent] [--wav FILE] [--name HeygoPP-XXXX]
                                       [--runs N] [--run-s SECONDS] [--jump]
+                                      [--popups N] [--popup-gap SECONDS]
 
 To make a WAV file on macOS:
   say -o /tmp/a.aiff "上一趟重心偏后" && afconvert -f WAVE -d LEI16@16000 -c 1 /tmp/a.aiff /tmp/a.wav
@@ -27,6 +32,7 @@ To make a WAV file on macOS:
 
 import argparse
 import asyncio
+import math
 import os
 import struct
 import sys
@@ -58,6 +64,9 @@ class Phone:
         self.canceled = set()
         self.acked = asyncio.Event()
         self.shape = None          # (run_no, n_turns) of the last TURN_SHAPE.
+        self.popup_xid = 0x7F      # The phone xids go from 0x80 to 0xFE.
+        self.popup_t = {}          # xid -> send time of each popup.
+        self.popup_ended = set()   # The xids of the popups that the device closed.
 
     async def send(self, data):
         await self.client.write_gatt_char(hl.NUS_RX, data, response=False)
@@ -103,6 +112,12 @@ class Phone:
             run_no, first, count = hl.read_turn_request(payload)
             log(f"<- TURN_REQUEST run {run_no}: groups {first} to {first + count - 1}")
             asyncio.ensure_future(self.send_groups(run_no, first, count))
+        elif ptype == hl.POPUP_END:
+            reason = {hl.POPUP_END_TIMEOUT: "timeout", hl.POPUP_END_KEY: "key",
+                      hl.POPUP_END_REPLACED: "replaced"}.get(payload[0], f"? {payload[0]}")
+            shown = time.monotonic() - self.popup_t.get(xid, time.monotonic())
+            log(f"<- POPUP_END xid=0x{xid:02x} reason={reason}, {shown:.1f} s after POPUP")
+            self.popup_ended.add(xid)
         elif ptype == hl.ERROR:
             log(f"<- ERROR code={payload[0]} type=0x{payload[1]:02x} xid=0x{payload[2]:02x}")
         else:
@@ -215,6 +230,53 @@ class Phone:
                 log("-> SHOW_PAGE 3 (Report page)")
             await asyncio.sleep(10.0)                                             # The lift: no LIVE_STATS.
 
+    POPUPS = [
+        (hl.POPUP_FALL, True, "", "需要帮助吗？60 秒内无操作，手机会通知紧急联系人。"),
+        (hl.POPUP_VOICE, True, "队友消息", "小王：我们在 3 号缆车下面集合。"),
+        (hl.POPUP_ISSUE, False, "第 2 弯重心偏后", "入弯时上身后坐，雪板容易甩尾。下一趟把重心放到前脚。"),
+        (hl.POPUP_BADGE, False, "今天完成 10 趟", "换刃比上午更稳，继续保持。"),
+    ]
+
+    def popup_audio(self):
+        """The --wav file, or 2 s of a 660 Hz tone at a quarter of full scale."""
+        if self.args.wav:
+            with wave.open(self.args.wav, "rb") as w:
+                raw = w.readframes(w.getnframes())
+            return hl.encode_stream(list(struct.unpack(f"<{len(raw) // 2}h", raw)))
+        return hl.encode_stream([int(8000 * math.sin(2 * math.pi * 660 * i / 16000)) for i in range(32000)])
+
+    async def popup_loop(self, count, gap_s):
+        """D-31: send popups. The device stops everything and shows each one at once."""
+        await self.acked.wait()
+        await asyncio.sleep(3.0)
+        for i in range(count):
+            kind, audio, title, body = self.POPUPS[i % len(self.POPUPS)]
+            self.popup_xid = 0x80 if self.popup_xid >= 0xFE else self.popup_xid + 1
+            xid = self.popup_xid
+            self.popup_t[xid] = time.monotonic()
+            await self.send(hl.popup(xid, kind, audio, title, body))
+            log(f"-> POPUP xid=0x{xid:02x} kind={kind} audio={int(audio)} {title!r}")
+            if audio:
+                asyncio.ensure_future(self.popup_play(xid))
+            await asyncio.sleep(gap_s)
+
+    async def popup_play(self, xid):
+        await asyncio.sleep(0.3)
+        down = self.popup_audio()
+        await self.send(hl.play_start(xid, hl.CHANNEL_POPUP))
+        log(f"-> PLAY_START channel 2 xid=0x{xid:02x}, {len(down)} blocks")
+        t0 = time.monotonic()
+        for seq, block in enumerate(down):
+            if xid in self.popup_ended:
+                log(f"popup audio xid=0x{xid:02x} stopped: the popup closed")
+                return
+            delay = t0 + (seq - AHEAD_BLOCKS) * BLOCK_S - time.monotonic()
+            if delay > 0:
+                await asyncio.sleep(delay)
+            await self.send(hl.audio_down(xid, seq, block))
+        await self.send(hl.play_end(xid))
+        log(f"-> PLAY_END xid=0x{xid:02x}. The device counts 10 s from the end of the sound.")
+
     async def status_loop(self):
         while self.client.is_connected:
             await self.send(hl.phone_status(int(time.time())))
@@ -231,6 +293,8 @@ async def main():
     ap.add_argument("--run-s", type=int, default=30, help="seconds of each simulated run (default 30)")
     ap.add_argument("--jump", action="store_true", help="send SHOW_PAGE after each report")
     ap.add_argument("--turns", type=int, default=0, help="turns of each run in TURN_SHAPE (default: the turn count)")
+    ap.add_argument("--popups", type=int, default=0, help="number of popups to send (default 0)")
+    ap.add_argument("--popup-gap", type=float, default=20.0, help="seconds between popups (default 20)")
     args = ap.parse_args()
     if args.mode == "wav" and not args.wav:
         ap.error("--mode wav needs --wav FILE")
@@ -253,6 +317,8 @@ async def main():
         await client.start_notify(hl.NUS_TX, phone.on_notify)
         if args.runs > 0:
             asyncio.ensure_future(phone.ski_loop(args.runs, max(1, args.run_s)))
+        if args.popups > 0:
+            asyncio.ensure_future(phone.popup_loop(args.popups, max(0.5, args.popup_gap)))
         await phone.status_loop()
     log("disconnected")
 

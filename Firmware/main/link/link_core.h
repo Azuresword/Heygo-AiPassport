@@ -53,6 +53,15 @@ typedef struct {
     char tip[BP_TIP_MAX + 1];
 } link_report_t;
 
+// D-31: the current popup, with its texts copied and closed by a zero byte.
+typedef struct {
+    uint8_t xid;             // Phone xid, from 0x80 to 0xFE.
+    uint8_t kind;            // BP_POPUP_*.
+    bool audio;              // A PLAY_START on channel 2 with this xid follows.
+    char title[BP_POPUP_TITLE_MAX + 1];
+    char body[BP_POPUP_BODY_MAX + 1];
+} link_popup_t;
+
 // Increment 3: the turn shape of the last run. The device keeps at most LINK_TURN_SLOTS
 // groups of 8 turns: the group on the screen, and the groups next to it. It asks the phone
 // for each group that it lacks (TURN_REQUEST), and asks once again after LINK_TURN_RETRY_MS.
@@ -88,9 +97,10 @@ typedef struct {
     // The calls below come only for the current Agent exchange. Stale packets never reach them.
     void (*agent_state)(void *ctx, uint8_t state, uint8_t failure, const char *text);
     void (*play_start)(void *ctx);
+    // audio_down and play_end come for the open stream: the Agent answer or the popup audio.
     void (*audio_down)(void *ctx, const uint8_t *block, size_t len, uint8_t missing);
     void (*play_end)(void *ctx);
-    // A packet of an Agent exchange arrived with another xid, or for a closed stream.
+    // A packet of an Agent exchange or a popup arrived with another xid, or for a closed stream.
     // current is the xid of the open exchange, or 0. For debug logs.
     void (*dropped)(void *ctx, uint8_t type, uint8_t xid, uint8_t current);
     // Increment 2 data. They come only after a HELLO_ACK with the same protocol version.
@@ -100,6 +110,10 @@ typedef struct {
     void (*show_page)(void *ctx, uint8_t page);
     // Increment 3: a new turn shape, or a new group of it.
     void (*turn_shape)(void *ctx, const link_turns_t *t);
+    // D-31: a new popup. The core already closed the Agent exchange and the old popup.
+    void (*popup)(void *ctx, const link_popup_t *p);
+    // The popup audio starts. audio_down and play_end follow.
+    void (*popup_play_start)(void *ctx);
 } link_io_t;
 
 typedef struct {
@@ -119,7 +133,10 @@ typedef struct {
     uint8_t agent_xid;     // Current Agent exchange. Zero: none.
     uint8_t up_seq;
     bool down_open;
+    uint8_t down_xid;      // xid of the open downlink stream.
+    uint8_t down_channel;  // BP_CHANNEL_AGENT or BP_CHANNEL_POPUP.
     bp_seq_t down_seq;
+    link_popup_t popup;    // popup.xid zero: no popup.
     uint8_t battery;
     uint8_t mode;
     uint8_t page;
@@ -159,6 +176,10 @@ void link_audio_up(link_core_t *l, const uint8_t block[BP_ADPCM_BLOCK]);
 void link_agent_end(link_core_t *l, uint8_t reason);          // BP_END_RELEASE or BP_END_LIMIT.
 void link_agent_cancel(link_core_t *l);
 void link_agent_done(link_core_t *l);                         // The answer ended. Drop later packets.
+
+// The popup closed on the device: BP_POPUP_END_TIMEOUT or BP_POPUP_END_KEY. Sends POPUP_END
+// and drops the popup audio that is still open. No popup: no packet.
+void link_popup_end(link_core_t *l, uint8_t reason);
 
 // Device state for CONTEXT and DEVICE_STATUS. A change sends the packets at once.
 void link_set_device(link_core_t *l, uint8_t battery, uint8_t mode, uint8_t page,

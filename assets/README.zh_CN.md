@@ -9,7 +9,7 @@
 
 | 路径 | 内容 |
 | --- | --- |
-| `ui/strings.json` | P0 屏幕显示的 38 条文字，有中文和英文。 |
+| `ui/strings.json` | 设备屏幕显示的 71 条文字，有中文和英文。`popup.*` 和 `hint.popup` 属于弹窗页（D-31）。 |
 | `fonts/heygo_sc_16.c` | 16 px 字体，用于状态、提示和手机发来的文字。3,869 个字形。 |
 | `fonts/heygo_sc_28.c` | 28 px 粗体，用于状态词和标题。185 个字形。 |
 | `fonts/heygo_display_20.c`、`fonts/heygo_display_34.c`、`fonts/heygo_display_48.c` | Staatliches 展示字体，20 px、34 px 和 48 px。只含 ASCII。48 px 用于显示速度。 |
@@ -95,7 +95,12 @@ python3 tools/check_glyphs.py
 | `19-turns-schematic.png` | 弯型页：255 个弯的示意弯型的最后一组，显示"示意" |
 | `20-turns-loading.png` | 弯型页：某一页还在从手机传来的路上 |
 | `21-turns-short.png` | 只有一页的一趟，停在第 2 弯：第二行提示长按 UP |
-| `contact-sheet.png` | 全部 20 张图，放大 2 倍 |
+| `22-popup-fall.png` | 红色的摔倒提醒，默认标题，正在播报语音（D-31） |
+| `23-popup-voice.png` | 语音播报，正在等待语音 |
+| `24-popup-issue.png` | 问题报告，倒计时中："8 秒后返回" |
+| `25-popup-badge.png` | 成就报告，倒计时刚开始 |
+| `26-popup-max.png` | 标题和正文都是最长的弹窗 |
+| `contact-sheet.png` | 全部 25 张图，放大 2 倍 |
 
 ## 模拟器
 
@@ -107,6 +112,7 @@ python3 tools/check_glyphs.py
 - 日志显示每次转换、对应的动作和每条蓝牙消息。
 - 滑行数据按钮可以开始一趟、暂停发送和结束这一趟。LIVE_STATS 每秒一帧，结束后 2 秒发送 RUN_REPORT。
 - 教练页空闲时短按 DOWN 打开报告页，短按 UP 返回。
+- 弹窗按钮可以发送每种弹窗，可选带不带语音（D-31）。一个进度条显示 10 秒倒计时。流转图把三个弹窗状态放在单独的区域里。
 
 浏览器用系统字体绘制屏幕。真实像素以 `mockups/` 里的图片为准。
 不要手工修改这个页面。在 `../Firmware` 里运行 `python3 tools/flow/flow_sim.py`。

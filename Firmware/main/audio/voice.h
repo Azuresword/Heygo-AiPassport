@@ -36,6 +36,9 @@ void voice_down_end(void);
 void voice_play_enable(void);
 // Block until the speaker stops. Returns false after 200 ms without an answer.
 bool voice_play_stop(void);
+// Stop the speaker, but keep the queued blocks. A popup uses it: the popup audio can be in
+// the queue before the Coach task stops the old answer. voice_down_open() drops old blocks.
+bool voice_play_cut(void);
 // Milliseconds since the playback last made progress. The Coach task uses it as a watchdog.
 uint32_t voice_play_idle_ms(void);
 

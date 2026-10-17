@@ -22,6 +22,7 @@ CONTEXT = 0x10
 AGENT_START, AGENT_END, AGENT_CANCEL, AGENT_STATE = 0x20, 0x21, 0x22, 0x23
 AUDIO_UP, AUDIO_DOWN, PLAY_START, PLAY_END = 0x30, 0x31, 0x32, 0x33
 LIVE_STATS, RUN_REPORT, SHOW_PAGE, TURN_SHAPE, TURN_GROUP, TURN_REQUEST = 0x60, 0x61, 0x62, 0x63, 0x64, 0x65
+POPUP, POPUP_END = 0x66, 0x67
 PAGE_REPORT = 3
 
 TYPE_NAMES = {
@@ -31,13 +32,18 @@ TYPE_NAMES = {
     AGENT_STATE: "AGENT_STATE", AUDIO_UP: "AUDIO_UP", AUDIO_DOWN: "AUDIO_DOWN",
     PLAY_START: "PLAY_START", PLAY_END: "PLAY_END",
     LIVE_STATS: "LIVE_STATS", RUN_REPORT: "RUN_REPORT", SHOW_PAGE: "SHOW_PAGE", TURN_SHAPE: "TURN_SHAPE",
-    TURN_GROUP: "TURN_GROUP", TURN_REQUEST: "TURN_REQUEST",
+    TURN_GROUP: "TURN_GROUP", TURN_REQUEST: "TURN_REQUEST", POPUP: "POPUP", POPUP_END: "POPUP_END",
 }
 
 ACCEPTED, RECOGNIZING, THINKING, ANSWERING, DONE, FAILED = 1, 2, 3, 4, 5, 6
 FAIL_RECOGNITION, FAIL_TIMEOUT, FAIL_GATEWAY = 1, 2, 3
 CODEC_ADPCM = 0
 CHANNEL_AGENT = 0
+CHANNEL_POPUP = 2
+# D-31: popups, doc 07 section 6.
+POPUP_FALL, POPUP_VOICE, POPUP_ISSUE, POPUP_BADGE = 1, 2, 3, 4
+POPUP_END_TIMEOUT, POPUP_END_KEY, POPUP_END_REPLACED = 0, 1, 2
+POPUP_TITLE_MAX, POPUP_BODY_MAX = 36, 120   # UTF-8 bytes: 12 and 40 Chinese characters.
 
 # Increment 2 data, doc 07 section 6. The phone sends these values when it cannot
 # calculate a field.
@@ -109,6 +115,17 @@ def show_page(page=PAGE_REPORT):
     if page != PAGE_REPORT:
         raise ValueError("SHOW_PAGE accepts only the Report page (3)")
     return packet(SHOW_PAGE, payload=bytes([page]))
+
+
+def popup(xid, kind, audio, title="", body=""):
+    """One POPUP packet. xid is a phone xid, 0x80 to 0xFE. With audio, send PLAY_START on
+    channel 2 with the same xid after it."""
+    t, b = title.encode("utf-8"), body.encode("utf-8")
+    if kind not in (POPUP_FALL, POPUP_VOICE, POPUP_ISSUE, POPUP_BADGE):
+        raise ValueError("kind is 1 to 4")
+    if len(t) > POPUP_TITLE_MAX or len(b) > POPUP_BODY_MAX:
+        raise ValueError("title holds at most 36 bytes, body at most 120 bytes")
+    return packet(POPUP, xid, payload=bytes([kind, 1 if audio else 0, len(t)]) + t + b)
 
 
 def turn_shape(run_no, source, n_turns):

@@ -262,6 +262,8 @@ void voice_play_enable(void) {
 
 uint32_t voice_play_idle_ms(void) { return now_ms() - s_progress_ms; }
 
+bool voice_play_cut(void) { return stop_mode(MODE_PLAY); }
+
 bool voice_play_stop(void) {
     const bool ok = stop_mode(MODE_PLAY);
     if (s_down_q) flush_down();

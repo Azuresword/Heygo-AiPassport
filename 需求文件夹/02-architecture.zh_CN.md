@@ -2,9 +2,9 @@
 
 # HeygoAI × AI Passport：架构方案
 
-版本：0.8。日期：2026-10-17。状态：工程评审草案。
+版本：0.9。日期：2026-10-17。状态：工程评审草案。
 
-本文针对[产品需求](01-product-requirements.zh_CN.md)中的增量 1、2 和 3 提出设计方案。
+本文针对[产品需求](01-product-requirements.zh_CN.md)中的增量 1 至 4 提出设计方案。
 本文不代表联动功能已经实现。
 每项决策的理由见[决策修订](05-decision-amendments.zh_CN.md)。
 具体的包格式见[蓝牙协议草案](07-ble-protocol-draft.zh_CN.md)。
@@ -110,6 +110,43 @@ stateDiagram-v2
     PLAYBACK --> TURNS: UP, cancel
 ```
 
+### 弹窗（D-31）
+
+手机可以随时发送弹窗（POPUP）。弹窗页不在翻页循环里，它有三个状态：
+
+| 状态 | 界面 | 含义 |
+|---|---|---|
+| POPUP_WAIT | 弹窗页 | 弹窗已显示，语音还没开始。 |
+| POPUP_PLAY | 弹窗页 | 正在播放弹窗语音。 |
+| POPUP_HOLD | 弹窗页 | 正在 10 秒倒计时。 |
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    state "任何页面或教练页状态" as ANY
+    ANY --> POPUP_WAIT: POPUP，取消提问并停止音频
+    POPUP_WAIT --> POPUP_PLAY: 通道 2 的 PLAY_START
+    POPUP_WAIT --> POPUP_HOLD: 无语音 / 5 秒 / 链路中断
+    POPUP_PLAY --> POPUP_HOLD: 语音结束 / 链路中断
+    POPUP_WAIT --> POPUP_WAIT: 新 POPUP
+    POPUP_PLAY --> POPUP_WAIT: 新 POPUP
+    POPUP_HOLD --> POPUP_WAIT: 新 POPUP
+    POPUP_HOLD --> SAVED: 10 秒 / 任意键，POPUP_END
+    POPUP_WAIT --> SAVED: 任意键，POPUP_END
+    POPUP_PLAY --> SAVED: 任意键，POPUP_END
+    state "保存的页面：LIVE、REPORT、TURNS 或 READY" as SAVED
+```
+
+- 任何状态收到 POPUP 都立即进入 POPUP_WAIT。CAPTURE 中，设备停止录音并发送 AGENT_CANCEL。WAIT_ANSWER 中，发送 AGENT_CANCEL。PLAYBACK 中，停止喇叭并发送 AGENT_CANCEL。
+- 第一个弹窗之前，设备保存当前页面：LIVE、REPORT 或 TURNS。教练页的各个状态都保存为 READY。
+- 不带语音的弹窗在同一步进入 POPUP_HOLD。带语音的弹窗等待通道 2 的 PLAY_START，最多 5 秒。
+- POPUP_HOLD 中有一个 10 秒定时器。POPUP_WAIT 或 POPUP_PLAY 中链路中断，也开始倒计时。
+- 每个按键事件都关闭弹窗：UP、DOWN、OK 的短按或长按。设备发送 POPUP_END，原因 0（超时）或 1（按键），并在同一步回到保存的页面。
+- 弹窗状态没有 OK 松开的转移。所以弹窗之前就按下的 OK 长按，松开时不关闭弹窗。
+- 新 POPUP 替换旧弹窗。链路核心为旧弹窗发送 POPUP_END，原因 2（被替换）。保存的页面不变。
+- 弹窗定时器事件带有弹窗序号。被替换的弹窗的定时器事件，设备直接丢弃。
+- 弹窗期间，CONTEXT 和 DEVICE_STATUS 发送 mode 0、page 6。
+
 状态图由 `flows/coach.flow.json` 生成的交互模拟器给出完整版本，见 `assets/sim/coach-flow.html`。
 
 ### 按键
@@ -128,6 +165,7 @@ stateDiagram-v2
 | 弯型页 | 长按 UP 500 ms | 选中上一弯。 |
 | 弯型页 | 长按 DOWN 500 ms | 跳到下一页（8 个弯）的第 1 弯，最后一页之后回到第 1 页。 |
 | 其他页面 | 短按 OK、长按 UP 或长按 DOWN | 没有动作。 |
+| 弹窗页 | 任何短按或长按 | 关闭弹窗，回到保存的页面（D-31）。不翻页，也不录音。 |
 
 三个按键共用一个 ADC 输入，所以按住 OK 时读不到 UP 或 DOWN。采集中要翻页，需要先松开 OK。
 长按之后不会再触发短按。
@@ -216,8 +254,24 @@ CAPTURE、WAIT_ANSWER 和 PLAYBACK 没有这条转移，所以忽略它，不打
 按键提示从左到右的顺序，与按键从上到下的顺序一致：UP、OK、DOWN。
 小精灵是 16 帧的精灵图，每帧相差 22.5 度。设备只选帧，不旋转图片。
 
+### 弹窗页布局
+
+| 控件 | 位置 | 字体 | 内容 |
+|---|---|---|---|
+| `mode_dot`、`mode` | `x=14..136, y=10` | 16 px 中文 | 类型："摔倒提醒"、"语音播报"、"问题报告"或"成就报告" |
+| `dest` | `x=14, y=36` | 34 px 品牌字体 | "FALL ALERT"、"BROADCAST"、"RUN ISSUE"或"ACHIEVED" |
+| `body_panel` | `x=10, y=80`，220 × 152 | 无 | 文字的底框 |
+| `title` | `x=22, y=92`，高 20 | 16 px 中文，一行 | 手机发来的标题，最多 12 个汉字。没有标题时显示该类型的默认标题 |
+| `body` | `x=22, y=118`，高 104 | 16 px 中文，多行 | 手机发来的正文，最多 40 个汉字 |
+| `foot` | `y=242`，居中 | 16 px 中文 | "等待语音"、"正在播报"或"N 秒后返回" |
+| `hint_panel`、`hint` | `x=10, y=272`，220 × 38 | 16 px 中文，在色条上 | "按任意键关闭" |
+
+摔倒提醒的圆点、`dest`、`title` 和提示条用危险色（红色）。其他类型用强调色。
+倒计时文字随数据节拍每秒更新一次。秒数向上取整，所以第一秒显示"10"。
+所有文字由 `main/ui/popup_view.c` 生成，主机测试 `tests/test_popup_view.c` 检查它们。
+
 同一时间只存在一个界面。切换页面时，任务先删除旧界面，再构建新界面。
-`assets/mockups` 的 10 至 21 号图片是主机渲染的结果，包含最长文本的情况。9 号图片已删除，因为 D-29 去掉了退出确认。
+`assets/mockups` 的 10 至 26 号图片是主机渲染的结果。22 至 26 号是弹窗页（D-31），包含最长文本的情况。9 号图片已删除，因为 D-29 去掉了退出确认。
 
 ## 4. 音频状态
 
@@ -257,6 +311,37 @@ sequenceDiagram
 取消会结束本次交流。之后到达的该交流的每一块，设备都丢弃。
 重连会取消未完成的交流。
 
+### 弹窗语音（D-31）
+
+弹窗语音和回答走同一条下行路径，使用通道 2（BP_CHANNEL_POPUP）。
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant P as Passport
+    participant A as 手机应用
+    A->>P: POPUP xid 0x81，kind 1，audio 1
+    P->>A: AGENT_CANCEL（有提问未完成时）
+    P-->>U: 显示弹窗页
+    A->>P: PLAY_START xid 0x81，通道 2
+    loop 弹窗语音
+        A->>P: AUDIO_DOWN xid 0x81
+    end
+    A->>P: PLAY_END xid 0x81
+    P-->>U: 播放语音，然后倒计时 10 秒
+    alt 10 秒到
+        P->>A: POPUP_END xid 0x81，原因 0
+    else 用户按键
+        P->>A: POPUP_END xid 0x81，原因 1
+    end
+    P-->>U: 显示保存的页面
+```
+
+- 通道 2 的 PLAY_START 只在 xid 等于当前弹窗、且弹窗的语音标志为 1 时才接受。
+- AUDIO_DOWN 和 PLAY_END 的 xid 必须等于当前打开的流。这条流要么是回答，要么是弹窗语音，不会同时存在。
+- 弹窗打断 PLAYBACK 时，设备用 `audio_play_cut` 停止喇叭。它和 `audio_play_stop` 不同，会保留队列里的块。因为弹窗语音可能在教练任务停止旧回答之前就已经进了队列。
+- 按键或新弹窗会关闭弹窗语音流。之后到达的块，设备都丢弃。
+
 ## 5. 资源
 
 ### 内存预算
@@ -271,6 +356,7 @@ sequenceDiagram
 | 蓝牙包队列 | 3,440 字节 | 07 号文档第 10 节。 |
 | 最后一个 LIVE_STATS 和 RUN_REPORT | 128 字节 | 07 号文档第 10 节。主机实测的结构体大小。 |
 | 最后一个 TURN_SHAPE、3 组缓存和弯型页 | 约 4.0 KB | 07 号文档第 10 节。固件构建的符号表。 |
+| 当前弹窗和弹窗页文字 | 约 0.7 KB | D-31。按结构体大小估算：弹窗三份拷贝加一组页面文字。未实测。 |
 | 小精灵图 | Flash 中 25.6 KB，不占 RAM | `assets/sprites`，由 `assets/tools/gen_sprite.py` 生成。 |
 | 48 像素数字字体 | 放在 Flash，不占 RAM | 大小在 Sprint 3 实测。 |
 | ADPCM 编解码状态 | 每个方向几个字节 | D-09。 |
@@ -308,6 +394,9 @@ D-18 把功耗管理推迟。首版不使用休眠模式，并申请 07 号文�
 | 5 秒没有 LIVE_STATS | 速度显示"--"。其他数字保留，并标明过期。 | 恢复发送。 |
 | LIVE_STATS 长度错误 | 回复错误码 2。保留旧包。 | 发送长度正确的包。 |
 | 手机算不出某个字段 | 该字段显示"--"。 | 发送未知值，绝不发送 0。 |
+| 弹窗期间链路中断 | 保留弹窗，停止它的语音，开始 10 秒倒计时。不发送 POPUP_END。 | 新连接会重置所有 xid。把这个弹窗当作已关闭。 |
+| 带语音的弹窗 5 秒内没有 PLAY_START | 开始倒计时。 | 尽快发送语音，或者把语音标志设为 0。 |
+| POPUP 字段错误 | 回复错误码 7、4 或 2。不显示。 | 发送字段正确的包。 |
 
 D-12 和 D-13 排除了安全和隐私工作。设备不保存账号数据，也不保存令牌。
 
@@ -319,6 +408,7 @@ D-17 把以下项目移出了 P0。每一项回来之前都需要各自的设计
 - **图表和离线缓存（P1，增量 2 之后）。** 图表需要一段时间内的多个数据点。离线缓存要把最后一份数据写入 Flash。两者都还没有设计。
 - **真人对讲（P1）。** 队伍页收到手机的开始消息后才开始采集。它复用教练页的音频通路。每条语音路径都要经过两段蓝牙链路，500 ms 音频目标尚无实测。
 - **弯型（增量 3，D-30）。** 第 3 节给出页面设计，07 号文档给出 TURN_SHAPE、TURN_GROUP 和 TURN_REQUEST。设备在内存里最多保存最后一个弯型的 3 组。Q-02 给出实测轨迹之前，手机只发送示意弯型，页面显示"示意"。
+- **手机弹窗（增量 4，D-31）。** 第 3 节给出状态和页面，第 4 节给出弹窗语音，07 号文档给出 POPUP 和 POPUP_END。设备在内存里只保存当前弹窗。摔倒提醒的升级处理由手机负责。
 
 提交 `970bb8e` 保存了这些项目在 0.3 版中的设计。
 

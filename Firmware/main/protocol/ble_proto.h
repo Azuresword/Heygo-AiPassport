@@ -41,6 +41,8 @@ typedef enum {
     BP_TURN_SHAPE    = 0x63,
     BP_TURN_GROUP    = 0x64,
     BP_TURN_REQUEST  = 0x65,
+    BP_POPUP         = 0x66,
+    BP_POPUP_END     = 0x67,
 } bp_type_t;
 
 typedef enum {
@@ -57,14 +59,15 @@ typedef enum {
 // D-29 has no Ski or Rest mode. The wire values stay: mode 0 means the live data page or the
 // Report page, and mode 1 means the Coach page. Page 2, the exit question, is no longer sent.
 enum { BP_MODE_SKI = 0, BP_MODE_REST = 1 };
-enum { BP_PAGE_SKI = 0, BP_PAGE_COACH = 1, BP_PAGE_EXIT = 2, BP_PAGE_REPORT = 3, BP_PAGE_TEAM = 4, BP_PAGE_TURNS = 5 };
+enum { BP_PAGE_SKI = 0, BP_PAGE_COACH = 1, BP_PAGE_EXIT = 2, BP_PAGE_REPORT = 3, BP_PAGE_TEAM = 4, BP_PAGE_TURNS = 5,
+       BP_PAGE_POPUP = 6 };
 enum { BP_CODEC_ADPCM = 0, BP_CODEC_PCM = 1 };
 enum { BP_CODEC_MASK_ADPCM = 1u << BP_CODEC_ADPCM, BP_CODEC_MASK_PCM = 1u << BP_CODEC_PCM };
 enum { BP_AGENT_ACCEPTED = 1, BP_AGENT_RECOGNIZING, BP_AGENT_THINKING,
        BP_AGENT_ANSWERING, BP_AGENT_DONE, BP_AGENT_FAILED };
 enum { BP_FAIL_NONE = 0, BP_FAIL_RECOGNITION = 1, BP_FAIL_TIMEOUT = 2, BP_FAIL_GATEWAY = 3 };
 enum { BP_END_RELEASE = 0, BP_END_LIMIT = 1 };
-enum { BP_CHANNEL_AGENT = 0, BP_CHANNEL_TEAM = 1 };
+enum { BP_CHANNEL_AGENT = 0, BP_CHANNEL_TEAM = 1, BP_CHANNEL_POPUP = 2 };
 #define BP_BATTERY_UNKNOWN 0xFF
 // Increment 2 data, doc 07 section 6. The phone sends these values when it cannot
 // calculate a field. The device shows them as "--" and never as 0.
@@ -84,6 +87,13 @@ enum { BP_RUN_UNKNOWN = 0, BP_RUN_SKIING = 1, BP_RUN_STOPPED = 2, BP_RUN_ENDED =
 #define BP_TURN_GROUP_FIXED   4
 #define BP_TURN_ENTRY         6
 #define BP_TURN_REQUEST_SIZE  3
+// D-31: a popup from the phone. Doc 07, "Popups".
+enum { BP_POPUP_FALL = 1, BP_POPUP_VOICE = 2, BP_POPUP_ISSUE = 3, BP_POPUP_BADGE = 4 };
+// Why the popup closed. A lost link sends nothing: a new connection resets every xid.
+enum { BP_POPUP_END_TIMEOUT = 0, BP_POPUP_END_KEY = 1, BP_POPUP_END_REPLACED = 2 };
+#define BP_POPUP_FIXED        3
+#define BP_POPUP_TITLE_MAX    36     // 12 Chinese characters in UTF-8.
+#define BP_POPUP_BODY_MAX     120    // 40 Chinese characters in UTF-8.
 #define BP_TURNS_MAX          255
 #define BP_GROUP_TURNS        8
 #define BP_GROUP_POINTS_MIN   2
@@ -176,6 +186,15 @@ bp_err_t bp_read_turn_shape(const bp_packet_t *p, bp_turn_shape_t *out);
 bp_err_t bp_read_turn_group(const bp_packet_t *p, bp_turn_group_t *out);
 // Gives BP_ERR_FIELD for a count of 0 or above 3.
 bp_err_t bp_read_turn_request(const bp_packet_t *p, bp_turn_request_t *out);
+typedef struct {
+    uint8_t kind;            // BP_POPUP_*.
+    bool audio;              // true: a PLAY_START on channel 2 with the same xid follows.
+    bp_text_t title;
+    bp_text_t body;
+} bp_popup_t;
+// Gives BP_ERR_FIELD for an unknown kind, a bad audio flag, or bad UTF-8, and BP_ERR_TOO_LARGE for a long text.
+bp_err_t bp_read_popup(const bp_packet_t *p, bp_popup_t *out);
+bp_err_t bp_read_popup_end(const bp_packet_t *p, uint8_t *reason);
 
 // Each builder returns the packet length, or 0 when `cap` is too small or a value is invalid.
 size_t bp_build_hello(uint8_t *out, size_t cap, uint8_t codec_mask, uint16_t mtu, const char *fw);
@@ -202,6 +221,8 @@ size_t bp_build_turn_shape(uint8_t *out, size_t cap, uint8_t run_no, uint8_t sou
 size_t bp_build_turn_group(uint8_t *out, size_t cap, uint8_t run_no, uint8_t group, uint8_t n_turns,
                            const bp_turn_t *turns, uint8_t n_points, const uint8_t *points);
 size_t bp_build_turn_request(uint8_t *out, size_t cap, uint8_t run_no, uint8_t first_group, uint8_t count);
+size_t bp_build_popup(uint8_t *out, size_t cap, uint8_t xid, uint8_t kind, bool audio, const char *title, const char *body);
+size_t bp_build_popup_end(uint8_t *out, size_t cap, uint8_t xid, uint8_t reason);
 
 // The name of a type, for logs. Returns "?" for an unknown type.
 const char *bp_type_name(uint8_t type);

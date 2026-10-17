@@ -1,7 +1,7 @@
 {
   "app": "coach",
 
-  "title": "Four flat pages: live data, run report, turn shape, and AI coach (D-29, D-30)",
+  "title": "Four flat pages: live data, run report, turn shape, and AI coach (D-29, D-30), with phone popups (D-31)",
 
   "strings_file": "../../assets/ui/strings.json",
 
@@ -17,7 +17,7 @@
       "UP_SHORT",
       "DOWN_SHORT"
     ],
-    "comment": "D-29. An OK hold opens the Coach page from every page, and starts capture on the Coach page. Short UP and DOWN presses move between the four pages. D-30: inside the Turns page, a short OK press and the UP and DOWN holds move between the turns."
+    "comment": "D-29. An OK hold opens the Coach page from every page, and starts capture on the Coach page. Short UP and DOWN presses move between the four pages. D-30: inside the Turns page, a short OK press and the UP and DOWN holds move between the turns. D-31: on a popup, every key only closes the popup."
   },
 
   "subjects": [
@@ -119,6 +119,22 @@
         {"id": "key_down", "type": "label", "x": 158, "y": 264, "w": 70, "align": "top_mid", "text": "▼教练", "font": "heygo_sc_16", "color": "bg"},
         {"id": "key_hold", "type": "label", "x": 12, "y": 289, "w": 216, "align": "top_mid", "text": "长按●问教练", "font": "heygo_sc_16", "color": "ridge"}
       ]
+    },
+    {
+      "id": "popup",
+      "comment": "D-31. coach_app.c writes every text and the kind color from main/ui/popup_view.c.",
+      "widgets": [
+        {"id": "body_panel", "type": "obj", "x": 10, "y": 80, "w": 220, "h": 152, "bg": "surface", "radius": 16, "border_width": 1, "border_color": "surface_hi"},
+        {"id": "hint_panel", "type": "obj", "x": 10, "y": 272, "w": 220, "h": 38, "bg": "accent", "radius": 19},
+        {"id": "mode_dot", "type": "obj", "x": 14, "y": 19, "w": 7, "h": 7, "color": "accent", "radius": 4},
+        {"id": "mode", "type": "label", "x": 26, "y": 10, "w": 110, "text": "语音播报", "font": "heygo_sc_16", "color": "ink"},
+        {"id": "battery", "type": "label", "x": 176, "y": 11, "w": 50, "align": "top_right", "text": "", "font": "heygo_display_20", "color": "muted"},
+        {"id": "dest", "type": "label", "x": 14, "y": 36, "w": 212, "text": "BROADCAST", "font": "heygo_display_34", "color": "accent", "letter_space": 1},
+        {"id": "title", "type": "label", "x": 22, "y": 92, "w": 196, "h": 20, "text": "", "font": "heygo_sc_16", "color": "accent", "long_mode": "dots"},
+        {"id": "body", "type": "label", "x": 22, "y": 118, "w": 196, "h": 104, "text": "", "font": "heygo_sc_16", "color": "ink", "long_mode": "dots"},
+        {"id": "foot", "type": "label", "x": 14, "y": 242, "w": 212, "align": "top_mid", "text": "", "font": "heygo_sc_16", "color": "muted"},
+        {"id": "hint", "type": "label", "x": 22, "y": 280, "w": 196, "align": "top_mid", "text": "按任意键关闭", "font": "heygo_sc_16", "color": "bg"}
+      ]
     }
   ],
 
@@ -200,7 +216,11 @@
     {"id": "ui_show_turns", "async": false},
     {"id": "turn_next", "async": false, "comment": "Finish the drawing, or select the next turn and replay it. coach_app.c runs it."},
     {"id": "turn_prev", "async": false, "comment": "Select the previous turn and replay it. coach_app.c runs it."},
-    {"id": "turn_page", "async": false, "comment": "Go to turn 1 of the next page of 8 turns. coach_app.c runs it."}
+    {"id": "turn_page", "async": false, "comment": "Go to turn 1 of the next page of 8 turns. coach_app.c runs it."},
+    {"id": "ui_show_popup", "async": false, "comment": "D-31. coach_app.c writes the popup texts from main/ui/popup_view.c."},
+    {"id": "popup_countdown", "async": false, "comment": "Start the 10-second timer of the popup."},
+    {"id": "popup_close", "async": true, "comment": "Send POPUP_END, then run the RETURN_* event of the saved page in the same step."},
+    {"id": "audio_play_cut", "async": true, "comment": "Stop the speaker. Unlike audio_play_stop, keep the queued blocks."}
   ],
 
   "ui_effects": {
@@ -304,7 +324,8 @@
     "ui_why_audio": {
       "body_text": "msg.voice_off"
     },
-    "ui_show_turns": {}
+    "ui_show_turns": {},
+    "ui_show_popup": {}
   },
 
   "states": [
@@ -314,7 +335,10 @@
     {"id": "READY", "screen": "coach"},
     {"id": "CAPTURE", "screen": "coach"},
     {"id": "WAIT_ANSWER", "screen": "coach"},
-    {"id": "PLAYBACK", "screen": "coach"}
+    {"id": "PLAYBACK", "screen": "coach"},
+    {"id": "POPUP_WAIT", "screen": "popup"},
+    {"id": "POPUP_PLAY", "screen": "popup"},
+    {"id": "POPUP_HOLD", "screen": "popup"}
   ],
 
   "transitions": [
@@ -353,6 +377,44 @@
     {"from": "PLAYBACK", "on": "OK_HOLD", "to": "CAPTURE", "actions": ["audio_play_stop", "link_send_agent_cancel", "ui_show_listening", "audio_capture_start", "link_send_agent_start"], "comment": "Playback stops before the microphone starts. The device never records and plays together."},
     {"from": "PLAYBACK", "on": "DOWN_SHORT", "to": "LIVE", "actions": ["audio_play_stop", "link_send_agent_cancel", "ui_show_live"], "comment": "D-29. A page change stops the speaker and cancels the answer."},
     {"from": "PLAYBACK", "on": "UP_SHORT", "to": "TURNS", "actions": ["audio_play_stop", "link_send_agent_cancel", "ui_show_turns"]},
-    {"from": "PLAYBACK", "on": "LINK_LOST", "to": "READY", "actions": ["audio_play_stop", "ui_show_link_lost"]}
+    {"from": "PLAYBACK", "on": "LINK_LOST", "to": "READY", "actions": ["audio_play_stop", "ui_show_link_lost"]},
+    {"from": "LIVE", "on": "POPUP_SHOW", "to": "POPUP_WAIT", "actions": ["ui_show_popup"], "comment": "D-31. The phone sends POPUP. Every state accepts it at once. coach_app.c keeps the page to go back to."},
+    {"from": "REPORT", "on": "POPUP_SHOW", "to": "POPUP_WAIT", "actions": ["ui_show_popup"]},
+    {"from": "TURNS", "on": "POPUP_SHOW", "to": "POPUP_WAIT", "actions": ["ui_show_popup"]},
+    {"from": "READY", "on": "POPUP_SHOW", "to": "POPUP_WAIT", "actions": ["ui_show_popup"]},
+    {"from": "CAPTURE", "on": "POPUP_SHOW", "to": "POPUP_WAIT", "actions": ["audio_capture_stop", "link_send_agent_cancel", "ui_show_ready", "ui_show_popup"], "comment": "D-31. A popup cancels the question. The Coach page is READY again after the popup."},
+    {"from": "WAIT_ANSWER", "on": "POPUP_SHOW", "to": "POPUP_WAIT", "actions": ["link_send_agent_cancel", "ui_show_ready", "ui_show_popup"]},
+    {"from": "PLAYBACK", "on": "POPUP_SHOW", "to": "POPUP_WAIT", "actions": ["audio_play_cut", "link_send_agent_cancel", "ui_show_ready", "ui_show_popup"], "comment": "audio_play_cut keeps the queued blocks: the popup audio can arrive before this step."},
+    {"from": "POPUP_WAIT", "on": "POPUP_SHOW", "to": "POPUP_WAIT", "actions": ["ui_show_popup"], "comment": "D-31. A new popup replaces the old one. The link sends POPUP_END reason 2 for the old one."},
+    {"from": "POPUP_PLAY", "on": "POPUP_SHOW", "to": "POPUP_WAIT", "actions": ["audio_play_cut", "ui_show_popup"]},
+    {"from": "POPUP_HOLD", "on": "POPUP_SHOW", "to": "POPUP_WAIT", "actions": ["ui_show_popup"]},
+    {"from": "POPUP_WAIT", "on": "POPUP_NO_AUDIO", "to": "POPUP_HOLD", "actions": ["popup_countdown"], "comment": "The popup has no audio, or its audio did not start within 5 s."},
+    {"from": "POPUP_WAIT", "on": "POPUP_AUDIO_START", "to": "POPUP_PLAY", "actions": ["audio_play_start"]},
+    {"from": "POPUP_WAIT", "on": "LINK_LOST", "to": "POPUP_HOLD", "actions": ["popup_countdown"]},
+    {"from": "POPUP_PLAY", "on": "POPUP_AUDIO_END", "to": "POPUP_HOLD", "actions": ["audio_play_stop", "popup_countdown"], "comment": "The 10-second countdown starts after the audio."},
+    {"from": "POPUP_PLAY", "on": "LINK_LOST", "to": "POPUP_HOLD", "actions": ["audio_play_stop", "popup_countdown"]},
+    {"from": "POPUP_WAIT", "on": "OK_SHORT", "to": "POPUP_HOLD", "actions": ["popup_close"], "comment": "D-31. Any key only closes the popup. popup_close sends POPUP_END and goes back at once."},
+    {"from": "POPUP_WAIT", "on": "OK_HOLD", "to": "POPUP_HOLD", "actions": ["popup_close"]},
+    {"from": "POPUP_WAIT", "on": "UP_SHORT", "to": "POPUP_HOLD", "actions": ["popup_close"]},
+    {"from": "POPUP_WAIT", "on": "UP_HOLD", "to": "POPUP_HOLD", "actions": ["popup_close"]},
+    {"from": "POPUP_WAIT", "on": "DOWN_SHORT", "to": "POPUP_HOLD", "actions": ["popup_close"]},
+    {"from": "POPUP_WAIT", "on": "DOWN_HOLD", "to": "POPUP_HOLD", "actions": ["popup_close"]},
+    {"from": "POPUP_PLAY", "on": "OK_SHORT", "to": "POPUP_HOLD", "actions": ["audio_play_stop", "popup_close"]},
+    {"from": "POPUP_PLAY", "on": "OK_HOLD", "to": "POPUP_HOLD", "actions": ["audio_play_stop", "popup_close"]},
+    {"from": "POPUP_PLAY", "on": "UP_SHORT", "to": "POPUP_HOLD", "actions": ["audio_play_stop", "popup_close"]},
+    {"from": "POPUP_PLAY", "on": "UP_HOLD", "to": "POPUP_HOLD", "actions": ["audio_play_stop", "popup_close"]},
+    {"from": "POPUP_PLAY", "on": "DOWN_SHORT", "to": "POPUP_HOLD", "actions": ["audio_play_stop", "popup_close"]},
+    {"from": "POPUP_PLAY", "on": "DOWN_HOLD", "to": "POPUP_HOLD", "actions": ["audio_play_stop", "popup_close"]},
+    {"from": "POPUP_HOLD", "on": "OK_SHORT", "to": "POPUP_HOLD", "actions": ["popup_close"]},
+    {"from": "POPUP_HOLD", "on": "OK_HOLD", "to": "POPUP_HOLD", "actions": ["popup_close"]},
+    {"from": "POPUP_HOLD", "on": "UP_SHORT", "to": "POPUP_HOLD", "actions": ["popup_close"]},
+    {"from": "POPUP_HOLD", "on": "UP_HOLD", "to": "POPUP_HOLD", "actions": ["popup_close"]},
+    {"from": "POPUP_HOLD", "on": "DOWN_SHORT", "to": "POPUP_HOLD", "actions": ["popup_close"]},
+    {"from": "POPUP_HOLD", "on": "DOWN_HOLD", "to": "POPUP_HOLD", "actions": ["popup_close"]},
+    {"from": "POPUP_HOLD", "on": "POPUP_TIMEOUT", "to": "POPUP_HOLD", "actions": ["popup_close"], "comment": "10 s after the popup audio, or 10 s after the popup with no audio."},
+    {"from": "POPUP_HOLD", "on": "RETURN_LIVE", "to": "LIVE", "actions": ["ui_show_live"], "comment": "popup_close sends one RETURN_* event: the page before the popup. The Coach page states go back to READY."},
+    {"from": "POPUP_HOLD", "on": "RETURN_REPORT", "to": "REPORT", "actions": ["ui_show_report"]},
+    {"from": "POPUP_HOLD", "on": "RETURN_TURNS", "to": "TURNS", "actions": ["ui_show_turns"]},
+    {"from": "POPUP_HOLD", "on": "RETURN_READY", "to": "READY", "actions": [], "comment": "No action: the Coach page keeps its texts."}
   ]
 }

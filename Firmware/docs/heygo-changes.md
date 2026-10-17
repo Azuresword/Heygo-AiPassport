@@ -282,9 +282,29 @@ The top left of each page shows the page name in Chinese: live data, run report,
 
 The Turns page uses 16,824 bytes of the LVGL pool. The page and the data use about 4.0 KB of static RAM.
 
-## 12. Open items
+## 12. Increment 4: phone popups (D-31)
+
+| File | Change |
+| --- | --- |
+| `main/protocol/ble_proto.*` | Parse and build POPUP (0x66) and POPUP_END (0x67). Add channel 2 (popup audio) and page 6 (popup page). The title holds at most 36 bytes, the body at most 120 bytes. The protocol version stays 0.2. |
+| `main/link/link_core.*`, `main/link/ble_link.*` | Accept POPUP only after HELLO_ACK, with a phone `xid` from 0x80 to 0xFE. Cancel the open question. Send POPUP_END reason 2 for a replaced popup. Accept PLAY_START on channel 2 only for the current popup with audio. Send POPUP_END when the device closes the popup. A lost link sends nothing. |
+| `main/ui/popup_view.*` | Plain C. It makes the texts of the popup page for each kind and phase. They are the name, the English word, the default title, the footer, and the countdown. A fall alert uses the danger color. |
+| `main/audio/voice.*` | Add `voice_play_cut`. It stops the speaker and keeps the queued blocks, because the popup audio can already be in the queue. |
+| `flows/coach.flow.json` | Add the states POPUP_WAIT, POPUP_PLAY, and POPUP_HOLD, and the screen `popup`. Each state goes to POPUP_WAIT on a POPUP. Each key closes the popup. The RETURN_* events go back to LIVE, REPORT, TURNS, or READY. |
+| `main/coach_app.c` | Save the page before the first popup. Run the 5-second wait for the audio and the 10-second countdown. Drop a timer event of a replaced popup. During a popup, CONTEXT sends mode 0 and page 6. |
+| `../assets/ui/strings.json` | Add 12 popup strings. The fonts already hold every glyph. |
+| `tools/phone_sim/`, `tools/flow/flow_sim.*` | `phone_sim.py --popups N --popup-gap S` sends popups and prints the reason of each POPUP_END. The simulator has popup buttons, a popup zone in the state diagram, and a countdown bar. |
+| `tools/host_render/` | Add the `popup` command and screen images 22 to 26. |
+
+Results on the host: the host tests pass, and the flow simulator self-test passes 102 of 102. Device tests: NOT RUN.
+The pool use of the popup page is not recorded in this note.
+
+## 13. Open items
 
 - Device tests: NOT RUN. The board is not at hand, and no phone application build follows doc 07 yet.
+- Popups (D-31): check on the board that the first blocks of the popup audio play when a popup interrupts an answer. Sprint 14 holds this test.
+- Popups (D-31): a fall popup closes after 10 seconds with no user action. The phone application team must build the escalation of a fall alert.
+- The phone application team must accept POPUP, POPUP_END, and channel 2 of doc 07 version 0.10.
 - The phone application team must review doc 07 version 0.6. It adds the protocol notes and the two data messages in section 6.
 - The battery label on the screen stays empty. DEVICE_STATUS carries the battery level.
 - A PLAY_START that arrives during capture is lost. The device then shows a timeout. D-20 forbids the phone to send it at that time.

@@ -10,7 +10,12 @@ static void send(link_core_t *l, link_lane_t lane, const uint8_t *pkt, size_t le
 static bool can_send(const link_core_t *l) { return l->connected && l->subscribed; }
 
 static void drop(link_core_t *l, const bp_packet_t *p) {
-    if (l->io.dropped) l->io.dropped(l->io.ctx, p->type, p->xid, l->agent_xid);
+    const uint8_t current = p->type == BP_AUDIO_DOWN || p->type == BP_PLAY_END ? l->down_xid : l->agent_xid;
+    if (l->io.dropped) l->io.dropped(l->io.ctx, p->type, p->xid, current);
+}
+
+static void close_down(link_core_t *l, uint8_t channel) {
+    if (l->down_open && l->down_channel == channel) l->down_open = false;
 }
 
 static void send_error(link_core_t *l, uint8_t code, uint8_t ref_type, uint8_t ref_xid) {
@@ -59,7 +64,7 @@ static void close_exchange(link_core_t *l) {
         send(l, LINK_LANE_CONTROL, pkt, bp_build_agent_cancel(pkt, sizeof pkt, l->agent_xid));
     }
     l->agent_xid = 0;
-    l->down_open = false;
+    close_down(l, BP_CHANNEL_AGENT);
 }
 
 static void update_voice(link_core_t *l, uint32_t now_ms) {
@@ -89,6 +94,7 @@ void link_on_connect(link_core_t *l, uint32_t now_ms) {
     l->mtu = 23;
     l->agent_xid = 0;
     l->down_open = false;
+    l->popup.xid = 0;
     l->last_rx_ms = now_ms;   // Defensive. The silence rule starts after HELLO_ACK, which also sets it.
     // Doc 07: a new connection resets every xid.
     bp_xid_init_device(&l->xids);
@@ -101,6 +107,7 @@ void link_on_disconnect(link_core_t *l, uint32_t now_ms) {
     update_voice(l, now_ms);
     l->agent_xid = 0;
     l->down_open = false;
+    l->popup.xid = 0;
 }
 
 void link_on_mtu(link_core_t *l, uint16_t mtu, uint32_t now_ms) {
@@ -150,8 +157,9 @@ static void on_play_start(link_core_t *l, const bp_packet_t *p) {
     bp_play_start_t s;
     if (bp_read_play_start(p, &s) != BP_OK) return;
     // Team speech is P1. The first version has no Team owner, so it ignores the stream.
-    if (s.channel != BP_CHANNEL_AGENT) return;
-    if (!bp_xid_accept(l->agent_xid, p->xid)) {
+    if (s.channel != BP_CHANNEL_AGENT && s.channel != BP_CHANNEL_POPUP) return;
+    const bool popup = s.channel == BP_CHANNEL_POPUP;
+    if (!bp_xid_accept(popup ? l->popup.xid : l->agent_xid, p->xid) || (popup && !l->popup.audio)) {
         drop(l, p);
         return;
     }
@@ -161,12 +169,18 @@ static void on_play_start(link_core_t *l, const bp_packet_t *p) {
         return;
     }
     l->down_open = true;
+    l->down_xid = p->xid;
+    l->down_channel = s.channel;
     bp_seq_reset(&l->down_seq);
-    if (l->io.play_start) l->io.play_start(l->io.ctx);
+    if (popup) {
+        if (l->io.popup_play_start) l->io.popup_play_start(l->io.ctx);
+    } else if (l->io.play_start) {
+        l->io.play_start(l->io.ctx);
+    }
 }
 
 static void on_audio_down(link_core_t *l, const bp_packet_t *p) {
-    if (!l->down_open || !bp_xid_accept(l->agent_xid, p->xid)) {
+    if (!l->down_open || !bp_xid_accept(l->down_xid, p->xid)) {
         drop(l, p);
         return;
     }
@@ -179,7 +193,7 @@ static void on_audio_down(link_core_t *l, const bp_packet_t *p) {
 }
 
 static void on_play_end(link_core_t *l, const bp_packet_t *p) {
-    if (!l->down_open || !bp_xid_accept(l->agent_xid, p->xid)) {
+    if (!l->down_open || !bp_xid_accept(l->down_xid, p->xid)) {
         drop(l, p);
         return;
     }
@@ -338,6 +352,42 @@ static void on_show_page(link_core_t *l, const bp_packet_t *p) {
     if (l->io.show_page) l->io.show_page(l->io.ctx, page);
 }
 
+static void send_popup_end(link_core_t *l, uint8_t reason) {
+    if (!can_send(l)) return;
+    uint8_t pkt[8];
+    send(l, LINK_LANE_CONTROL, pkt, bp_build_popup_end(pkt, sizeof pkt, l->popup.xid, reason));
+}
+
+// D-31: a popup stops all other audio at once. A new popup replaces the old one.
+static void on_popup(link_core_t *l, const bp_packet_t *p) {
+    if (!data_allowed(l)) return;
+    bp_popup_t r;
+    bp_err_t err = bp_read_popup(p, &r);
+    if (err == BP_OK && (p->xid < 0x80 || p->xid == 0xFF)) err = BP_ERR_FIELD;
+    if (err != BP_OK) {
+        send_error(l, (uint8_t)err, p->type, p->xid);
+        return;
+    }
+    close_exchange(l);
+    if (l->popup.xid) {
+        close_down(l, BP_CHANNEL_POPUP);
+        send_popup_end(l, BP_POPUP_END_REPLACED);
+    }
+    l->popup.xid = p->xid;
+    l->popup.kind = r.kind;
+    l->popup.audio = r.audio;
+    copy_text(l->popup.title, &r.title);
+    copy_text(l->popup.body, &r.body);
+    if (l->io.popup) l->io.popup(l->io.ctx, &l->popup);
+}
+
+void link_popup_end(link_core_t *l, uint8_t reason) {
+    if (!l->popup.xid) return;
+    close_down(l, BP_CHANNEL_POPUP);
+    send_popup_end(l, reason);
+    l->popup.xid = 0;
+}
+
 void link_on_rx(link_core_t *l, const uint8_t *buf, size_t len, uint32_t now_ms) {
     if (!l->connected) return;
     l->last_rx_ms = now_ms;
@@ -368,6 +418,7 @@ void link_on_rx(link_core_t *l, const uint8_t *buf, size_t len, uint32_t now_ms)
     case BP_SHOW_PAGE: on_show_page(l, &p); break;
     case BP_TURN_SHAPE: on_turn_shape(l, &p, now_ms); break;
     case BP_TURN_GROUP: on_turn_group(l, &p, now_ms); break;
+    case BP_POPUP: on_popup(l, &p); break;
     default:
         // A device-to-phone type that arrives from the phone.
         send_error(l, BP_ERR_STATE, p.type, p.xid);
@@ -395,7 +446,7 @@ uint8_t link_agent_start(link_core_t *l) {
     if (l->agent_xid) close_exchange(l);
     l->agent_xid = bp_xid_next(&l->xids);
     l->up_seq = 0;
-    l->down_open = false;
+    close_down(l, BP_CHANNEL_AGENT);
     uint8_t pkt[8];
     send(l, LINK_LANE_CONTROL, pkt, bp_build_agent_start(pkt, sizeof pkt, l->agent_xid, BP_CODEC_ADPCM));
     return l->agent_xid;
@@ -418,7 +469,7 @@ void link_agent_cancel(link_core_t *l) { close_exchange(l); }
 
 void link_agent_done(link_core_t *l) {
     l->agent_xid = 0;
-    l->down_open = false;
+    close_down(l, BP_CHANNEL_AGENT);
 }
 
 void link_set_device(link_core_t *l, uint8_t battery, uint8_t mode, uint8_t page,

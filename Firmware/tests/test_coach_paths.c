@@ -28,6 +28,7 @@ static owner_t apply(owner_t owner, const coach_step_t *s) {
         case COACH_ACTION_AUDIO_PLAY_START:    assert(owner == OWNER_NONE); owner = OWNER_PLAYBACK; break;
         case COACH_ACTION_AUDIO_CAPTURE_STOP:  assert(owner == OWNER_CAPTURE); owner = OWNER_NONE; break;
         case COACH_ACTION_AUDIO_PLAY_STOP:     assert(owner == OWNER_PLAYBACK); owner = OWNER_NONE; break;
+        case COACH_ACTION_AUDIO_PLAY_CUT:      assert(owner == OWNER_PLAYBACK); owner = OWNER_NONE; break;
         default: break;
         }
     }
@@ -173,6 +174,82 @@ static void path_show_report(void) {
     assert(f.state == COACH_STATE_READY && !has_action(&s, COACH_ACTION_AUDIO_CAPTURE_START));
 }
 
+// Path 8 (D-31): a popup from the phone interrupts every state at once.
+static bool is_popup(coach_state_t s) {
+    return s == COACH_STATE_POPUP_WAIT || s == COACH_STATE_POPUP_PLAY || s == COACH_STATE_POPUP_HOLD;
+}
+
+static void path_popup(void) {
+    for (int i = 0; i < COACH_STATE_COUNT; i++) {
+        const coach_state_t from = (coach_state_t)i;
+        const owner_t before = from == COACH_STATE_CAPTURE ? OWNER_CAPTURE
+                             : from == COACH_STATE_PLAYBACK || from == COACH_STATE_POPUP_PLAY ? OWNER_PLAYBACK : OWNER_NONE;
+        coach_flow_t f; coach_flow_init(&f); f.state = from;
+        coach_step_t s = step(&f, COACH_EVENT_POPUP_SHOW);
+        assert(s.handled && f.state == COACH_STATE_POPUP_WAIT);
+        assert(has_action(&s, COACH_ACTION_UI_SHOW_POPUP));
+        assert(apply(before, &s) == OWNER_NONE);
+        const bool busy = from == COACH_STATE_CAPTURE || from == COACH_STATE_WAIT_ANSWER || from == COACH_STATE_PLAYBACK;
+        assert(has_action(&s, COACH_ACTION_LINK_SEND_AGENT_CANCEL) == busy);
+    }
+    // The popup audio, then the countdown.
+    coach_flow_t f; coach_flow_init(&f); f.state = COACH_STATE_POPUP_WAIT;
+    coach_step_t s = step(&f, COACH_EVENT_POPUP_AUDIO_START);
+    assert(f.state == COACH_STATE_POPUP_PLAY && apply(OWNER_NONE, &s) == OWNER_PLAYBACK);
+    s = step(&f, COACH_EVENT_POPUP_AUDIO_END);
+    assert(f.state == COACH_STATE_POPUP_HOLD && has_action(&s, COACH_ACTION_POPUP_COUNTDOWN));
+    assert(apply(OWNER_PLAYBACK, &s) == OWNER_NONE);
+    f.state = COACH_STATE_POPUP_WAIT;
+    s = step(&f, COACH_EVENT_POPUP_NO_AUDIO);
+    assert(f.state == COACH_STATE_POPUP_HOLD && has_action(&s, COACH_ACTION_POPUP_COUNTDOWN));
+    s = step(&f, COACH_EVENT_POPUP_TIMEOUT);
+    assert(f.state == COACH_STATE_POPUP_HOLD && has_action(&s, COACH_ACTION_POPUP_CLOSE));
+    // A lost link ends the popup audio. The countdown starts.
+    f.state = COACH_STATE_POPUP_PLAY;
+    s = step(&f, COACH_EVENT_LINK_LOST);
+    assert(f.state == COACH_STATE_POPUP_HOLD && apply(OWNER_PLAYBACK, &s) == OWNER_NONE);
+    // Any key only closes the popup. The release of an old hold changes nothing.
+    const coach_event_t keys[] = { COACH_EVENT_OK_SHORT, COACH_EVENT_OK_HOLD, COACH_EVENT_UP_SHORT,
+                                   COACH_EVENT_UP_HOLD, COACH_EVENT_DOWN_SHORT, COACH_EVENT_DOWN_HOLD };
+    const coach_state_t popups[] = { COACH_STATE_POPUP_WAIT, COACH_STATE_POPUP_PLAY, COACH_STATE_POPUP_HOLD };
+    for (size_t p = 0; p < 3; p++) {
+        for (size_t k = 0; k < sizeof keys / sizeof keys[0]; k++) {
+            f.state = popups[p];
+            s = step(&f, keys[k]);
+            assert(f.state == COACH_STATE_POPUP_HOLD && has_action(&s, COACH_ACTION_POPUP_CLOSE));
+            assert(!has_action(&s, COACH_ACTION_AUDIO_CAPTURE_START));
+            assert(apply(popups[p] == COACH_STATE_POPUP_PLAY ? OWNER_PLAYBACK : OWNER_NONE, &s) == OWNER_NONE);
+        }
+        f.state = popups[p];
+        assert(!step(&f, COACH_EVENT_OK_RELEASE).handled);
+        assert(!step(&f, COACH_EVENT_SHOW_REPORT).handled);
+    }
+    // popup_close then sends the RETURN_* event of the saved page. Only the countdown state takes it.
+    const coach_event_t ret[] = { COACH_EVENT_RETURN_LIVE, COACH_EVENT_RETURN_REPORT, COACH_EVENT_RETURN_TURNS,
+                                  COACH_EVENT_RETURN_READY };
+    const coach_state_t to[] = { COACH_STATE_LIVE, COACH_STATE_REPORT, COACH_STATE_TURNS, COACH_STATE_READY };
+    for (size_t r = 0; r < 4; r++) {
+        f.state = COACH_STATE_POPUP_HOLD;
+        s = step(&f, ret[r]);
+        assert(f.state == to[r] && apply(OWNER_NONE, &s) == OWNER_NONE);
+        for (int i = 0; i < COACH_STATE_COUNT; i++) {
+            if (i == COACH_STATE_POPUP_HOLD) continue;
+            f.state = (coach_state_t)i;
+            assert(!step(&f, ret[r]).handled);
+        }
+    }
+    // The popup events mean nothing outside a popup.
+    const coach_event_t inside[] = { COACH_EVENT_POPUP_NO_AUDIO, COACH_EVENT_POPUP_AUDIO_START,
+                                     COACH_EVENT_POPUP_AUDIO_END, COACH_EVENT_POPUP_TIMEOUT };
+    for (int i = 0; i < COACH_STATE_COUNT; i++) {
+        if (is_popup((coach_state_t)i)) continue;
+        for (size_t e = 0; e < 4; e++) {
+            f.state = (coach_state_t)i;
+            assert(!step(&f, inside[e]).handled);
+        }
+    }
+}
+
 static void walk_invariants(void) {
     coach_flow_t f; coach_flow_init(&f);
     owner_t owner = OWNER_NONE;
@@ -184,11 +261,12 @@ static void walk_invariants(void) {
         owner = apply(owner, &s);
         if (f.state == COACH_STATE_LIVE || f.state == COACH_STATE_READY ||
             f.state == COACH_STATE_WAIT_ANSWER ||
-            f.state == COACH_STATE_REPORT || f.state == COACH_STATE_TURNS) {
+            f.state == COACH_STATE_REPORT || f.state == COACH_STATE_TURNS ||
+            f.state == COACH_STATE_POPUP_WAIT || f.state == COACH_STATE_POPUP_HOLD) {
             assert(owner == OWNER_NONE);           // no audio outside capture and playback
         }
         if (f.state == COACH_STATE_CAPTURE) assert(owner == OWNER_CAPTURE);
-        if (f.state == COACH_STATE_PLAYBACK) assert(owner == OWNER_PLAYBACK);
+        if (f.state == COACH_STATE_PLAYBACK || f.state == COACH_STATE_POPUP_PLAY) assert(owner == OWNER_PLAYBACK);
     }
 }
 
@@ -200,6 +278,7 @@ int main(void) {
     path_pages();
     path_link_loss();
     path_show_report();
+    path_popup();
     walk_invariants();
     printf("coach path tests: PASS\n");
     return 0;

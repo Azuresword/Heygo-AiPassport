@@ -201,6 +201,62 @@
   showReport(); await sleep(50);
   ok(st === "PLAYBACK" && spk, "18 SHOW_PAGE during playback changes nothing");
   await tap("DOWN");
+
+  // D-31: popups from the phone. Any state stops at once. Any key only closes the popup.
+  const red = "rgb(239, 68, 68)";
+  ok(st === "LIVE", "21 back on the live data page");
+  phonePopup(4, false); await sleep(50);
+  ok(st === "POPUP_HOLD" && on() === "popup" && shown("popup.mode") === "成就报告" && shown("popup.dest") === "ACHIEVED" &&
+     shown("popup.title") === "今天完成 10 趟" && shown("popup.foot") === "10 秒后返回", "21 a popup with no audio starts the 10-second countdown at once");
+  await sleep(5100); paintData();
+  ok(st === "POPUP_HOLD" && shown("popup.foot") === "5 秒后返回", "21 the countdown shows the seconds left");
+  await sleep(5100);
+  ok(st === "LIVE" && on() === "ski" && /POPUP_END xid=0x80 reason=0/.test(bleLog()), "21 after 10 s, POPUP_END reason 0, and back to the live data page");
+
+  await tap("DOWN");
+  phonePopup(1, true); await sleep(50);
+  ok(st === "POPUP_WAIT" && shown("popup.dest") === "FALL ALERT" && shown("popup.title") === "检测到摔倒" &&
+     widgetEls["popup.dest"].style.color === red && shown("popup.foot") === "等待语音", "22 a fall popup is red and waits for its audio");
+  await sleep(500);
+  ok(st === "POPUP_PLAY" && spk && shown("popup.foot") === "正在播报", "22 the popup audio plays on channel 2");
+  await sleep(3100);
+  ok(st === "POPUP_HOLD" && !spk && shown("popup.foot") === "10 秒后返回", "22 the countdown starts after the audio");
+  await tap("UP");
+  ok(st === "REPORT" && /POPUP_END xid=0x81 reason=1/.test(bleLog()), "22 a key only closes the popup, and the Report page comes back");
+
+  await hold("OK");
+  press("OK", key("OK")); await sleep(600);
+  ok(st === "CAPTURE" && mic, "23 capture runs");
+  phonePopup(2, false); await sleep(50);
+  ok(st === "POPUP_HOLD" && !mic && /AGENT_CANCEL/.test(bleLog().split("POPUP").pop()), "23 a popup stops capture and cancels the question");
+  release("OK"); await sleep(50);
+  ok(st === "POPUP_HOLD", "23 the release of the old hold does not close the popup");
+  await sleep(3000);
+  phonePopup(3, false); await sleep(50);
+  ok(st === "POPUP_HOLD" && /POPUP_END xid=0x82 reason=2/.test(bleLog()) && shown("popup.mode") === "问题报告" &&
+     shown("popup.foot") === "10 秒后返回", "23 a new popup replaces the old one, and the countdown starts again");
+  await tap("DOWN");
+  ok(st === "READY" && on() === "coach" && shown("coach.state") === "就绪", "23 a popup from the Coach page goes back to READY");
+
+  phonePopup(2, true, false); await sleep(50);
+  ok(st === "POPUP_WAIT" && shown("popup.foot") === "等待语音", "24 a popup with audio waits for PLAY_START");
+  await sleep(5100);
+  ok(st === "POPUP_HOLD", "24 no audio within 5 s starts the countdown");
+  await tap("OK");
+  ok(st === "READY" && !mic, "24 a short OK closes the popup and starts nothing");
+
+  await hold("OK", 1200); await sleep(2600);
+  ok(st === "PLAYBACK" && spk, "25 the answer plays");
+  phonePopup(2, true); await sleep(50);
+  ok(st === "POPUP_WAIT" && !spk, "25 a popup stops the answer at once");
+  await sleep(500);
+  ok(st === "POPUP_PLAY" && spk, "25 the popup audio plays");
+  await hold("OK");
+  ok(st === "READY" && !spk && !mic, "25 an OK hold during the popup audio only closes the popup");
+  await sleep(3500);
+  ok(st === "READY" && /PLAY_END xid=0x85 → 设备丢弃/.test(bleLog()), "25 the late popup audio is dropped");
+  ok(!both, "25 capture and playback never run together");
+
   const pre = document.createElement("pre");
   pre.id = "selftest";
   pre.textContent = out.join("\n") + `\nRESULT ${fails ? "FAIL" : "PASS"} ${out.length - fails}/${out.length}`;

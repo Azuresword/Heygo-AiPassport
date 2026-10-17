@@ -1,10 +1,10 @@
 [简体中文](05-decision-amendments.zh_CN.md) · **English**
 
-# Decision amendments: D-08 to D-30
+# Decision amendments: D-08 to D-31
 
-Version: 0.9. Date: 2026-10-17. Status: D-08 to D-15 and D-17 to D-30 accepted by the user. The phone application team accepted D-16. It must accept D-29 and the three turn messages of D-30.
+Version: 0.10. Date: 2026-10-17. Status: D-08 to D-15 and D-17 to D-31 accepted by the user. The phone application team accepted D-16. It must accept D-29, the three turn messages of D-30, and the two popup messages of D-31.
 
-This document gives the reasons behind D-08 to D-30.
+This document gives the reasons behind D-08 to D-31.
 [Validation and decisions](04-validation-and-decisions.md) holds the short log.
 Requirement numbers stay stable. This document deletes no requirement.
 
@@ -377,7 +377,49 @@ The device asks the phone for each missing group in TURN_REQUEST (0x65). The pho
 
 **Status.** The user accepted the page, the pages of 8 turns, the requests from the device, and the key hints on 2026-10-17. On the same day, the user chose the place of the page: the fourth page in the loop of D-29. The phone application team must accept the three turn messages.
 
-## 25. Related documents
+## 25. D-31: phone popups
+
+**Decision.** The phone can show a popup on the device at any time. REQ-22 is Increment 4.
+The phone sends POPUP (0x66) with a kind, an audio flag, a title, and a body. The device sends POPUP_END (0x67) when the popup closes.
+Four kinds exist: 1 fall alert, 2 voice message, 3 problem report, and 4 achievement.
+
+- A popup interrupts at once, in every state. Capture stops and the device sends AGENT_CANCEL. The wait stops. An answer that plays stops.
+- A popup with audio: the phone sends PLAY_START on channel 2 with the popup xid, then AUDIO_DOWN and PLAY_END. The device plays the audio, then counts down 10 seconds.
+- A popup with no audio counts down 10 seconds at once. If the audio flag is 1 and no PLAY_START arrives within 5 seconds, the countdown starts.
+- After the countdown, or at any key press, the device sends POPUP_END with reason 0 (timeout) or 1 (key).
+- Then the device goes back to the page before the popup: the live data page, the Report page, or the Turns page. The Coach page states go back to READY.
+- During a popup, CONTEXT and DEVICE_STATUS send mode 0 and page 6.
+
+The user made four choices on 2026-10-17:
+
+1. **Every state.** A popup interrupts every state at once, also capture and the answer. It does not wait for the end of a question.
+2. **Any key only closes.** On the popup page, each key closes the popup. No key changes the page or starts capture. The release of an OK hold that started before the popup does not close it.
+3. **The fall alert closes as the others do.** A fall popup also closes after 10 seconds. It uses red.
+4. **A new popup replaces the old one.** The device sends POPUP_END with reason 2 for the old popup. The saved page from before the first popup stays.
+
+**Reason.**
+
+- The phone knows about events that the device cannot know about. Examples are a fall, a message from a friend, a problem in the last run, and an achievement. The skier keeps the phone in a pocket, so the device must show these events.
+- A fall alert or a message is more urgent than a question to the coach. A popup that waits for the end of an answer can come 20 seconds late.
+- The three keys share one ADC input and the user wears gloves. One rule for every key is easier than a key for each action. A key that only closes the popup cannot start capture by accident.
+- The old OK release must not close the new popup. Otherwise a popup that comes during capture closes in the same moment.
+- The popup page goes back to the saved page, so the user does not lose the place in the page loop. The Coach page goes back to READY, because the popup canceled the question.
+- One popup at a time keeps the device simple. The phone decides the order of the popups. A queue on the device would show old news.
+- The popup audio uses the downlink path of the answer on a new channel. No new audio path is necessary.
+- POPUP and POPUP_END add messages and change no current packet. The protocol version stays 0.2, as for SHOW_PAGE (D-28) and the turn messages (D-30).
+
+**Cost.**
+
+- A fall popup closes with no user action. The device cannot know whether the user is safe. The phone owns the escalation, for example a call to an emergency contact. This matches the exclusion of automatic emergency detection.
+- A popup cancels a question. The user must ask again after the popup.
+- The popup audio can arrive before the Coach task stops the old answer. The device therefore uses `audio_play_cut`, which keeps the queued blocks. Only the device tests can show whether the first blocks of the popup audio play.
+- A lost link sends no POPUP_END. A new connection resets every xid, so the phone must treat the popup as closed.
+- The title holds at most 36 bytes (12 Chinese characters). The body holds at most 120 bytes (40 Chinese characters).
+- Firmware at commit `49573f9` or older answers POPUP with ERROR code 1. The phone application can ignore that error.
+
+**Status.** The user accepted the popups and the four choices on 2026-10-17. The phone application team must accept POPUP and POPUP_END. Device tests are NOT RUN.
+
+## 26. Related documents
 
 - [Product requirements](01-product-requirements.md).
 - [System architecture](02-architecture.md).

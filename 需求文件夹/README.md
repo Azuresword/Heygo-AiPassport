@@ -34,16 +34,18 @@ D-17, D-18, and D-22 set the priorities:
 
 - **P0, Increment 1:** device connection, the voice question, the spoken answer, and the Agent exchange. P0 also covers page navigation, gloves and Chinese text, and recovery.
 - **P1, Increment 2:** data sync, live data on the live data page, and the Report page.
+- **P1, Increment 3:** the Turns page (D-30).
+- **P1, Increment 4:** phone popups: a fall alert, a voice message, a problem report, or an achievement (D-31).
 - **P1, after Increment 2:** metric charts, the offline report cache, and human intercom.
 - **P2, later candidates:** practice goals, quests, a reflection journal, session comparison, and report sharing.
-- **Deferred:** turn visualization, privacy and authorization, and power management.
+- **Deferred:** privacy and authorization, and power management.
 
 ## Status and evidence
 
 Sprint 0 ended. The Sprint 1 device code is in the repository. Device tests are NOT RUN. The team closed no story.
 Section 4.1 of the [backlog](03-scrum-backlog.md) gives the progress of each story.
 
-The user accepted D-08 to D-15 and D-17 to D-30. The phone application team accepted protocol 0.2 (D-16). D-29 changes the meaning of two protocol fields, so that team must accept it again. The team must also accept the three turn messages of D-30.
+The user accepted D-08 to D-15 and D-17 to D-31. The phone application team accepted protocol 0.2 (D-16). D-29 changes the meaning of two protocol fields, so that team must accept it again. The team must also accept the three turn messages of D-30 and the two popup messages of D-31.
 A phone application already exists. Another team develops it.
 No person accepted a Scrum role or a delivery date.
 

@@ -46,8 +46,13 @@ static void io_page(void *c, uint8_t page) { (void)c; s_pages++; s_page = page; 
 static int s_turn_calls;
 static void io_turns(void *c, const link_turns_t *t) { (void)c; (void)t; s_turn_calls++; }
 
+static int s_popups, s_popup_play;
+static link_popup_t s_popup;
+static void io_popup(void *c, const link_popup_t *p) { (void)c; s_popups++; s_popup = *p; }
+static void io_popup_play(void *c) { (void)c; s_popup_play++; }
+
 static const link_io_t IO = { NULL, io_send, io_drop, io_voice, io_state, io_play_start, io_down, io_play_end, io_dropped,
-                              io_live, io_report, io_page, io_turns };
+                              io_live, io_report, io_page, io_turns, io_popup, io_popup_play };
 
 static void clear(void) { s_nsent = 0; }
 static const sent_t *last(void) { return s_nsent ? &s_sent[s_nsent - 1] : NULL; }
@@ -471,6 +476,78 @@ static void test_turn_shape(void) {
     CHECK(link_turns(&l) != NULL, "a disconnect keeps the shape for the screen");
 }
 
+static size_t popup_pkt(uint8_t *p, uint8_t xid, uint8_t kind, bool audio, const char *title) {
+    return bp_build_popup(p, LINK_PACKET_MAX, xid, kind, audio, title, "body");
+}
+
+// D-31: popups interrupt the Agent exchange, replace each other, and carry their own audio.
+static void test_popup(void) {
+    link_core_t l;
+    uint8_t p[LINK_PACKET_MAX];
+    uint8_t blk[BP_ADPCM_BLOCK] = { 0 };
+    link_init(&l, &IO, "fw");
+    link_on_connect(&l, 0);
+    link_on_subscribe(&l, true, 0);
+    s_popups = 0;
+    rx(&l, p, popup_pkt(p, 0x80, BP_POPUP_FALL, false, "x"), 5);
+    CHECK(s_popups == 0, "no popup before HELLO_ACK");
+
+    uint32_t t = ready(&l, 100);
+    const uint8_t agent = link_agent_start(&l);
+    size_t n = bp_build_play_start(p, sizeof p, agent, BP_CHANNEL_AGENT, BP_CODEC_ADPCM, NULL);
+    rx(&l, p, n, t + 1);
+    clear();
+    s_drops = 0;
+    rx(&l, p, popup_pkt(p, 0x81, BP_POPUP_FALL, true, "检测到摔倒"), t + 10);
+    CHECK(s_popups == 1 && s_popup.xid == 0x81 && s_popup.kind == BP_POPUP_FALL && s_popup.audio, "the popup arrives");
+    CHECK(strcmp(s_popup.title, "检测到摔倒") == 0 && strcmp(s_popup.body, "body") == 0, "the popup texts are copied");
+    const sent_t *c = find_type(BP_AGENT_CANCEL);
+    CHECK(c && c->buf[2] == agent && s_drops == 1, "the popup cancels the Agent exchange");
+    n = bp_build_audio(p, sizeof p, BP_AUDIO_DOWN, agent, 0, blk, BP_ADPCM_BLOCK);
+    int down = s_down;
+    rx(&l, p, n, t + 11);
+    CHECK(s_down == down, "the old answer audio is dropped");
+
+    n = bp_build_play_start(p, sizeof p, 0x82, BP_CHANNEL_POPUP, BP_CODEC_ADPCM, NULL);
+    rx(&l, p, n, t + 20);
+    CHECK(s_popup_play == 0, "popup audio with another xid is dropped");
+    n = bp_build_play_start(p, sizeof p, 0x81, BP_CHANNEL_POPUP, BP_CODEC_ADPCM, NULL);
+    rx(&l, p, n, t + 21);
+    CHECK(s_popup_play == 1, "popup audio starts on channel 2");
+    n = bp_build_audio(p, sizeof p, BP_AUDIO_DOWN, 0x81, 0, blk, BP_ADPCM_BLOCK);
+    rx(&l, p, n, t + 22);
+    CHECK(s_down == down + 1, "popup audio blocks arrive");
+    link_agent_cancel(&l);
+    rx(&l, p, bp_build_audio(p, sizeof p, BP_AUDIO_DOWN, 0x81, 1, blk, BP_ADPCM_BLOCK), t + 23);
+    CHECK(s_down == down + 2, "an Agent cancel does not close the popup audio");
+
+    clear();
+    rx(&l, p, popup_pkt(p, 0x83, BP_POPUP_BADGE, false, "新成就"), t + 30);
+    const sent_t *e = find_type(BP_POPUP_END);
+    CHECK(e && e->buf[2] == 0x81 && e->buf[4] == BP_POPUP_END_REPLACED, "the new popup replaces the old one");
+    CHECK(s_popups == 2 && s_popup.xid == 0x83 && !s_popup.audio, "the new popup arrives");
+    rx(&l, p, bp_build_audio(p, sizeof p, BP_AUDIO_DOWN, 0x81, 2, blk, BP_ADPCM_BLOCK), t + 31);
+    CHECK(s_down == down + 2, "the audio of the replaced popup is dropped");
+    n = bp_build_play_start(p, sizeof p, 0x83, BP_CHANNEL_POPUP, BP_CODEC_ADPCM, NULL);
+    rx(&l, p, n, t + 32);
+    CHECK(s_popup_play == 1, "a popup without the audio flag gets no audio");
+
+    clear();
+    link_popup_end(&l, BP_POPUP_END_TIMEOUT);
+    CHECK(s_nsent == 1 && last()->buf[0] == BP_POPUP_END && last()->buf[2] == 0x83 && last()->buf[4] == BP_POPUP_END_TIMEOUT,
+          "POPUP_END with the timeout reason");
+    clear();
+    link_popup_end(&l, BP_POPUP_END_KEY);
+    CHECK(s_nsent == 0, "no popup: no POPUP_END");
+
+    clear();
+    rx(&l, p, popup_pkt(p, 0x05, BP_POPUP_ISSUE, false, "x"), t + 40);
+    CHECK(s_popups == 2 && last() && last()->buf[0] == BP_ERROR && last()->buf[4] == BP_ERR_FIELD, "a device xid is refused");
+    rx(&l, p, popup_pkt(p, 0x90, BP_POPUP_VOICE, false, "x"), t + 41);
+    link_on_disconnect(&l, t + 50);
+    CHECK(l.popup.xid == 0, "a disconnect clears the popup");
+}
+
 int main(void) {
     test_handshake();
     test_version();
@@ -481,6 +558,7 @@ int main(void) {
     test_reconnect_and_status();
     test_live_data();
     test_turn_shape();
+    test_popup();
     if (s_fail) return EXIT_FAILURE;
     printf("link core tests: PASS\n");
     return EXIT_SUCCESS;
