@@ -107,7 +107,7 @@ The user parked these questions. The user will share answers after a review with
 | D-13 | Build no privacy or authorization feature. | Accepted by the user. |
 | D-14 | The device does four tasks. The phone application does the rest. | Accepted by the user. |
 | D-15 | Two modes. An OK hold enters Rest mode on the Coach page. A DOWN hold and a short OK exit. | Accepted by the user. Version 0.4 changed the landing page. |
-| D-16 | The device team proposes the BLE protocol draft. Document version 0.3 defines protocol version 0.1. | Proposed. Waits for the phone application team. |
+| D-16 | The device team proposes the BLE protocol draft. Document version 0.4 defines protocol version 0.1. | Proposed. Waits for the phone application team. |
 | D-17 | P0 keeps the Coach voice chain. Reports, charts, the cache, and intercom move to P1. Turn views move to Deferred. | Accepted by the user. |
 | D-18 | The first version builds no power management, and requests the best-performance link settings. REQ-16 moves to Deferred. | Accepted by the user. |
 

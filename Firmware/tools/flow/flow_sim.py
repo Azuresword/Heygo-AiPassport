@@ -65,8 +65,6 @@ def static_issues(flow):
     if busy:
         issues.append("在 " + "、".join(busy) + " 状态下长按 DOWN 会被忽略。"
                       "这是固件侧的选择，需求没有定义这种情况。")
-    issues.append("手机事件到状态机事件的对应关系（PLAY_START → ANSWER_START 等）是模拟器的假设。"
-                  "固件里连接这两层的代码还没有写。")
     return issues
 
 

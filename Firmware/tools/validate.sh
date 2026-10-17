@@ -99,6 +99,11 @@ run_static_checks() {
         tests/test_coach_input.c main/coach_input.c main/generated/coach_flow.c \
         -o "${test_dir}/test_coach_input"
     "${test_dir}/test_coach_input"
+    "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain/protocol -Imain/link \
+        tests/test_link_core.c main/link/link_core.c main/protocol/ble_proto.c \
+        -o "${test_dir}/test_link_core"
+    "${test_dir}/test_link_core"
+    PYTHONDONTWRITEBYTECODE=1 python3 tests/test_phone_sim.py
 
     # Chinese glyph coverage. A build cannot prove that a glyph exists.
     PYTHONDONTWRITEBYTECODE=1 python3 tools/flow/flow_sim.py --check

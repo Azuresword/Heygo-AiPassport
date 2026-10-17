@@ -7,6 +7,9 @@ idf_component_register(
     SRCS "main.c"
          "coach_app.c"
          "coach_input.c"
+         "link/link_core.c"
+         "link/ble_link.c"
+         "audio/voice.c"
          "demo_navigation.c"
          "ui_pixel.c"
          "ui_pixel_math.c"
@@ -29,6 +32,6 @@ idf_component_register(
          "protocol/ble_proto.c"
          "${HEYGO_FONTS}/heygo_sc_16.c"
          "${HEYGO_FONTS}/heygo_sc_28.c"
-    INCLUDE_DIRS "." "ui" "generated" "audio" "protocol" "${HEYGO_FONTS}"
-    REQUIRES bsp bt esp_event esp_hw_support esp_netif esp_timer esp_wifi nvs_flash
+    INCLUDE_DIRS "." "ui" "generated" "audio" "protocol" "link" "${HEYGO_FONTS}"
+    REQUIRES bsp bt esp_app_format esp_event esp_hw_support esp_netif esp_timer esp_wifi nvs_flash
 )

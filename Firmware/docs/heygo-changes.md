@@ -81,15 +81,16 @@ The host UI measurements are from 2026-10-17, after the visual redesign. Device 
 | Item | Result | Method |
 | --- | --- | --- |
 | Full gate | Exit code 0 | `./tools/validate.sh` |
-| Application image | 1,252,514 bytes of 8,323,072 bytes. It contains the Coach app and both fonts. | `idf.py size` |
-| Static DRAM | 105,610 of 321,296 bytes, 32.9%. The baseline demo used 178,960 bytes. | `idf.py size` |
+| Application image | 1,616,982 bytes of 8,323,072 bytes. It contains the Coach app, NimBLE, and both fonts. | `idf.py size` |
+| Static DRAM | 141,616 of 321,296 bytes, 44.1%. The baseline demo used 178,960 bytes. | `idf.py size` |
 | LVGL pool before the Heygo screens | 9,352 bytes of 21,656 bytes | Host screen check |
 | Coach screen | +6,184 bytes on first build. +5,856 bytes after rendering. | Host screen check |
 | flowc estimate for all three screens | 12,930 bytes. Only one screen is active at a time. | `tools/flow/flowc.py` |
 | LVGL pool peak | 17,128 of 21,656 bytes, 79% | Host screen check |
 
-The static DRAM is lower than in the baseline because the app no longer links the Wi-Fi and BLE demos.
-BLE comes back in Sprint 1, so this figure will increase again.
+Sprint 1 added NimBLE and the voice task. They raised the static DRAM by 36,006 bytes, from 105,610 bytes.
+The app does not link Wi-Fi, so the figure stays below the baseline.
+NimBLE and the task stacks also use heap at run time. Only a device test can measure that use.
 
 The host uses 8-byte pointers. The ESP32-C3 uses 4-byte pointers.
 We expect the device pool use to be lower than the host figures. A device test must check this.
@@ -125,8 +126,45 @@ These timers give `CAPTURE_LIMIT` and `AGENT_TIMEOUT`.
 Only one screen exists at a time, because all three screens do not fit the LVGL pool.
 At a screen change, the task loads a blank screen, deletes the old screen, and builds the new one.
 
-The audio and link actions are not connected yet. The task writes each of them to the log.
-The BLE link therefore stays down. The status line shows the "not connected" text, and each question ends with a timeout after 10 seconds.
+### Sprint 1: voice and link
+
+| File | Task |
+| --- | --- |
+| `main/link/link_core.c` | The doc 07 session: handshake, voice availability, xid, timeouts, and errors. Plain C with a host test. |
+| `main/link/ble_link.c` | NimBLE, the GATT service, advertising, the link settings, and the two TX queues. |
+| `main/audio/voice.c` | Capture to ADPCM blocks, and ADPCM blocks through the playback start rules to the speaker. |
+| `tools/phone_sim/` | A stand-in for the phone application. See its [README](../tools/phone_sim/README.md). |
+
+The device advertises as `HeygoPP-XXXX`, and accepts one phone.
+Voice is available only after these steps: subscription, HELLO_ACK 0.1, and an MTU of at least 172.
+
+The Coach task applies these rules:
+
+- Capture starts after every action of the step. The first block therefore carries the new xid.
+- A capture stop waits for the last block. AGENT_END therefore follows the last AUDIO_UP block.
+- A playback stop waits for the speaker. The microphone therefore never runs during playback.
+- Without voice, an OK hold in READY becomes `ASK_BLOCKED`. The screen names the cause, and no capture starts.
+
+The phone events map to flow events as follows:
+
+| Phone event | Flow event |
+| --- | --- |
+| PLAY_START for the current xid | `ANSWER_START` |
+| The speaker plays the last block after PLAY_END, or the stream stalls for 2 s | `ANSWER_END` |
+| AGENT_STATE failed, code 1 or 3 | `ANSWER_FAILED` |
+| AGENT_STATE failed, code 2 | `AGENT_TIMEOUT` |
+| Voice becomes unavailable | `LINK_LOST` |
+
+### Protocol notes for the phone application team
+
+Doc 07 version 0.4 states these notes in its section 13. The phone application team must check each note.
+
+1. AGENT_END travels behind the last AUDIO_UP block of its exchange. Every other control packet goes before the audio.
+2. HELLO offers IMA ADPCM only. PLAY_START with codec 1 gets ERROR 7.
+3. Each AGENT_STATE that is not a failure starts the 10-second wait again. The phone must therefore send a state at least every 10 seconds before the answer starts.
+4. The device does not start the MTU exchange. The phone must request the MTU.
+5. After its own 10-second timeout, the device sends AGENT_CANCEL.
+6. The device ignores PLAY_START for the Team channel, because Team speech is P1.
 
 ## 7. Rules for integration
 
@@ -150,6 +188,8 @@ The body subject holds 239 bytes of text. At an MTU of 247, `AGENT_STATE` text c
 ## 8. Open items
 
 - During capture or playback, the state machine ignores a DOWN hold. The requirements do not define this case.
-- When the BLE link is down, an OK hold in READY still starts capture. The flow has no link check for this transition.
-- The audio and link actions only write to the log. Sprint 1 connects them.
+- Device tests: NOT RUN. The board is not at hand, and no phone application build follows doc 07 yet.
+- The phone application team must review doc 07 version 0.4, which adds the protocol notes in section 6.
+- The battery label on the screen stays empty. DEVICE_STATUS carries the battery level.
+- A PLAY_START that arrives during capture is lost. The device then shows a timeout.
 - The body label shows four lines. It ends a longer text with three dots. The device speaks the full answer.

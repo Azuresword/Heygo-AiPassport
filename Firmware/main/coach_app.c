@@ -1,12 +1,18 @@
 // main/coach_app.c
 //
-// Status of the actions (Sprint 1 scope):
-//   ui_*     Done. coach_ui_apply() sets the texts and icons from the flow graph.
-//   audio_*  Not connected yet. The task logs each action.
-//   link_*   Not connected yet. The task logs each action. The BLE link stays down,
-//            so the status line shows 未连接 and a question ends with a timeout.
+// The Coach task connects three parts:
+//   the flow     generated from flows/coach.flow.json
+//   the voice    main/audio/voice.c, microphone and speaker
+//   the link     main/link/ble_link.c, BLE and the doc 07 session
+//
+// Order rules:
+//   - Capture starts after every action of the step. The flow lists audio_capture_start
+//     before link_send_agent_start, and the first block needs the new xid.
+//   - A capture stop waits for the last block, so AGENT_END follows it.
+//   - A playback stop waits for the speaker, so the microphone never runs during playback.
 #include "coach_app.h"
 
+#include "ble_link.h"
 #include "bsp_display.h"
 #include "coach_bindings.h"
 #include "coach_flow.h"
@@ -14,6 +20,7 @@
 #include "coach_screens.h"
 #include "coach_ui.h"
 #include "ui_theme.h"
+#include "voice.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -23,20 +30,23 @@
 
 static const char *TAG = "coach";
 
-#define QUEUE_DEPTH 8
+#define QUEUE_DEPTH 16
 #define TASK_STACK 4096
 #define TASK_PRIO 5
 #define LVGL_LOCK_MS 500
 #define CAPTURE_LIMIT_US (20LL * 1000 * 1000)   // Document 01: one question lasts at most 20 s.
 #define AGENT_TIMEOUT_US (10LL * 1000 * 1000)   // Document 07: the first answer comes within 10 s.
 
-typedef enum { MSG_KEY, MSG_EVENT } msg_kind_t;
+typedef enum { MSG_KEY, MSG_EVENT, MSG_LINK, MSG_AGENT_STATE } msg_kind_t;
 
 typedef struct {
     msg_kind_t kind;
     bsp_btn_t btn;
     bsp_btn_ev_t ev;
     coach_event_t event;
+    link_voice_t voice;
+    uint8_t state;
+    uint8_t failure;
 } msg_t;
 
 static QueueHandle_t s_queue;
@@ -49,8 +59,9 @@ static esp_timer_handle_t s_capture_timer;
 static esp_timer_handle_t s_answer_timer;
 static coach_screen_id_t s_shown = COACH_SCREEN_COUNT;   // COUNT: no screen yet
 static lv_obj_t *s_blank;   // Active while the old screen is deleted. LVGL must not delete the active screen.
-static bool s_mic_on;
-static bool s_speaker_on;
+static link_voice_t s_voice = LINK_VOICE_NO_LINK;
+static coach_event_t s_event;          // The event of the step that runs now.
+static bool s_start_capture;           // Set by audio_capture_start. Runs after the step.
 
 _Static_assert((int)COACH_KEY_UP == (int)BSP_BTN_UP && (int)COACH_KEY_DOWN == (int)BSP_BTN_DOWN &&
                (int)COACH_KEY_OK == (int)BSP_BTN_OK, "coach_key_t must match bsp_btn_t");
@@ -67,6 +78,10 @@ static void post_event(coach_event_t event) {
     if (xQueueSend(s_queue, &m, 0) != pdTRUE) {
         ESP_LOGW(TAG, "queue full: drop %s", coach_event_name(event));
     }
+}
+
+static void post_msg(const msg_t *m) {
+    if (s_queue && xQueueSend(s_queue, m, 0) != pdTRUE) ESP_LOGW(TAG, "queue full: drop message %d", m->kind);
 }
 
 static void on_capture_limit(void *arg) { (void)arg; post_event(COACH_EVENT_CAPTURE_LIMIT); }
@@ -109,20 +124,46 @@ static void show_screen(coach_screen_id_t id) {
 static void run_action(coach_action_t a) {
     if (coach_ui_apply(a)) return;
     switch (a) {
-    case COACH_ACTION_AUDIO_CAPTURE_START:
-        if (s_speaker_on) ESP_LOGE(TAG, "rule broken: the microphone starts during playback");
-        s_mic_on = true;
+    case COACH_ACTION_AUDIO_CAPTURE_START: s_start_capture = true; break;
+    case COACH_ACTION_AUDIO_CAPTURE_STOP: voice_capture_stop(); break;
+    case COACH_ACTION_AUDIO_PLAY_START: voice_play_enable(); break;
+    case COACH_ACTION_AUDIO_PLAY_STOP: voice_play_stop(); break;
+    case COACH_ACTION_LINK_SEND_AGENT_START:
+        if (!ble_link_agent_start()) ESP_LOGW(TAG, "AGENT_START not sent: voice %s", link_voice_name(s_voice));
         break;
-    case COACH_ACTION_AUDIO_CAPTURE_STOP: s_mic_on = false; break;
-    case COACH_ACTION_AUDIO_PLAY_START:
-        if (s_mic_on) ESP_LOGE(TAG, "rule broken: playback starts during capture");
-        s_speaker_on = true;
+    case COACH_ACTION_LINK_SEND_AGENT_END:
+        ble_link_agent_end(s_event == COACH_EVENT_CAPTURE_LIMIT ? BP_END_LIMIT : BP_END_RELEASE);
         break;
-    case COACH_ACTION_AUDIO_PLAY_STOP: s_speaker_on = false; break;
-    default: break;
+    case COACH_ACTION_LINK_SEND_AGENT_CANCEL: ble_link_agent_cancel(); break;
+    default: ESP_LOGW(TAG, "no handler for %s", coach_action_name(a)); break;
     }
-    // Audio and link actions are not connected yet. See the note at the top of the file.
-    ESP_LOGI(TAG, "  action %s (not connected)", coach_action_name(a));
+}
+
+// Doc 07 field values for CONTEXT and DEVICE_STATUS.
+static void send_context(coach_state_t st) {
+    const uint8_t mode = st == COACH_STATE_SKI ? BP_MODE_SKI : BP_MODE_REST;
+    const uint8_t page = st == COACH_STATE_SKI ? BP_PAGE_SKI : st == COACH_STATE_EXIT_Q ? BP_PAGE_EXIT : BP_PAGE_COACH;
+    ble_link_set_context(mode, page);
+}
+
+static coach_action_t why_action(link_voice_t v) {
+    switch (v) {
+    case LINK_VOICE_VERSION: return COACH_ACTION_UI_WHY_VERSION;
+    case LINK_VOICE_MTU: return COACH_ACTION_UI_WHY_MTU;
+    case LINK_VOICE_WAIT_HELLO:
+    case LINK_VOICE_NO_ACK:
+    case LINK_VOICE_SILENT: return COACH_ACTION_UI_WHY_PHONE_SILENT;
+    default: return COACH_ACTION_UI_WHY_LINK_DOWN;
+    }
+}
+
+static coach_action_t status_action(link_voice_t v) {
+    switch (v) {
+    case LINK_VOICE_OK: return COACH_ACTION_UI_LINK_READY;
+    case LINK_VOICE_NO_LINK:
+    case LINK_VOICE_WAIT_HELLO: return COACH_ACTION_UI_LINK_DOWN;
+    default: return COACH_ACTION_UI_LINK_NO_VOICE;
+    }
 }
 
 // Start the timer that belongs to the new state. Stop the timers of the old state.
@@ -138,6 +179,13 @@ static void update_timers(coach_state_t from, coach_state_t to) {
 }
 
 static void handle(coach_event_t event) {
+    // The guard: without voice, a question cannot start. The screen names the cause.
+    if (event == COACH_EVENT_OK_HOLD && s_flow.state == COACH_STATE_READY && s_voice != LINK_VOICE_OK) {
+        coach_ui_apply(why_action(s_voice));
+        event = COACH_EVENT_ASK_BLOCKED;
+    }
+    s_event = event;
+    s_start_capture = false;
     const coach_step_t step = coach_flow_step(&s_flow, event);
     if (!step.handled) {
         ESP_LOGD(TAG, "%s ignores %s", coach_state_name(step.from), coach_event_name(event));
@@ -146,7 +194,13 @@ static void handle(coach_event_t event) {
     ESP_LOGI(TAG, "%s --%s--> %s", coach_state_name(step.from), coach_event_name(event),
              coach_state_name(step.to));
     for (size_t i = 0; i < step.action_count; i++) run_action(step.actions[i]);
+    if (s_start_capture) voice_capture_start();
     update_timers(step.from, step.to);
+
+    // The exchange ends with the answer. A timeout also tells the phone to stop.
+    if (event == COACH_EVENT_ANSWER_END || event == COACH_EVENT_ANSWER_FAILED) ble_link_agent_done();
+    if (event == COACH_EVENT_AGENT_TIMEOUT) ble_link_agent_cancel();
+    if (step.state_changed) send_context(step.to);
 
     const coach_screen_id_t screen = coach_state_screen(step.to);
     if (screen != s_shown && lvgl_lock()) {
@@ -155,19 +209,72 @@ static void handle(coach_event_t event) {
     }
 }
 
+static void on_link_msg(link_voice_t v) {
+    const link_voice_t before = s_voice;
+    s_voice = v;
+    coach_ui_apply(status_action(v));
+    if (before == LINK_VOICE_OK && v != LINK_VOICE_OK) handle(COACH_EVENT_LINK_LOST);
+}
+
+static void on_agent_state_msg(uint8_t state, uint8_t failure) {
+    if (state == BP_AGENT_FAILED) {
+        handle(failure == BP_FAIL_TIMEOUT ? COACH_EVENT_AGENT_TIMEOUT : COACH_EVENT_ANSWER_FAILED);
+        return;
+    }
+    // Each state from the phone shows progress, so the 10-second wait starts again.
+    if (s_flow.state == COACH_STATE_WAIT_ANSWER) {
+        esp_timer_stop(s_answer_timer);
+        esp_timer_start_once(s_answer_timer, AGENT_TIMEOUT_US);
+    }
+}
+
 static void coach_task(void *arg) {
     (void)arg;
     msg_t m;
     for (;;) {
         if (xQueueReceive(s_queue, &m, portMAX_DELAY) != pdTRUE) continue;
-        if (m.kind == MSG_EVENT) {
-            handle(m.event);
-            continue;
+        switch (m.kind) {
+        case MSG_EVENT: handle(m.event); break;
+        case MSG_LINK: on_link_msg(m.voice); break;
+        case MSG_AGENT_STATE: on_agent_state_msg(m.state, m.failure); break;
+        case MSG_KEY: {
+            coach_event_t event;
+            if (coach_input_map(&s_input, (coach_key_t)m.btn, (coach_key_ev_t)m.ev, &event)) handle(event);
+            break;
         }
-        coach_event_t event;
-        if (coach_input_map(&s_input, (coach_key_t)m.btn, (coach_key_ev_t)m.ev, &event)) handle(event);
+        }
     }
 }
+
+// ---------------------------------------------------------------- link and voice callbacks
+// The link callbacks run on the NimBLE task inside the link lock. They post to the
+// Coach queue, or they call the voice queue. They never call ble_link_*.
+static void link_voice_changed(link_voice_t v) {
+    const msg_t m = { .kind = MSG_LINK, .voice = v };
+    post_msg(&m);
+}
+
+static void link_agent_state(uint8_t state, uint8_t failure, const char *text) {
+    // The setter takes the LVGL lock. The lock order is link, then LVGL.
+    if (text && text[0]) coach_set_body_text(text);
+    const msg_t m = { .kind = MSG_AGENT_STATE, .state = state, .failure = failure };
+    post_msg(&m);
+}
+
+static void link_play_start(void) {
+    voice_down_open();
+    post_event(COACH_EVENT_ANSWER_START);
+}
+
+static void link_audio_down(const uint8_t *block, size_t len, uint8_t missing) {
+    (void)missing;   // Doc 07: play nothing for a missing block.
+    voice_down_push(block, len);
+}
+
+static void link_play_end(void) { voice_down_end(); }
+
+static void voice_up_block(const uint8_t *block) { ble_link_audio_up(block); }
+static void voice_play_done(void) { post_event(COACH_EVENT_ANSWER_END); }
 
 void coach_app_post_key(bsp_btn_t btn, bsp_btn_ev_t ev) {
     if (!s_queue) return;
@@ -196,6 +303,17 @@ esp_err_t coach_app_start(void) {
 
     s_queue = xQueueCreate(QUEUE_DEPTH, sizeof(msg_t));
     if (!s_queue) return ESP_ERR_NO_MEM;
+
+    // Voice and link failures leave the screens and keys working. The guard then blocks questions.
+    const voice_cb_t vcb = { .up_block = voice_up_block, .play_done = voice_play_done };
+    esp_err_t ve = voice_start(&vcb);
+    if (ve != ESP_OK) ESP_LOGE(TAG, "voice start failed: %s", esp_err_to_name(ve));
+    const ble_link_app_t app = {
+        .voice_changed = link_voice_changed, .agent_state = link_agent_state,
+        .play_start = link_play_start, .audio_down = link_audio_down, .play_end = link_play_end,
+    };
+    esp_err_t le = ble_link_start(&app);
+    if (le != ESP_OK) ESP_LOGE(TAG, "BLE link start failed: %s", esp_err_to_name(le));
     if (xTaskCreate(coach_task, "coach", TASK_STACK, NULL, TASK_PRIO, NULL) != pdPASS) {
         vQueueDelete(s_queue);
         s_queue = NULL;

@@ -2,7 +2,7 @@
 
 # BLE Protocol Draft
 
-Version: 0.3. Date: 2026-10-16. Status: draft from the device team. The phone application team must review it.
+Version: 0.4. Date: 2026-10-17. Status: draft from the device team. The phone application team must review it.
 
 ## 1. Purpose and scope
 
@@ -18,6 +18,9 @@ Document version 0.3 defines protocol version 0.1. It fixes every field value th
 
 Version 0.3 follows D-18. The first version requests the best-performance link settings and ignores their power cost.
 It also uses one fixed advertising interval.
+
+Version 0.4 adds six rules from the Sprint 1 firmware. It changes no packet format, so the protocol version stays 0.1.
+Section 13 lists the six rules.
 
 The draft follows three rules:
 
@@ -57,7 +60,7 @@ A reference on this board used the same UUIDs.
 ## 4. Link setup
 
 1. The phone connects.
-2. The phone requests an ATT MTU of 247. The device needs at least 172.
+2. The phone requests an ATT MTU of 247. The device needs at least 172. The device does not start the MTU exchange.
 3. The phone subscribes to TX notifications.
 4. The device sends HELLO.
 5. The phone answers with HELLO_ACK within 2 seconds.
@@ -135,7 +138,7 @@ Packets from an old connection cannot arrive on a new connection. The link there
 
 ### Protocol version
 
-Document version 0.3 defines protocol version 0.1.
+Document versions 0.3 and 0.4 define protocol version 0.1.
 HELLO and HELLO_ACK therefore carry major 0 and minor 1.
 Earlier document versions had no implementation, so they carry no protocol number.
 
@@ -223,6 +226,9 @@ AGENT_CANCEL ends the whole exchange. The phone drops the input, and stops the a
 
 For every other state, the failure code is 0.
 
+The device shows a timeout for failure code 2. For codes 1 and 3, it asks the user to ask again.
+Before the answer starts, each AGENT_STATE that is not a failure starts the 10-second wait of the device again.
+
 The optional text can hold a transcript or a short answer. It must fit in the packet.
 With an MTU of 172, the text holds at most 163 bytes.
 
@@ -241,6 +247,9 @@ After PLAY_END, the device plays the frames in its queue, and then frees the aud
 At an UP hold during Agent playback, the device sends AGENT_CANCEL.
 At an UP hold during Team playback, the device sends PLAY_STOP.
 In both cases the device stops the speaker at once. It does not wait for the phone.
+
+The first version offers only IMA ADPCM in HELLO. The device answers a PLAY_START with codec 1 with ERROR code 7.
+The first version has no Team owner. The device ignores a PLAY_START for the Team channel.
 
 ### Team (P1)
 
@@ -366,6 +375,7 @@ If no block and no PLAY_END arrive for 2 seconds, the device ends playback and f
 - The device starts the speaker by the rules in the section above.
 - The device TX queue holds 8 audio packets. On overflow, the device drops the oldest audio packet.
 - Control packets go before audio packets. A control packet never waits behind audio.
+- One exception applies: AGENT_END waits behind the last AUDIO_UP block of its exchange. The section "Last block" requires this order.
 - The device playback queue holds 8 packets. On overflow, the device drops the oldest packet.
 - After a sequence gap, the device plays nothing for the missing block. The next block header resets the decoder.
 
@@ -377,7 +387,7 @@ If no block and no PLAY_END arrive for 2 seconds, the device ends playback and f
 | Interval between PHONE_STATUS packets | At most 5 seconds | Phone |
 | Silence before the device shows that the phone application does not respond | 15 seconds | Device |
 | P1: TEAM_GRANT or TEAM_DENY after TEAM_REQUEST | At most 1,500 ms. After that, the device treats the request as a timeout. | Device |
-| First AGENT_STATE after AGENT_END | At most 10 seconds. After that, the device shows a timeout. | Device |
+| Before the answer starts: from AGENT_END to the first AGENT_STATE, and between two AGENT_STATE packets | At most 10 seconds. After that, the device shows a timeout and sends AGENT_CANCEL. | Device |
 | Capture stop after OK release or cancellation | At most 100 ms | Device |
 | Speaker stop after the cancellation command | At most 200 ms | Device |
 | One capture | At most 20 seconds | Device |
@@ -462,6 +472,7 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 11. P1: Split each report page into fragments that fit the MTU.
 12. Send major 0 and minor 1 in HELLO_ACK.
 13. Fill the last downlink block with silence to the full block size.
+14. Before the answer starts, send an AGENT_STATE at least every 10 seconds.
 
 ## 12. Open items
 
@@ -472,7 +483,22 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 - Record the interval, the PHY, and the data length that each target phone grants.
 - A later version measures the battery cost of the link settings. D-18 defers this item.
 
-## 13. Related documents
+## 13. Changes in version 0.4
+
+The Sprint 1 firmware follows these rules. None of them changes a packet format.
+
+| No. | Rule | Section |
+| --- | --- | --- |
+| 1 | AGENT_END waits behind the last AUDIO_UP block of its exchange. Every other control packet goes before the audio. | 7 |
+| 2 | HELLO offers IMA ADPCM only. A PLAY_START with codec 1 gets ERROR code 7. | 6 |
+| 3 | Before the answer starts, each AGENT_STATE that is not a failure starts the 10-second wait again. | 6, 8 |
+| 4 | The device does not start the MTU exchange. The phone requests the MTU. | 4 |
+| 5 | After its own 10-second timeout, the device sends AGENT_CANCEL. | 8 |
+| 6 | The device ignores a PLAY_START for the Team channel, because Team speech is P1. | 6 |
+
+The device also maps failure code 2 to its timeout message, and codes 1 and 3 to its retry message.
+
+## 14. Related documents
 
 - [System Architecture](02-architecture.md).
 - [Validation and Decisions](04-validation-and-decisions.md).

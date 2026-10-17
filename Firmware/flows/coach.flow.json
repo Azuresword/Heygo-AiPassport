@@ -103,6 +103,14 @@
     { "id": "ui_show_timeout",        "async": false },
     { "id": "ui_show_limit",          "async": false },
     { "id": "ui_show_link_lost",      "async": false },
+    { "id": "ui_show_blocked",        "async": false },
+    { "id": "ui_link_ready",          "async": false, "comment": "The link glue applies the ui_link_* and ui_why_* actions. No transition uses them." },
+    { "id": "ui_link_down",           "async": false },
+    { "id": "ui_link_no_voice",       "async": false },
+    { "id": "ui_why_link_down",       "async": false },
+    { "id": "ui_why_phone_silent",    "async": false },
+    { "id": "ui_why_version",         "async": false },
+    { "id": "ui_why_mtu",             "async": false },
     { "id": "audio_capture_start",    "async": true },
     { "id": "audio_capture_stop",     "async": true },
     { "id": "audio_play_start",       "async": true },
@@ -124,7 +132,15 @@
     "ui_show_retry":     { "state_text": "state.failed",    "body_text": "msg.retry",     "hint_text": "hint.ready",     "icon_state": 4 },
     "ui_show_timeout":   { "state_text": "state.failed",    "body_text": "msg.timeout",   "hint_text": "hint.ready",     "icon_state": 4 },
     "ui_show_limit":     { "state_text": "state.thinking",  "body_text": { "key": "msg.limit", "n": 20 }, "hint_text": "hint.thinking", "icon_state": 2 },
-    "ui_show_link_lost": { "state_text": "state.failed",    "body_text": "msg.link_lost", "hint_text": "hint.ready",     "icon_state": 7 }
+    "ui_show_link_lost": { "state_text": "state.failed",    "body_text": "msg.link_lost", "hint_text": "hint.ready",     "icon_state": 7 },
+    "ui_show_blocked":     { "state_text": "state.failed", "hint_text": "hint.ready", "icon_state": 7 },
+    "ui_link_ready":       { "status_text": "status.link_up", "link_state": 1 },
+    "ui_link_down":        { "status_text": "status.link_down", "link_state": 0 },
+    "ui_link_no_voice":    { "status_text": "msg.voice_off", "link_state": 0 },
+    "ui_why_link_down":    { "body_text": "msg.link_lost" },
+    "ui_why_phone_silent": { "body_text": "msg.phone_silent" },
+    "ui_why_version":      { "body_text": "msg.version" },
+    "ui_why_mtu":          { "body_text": "msg.voice_off" }
   },
 
   "states": [
@@ -143,6 +159,8 @@
     { "from": "READY", "on": "OK_HOLD", "to": "CAPTURE",
       "actions": ["ui_show_listening", "audio_capture_start", "link_send_agent_start"] },
     { "from": "READY", "on": "DOWN_HOLD", "to": "EXIT_Q", "actions": ["ui_show_exit"] },
+    { "from": "READY", "on": "ASK_BLOCKED", "to": "READY", "actions": ["ui_show_blocked"],
+      "comment": "The glue sends ASK_BLOCKED in place of OK_HOLD while voice is not available. The ui_why_* text gives the cause." },
     { "from": "READY", "on": "LINK_LOST", "to": "READY", "actions": ["ui_show_link_lost"] },
 
     { "from": "CAPTURE", "on": "OK_RELEASE", "to": "WAIT_ANSWER",

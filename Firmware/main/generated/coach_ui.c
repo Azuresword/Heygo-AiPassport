@@ -62,6 +62,35 @@ bool coach_ui_apply(coach_action_t action) {
         coach_set_hint_text("长按 OK 提问");
         coach_set_icon_state(7);
         return true;
+    case COACH_ACTION_UI_SHOW_BLOCKED:
+        coach_set_state_text("失败");
+        coach_set_hint_text("长按 OK 提问");
+        coach_set_icon_state(7);
+        return true;
+    case COACH_ACTION_UI_LINK_READY:
+        coach_set_status_text("已连接");
+        coach_set_link_state(1);
+        return true;
+    case COACH_ACTION_UI_LINK_DOWN:
+        coach_set_status_text("未连接");
+        coach_set_link_state(0);
+        return true;
+    case COACH_ACTION_UI_LINK_NO_VOICE:
+        coach_set_status_text("语音不可用");
+        coach_set_link_state(0);
+        return true;
+    case COACH_ACTION_UI_WHY_LINK_DOWN:
+        coach_set_body_text("手机未连接");
+        return true;
+    case COACH_ACTION_UI_WHY_PHONE_SILENT:
+        coach_set_body_text("手机应用无响应");
+        return true;
+    case COACH_ACTION_UI_WHY_VERSION:
+        coach_set_body_text("协议版本不兼容");
+        return true;
+    case COACH_ACTION_UI_WHY_MTU:
+        coach_set_body_text("语音不可用");
+        return true;
     default:
         return false;
     }

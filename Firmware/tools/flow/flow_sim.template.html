@@ -509,6 +509,11 @@ const statusText = () => link ? S["status.link_up"] : S["status.link_down"];
 
 // ---------------------------------------------------------------- engine
 function fire(ev, src) {
+  // The same guard as main/coach_app.c: without the link, a question cannot start.
+  if (ev === "OK_HOLD" && !link && (table[st] || {}).ASK_BLOCKED) {
+    runAction("ui_why_link_down");
+    ev = "ASK_BLOCKED";
+  }
   const t = (table[st] || {})[ev];
   if (!t) {
     addLog("fsmLog", `<span class="ign">${sname(st)} 忽略 ${ename(ev)} <code>${ev}</code>${src ? "（" + src + "）" : ""}</span>`);
@@ -575,9 +580,10 @@ function phonePlay(x, text) {
 }
 function setLink(up) {
   link = up;
-  subj.link_state = up ? 1 : 0;
-  subj.status_text = statusText();
-  if (up) { ble("dp", "HELLO", "version=0.1 codec=ADPCM|PCM mtu=247"); ble("pd", "HELLO_ACK", "version=0.1"); }
+  const linkAction = up ? "ui_link_ready" : "ui_link_down";
+  if (F.ui_effects && F.ui_effects[linkAction]) runAction(linkAction);
+  else { subj.link_state = up ? 1 : 0; subj.status_text = statusText(); }
+  if (up) { ble("dp", "HELLO", "version=0.1 codec=ADPCM mtu=247"); ble("pd", "HELLO_ACK", "version=0.1"); }
   else { phoneTimers.forEach(clearTimeout); phoneTimers = []; addLog("bleLog", "<b>蓝牙断开</b>", "bad"); fire("LINK_LOST", "蓝牙"); }
   render();
 }

@@ -77,7 +77,9 @@
   ok(shown("coach.status") === "未连接", "10 status shows 未连接");
   ok(widgetEls["coach.icon"].classList.contains("icon-link"), "10 link loss has its own icon");
   await hold("OK");
-  ok(document.getElementById("issues").textContent.includes("蓝牙断开时长按 OK"), "10 the simulator reports the missing link guard");
+  ok(st === "READY" && !mic, "10 without the link, an OK hold starts no capture (ASK_BLOCKED)");
+  ok(shown("coach.state") === "失败" && shown("coach.body") === "手机未连接", "10 the screen names the cause");
+  ok(!document.getElementById("issues").textContent.includes("蓝牙断开时长按 OK"), "10 the missing-guard issue no longer appears");
   await hold("UP");
   setLink(true);
 

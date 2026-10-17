@@ -32,6 +32,12 @@ int main(void) {
       assert(s.action_count == 1); }
     coach_flow_init(&flow);
     flow.state = COACH_STATE_READY;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_ASK_BLOCKED);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_READY);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_READY;
     { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_LINK_LOST);
       assert(s.handled);
       assert(s.to == COACH_STATE_READY);

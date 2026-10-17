@@ -1,0 +1,180 @@
+// main/audio/voice.c
+#include "voice.h"
+
+#include <string.h>
+
+#include "bsp_audio.h"
+#include "esp_log.h"
+#include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "freertos/semphr.h"
+#include "freertos/task.h"
+#include "ima_adpcm.h"
+#include "play_gate.h"
+
+static const char *TAG = "voice";
+
+#define SAMPLE_RATE      16000
+#define DOWN_QUEUE_DEPTH 8        // Doc 07 section 7: 8 blocks, drop the oldest.
+#define STOP_WAIT_MS     200
+#define TASK_STACK       4096
+#define TASK_PRIO        7        // Above the Coach task, so a block is never late.
+#define VOLUME           80
+
+typedef enum { MODE_IDLE = 0, MODE_CAPTURE, MODE_PLAY } voice_mode_t;
+
+static voice_cb_t s_cb;
+static TaskHandle_t s_task;
+static QueueHandle_t s_down_q;      // Items: IMA_BLOCK_BYTES.
+static SemaphoreHandle_t s_gate_mu;
+static SemaphoreHandle_t s_stopped;
+static play_gate_t s_gate;
+static volatile voice_mode_t s_mode;
+static volatile bool s_stop;
+
+static uint32_t now_ms(void) { return (uint32_t)(esp_timer_get_time() / 1000); }
+
+static void flush_down(void) {
+    xSemaphoreTake(s_gate_mu, portMAX_DELAY);
+    xQueueReset(s_down_q);
+    play_gate_reset(&s_gate);
+    xSemaphoreGive(s_gate_mu);
+}
+
+static void capture_loop(void) {
+    static int16_t pcm[IMA_BLOCK_SAMPLES];
+    static uint8_t block[IMA_BLOCK_BYTES];
+    ima_state_t enc;
+    ima_state_init(&enc);
+    while (!s_stop) {
+        // One block takes 20 ms, so the stop check runs every 20 ms.
+        if (bsp_audio_read(pcm, sizeof pcm) != ESP_OK) {
+            ESP_LOGE(TAG, "microphone read failed");
+            break;
+        }
+        ima_encode_block(&enc, pcm, IMA_BLOCK_SAMPLES, block);
+        if (s_cb.up_block) s_cb.up_block(block);
+    }
+}
+
+static void play_loop(void) {
+    static int16_t pcm[IMA_BLOCK_SAMPLES];
+    static uint8_t block[IMA_BLOCK_BYTES];
+    while (!s_stop) {
+        xSemaphoreTake(s_gate_mu, portMAX_DELAY);
+        const play_gate_action_t act = play_gate_poll(&s_gate, now_ms());
+        bool have = false;
+        if (act == PLAY_GATE_PLAY && xQueueReceive(s_down_q, block, 0) == pdTRUE) {
+            play_gate_on_played(&s_gate);
+            have = true;
+        }
+        xSemaphoreGive(s_gate_mu);
+
+        if (act == PLAY_GATE_DONE) {
+            if (s_cb.play_done) s_cb.play_done();
+            return;
+        }
+        if (act == PLAY_GATE_WAIT) {
+            vTaskDelay(pdMS_TO_TICKS(5));
+            continue;
+        }
+        if (have) {
+            if (ima_decode_block(block, pcm) == 0) memset(pcm, 0, sizeof pcm);   // A bad header plays silence.
+        } else {
+            memset(pcm, 0, sizeof pcm);   // The queue ran empty: one block of silence.
+        }
+        if (bsp_audio_write(pcm, sizeof pcm) != ESP_OK) {
+            ESP_LOGE(TAG, "speaker write failed");
+            if (s_cb.play_done) s_cb.play_done();
+            return;
+        }
+    }
+}
+
+static void voice_task(void *arg) {
+    (void)arg;
+    for (;;) {
+        (void)ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        const voice_mode_t m = s_mode;
+        if (m == MODE_CAPTURE) capture_loop();
+        else if (m == MODE_PLAY) play_loop();
+        s_mode = MODE_IDLE;
+        if (s_stop) {
+            s_stop = false;
+            xSemaphoreGive(s_stopped);
+        }
+    }
+}
+
+esp_err_t voice_start(const voice_cb_t *cb) {
+    if (s_task) return ESP_ERR_INVALID_STATE;
+    if (cb) s_cb = *cb;
+    esp_err_t e = bsp_audio_set_format(SAMPLE_RATE, 16, 1);
+    if (e != ESP_OK) return e;
+    bsp_audio_set_volume(VOLUME);
+    s_down_q = xQueueCreate(DOWN_QUEUE_DEPTH, IMA_BLOCK_BYTES);
+    s_gate_mu = xSemaphoreCreateMutex();
+    s_stopped = xSemaphoreCreateBinary();
+    if (!s_down_q || !s_gate_mu || !s_stopped) return ESP_ERR_NO_MEM;
+    play_gate_reset(&s_gate);
+    if (xTaskCreate(voice_task, "voice", TASK_STACK, NULL, TASK_PRIO, &s_task) != pdPASS) return ESP_ERR_NO_MEM;
+    return ESP_OK;
+}
+
+static void start_mode(voice_mode_t m) {
+    if (!s_task || s_mode != MODE_IDLE) return;
+    s_stop = false;
+    s_mode = m;
+    xTaskNotifyGive(s_task);
+}
+
+// Ask the running loop to end, and wait for the task to confirm.
+static bool stop_mode(voice_mode_t m) {
+    if (!s_task || s_mode != m) return true;
+    xSemaphoreTake(s_stopped, 0);   // Clear an old confirmation.
+    s_stop = true;
+    // The loop can end by itself just before s_stop is set. Then no confirmation comes.
+    if (s_mode == MODE_IDLE) {
+        s_stop = false;
+        return true;
+    }
+    if (xSemaphoreTake(s_stopped, pdMS_TO_TICKS(STOP_WAIT_MS)) != pdTRUE) {
+        ESP_LOGW(TAG, "stop took more than %d ms", STOP_WAIT_MS);
+        return false;
+    }
+    return true;
+}
+
+void voice_capture_start(void) { start_mode(MODE_CAPTURE); }
+bool voice_capture_stop(void) { return stop_mode(MODE_CAPTURE); }
+
+void voice_down_open(void) { if (s_down_q) flush_down(); }
+
+void voice_down_push(const uint8_t *block, size_t len) {
+    if (!s_down_q || len != IMA_BLOCK_BYTES) return;
+    xSemaphoreTake(s_gate_mu, portMAX_DELAY);
+    if (xQueueSend(s_down_q, block, 0) != pdTRUE) {
+        uint8_t old[IMA_BLOCK_BYTES];
+        (void)xQueueReceive(s_down_q, old, 0);   // Drop the oldest block.
+        play_gate_on_played(&s_gate);
+        (void)xQueueSend(s_down_q, block, 0);
+    }
+    play_gate_on_block(&s_gate, now_ms());
+    xSemaphoreGive(s_gate_mu);
+}
+
+void voice_down_end(void) {
+    if (!s_gate_mu) return;
+    xSemaphoreTake(s_gate_mu, portMAX_DELAY);
+    play_gate_on_end(&s_gate, now_ms());
+    xSemaphoreGive(s_gate_mu);
+}
+
+void voice_play_enable(void) { start_mode(MODE_PLAY); }
+
+bool voice_play_stop(void) {
+    const bool ok = stop_mode(MODE_PLAY);
+    if (s_down_q) flush_down();
+    return ok;
+}
