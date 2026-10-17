@@ -2,7 +2,7 @@
 
 # Scrum backlog and delivery plan
 
-Version: 0.5. Date: 2026-10-16. Status: Proposed. No story, Sprint, or test is complete.
+Version: 0.6. Date: 2026-10-17. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. The team closed no story.
 
 Related documents: [Requirements](01-product-requirements.md), [Architecture](02-architecture.md), [Validation and decisions](04-validation-and-decisions.md), [Decision amendments](05-decision-amendments.md), [Sprint 0 plan](06-sprint-0-plan.md), and [BLE protocol draft](07-ble-protocol-draft.md).
 
@@ -61,6 +61,31 @@ The user made every scope decision so far, including D-17.
 | US-16 Resource limits | REQ-16 | Deferred | None | None | None |
 
 "Re-estimate" marks a P0 story whose scope shrank in version 0.4. The Developers set new points.
+
+### 4.1 P0 progress
+
+This table applies to commit `11b10cc`, dated 2026-10-17.
+"Device code" means that the code is in the repository. It does not mean that the story meets the Definition of Done.
+Per section 8, each story needs device tests. Some stories also need the real phone application.
+
+| Story | Device code | Host evidence | Acceptance test | Still needed to close |
+|---|---|---|---|---|
+| US-01 | Committed. `ble_link.c` advertises as `HeygoPP-XXXX` and accepts one phone at a time. | `test_link_core.c`, `test_phone_sim.py` | TC-01 NOT RUN | The board, and a phone application that follows doc 07. |
+| US-06 | Committed. `voice.c` encodes the capture to ADPCM blocks and sends each block at once. 20 s limit. A long UP press cancels. | `test_coach_paths.c`, `test_ima_adpcm.c` | TC-06 NOT RUN | The board, and a phone application that accepts streamed audio. |
+| US-07 | Committed. Playback follows the playback start rules. A playback stop waits for the speaker. | `test_play_gate.c`, `test_coach_paths.c` | TC-07 NOT RUN | The board, and a phone application that supplies speech. |
+| US-08 | Device part only: the 10 s wait and the AGENT_STATE text on the screen. The phone and the Agent own the session context and the evidence labels. | `test_link_core.c` | TC-08 NOT RUN | HeygoAI coaching tools (Q-01). |
+| US-15 | Committed. `coach_input.c` maps the three buttons. The Chinese fonts and screens are in place. | `test_coach_input.c`, glyph check, host screen check | TC-15 NOT RUN | A glyph check on the board, and the U1 usability test. |
+| US-17 | Committed. `coach.flow.json` generates the state machine. | `test_coach_flow.c`, `test_coach_paths.c`, simulator self-test | TC-17 NOT RUN | The board. |
+| US-20 | Committed. A link loss stops audio. The screen shows a message after 15 s with no phone packet. The device drops packets with an old `xid`. | `test_link_core.c`, `test_coach_paths.c` | TC-20 NOT RUN | The board, and the phone application. |
+
+The simulator and `phone_sim` show protocol behavior only. They cannot satisfy a device test.
+
+Known gaps, from section 8 of the [firmware change notes](../Firmware/docs/heygo-changes.md):
+
+- During capture or playback, the device ignores a long DOWN press. The requirements do not define this case. See Q-14.
+- A PLAY_START that arrives during capture is lost. The device then shows a timeout. See Q-15.
+- The battery label on the screen stays empty. D-18 keeps the battery level on the screen.
+- The body label shows four lines. Longer text ends with three dots. The device speaks the full answer.
 
 ## 5. P0 stories
 
@@ -140,13 +165,14 @@ Commit `970bb8e` holds the version 0.3 text.
 
 ## 7. Sprint order
 
-| Sprint | Goal | Scope | Evidence |
-|---|---|---|---|
-| 0 | Build the device logic for one Coach question. | The [Sprint 0 plan](06-sprint-0-plan.md). Host only. Four hours. | Host tests and a firmware build. |
-| 1 | Ask one real question on hardware. | The P0 stories with the board and the phone application. | Device tests for every P0 TC. |
-| 2 and later | Add P1 items. | Reports first, then intercom. | The P1 tests. |
+| Sprint | Goal | Scope | Evidence | Status |
+|---|---|---|---|---|
+| 0 | Build the device logic for one Coach question. | The [Sprint 0 plan](06-sprint-0-plan.md). Host only. Four hours. | Host tests and a firmware build. | Done, commit `a917aaa`. |
+| 1 | Ask one real question on hardware. | The P0 stories with the board and the phone application. | Device tests for every P0 TC. | In progress. Code committed (`941f4e7`, `11b10cc`). Device tests NOT RUN. |
+| 2 and later | Add P1 items. | Reports first, then intercom. | The P1 tests. | Not started. |
 
-Sprint 1 starts after two inputs exist: the board at hand, and a phone application build that follows doc 07.
+The Sprint 1 code does not need the board or the phone application, so it came first.
+Sprint 1 device acceptance needs two inputs: the board at hand, and a phone application build that follows doc 07.
 
 ## 8. Definition of Done
 

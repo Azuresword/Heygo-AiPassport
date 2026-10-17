@@ -2,7 +2,7 @@
 
 # Validation, open questions, and decisions
 
-Version: 0.5. Date: 2026-10-16. Status: Draft for review.
+Version: 0.6. Date: 2026-10-17. Status: Draft for review.
 Every product test below has status NOT RUN.
 Document checks do not count as firmware or device tests.
 
@@ -86,7 +86,9 @@ The user parked these questions. The user will share answers after a review with
 | Q-10 | Which firmware baseline and license apply? | P0 | Open. D-09 selected the audio format. |
 | Q-11 | Which final memory and queue limits apply? | Deferred | Deferred by D-18 |
 | Q-12 | Which conditions make two sessions comparable? | P2 | Open |
-| Q-13 | Does the phone application accept the BLE protocol draft? | P0 | Open. Doc 07 offers the device draft. |
+| Q-13 | Does the phone application accept the BLE protocol draft? | P0 | Open. Doc 07 version 0.4 offers the device draft. |
+| Q-14 | What does the device do on a long DOWN press during capture or playback? | P0 | Open. The firmware ignores the press now. |
+| Q-15 | What does the device do with a PLAY_START that arrives during capture? | P0 | Open. The firmware drops it now and then shows a timeout. |
 
 ## 6. Decision log
 
@@ -127,11 +129,14 @@ The user parked these questions. The user will share answers after a review with
 ## 8. Delivery evidence
 
 Report Build, Host tests, and Device tests separately. Record every unverified item.
-The current document package has no firmware. Its status is:
+The firmware is in the `Firmware` folder of the repository.
+This status applies to commit `11b10cc`. It comes from `./tools/validate.sh` on a macOS host on 2026-10-17:
 
 ```text
-Build: NOT RUN
-Host tests: NOT RUN
+Build: PASS (application image 1,617,856 bytes, partition 8,323,072 bytes)
+Host tests: PASS (Coach, protocol, ADPCM, playback start rules, link_core, simulator self-test 37/37, glyph check)
 Device tests: NOT RUN
-Unverified: All product behavior, external interfaces, resource budgets, and field conditions.
+Unverified: the real phone application, every device behavior, runtime heap use, external interfaces, and field conditions.
 ```
+
+Every product test in the tables above is still NOT RUN. Section 4.1 of the [backlog](03-scrum-backlog.md) gives the progress of each story.
