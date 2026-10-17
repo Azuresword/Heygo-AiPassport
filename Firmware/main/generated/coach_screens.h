@@ -83,7 +83,10 @@ typedef struct {
     lv_obj_t *hint_panel;
     lv_obj_t *path;
     lv_obj_t *turn;
-    lv_obj_t *dot;
+    lv_obj_t *track;
+    lv_obj_t *thumb;
+    lv_obj_t *msg;
+    lv_obj_t *rider;
     lv_obj_t *mode_dot;
     lv_obj_t *mode;
     lv_obj_t *battery;
@@ -93,7 +96,10 @@ typedef struct {
     lv_obj_t *side;
     lv_obj_t *counter;
     lv_obj_t *metrics;
-    lv_obj_t *hint;
+    lv_obj_t *key_up;
+    lv_obj_t *key_ok;
+    lv_obj_t *key_down;
+    lv_obj_t *key_hold;
 } coach_screen_turns_t;
 
 void coach_screen_turns_build(coach_screen_turns_t *out);

@@ -18,6 +18,8 @@ The firmware in `../Firmware` compiles the fonts from this folder.
 | `fonts/LICENSE-OFL.txt`, `fonts/LICENSE-OFL-Staatliches.txt` | The licenses of the source fonts. |
 | `tools/gen_lv_font.py` | Makes a font file from the source font. |
 | `tools/check_glyphs.py` | Makes sure that each shown character exists in its font. |
+| `sprites/heygo_board_sprite.c`, `sprites/heygo_sprites.h` | The rider sprite of the Turns page: 16 frames of 20 x 20 px, ARGB8888. `heygo_board_sprite.png` is a preview. |
+| `tools/gen_sprite.py` | Makes the rider sprite. |
 | `mockups/` | Screen images from the host screen check. `compare-A-B.png` shows the two design options. Version B is in use. |
 | `sim/coach-flow.html` | Interactive simulator of the Coach flow. |
 
@@ -89,10 +91,12 @@ To make the images again, run `python3 tools/host_render/render.py` from `../Fir
 | `14-report.png` | The Report page with a report |
 | `15-report-max.png` | The Report page with the longest texts and the report age |
 | `16-turns-empty.png` | The Turns page before the first shape |
-| `17-turns.png` | The Turns page: turn 1 of 8, the dot at the end of the turn |
-| `18-turns-heel.png` | The Turns page: a heel side turn, the dot in the middle of the turn |
-| `19-turns-schematic.png` | The Turns page: a schematic shape with 12 turns, with the schematic tag |
-| `contact-sheet.png` | All nineteen images at 2x scale |
+| `17-turns-drawing.png` | The Turns page while the first page draws: the rider at the head of the line |
+| `18-turns-heel.png` | The Turns page: a heel side turn, the rider in the middle of the turn |
+| `19-turns-schematic.png` | The Turns page: the last group of a schematic run of 255 turns, with the schematic tag |
+| `20-turns-loading.png` | The Turns page while a page is still on its way from the phone |
+| `21-turns-short.png` | A run of one page: OK replays the turn |
+| `contact-sheet.png` | All 21 images at 2x scale |
 
 ## Simulator
 

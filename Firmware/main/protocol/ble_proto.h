@@ -39,6 +39,8 @@ typedef enum {
     BP_RUN_REPORT    = 0x61,
     BP_SHOW_PAGE     = 0x62,
     BP_TURN_SHAPE    = 0x63,
+    BP_TURN_GROUP    = 0x64,
+    BP_TURN_REQUEST  = 0x65,
 } bp_type_t;
 
 typedef enum {
@@ -73,12 +75,18 @@ enum { BP_RUN_UNKNOWN = 0, BP_RUN_SKIING = 1, BP_RUN_STOPPED = 2, BP_RUN_ENDED =
 #define BP_PROBLEM_MAX       36     // 12 Chinese characters in UTF-8.
 #define BP_TIP_MAX           60     // 20 Chinese characters in UTF-8.
 #define BP_FLAG_LAST       0x01
-// TURN_SHAPE, doc 07 section 6. One packet per run, after RUN_REPORT.
-#define BP_TURN_SHAPE_FIXED  4
-#define BP_TURN_ENTRY        6
-#define BP_TURN_POINTS_MIN   2
-#define BP_TURN_POINTS_MAX   40
-#define BP_TURNS_MAX         12
+// TURN_SHAPE, TURN_GROUP, and TURN_REQUEST, doc 07 section 6. TURN_SHAPE gives the turn count of
+// a run after RUN_REPORT. The device asks for groups of 8 turns in TURN_REQUEST. The phone sends
+// each group in TURN_GROUP. Each group has its own points, from 0 to 255 on both axes.
+#define BP_TURN_SHAPE_SIZE    3
+#define BP_TURN_GROUP_FIXED   4
+#define BP_TURN_ENTRY         6
+#define BP_TURN_REQUEST_SIZE  3
+#define BP_TURNS_MAX          255
+#define BP_GROUP_TURNS        8
+#define BP_GROUP_POINTS_MIN   2
+#define BP_GROUP_POINTS_MAX   33     // 4 segments for each of 8 turns, and the first point.
+#define BP_REQUEST_GROUPS_MAX 3
 #define BP_EDGE_MAX          90     // Degrees.
 enum { BP_TURN_SRC_MEASURED = 0, BP_TURN_SRC_SCHEMATIC = 1 };
 enum { BP_SIDE_TOE = 0, BP_SIDE_HEEL = 1 };   // BP_U8_UNKNOWN: unknown side.
@@ -118,7 +126,7 @@ typedef struct {
     bp_text_t tip;           // At most BP_TIP_MAX bytes of UTF-8.
 } bp_run_report_t;
 typedef struct {
-    uint8_t first, last;     // Point indexes of the turn, first < last < point count.
+    uint8_t first, last;     // Point indexes in its group, first < last < point count of the group.
     uint8_t side;            // BP_SIDE_TOE, BP_SIDE_HEEL, or BP_U8_UNKNOWN.
     uint8_t speed_kmh;       // Each metric: BP_U8_UNKNOWN when the phone has no value.
     uint8_t edge_deg;        // 0 to BP_EDGE_MAX.
@@ -127,11 +135,17 @@ typedef struct {
 typedef struct {
     uint8_t run_no;
     uint8_t source;          // BP_TURN_SRC_*.
-    uint8_t n_points;
-    const uint8_t *points;   // n_points pairs of x, y, from 0 to 255. y grows downhill.
-    uint8_t n_turns;
-    bp_turn_t turns[BP_TURNS_MAX];
+    uint8_t n_turns;         // The turn count of the whole run, 0 to 255.
 } bp_turn_shape_t;
+typedef struct {
+    uint8_t run_no;
+    uint8_t group;           // Group g holds turns 8g to 8g + 7 of the run.
+    uint8_t n_turns;         // 1 to 8.
+    uint8_t n_points;        // 2 to 33.
+    bp_turn_t turns[BP_GROUP_TURNS];
+    const uint8_t *points;   // n_points pairs of x, y, from 0 to 255. y grows downhill.
+} bp_turn_group_t;
+typedef struct { uint8_t run_no, first_group, count; } bp_turn_request_t;
 
 // Parse the header and check the minimum payload length of a P0 type.
 // Extra bytes at the end of a fixed payload stay allowed.
@@ -152,9 +166,14 @@ bp_err_t bp_read_live_stats(const bp_packet_t *p, bp_live_stats_t *out);
 bp_err_t bp_read_run_report(const bp_packet_t *p, bp_run_report_t *out);
 // The phone asks the device to show a page. Only BP_PAGE_REPORT is valid. Another page gives BP_ERR_FIELD.
 bp_err_t bp_read_show_page(const bp_packet_t *p, uint8_t *page);
-// Errors: BP_ERR_LENGTH when the length does not match the counts, BP_ERR_TOO_LARGE above
-// 40 points or 12 turns, BP_ERR_FIELD for any other value out of range.
+// Gives BP_ERR_FIELD for a source above 1.
 bp_err_t bp_read_turn_shape(const bp_packet_t *p, bp_turn_shape_t *out);
+// Errors: BP_ERR_LENGTH when the length does not match the counts, BP_ERR_TOO_LARGE above
+// 8 turns or 33 points, BP_ERR_FIELD for any other value out of range.
+// The link session checks the run number and the group against the last TURN_SHAPE.
+bp_err_t bp_read_turn_group(const bp_packet_t *p, bp_turn_group_t *out);
+// Gives BP_ERR_FIELD for a count of 0 or above 3.
+bp_err_t bp_read_turn_request(const bp_packet_t *p, bp_turn_request_t *out);
 
 // Each builder returns the packet length, or 0 when `cap` is too small or a value is invalid.
 size_t bp_build_hello(uint8_t *out, size_t cap, uint8_t codec_mask, uint16_t mtu, const char *fw);
@@ -175,9 +194,12 @@ size_t bp_build_live_stats(uint8_t *out, size_t cap, const bp_live_stats_t *s);
 size_t bp_build_run_report(uint8_t *out, size_t cap, uint8_t run_no, uint16_t distance_m, uint16_t turns,
                            uint8_t iq, const char *problem, const char *tip);
 size_t bp_build_show_page(uint8_t *out, size_t cap, uint8_t page);
-// points holds n_points pairs of x, y. Returns 0 for a value that the reader rejects.
-size_t bp_build_turn_shape(uint8_t *out, size_t cap, uint8_t run_no, uint8_t source, uint8_t n_points,
-                           const uint8_t *points, uint8_t n_turns, const bp_turn_t *turns);
+// Each turn builder returns 0 for a value that its reader rejects.
+size_t bp_build_turn_shape(uint8_t *out, size_t cap, uint8_t run_no, uint8_t source, uint8_t n_turns);
+// points holds n_points pairs of x, y.
+size_t bp_build_turn_group(uint8_t *out, size_t cap, uint8_t run_no, uint8_t group, uint8_t n_turns,
+                           const bp_turn_t *turns, uint8_t n_points, const uint8_t *points);
+size_t bp_build_turn_request(uint8_t *out, size_t cap, uint8_t run_no, uint8_t first_group, uint8_t count);
 
 // The name of a type, for logs. Returns "?" for an unknown type.
 const char *bp_type_name(uint8_t type);

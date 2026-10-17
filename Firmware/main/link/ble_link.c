@@ -173,10 +173,24 @@ static void log_packet(const char *dir, const uint8_t *buf, size_t len) {
         bp_turn_shape_t t;
         const bp_err_t e = bp_read_turn_shape(&p, &t);
         if (e == BP_OK)
-            ESP_LOGI(TAG, "%s TURN_SHAPE run=%u source=%u points=%u turns=%u", dir,
-                     t.run_no, t.source, t.n_points, t.n_turns);
+            ESP_LOGI(TAG, "%s TURN_SHAPE run=%u source=%u turns=%u", dir, t.run_no, t.source, t.n_turns);
         else
             ESP_LOGW(TAG, "%s TURN_SHAPE rejected: error %d, %u bytes", dir, (int)e, (unsigned)p.payload_len);
+        return;
+    }
+    case BP_TURN_GROUP: {
+        bp_turn_group_t t;
+        const bp_err_t e = bp_read_turn_group(&p, &t);
+        if (e == BP_OK)
+            ESP_LOGI(TAG, "%s TURN_GROUP run=%u group=%u turns=%u points=%u", dir, t.run_no, t.group, t.n_turns, t.n_points);
+        else
+            ESP_LOGW(TAG, "%s TURN_GROUP rejected: error %d, %u bytes", dir, (int)e, (unsigned)p.payload_len);
+        return;
+    }
+    case BP_TURN_REQUEST: {
+        bp_turn_request_t t;
+        if (bp_read_turn_request(&p, &t) == BP_OK)
+            ESP_LOGI(TAG, "%s TURN_REQUEST run=%u groups %u to %u", dir, t.run_no, t.first_group, t.first_group + t.count - 1);
         return;
     }
     default:
@@ -574,6 +588,13 @@ void ble_link_get_data(bp_live_stats_t *live, bool *has_live, bool *stale,
     if (stale) *stale = old;
     if (has_report) *has_report = r != NULL;
     if (report_age_ms) *report_age_ms = age;
+}
+
+void ble_link_turns_focus(uint8_t group) {
+    if (!s_mu) return;
+    lock();
+    link_turns_focus(&s_core, group, now_ms());
+    unlock();
 }
 
 bool ble_link_get_turns(link_turns_t *out) {

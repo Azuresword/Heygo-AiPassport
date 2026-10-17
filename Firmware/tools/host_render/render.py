@@ -81,17 +81,19 @@ def build(sdkconfig):
     # An object file also depends on the headers. A changed screen struct in a generated
     # header with an old render.o crashed the renderer, so a newer header rebuilds the app.
     headers = list((FW / "main" / "generated").glob("*.h")) + list((FW / "main" / "ui").glob("*.h")) + \
-        [ASSETS / "fonts" / "heygo_fonts.h"]
+        [ASSETS / "fonts" / "heygo_fonts.h", ASSETS / "sprites" / "heygo_sprites.h"]
     app_stamp = max([stamp] + [h.stat().st_mtime for h in headers])
     jobs = [(s, BUILD / "lvgl" / s.relative_to(LVGL).with_suffix(".o"), [])
             for s in sorted((LVGL / "src").rglob("*.c"))]
-    app_inc = [f"-I{FW / 'main' / d}" for d in ("ui", "generated", "link", "protocol")] + [f"-I{ASSETS / 'fonts'}"]
+    app_inc = [f"-I{FW / 'main' / d}" for d in ("ui", "generated", "link", "protocol")] + \
+        [f"-I{ASSETS / 'fonts'}", f"-I{ASSETS / 'sprites'}"]
     app_src = [HERE / "render.c", FW / "main/ui/ui_theme.c",
                FW / "main/ui/ui_state_icon.c", FW / "main/ui/turn_view.c", FW / "main/ui/turn_page.c",
+               FW / "main/link/link_core.c", FW / "main/protocol/ble_proto.c",
                FW / "main/generated/coach_screens.c", FW / "main/generated/coach_bindings.c",
                ASSETS / "fonts/heygo_sc_16.c", ASSETS / "fonts/heygo_sc_28.c",
                ASSETS / "fonts/heygo_display_20.c", ASSETS / "fonts/heygo_display_34.c",
-               ASSETS / "fonts/heygo_display_48.c"]
+               ASSETS / "fonts/heygo_display_48.c", ASSETS / "sprites/heygo_board_sprite.c"]
     lvgl_jobs = len(jobs)
     jobs += [(s, BUILD / "app" / (s.stem + ".o"), app_inc) for s in app_src]
     with ThreadPoolExecutor(os.cpu_count() or 4) as pool:
@@ -108,15 +110,20 @@ def build(sdkconfig):
     return exe
 
 
-def shape(run_no, source, sel, permille, n_turns):
-    """A shape command with the demo run of tools/phone_sim, as phone_sim.py sends it."""
+def shape(run_no, source, n_turns, sel, drawn=255, permille=0, link=1, cached=True):
+    """A shape command: a TURN_SHAPE of n_turns turns, and the group of sel from tools/phone_sim,
+    as phone_sim.py sends it. n_turns None: no shape. cached False: the group did not arrive."""
     sys.path.insert(0, str(FW / "tools" / "phone_sim"))
     import heygo_link
-    if n_turns == 0:
-        return f"{run_no} {source} {sel} {permille} 0 0"
-    pts, turns = heygo_link.demo_turn_shape(run_no, n_turns, source)
-    flat = " ".join(f"{x} {y}" for x, y in pts)
-    return f"{run_no} {source} {sel} {permille} {len(pts)} {flat} {len(turns)} " + " ".join(" ".join(map(str, t)) for t in turns)
+    if n_turns is None:
+        return f"0 0 -1 0 255 0 {link} -1"
+    head = f"{run_no} {source} {n_turns} {sel} {drawn} {permille} {link}"
+    if not cached or n_turns == 0:
+        return head + " -1"
+    g = sel // 8
+    turns, pts = heygo_link.demo_turn_group(n_turns, g)
+    return (f"{head} {g} {len(turns)} " + " ".join(" ".join(map(str, t)) for t in turns)
+            + f" {len(pts)} " + " ".join(f"{x} {y}" for x, y in pts))
 
 
 def frames(s):
@@ -158,10 +165,12 @@ def frames(s):
         ("15-report-max", None, {"@title": "第 12 趟 · 12.4 km · 136 弯", "@age": "59 MIN AGO", "@iq": "100",
                                  "@problem": "重心偏后" * 3, "@tip": "下一趟把双手放在身体前方，膝盖再多弯一点"}),
         # Turn shape (Increment 3, D-29). The !shape value goes through turn_view.c and turn_page.c.
-        ("16-turns-empty", "turns", {"!shape": shape(0, 0, 0, 0, 0)}),
-        ("17-turns", None, {"!shape": shape(4, 0, 0, 1000, 8)}),
-        ("18-turns-heel", None, {"!shape": shape(4, 0, 5, 450, 8)}),
-        ("19-turns-schematic", None, {"!shape": shape(12, 1, 11, 1000, 12)}),
+        ("16-turns-empty", "turns", {"!shape": shape(0, 0, None, 0)}),
+        ("17-turns-drawing", None, {"!shape": shape(4, 0, 44, 0, drawn=14)}),
+        ("18-turns-heel", None, {"!shape": shape(4, 0, 44, 17, permille=450)}),
+        ("19-turns-schematic", None, {"!shape": shape(12, 1, 255, 254, permille=1000)}),
+        ("20-turns-loading", None, {"!shape": shape(4, 0, 44, 24, cached=False)}),
+        ("21-turns-short", None, {"!shape": shape(2, 0, 5, 1, permille=1000)}),
     ]
 
 

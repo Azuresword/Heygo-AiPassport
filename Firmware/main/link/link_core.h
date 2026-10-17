@@ -53,15 +53,32 @@ typedef struct {
     char tip[BP_TIP_MAX + 1];
 } link_report_t;
 
-// The last TURN_SHAPE, copied. points[i] is { x, y }, from 0 to 255, y downhill.
+// Increment 3: the turn shape of the last run. The device keeps at most LINK_TURN_SLOTS
+// groups of 8 turns: the group on the screen, and the groups next to it. It asks the phone
+// for each group that it lacks (TURN_REQUEST), and asks once again after LINK_TURN_RETRY_MS.
+#define LINK_TURN_SLOTS    3
+#define LINK_TURN_RETRY_MS 1000
+
+typedef struct {
+    bool used;
+    uint8_t group;           // Turns 8 * group to 8 * group + n_turns - 1 of the run.
+    uint8_t n_turns;
+    uint8_t n_points;
+    bp_turn_t turns[BP_GROUP_TURNS];               // Point indexes are local to the group.
+    uint8_t points[BP_GROUP_POINTS_MAX][2];        // { x, y }, from 0 to 255, y downhill.
+} link_turn_group_t;
+
 typedef struct {
     uint8_t run_no;
     uint8_t source;          // BP_TURN_SRC_*.
-    uint8_t n_points;
-    uint8_t points[BP_TURN_POINTS_MAX][2];
-    uint8_t n_turns;
-    bp_turn_t turns[BP_TURNS_MAX];
+    uint8_t n_turns;         // The turn count of the whole run.
+    uint8_t n_groups;        // (n_turns + 7) / 8.
+    uint8_t focus;           // The group on the screen.
+    link_turn_group_t slot[LINK_TURN_SLOTS];
 } link_turns_t;
+
+// The cached group, or NULL.
+const link_turn_group_t *link_turns_group(const link_turns_t *t, uint8_t group);
 
 typedef struct {
     void *ctx;
@@ -81,7 +98,7 @@ typedef struct {
     void (*run_report)(void *ctx, const link_report_t *r);
     // The phone asks for a page. The only page now is BP_PAGE_REPORT.
     void (*show_page)(void *ctx, uint8_t page);
-    // Increment 3: the turn shape of a run.
+    // Increment 3: a new turn shape, or a new group of it.
     void (*turn_shape)(void *ctx, const link_turns_t *t);
 } link_io_t;
 
@@ -118,6 +135,9 @@ typedef struct {
     uint32_t report_ms;    // Local receive time of report.
     link_turns_t turns;
     bool has_turns;
+    bool turn_req_open;    // A TURN_REQUEST waits for its groups.
+    uint8_t turn_req_tries;
+    uint32_t turn_req_ms;
 } link_core_t;
 
 void link_init(link_core_t *l, const link_io_t *io, const char *fw_version);
@@ -149,8 +169,10 @@ void link_set_device(link_core_t *l, uint8_t battery, uint8_t mode, uint8_t page
 const bp_live_stats_t *link_live(const link_core_t *l, uint32_t now_ms, bool *stale);
 // The last RUN_REPORT, or NULL when none arrived. *age_ms is the time since it arrived.
 const link_report_t *link_report(const link_core_t *l, uint32_t now_ms, uint32_t *age_ms);
-// The last TURN_SHAPE, or NULL when none arrived.
+// The last TURN_SHAPE and its cached groups, or NULL when none arrived.
 const link_turns_t *link_turns(const link_core_t *l);
+// The screen shows this group. Drop the groups that are not next to it, and ask for the missing ones.
+void link_turns_focus(link_core_t *l, uint8_t group, uint32_t now_ms);
 
 const char *link_voice_name(link_voice_t voice);
 

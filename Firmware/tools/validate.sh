@@ -115,7 +115,8 @@ run_static_checks() {
     "${test_dir}/test_ski_view"
     # Increment 3: the Turns page geometry and texts.
     "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain/ui -Imain/protocol -Imain/link \
-        tests/test_turn_view.c main/ui/turn_view.c -o "${test_dir}/test_turn_view"
+        tests/test_turn_view.c main/ui/turn_view.c main/link/link_core.c main/protocol/ble_proto.c \
+        -lm -o "${test_dir}/test_turn_view"
     "${test_dir}/test_turn_view"
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_phone_sim.py
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_analyze_log.py

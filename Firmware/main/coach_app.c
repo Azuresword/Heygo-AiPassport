@@ -49,6 +49,7 @@ static const char *TAG = "coach";
 #define PLAY_WATCH_US    (1000LL * 1000)         // Check the playback once a second.
 #define PLAY_STUCK_MS    3000                    // No progress for 3 s ends the answer.
 #define DATA_TICK_US     (1000LL * 1000)         // The out-of-date mark and the report age.
+#define TURN_POINT_MS    40                      // The Turns page draws one point each 40 ms.
 
 typedef enum { MSG_KEY, MSG_EVENT, MSG_LINK, MSG_AGENT_STATE, MSG_DATA } msg_kind_t;
 
@@ -77,7 +78,12 @@ static esp_timer_handle_t s_data_tick;
 static ski_view_t s_ski_view;          // The texts on the Ski page now.
 static report_view_t s_report_view;    // The texts on the Report page now.
 static turn_view_t s_turn_view;        // The shape and the texts on the Turns page now.
-static uint8_t s_turn_sel;             // The selected turn. A new Turns page starts at turn 1.
+static uint8_t s_turn_sel;             // The selected turn in the run. The page shows group s_turn_sel / 8.
+static uint8_t s_turn_drawn;           // Points of that group on the screen, or TURN_VIEW_DRAWN_ALL.
+static uint8_t s_turn_run;             // The run on the page, and its turn count. A new shape starts
+static uint8_t s_turn_count;           // again at turn 1.
+static TickType_t s_turn_tick;         // While the group draws: the time of the next point.
+static link_turns_t s_turn_data;       // A copy of the turn cache. Static, so it stays off the task stack.
 static coach_screen_id_t s_shown = COACH_SCREEN_COUNT;   // COUNT: no screen yet
 static lv_obj_t *s_blank;   // Active while the old screen is deleted. LVGL must not delete the active screen.
 static link_voice_t s_voice = LINK_VOICE_NO_LINK;
@@ -159,21 +165,56 @@ static void set_hidden(lv_obj_t *obj, bool hidden) {
 #define PUT(screen, view, field, want, force) \
     put_label(screen.field, #view "." #field, view.field, sizeof view.field, want.field, force)
 
-// The Turns page. replay: move the dot along the turn again. A new shape also replays.
+// Show group `group` of the Turns page from its first turn, and ask the link for the groups next to it.
+static void turn_group_show(uint8_t group) {
+    s_turn_sel = (uint8_t)(group * BP_GROUP_TURNS);
+    s_turn_drawn = 0;
+    ble_link_turns_focus(group);
+}
+
+// The Turns page. replay: move the rider along the marked turn again.
+// When the page opens, the first page of 8 turns draws point by point. The rider sits at
+// the head of the line, and nothing replays. Then the rider replays the first turn.
+// After that, the keys move the cursor, the page follows it, and the rider replays each turn.
 // The caller holds the LVGL lock.
 static void refresh_turns(bool force, bool replay) {
-    link_turns_t t;
-    const bool has = ble_link_get_turns(&t);
+    const bool has = ble_link_get_turns(&s_turn_data);
+    if (has && (s_turn_data.run_no != s_turn_run || s_turn_data.n_turns != s_turn_count)) {
+        // A new shape: start again at turn 1.
+        s_turn_run = s_turn_data.run_no;
+        s_turn_count = s_turn_data.n_turns;
+        turn_group_show(0);
+    }
     static turn_view_t v;   // About 800 B. Static, so it stays off the 4 KB task stack.
-    turn_view_build(&v, has ? &t : NULL, s_turn_sel, TURN_PAGE_BOX_W, TURN_PAGE_BOX_H, TURN_PAGE_MARGIN);
+    turn_view_build(&v, has ? &s_turn_data : NULL, s_turn_sel, s_turn_drawn, s_voice != LINK_VOICE_NO_LINK,
+                    TURN_PAGE_BOX_W, TURN_PAGE_BOX_H, TURN_PAGE_MARGIN);
+    const bool finished = s_turn_view.drawing && !v.drawing && v.n_path;
+    if (v.drawing && !s_turn_view.drawing) s_turn_tick = xTaskGetTickCount() + pdMS_TO_TICKS(TURN_POINT_MS);
     const bool changed = memcmp(&v, &s_turn_view, sizeof v) != 0;
     if (!force && !changed && !replay) return;
+    const bool new_turn = strcmp(v.counter, s_turn_view.counter) != 0;
     s_turn_view = v;
     if (force || changed) {
         turn_page_apply(&s_turns, &v);
-        ESP_LOGI("screen", "turns = \"%s\" %s %s \"%s\" %s", v.title, v.counter, v.side, v.metrics, v.source);
+        // While a group draws, log only when the head reaches another turn.
+        if (!v.drawing || new_turn || force) {
+            ESP_LOGI("screen", "turns = \"%s\" %s %s \"%s\" %s %s keys [%s|%s|%s] group %u/%u", v.title, v.counter,
+                     v.side, v.metrics, v.source, v.msg, v.key_up, v.key_ok, v.key_down,
+                     has ? s_turn_sel / BP_GROUP_TURNS + 1u : 0u, has ? s_turn_data.n_groups : 0u);
+        }
     }
-    turn_page_replay(&s_turns);
+    if (!v.drawing && (finished || replay || force || changed)) turn_page_replay(&s_turns);
+}
+
+// One more point of the group that draws. The Coach task calls it each TURN_POINT_MS.
+static void turn_draw_step(void) {
+    if (s_shown != COACH_SCREEN_TURNS || !s_turn_view.drawing) return;
+    s_turn_tick += pdMS_TO_TICKS(TURN_POINT_MS);
+    if (s_turn_drawn < TURN_VIEW_DRAWN_ALL - 1) s_turn_drawn++;
+    if (lvgl_lock()) {
+        refresh_turns(false, false);
+        lvgl_unlock();
+    }
 }
 
 // Copy the ski data texts into the screen that is on now. force: the screen is new.
@@ -261,8 +302,8 @@ static void show_screen(coach_screen_id_t id) {
     case COACH_SCREEN_TURNS:
         coach_screen_turns_build(&s_turns);
         lv_screen_load(s_turns.screen);
-        s_turn_sel = 0;
         memset(&s_turn_view, 0, sizeof s_turn_view);
+        turn_group_show(0);
         break;
     default:
         break;
@@ -275,11 +316,25 @@ static void run_action(coach_action_t a) {
     if (coach_ui_apply(a)) return;
     switch (a) {
     case COACH_ACTION_AUDIO_CAPTURE_START: s_start_capture = true; break;
-    case COACH_ACTION_TURN_NEXT: {
-        link_turns_t t;
-        s_turn_sel = turn_view_next(ble_link_get_turns(&t) ? &t : NULL, s_turn_sel);
+    case COACH_ACTION_TURN_NEXT:
+    case COACH_ACTION_TURN_PREV:
+    case COACH_ACTION_TURN_PAGE: {
+        // The keys move a cursor on the run. Any key first ends the drawing of the first page.
+        const bool drawing = s_turn_view.drawing;
+        s_turn_drawn = TURN_VIEW_DRAWN_ALL;
+        const bool has = ble_link_get_turns(&s_turn_data);
+        const uint8_t n = has ? s_turn_data.n_turns : 0;
+        uint8_t sel = s_turn_sel;
+        if (a == COACH_ACTION_TURN_NEXT && sel + 1u < n) sel++;
+        else if (a == COACH_ACTION_TURN_PREV && sel > 0) sel--;
+        else if (a == COACH_ACTION_TURN_PAGE && !drawing && n > BP_GROUP_TURNS) {
+            sel = (uint8_t)((sel / BP_GROUP_TURNS + 1u) * BP_GROUP_TURNS);
+            if (sel >= n) sel = 0;
+        }
+        if (sel / BP_GROUP_TURNS != s_turn_sel / BP_GROUP_TURNS) ble_link_turns_focus(sel / BP_GROUP_TURNS);
+        s_turn_sel = sel;
         if (s_shown == COACH_SCREEN_TURNS && lvgl_lock()) {
-            refresh_turns(false, true);
+            refresh_turns(false, true);   // A replay of the turn, also for OK on a run of one page.
             lvgl_unlock();
         }
         break;
@@ -351,6 +406,10 @@ static void handle(coach_event_t event) {
         coach_ui_apply(!voice_ready() ? COACH_ACTION_UI_WHY_AUDIO : why_action(s_voice));
         event = COACH_EVENT_ASK_BLOCKED;
     }
+    // On the Turns page after turn 1, a short UP goes back one turn, not to the Report page.
+    if (event == COACH_EVENT_UP_SHORT && s_flow.state == COACH_STATE_TURNS && s_turn_sel > 0) {
+        event = COACH_EVENT_TURN_PREV;
+    }
     s_event = event;
     s_start_capture = false;
     const coach_step_t step = coach_flow_step(&s_flow, event);
@@ -399,7 +458,16 @@ static void coach_task(void *arg) {
     (void)arg;
     msg_t m;
     for (;;) {
-        if (xQueueReceive(s_queue, &m, portMAX_DELAY) != pdTRUE) continue;
+        // While a group of the Turns page draws, wake up for its next point.
+        TickType_t wait = portMAX_DELAY;
+        if (s_shown == COACH_SCREEN_TURNS && s_turn_view.drawing) {
+            const TickType_t now = xTaskGetTickCount();
+            wait = (TickType_t)(s_turn_tick - now) <= pdMS_TO_TICKS(TURN_POINT_MS) ? (TickType_t)(s_turn_tick - now) : 0;
+        }
+        if (xQueueReceive(s_queue, &m, wait) != pdTRUE) {
+            turn_draw_step();
+            continue;
+        }
         switch (m.kind) {
         case MSG_EVENT: handle(m.event); break;
         case MSG_LINK: on_link_msg(m.voice); break;
@@ -415,6 +483,10 @@ static void coach_task(void *arg) {
             if (coach_input_map(&s_input, (coach_key_t)m.btn, (coach_key_ev_t)m.ev, &event)) handle(event);
             break;
         }
+        }
+        // Many messages in a row must not stop the drawing.
+        if (s_shown == COACH_SCREEN_TURNS && s_turn_view.drawing && (int32_t)(xTaskGetTickCount() - s_turn_tick) >= 0) {
+            turn_draw_step();
         }
     }
 }

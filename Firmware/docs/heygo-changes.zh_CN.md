@@ -255,17 +255,18 @@ flowc 估算四个界面合计占用 18,960 字节内存池，运行时只有一
 
 | 文件 | 改动 |
 | --- | --- |
-| `main/protocol/ble_proto.*` | 解析和组装 TURN_SHAPE（0x63）：最多 40 个点、12 个弯。协议版本保持 0.2。 |
-| `main/link/link_core.*`、`main/link/ble_link.*` | 保存最后一个弯型。错误的弯型回复 ERROR，设备保留旧弯型。 |
-| `main/ui/turn_view.*` | 纯 C。把线路放进框里，保持轴比例，做两次圆角处理，并生成文字。 |
-| `main/ui/turn_page.*` | 把视图放到屏幕上，并让回放圆点在 1.6 秒内沿当前弯走一遍。 |
+| `main/protocol/ble_proto.*` | 解析和组装 TURN_SHAPE（0x63）、TURN_GROUP（0x64）和 TURN_REQUEST（0x65）。一趟最多 255 个弯，一组最多 8 个弯、33 个点。协议版本保持 0.2。 |
+| `main/link/link_core.*`、`main/link/ble_link.*` | 保存最后一个弯型，以及屏幕上这一组前后最多 3 组。请求缺少的组，1 秒后再请求一次。错误的包回复 ERROR，设备保留旧数据。 |
+| `main/ui/turn_view.*` | 纯 C。把一组映射到画框，做两次圆角处理，画线时跟随线头，选择精灵帧，并生成文字、按键提示和进度条。 |
+| `main/ui/turn_page.*` | 把视图放到屏幕上。小精灵停在线头，或在 1.6 秒内沿当前弯走一遍。 |
+| `../assets/sprites/`、`../assets/tools/gen_sprite.py` | 小精灵图：16 帧，每帧 20 × 20 px，ARGB8888，占 Flash 25.6 KB。 |
 | `flows/coach.flow.json` | 新增 TURNS 状态和弯型页。REPORT 短按 DOWN 到 TURNS，短按 OK 切到下一弯，短按 UP 回 REPORT，长按 DOWN 到退出确认。 |
-| `main/coach_app.c` | 收到弯型和切换弯时重画页面。CONTEXT 在弯型页时发送页面 5。 |
+| `main/coach_app.c` | 打开时画出第一页，每 40 ms 一个点。按键逐弯移动光标。第 1 弯之后短按 UP 时，改为发送 TURN_PREV。CONTEXT 在弯型页时发送页面 5。 |
 | `../assets/fonts/heygo_display_*.c` | 三个品牌字体加入立刃角用的"°"字形。 |
-| `tools/phone_sim/`、`tools/flow/flow_sim.*` | 两者都在每份报告之后发送示例弯型。第 3 趟发送示意弯型。 |
-| `tools/host_render/` | 新增 `shape` 命令，以及 16 至 19 号界面图。 |
+| `tools/phone_sim/`、`tools/flow/flow_sim.*` | 两者都在每份报告之后发送示例弯型，并回复每个 TURN_REQUEST。`--turns N` 和模拟器的弯数输入框可模拟弯很多的一趟。第 3 趟发送示意弯型。 |
+| `tools/host_render/` | 新增 `shape` 命令，以及 16 至 21 号界面图。 |
 
-弯型页占用 LVGL 内存池 14,864 字节。页面和数据约占 3.7 KB 静态内存。
+弯型页占用 LVGL 内存池 16,784 字节。页面和数据约占 4.0 KB 静态内存。
 
 ## 11. 待定事项
 

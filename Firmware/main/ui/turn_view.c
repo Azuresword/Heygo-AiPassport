@@ -1,22 +1,26 @@
 // main/ui/turn_view.c
 #include "turn_view.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
 #define NO_TURNS   "暂无弯型数据"
+#define LOADING    "加载中"
+#define LINK_DOWN  "蓝牙断开"
 #define SCHEMATIC  "示意"
+#define KEY_PREV   "▲上一弯"
+#define KEY_BACK   "▲报告"
+#define KEY_PAGE   "●下一页"
+#define KEY_REPLAY "●重放"
+#define KEY_SKIP   "●跳过"
+#define KEY_NEXT   "▼下一弯"
 #define SEP        " · "
 #define UNKNOWN    "--"
 
 static void put_u8(char *out, size_t cap, uint8_t v) {
     if (v == BP_U8_UNKNOWN) snprintf(out, cap, UNKNOWN);
     else snprintf(out, cap, "%u", v);
-}
-
-// One axis: map v from [lo, lo + span] into the box. num / den is the shared scale.
-static int16_t place(uint8_t v, uint8_t lo, int32_t num, int32_t den, int32_t offset) {
-    return (int16_t)(offset + ((int32_t)(v - lo) * num) / den);
 }
 
 // One Chaikin pass in place: each segment a-b gives the points at 1/4 and 3/4. The ends stay.
@@ -31,64 +35,23 @@ static uint8_t smooth(turn_point_t *p, uint8_t n) {
     return (uint8_t)(2 * n);
 }
 
-void turn_view_build(turn_view_t *v, const link_turns_t *t, uint8_t sel,
-                     int16_t box_w, int16_t box_h, int16_t margin) {
-    memset(v, 0, sizeof *v);
-    if (!t || t->n_points < BP_TURN_POINTS_MIN) {
-        snprintf(v->title, sizeof v->title, NO_TURNS);
-        snprintf(v->side, sizeof v->side, "SIDE " UNKNOWN);
-        return;
-    }
+// Packet values 0 to 255 fill the box inside the margin. Downhill (y) goes right.
+static turn_point_t place(const uint8_t pt[2], int16_t box_w, int16_t box_h, int16_t margin) {
+    const int32_t w = box_w - 2 * margin, h = box_h - 2 * margin;
+    return (turn_point_t){ (int16_t)(margin + (pt[1] * w + 127) / 255), (int16_t)(margin + (pt[0] * h + 127) / 255) };
+}
 
-    // The page draws downhill from left to right, so the wide box holds a long run.
-    // Screen x comes from the downhill axis (y), and screen y from the side axis (x).
-    // The bounding box of the points, on the screen axes.
-    uint8_t min_x = 255, min_y = 255, max_x = 0, max_y = 0;
-    for (uint8_t i = 0; i < t->n_points; i++) {
-        const uint8_t x = t->points[i][1], y = t->points[i][0];
-        if (x < min_x) min_x = x;
-        if (x > max_x) max_x = x;
-        if (y < min_y) min_y = y;
-        if (y > max_y) max_y = y;
-    }
-    const int32_t span_x = max_x - min_x, span_y = max_y - min_y;
-    const int32_t avail_w = box_w - 2 * margin, avail_h = box_h - 2 * margin;
+uint8_t turn_view_frame(int32_t dx, int32_t dy) {
+    if (dx == 0 && dy == 0) return 0;
+    const float step = 6.28318531f / TURN_VIEW_FRAMES;
+    const int k = (int)lroundf(atan2f((float)dy, (float)dx) / step);
+    return (uint8_t)((k % TURN_VIEW_FRAMES + TURN_VIEW_FRAMES) % TURN_VIEW_FRAMES);
+}
 
-    // One scale for both axes keeps the aspect ratio. The tighter axis sets it.
-    int32_t num = 1, den = 1;
-    if (span_x == 0 && span_y == 0) {
-        num = 0;
-    } else if (span_y == 0 || (span_x > 0 && span_x * avail_h > span_y * avail_w)) {
-        num = avail_w; den = span_x;
-    } else {
-        num = avail_h; den = span_y;
-    }
-    const int32_t used_w = span_x * num / den, used_h = span_y * num / den;
-    const int32_t off_x = margin + (avail_w - used_w) / 2, off_y = margin + (avail_h - used_h) / 2;
-
-    for (uint8_t i = 0; i < t->n_points; i++) {
-        v->path[i].x = place(t->points[i][1], min_x, num, den, off_x);
-        v->path[i].y = place(t->points[i][0], min_y, num, den, off_y);
-    }
-    uint8_t n = t->n_points;
-    for (int pass = 0; pass < TURN_VIEW_SMOOTH; pass++) n = smooth(v->path, n);
-    v->n_path = n;
-
-    char no[8];
-    put_u8(no, sizeof no, t->run_no);
-    snprintf(v->title, sizeof v->title, "第 %s 趟" SEP "%u 弯", no, t->n_turns);
-    if (t->source == BP_TURN_SRC_SCHEMATIC) snprintf(v->source, sizeof v->source, SCHEMATIC);
-
-    if (t->n_turns == 0) {
-        snprintf(v->side, sizeof v->side, "SIDE " UNKNOWN);
-        return;
-    }
-    if (sel >= t->n_turns) sel = 0;
-    const bp_turn_t *turn = &t->turns[sel];
-    v->turn_first = (uint8_t)(turn->first << TURN_VIEW_SMOOTH);
-    v->n_turn = (uint8_t)((turn->last + 1 - turn->first) << TURN_VIEW_SMOOTH);
-
-    snprintf(v->counter, sizeof v->counter, "TURN %u/%u", sel + 1, t->n_turns);
+// The texts of turn k of the group, and the mark on the part of it that the line already has.
+static void put_turn(turn_view_t *v, const link_turns_t *t, const link_turn_group_t *g, uint8_t k) {
+    const bp_turn_t *turn = &g->turns[k];
+    snprintf(v->counter, sizeof v->counter, "TURN %u/%u", g->group * BP_GROUP_TURNS + k + 1u, t->n_turns);
     snprintf(v->side, sizeof v->side, "%s",
              turn->side == BP_SIDE_TOE ? "TOE SIDE" : turn->side == BP_SIDE_HEEL ? "HEEL SIDE" : "SIDE " UNKNOWN);
     char speed[8], edge[8], radius[8];
@@ -96,6 +59,74 @@ void turn_view_build(turn_view_t *v, const link_turns_t *t, uint8_t sel,
     put_u8(edge, sizeof edge, turn->edge_deg);
     put_u8(radius, sizeof radius, turn->radius_m);
     snprintf(v->metrics, sizeof v->metrics, "%s KM/H  %s°  R %s M", speed, edge, radius);
+    const unsigned first = (unsigned)turn->first << TURN_VIEW_SMOOTH;
+    unsigned end = ((unsigned)turn->last + 1u) << TURN_VIEW_SMOOTH;
+    if (end > v->n_path) end = v->n_path;
+    if (end > first + 1u) {
+        v->turn_first = (uint8_t)first;
+        v->n_turn = (uint8_t)(end - first);
+    }
+}
+
+void turn_view_build(turn_view_t *v, const link_turns_t *t, uint8_t sel, uint8_t drawn, bool link_up,
+                     int16_t box_w, int16_t box_h, int16_t margin) {
+    memset(v, 0, sizeof *v);
+    snprintf(v->side, sizeof v->side, "SIDE " UNKNOWN);
+    snprintf(v->key_up, sizeof v->key_up, KEY_BACK);
+    if (!t) {
+        snprintf(v->title, sizeof v->title, NO_TURNS);
+        return;
+    }
+    char no[8];
+    put_u8(no, sizeof no, t->run_no);
+    snprintf(v->title, sizeof v->title, "第 %s 趟" SEP "%u 弯", no, t->n_turns);
+    if (t->source == BP_TURN_SRC_SCHEMATIC) snprintf(v->source, sizeof v->source, SCHEMATIC);
+    if (t->n_turns == 0) return;
+
+    if (sel >= t->n_turns) sel = 0;
+    const uint8_t group = sel / BP_GROUP_TURNS;
+    // The keys move a cursor on the run: UP one turn back, DOWN one turn on, OK one page on.
+    if (sel > 0) snprintf(v->key_up, sizeof v->key_up, KEY_PREV);
+    if (sel + 1u < t->n_turns) snprintf(v->key_down, sizeof v->key_down, KEY_NEXT);
+    if (t->n_groups > 1) snprintf(v->key_ok, sizeof v->key_ok, KEY_PAGE);
+    if (t->n_groups > 1) {
+        const int32_t w = box_w - 2 * margin;
+        v->has_progress = true;
+        v->prog_x = (int16_t)(margin + w * group / t->n_groups);
+        v->prog_w = (int16_t)(w / t->n_groups > 4 ? w / t->n_groups : 4);
+    }
+
+    const link_turn_group_t *g = link_turns_group(t, group);
+    if (!g) {
+        snprintf(v->msg, sizeof v->msg, "%s", link_up ? LOADING : LINK_DOWN);
+        return;
+    }
+    const uint8_t n = drawn < g->n_points ? drawn : g->n_points;
+    v->drawing = n < g->n_points;
+    if (v->drawing) snprintf(v->key_ok, sizeof v->key_ok, KEY_SKIP);
+    else if (t->n_groups == 1) snprintf(v->key_ok, sizeof v->key_ok, KEY_REPLAY);
+    for (uint8_t i = 0; i < n; i++) v->path[i] = place(g->points[i], box_w, box_h, margin);
+    if (n >= 1 && v->drawing) {
+        v->has_head = true;
+        v->head = v->path[n - 1];
+        if (n >= 2) v->head_frame = turn_view_frame(v->head.x - v->path[n - 2].x, v->head.y - v->path[n - 2].y);
+    }
+    if (n >= 2) {
+        uint8_t m = n;
+        for (int pass = 0; pass < TURN_VIEW_SMOOTH; pass++) m = smooth(v->path, m);
+        v->n_path = m;
+    }
+
+    if (v->drawing) {
+        // The turn of the head: the last turn that starts before the last point.
+        int k = -1;
+        for (uint8_t i = 0; n >= 2 && i < g->n_turns; i++) {
+            if (g->turns[i].first < n - 1) k = i;
+        }
+        if (k >= 0) put_turn(v, t, g, (uint8_t)k);
+        return;
+    }
+    put_turn(v, t, g, (uint8_t)(sel - group * BP_GROUP_TURNS));
 }
 
 uint8_t turn_view_next(const link_turns_t *t, uint8_t sel) {

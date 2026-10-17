@@ -7,9 +7,10 @@
 //   set <subject> <value>   Call the generated setter. The value is the rest of the line.
 //   label <widget> <text>   Set a label of the Ski or Report page, as the Coach task does.
 //   panel metrics|report    Show the metric cells or the report lines of the Ski page.
-//   shape <run> <source> <sel> <permille> <n> <x y>... <m> <first last side speed edge radius>...
-//                           Put a TURN_SHAPE on the Turns page through turn_view.c and turn_page.c,
-//                           as the Coach task does. n 0 shows the page with no shape.
+//   shape <run> <source> <turns> <sel> <drawn> <permille> <link> <group> [<k> <turn>... <n> <x y>...]
+//                           Put a TURN_SHAPE and one cached TURN_GROUP on the Turns page through
+//                           turn_view.c and turn_page.c, as the Coach task does. turns -1: no shape.
+//                           group -1: no group in the cache.
 //   snap <name>             Draw the screen and write <outdir>/<name>.rgb565.
 //   drop                    Delete the current screen and load a blank screen.
 //   text body               Write the byte length and the bytes of the body label text.
@@ -166,34 +167,49 @@ static lv_obj_t *data_label(const char *id)
     return NULL;
 }
 
-// Read the numbers of a shape command, check the shape as link_core.c does, and draw it.
+// Read the numbers of a shape command, check the group as link_core.c does, and draw the page
+// through turn_view.c and turn_page.c, as the Coach task does.
 static void put_shape(char *args)
 {
-    long v[4 + 1 + 2 * BP_TURN_POINTS_MAX + 1 + 6 * BP_TURNS_MAX];
+    long v[9 + 6 * BP_GROUP_TURNS + 1 + 2 * BP_GROUP_POINTS_MAX];
     size_t n = 0;
     for (char *tok = strtok(args, " "); tok && n < sizeof v / sizeof v[0]; tok = strtok(NULL, " ")) v[n++] = strtol(tok, NULL, 10);
-    link_turns_t t;
+    static link_turns_t t;
     memset(&t, 0, sizeof t);
     size_t i = 0;
-    if (n < 5) { printf("ERR shape needs run, source, sel, permille and n\n"); return; }
+    if (n < 8) { printf("ERR shape needs run, source, turns, sel, drawn, permille, link, and group\n"); return; }
     t.run_no = (uint8_t)v[i++];
     t.source = (uint8_t)v[i++];
+    const long n_turns = v[i++];
     const uint8_t sel = (uint8_t)v[i++];
+    const uint8_t drawn = (uint8_t)v[i++];
     const int32_t permille = (int32_t)v[i++];
-    t.n_points = (uint8_t)v[i++];
-    if (t.n_points > BP_TURN_POINTS_MAX || n < i + 2u * t.n_points + 1) { printf("ERR shape points\n"); return; }
-    for (uint8_t k = 0; k < t.n_points; k++) { t.points[k][0] = (uint8_t)v[i++]; t.points[k][1] = (uint8_t)v[i++]; }
-    t.n_turns = (uint8_t)v[i++];
-    if (t.n_turns > BP_TURNS_MAX || n != i + 6u * t.n_turns) { printf("ERR shape turns\n"); return; }
-    for (uint8_t k = 0; k < t.n_turns; k++, i += 6) {
-        t.turns[k] = (bp_turn_t){ (uint8_t)v[i], (uint8_t)v[i + 1], (uint8_t)v[i + 2],
-                                  (uint8_t)v[i + 3], (uint8_t)v[i + 4], (uint8_t)v[i + 5] };
-        if (t.turns[k].first >= t.turns[k].last || t.turns[k].last >= t.n_points) { printf("ERR shape turn %u\n", k); return; }
+    const bool link_up = v[i++] != 0;
+    const long group = v[i++];
+    t.n_turns = (uint8_t)(n_turns < 0 ? 0 : n_turns);
+    t.n_groups = (uint8_t)((t.n_turns + BP_GROUP_TURNS - 1) / BP_GROUP_TURNS);
+    if (group >= 0) {
+        link_turn_group_t *g = &t.slot[0];
+        if (n < i + 1) { printf("ERR shape group turns\n"); return; }
+        g->used = true;
+        g->group = (uint8_t)group;
+        g->n_turns = (uint8_t)v[i++];
+        if (g->n_turns > BP_GROUP_TURNS || n < i + 6u * g->n_turns + 1) { printf("ERR shape group turns\n"); return; }
+        for (uint8_t k = 0; k < g->n_turns; k++, i += 6) {
+            g->turns[k] = (bp_turn_t){ (uint8_t)v[i], (uint8_t)v[i + 1], (uint8_t)v[i + 2],
+                                       (uint8_t)v[i + 3], (uint8_t)v[i + 4], (uint8_t)v[i + 5] };
+        }
+        g->n_points = (uint8_t)v[i++];
+        if (g->n_points > BP_GROUP_POINTS_MAX || n != i + 2u * g->n_points) { printf("ERR shape group points\n"); return; }
+        for (uint8_t k = 0; k < g->n_points; k++) { g->points[k][0] = (uint8_t)v[i++]; g->points[k][1] = (uint8_t)v[i++]; }
+        for (uint8_t k = 0; k < g->n_turns; k++) {
+            if (g->turns[k].first >= g->turns[k].last || g->turns[k].last >= g->n_points) { printf("ERR shape turn %u\n", k); return; }
+        }
     }
     static turn_view_t view;
-    turn_view_build(&view, t.n_points ? &t : NULL, sel, TURN_PAGE_BOX_W, TURN_PAGE_BOX_H, TURN_PAGE_MARGIN);
+    turn_view_build(&view, n_turns >= 0 ? &t : NULL, sel, drawn, link_up, TURN_PAGE_BOX_W, TURN_PAGE_BOX_H, TURN_PAGE_MARGIN);
     turn_page_apply(&s_turns, &view);
-    turn_page_place_dot(&s_turns, permille);
+    if (!view.drawing) turn_page_place_rider(&s_turns, permille);
 }
 
 static void snap(const char *name)
@@ -239,12 +255,13 @@ static void snap(const char *name)
         print_box("hint", s_report.hint);
         break;
     case TURNS:
-        // The lines and the dot sit inside shape_panel, so the layout check skips them.
+        // The lines, the rider, the bar, and msg sit inside shape_panel, so the layout check skips them.
         print_box("mode", s_turns.mode); print_box("battery", s_turns.battery);
         print_box("dest", s_turns.dest); print_box("title", s_turns.title);
         print_box("source", s_turns.source); print_box("shape_panel", s_turns.shape_panel);
         print_box("side", s_turns.side); print_box("counter", s_turns.counter);
-        print_box("metrics", s_turns.metrics); print_box("hint", s_turns.hint);
+        print_box("metrics", s_turns.metrics);   // msg sits inside shape_panel, as the lines do.
+        print_box("key_up", s_turns.key_up); print_box("key_ok", s_turns.key_ok); print_box("key_down", s_turns.key_down);
         break;
     case EXIT:
         print_box("mode", s_exit.mode); print_box("battery", s_exit.battery);

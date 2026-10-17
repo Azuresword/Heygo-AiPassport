@@ -137,7 +137,7 @@ The user parked these questions. The user will share answers after a review with
 | D-26 | After each run, the phone sends the report of that run. It holds the distance, turn count, Heygo IQ, core problem, and a tip of at most 20 characters. | Accepted by the user. |
 | D-27 | The Heygo IQ is an integer from 0 to 100. The phone sends the core problem as text of at most 12 Chinese characters. The report shows on the Ski page on the lift and on the Report page in Rest mode. | Accepted by the user on 2026-10-17. |
 | D-28 | When the phone sends SHOW_PAGE 3, the device changes to the Report page from the Ski page or the idle Coach page. In Ski mode, it also enters Rest mode. Other states ignore the message. | Accepted by the user on 2026-10-17. |
-| D-29 | REQ-05 becomes Increment 3. A short DOWN press on the Report page opens a Turns page. The phone sends the shape in TURN_SHAPE, with a flag that marks a schematic shape. The protocol version stays 0.2. | The user accepted the page and the state machine on 2026-10-17. Waits for the phone application team. |
+| D-29 | REQ-05 becomes Increment 3. A short DOWN press on the Report page opens a Turns page. The phone sends the turns in TURN_SHAPE, with a flag that marks a schematic shape. The page shows 8 turns at a time. The device keeps 3 groups and asks the phone for the others in TURN_REQUEST. The page shows the action of each key. The protocol version stays 0.2. | The user accepted the page and the state machine on 2026-10-17. Waits for the phone application team. |
 
 ## 7. Risks
 

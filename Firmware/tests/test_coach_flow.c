@@ -152,13 +152,31 @@ int main(void) {
       assert(s.action_count == 1); }
     coach_flow_init(&flow);
     flow.state = COACH_STATE_TURNS;
-    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_OK_SHORT);
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_DOWN_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_TURNS);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_TURNS;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_TURN_PREV);
       assert(s.handled);
       assert(s.to == COACH_STATE_TURNS);
       assert(s.action_count == 1); }
     coach_flow_init(&flow);
     flow.state = COACH_STATE_TURNS;
     { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_REPORT);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_TURNS;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_OK_SHORT);
+      assert(s.handled);
+      assert(s.to == COACH_STATE_TURNS);
+      assert(s.action_count == 1); }
+    coach_flow_init(&flow);
+    flow.state = COACH_STATE_TURNS;
+    { coach_step_t s = coach_flow_step(&flow, COACH_EVENT_UP_HOLD);
       assert(s.handled);
       assert(s.to == COACH_STATE_REPORT);
       assert(s.action_count == 1); }

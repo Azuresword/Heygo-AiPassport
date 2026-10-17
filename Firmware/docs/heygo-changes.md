@@ -255,17 +255,18 @@ flowc estimates 18,960 bytes of LVGL pool for all four screens. Only one screen 
 
 | File | Change |
 | --- | --- |
-| `main/protocol/ble_proto.*` | Parse and build TURN_SHAPE (0x63): at most 40 points and 12 turns. The protocol version stays 0.2. |
-| `main/link/link_core.*`, `main/link/ble_link.*` | Keep the last shape. A bad shape gets an ERROR, and the device keeps the old shape. |
-| `main/ui/turn_view.*` | Plain C. It fits the run into the box, keeps the axis ratio, rounds the corners twice, and makes the texts. |
-| `main/ui/turn_page.*` | It puts the view on the screen and moves the replay dot along the selected turn in 1.6 s. |
+| `main/protocol/ble_proto.*` | Parse and build TURN_SHAPE (0x63), TURN_GROUP (0x64), and TURN_REQUEST (0x65). At most 255 turns, 8 turns and 33 points in a group. The protocol version stays 0.2. |
+| `main/link/link_core.*`, `main/link/ble_link.*` | Keep the last shape and at most 3 groups around the group on the screen. Ask for missing groups, and ask once again after 1 s. A bad packet gets an ERROR, and the device keeps the old data. |
+| `main/ui/turn_view.*` | Plain C. It maps one group to the box and rounds the corners twice. While the group draws, it follows the head. It picks the sprite frame and makes the texts, the key hints, and the bar. |
+| `main/ui/turn_page.*` | It puts the view on the screen. It puts the rider at the head of the line, or moves it along the selected turn in 1.6 s. |
+| `../assets/sprites/`, `../assets/tools/gen_sprite.py` | The rider sprite: 16 frames of 20 x 20 px, ARGB8888, 25.6 KB in Flash. |
 | `flows/coach.flow.json` | Add the TURNS state and the Turns page. A short DOWN in REPORT opens TURNS. A short OK selects the next turn. A short UP returns to REPORT. A DOWN hold opens the exit question. |
-| `main/coach_app.c` | It draws the page when a shape arrives and on each turn change. On the Turns page, CONTEXT sends page 5. |
+| `main/coach_app.c` | It draws the first page, one point each 40 ms. The keys move a cursor from turn to turn. After turn 1, it sends TURN_PREV in place of a short UP. On the Turns page, CONTEXT sends page 5. |
 | `../assets/fonts/heygo_display_*.c` | The three brand fonts add the "°" glyph for the edge angle. |
-| `tools/phone_sim/`, `tools/flow/flow_sim.*` | Both send a demo shape after each report. Run 3 sends a schematic shape. |
-| `tools/host_render/` | Add the `shape` command and screen images 16 to 19. |
+| `tools/phone_sim/`, `tools/flow/flow_sim.*` | Both send a demo shape after each report, and answer each TURN_REQUEST. `--turns N` and the simulator field set a long run. Run 3 sends a schematic shape. |
+| `tools/host_render/` | Add the `shape` command and screen images 16 to 21. |
 
-The Turns page uses 14,864 bytes of the LVGL pool. The page and the data use about 3.7 KB of static RAM.
+The Turns page uses 16,784 bytes of the LVGL pool. The page and the data use about 4.0 KB of static RAM.
 
 ## 11. Open items
 

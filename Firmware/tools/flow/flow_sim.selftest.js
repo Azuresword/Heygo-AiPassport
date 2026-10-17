@@ -118,29 +118,73 @@
   ok(shown("report.problem") === "重心偏后" && shown("report.title").startsWith("第 1 趟"), "17 the Report page shows the run report");
   await hold("OK");
   ok(st === "REPORT" && !mic, "17 an OK hold on the Report page does nothing");
-  // D-29: the Turns page under the Report page.
-  ok(/TURN_SHAPE run=1/.test(bleLog()), "19 the turn shape follows the report");
+  // D-29: the Turns page under the Report page. The device asks for groups of 8 turns.
+  ok(/TURN_SHAPE run=1/.test(bleLog()) && /TURN_REQUEST run=1 第 1–1 组/.test(bleLog()) && /TURN_GROUP run=1 第 1 组/.test(bleLog()),
+     "19 the shape follows the report, and the device asks for the first group");
+  const nTurns = dev.n_turns, nPts = dev.slots.get(0).points.length;
+  const pts = id => widgetEls["turns." + id].querySelector("polyline").getAttribute("points").split(" ").map(p => p.split(",").map(Number));
+  const rider = () => widgetEls["turns.rider"];
+  const keys = () => [shown("turns.key_up"), shown("turns.key_ok"), shown("turns.key_down")].join("|");
   await tap("DOWN");
   ok(st === "TURNS" && document.querySelector(".scr.on").dataset.id === "turns", "19 a short DOWN on the Report page opens the Turns page");
-  ok(shown("turns.title").startsWith("第 1 趟") && shown("turns.counter").startsWith("TURN 1/") && shown("turns.side") === "TOE SIDE", "19 the page starts at turn 1");
-  ok(/^\d+ KM\/H  \d+°  R \d+ M$/.test(shown("turns.metrics")) && shown("turns.source") === "", "19 a measured turn shows its metrics and no tag");
-  const pts = id => widgetEls["turns." + id].querySelector("polyline").getAttribute("points").split(" ").map(p => p.split(",").map(Number));
-  const path = pts("path");
-  ok(path.length === turns.points.length * 4 && Math.min(...path.map(p => p[0])) === 10 && Math.max(...path.map(p => p[0])) === 210, "19 the run fills the box width, downhill to the right");
-  ok(path.every(p => p[1] >= 10 && p[1] <= 98), "19 the run stays inside the box");
-  ok(pts("turn").length === 16 && pts("turn")[0].join() === path[0].join(), "19 turn 1 uses packet points 0 to 3, smoothed twice");
-  await sleep(1800);
-  const end = pts("turn")[15], dot = widgetEls["turns.dot"];
-  ok(parseInt(dot.style.left) === 10 + end[0] - 5 && parseInt(dot.style.top) === 108 + end[1] - 5, "19 the dot ends at the end of the turn");
+  ok(shown("turns.key_hold") === "长按▲回报告 · 长按▼退出", "19 the page explains the two holds");
+  await sleep(POINT_MS * 4);
+  ok(turnDrawnPts > 1 && turnDrawnPts < nPts && pts("path").length === turnDrawnPts * 4, "19 the first page draws point by point");
+  const head = pts("path")[pts("path").length - 1];
+  ok(parseInt(rider().style.left) === 10 + head[0] - 10 && parseInt(rider().style.top) === 108 + head[1] - 10, "19 the rider sits at the head of the line");
+  ok(keys() === "▲报告|●跳过|▼下一弯", "19 while drawing: UP report, OK skip, DOWN next turn");
   await tap("OK");
-  ok(st === "TURNS" && shown("turns.counter").startsWith("TURN 2/") && shown("turns.side") === "HEEL SIDE" && pts("turn")[0].join() === path[12].join(), "19 OK selects the next turn");
+  ok(pts("path").length === nPts * 4 && shown("turns.counter") === `TURN 1/${nTurns}`, "19 OK shows the whole page at once");
+  ok(keys() === "▲报告|●重放|▼下一弯" && widgetEls["turns.track"].style.display === "none", "19 one page: OK replays, and no bar");
+  const box = el => el.getBoundingClientRect();
+  ok(box(widgetEls["turns.path"].querySelector("polyline")).width > 100 && box(widgetEls["turns.path"].querySelector("svg")).width === 240,
+     "19 the browser draws the line");
+  await sleep(1800);
+  const end1 = pts("turn")[pts("turn").length - 1];
+  ok(parseInt(rider().style.left) === 10 + end1[0] - 10 && /rotate\(/.test(rider().style.transform), "19 the rider replays turn 1 to its end");
+  await tap("DOWN");
+  ok(shown("turns.counter") === `TURN 2/${nTurns}` && shown("turns.side") === "HEEL SIDE" && keys().startsWith("▲上一弯"), "19 DOWN selects the next turn");
+  await tap("UP");
+  ok(st === "TURNS" && shown("turns.counter") === `TURN 1/${nTurns}` && keys().startsWith("▲报告"), "19 UP selects the previous turn");
+  await tap("OK");
+  ok(st === "TURNS" && shown("turns.counter") === `TURN 1/${nTurns}`, "19 OK on a run of one page replays the turn");
   await hold("OK");
   ok(st === "TURNS" && !mic, "19 an OK hold on the Turns page does nothing");
+
+  // A long run: 44 turns make 6 pages. The device keeps 3 groups and asks for the others.
+  phoneSendShape(1, 44, 0); await sleep(400);
+  ok(/TURN_REQUEST run=1 第 1–3 组/.test(bleLog()) && [0, 1, 2].every(g => dev.slots.has(g)), "20 the device asks for groups 1 to 3 (24 turns)");
+  await sleep(POINT_MS * 30);
+  ok(shown("turns.title") === "第 1 趟 · 44 弯" && keys() === "▲报告|●下一页|▼下一弯", "20 a long run: OK goes to the next page");
+  ok(widgetEls["turns.thumb"].style.display !== "none" && parseInt(widgetEls["turns.thumb"].style.left) === 20 &&
+     parseInt(widgetEls["turns.thumb"].style.width) === 33, "20 the bar marks page 1 of 6");
+  for (let i = 0; i < 8; i++) await tap("DOWN");
+  ok(shown("turns.counter") === "TURN 9/44" && parseInt(widgetEls["turns.thumb"].style.left) === 20 + 33 && pts("path").length > 8,
+     "20 DOWN past turn 8 moves the page at once, with no new drawing");
   await tap("UP");
-  ok(st === "REPORT", "19 a short UP returns to the Report page");
+  ok(shown("turns.counter") === "TURN 8/44" && parseInt(widgetEls["turns.thumb"].style.left) === 20, "20 UP goes back across the page edge");
+  await tap("OK"); await tap("OK"); await sleep(400);
+  ok(shown("turns.counter") === "TURN 17/44" && /TURN_REQUEST run=1 第 4–4 组/.test(bleLog()) && !dev.slots.has(0),
+     "20 two OK presses go to page 3, which drops group 1 and asks for group 4");
+  await tap("OK"); await tap("OK"); await tap("OK"); await sleep(400);
+  ok(shown("turns.counter") === "TURN 41/44" && keys() === "▲上一弯|●下一页|▼下一弯", "20 OK reaches the last page");
+  await tap("DOWN"); await tap("DOWN"); await tap("DOWN");
+  ok(shown("turns.counter") === "TURN 44/44" && shown("turns.key_down") === "", "20 the last turn has no DOWN hint");
   await tap("DOWN");
-  ok(shown("turns.counter").startsWith("TURN 1/"), "19 a new Turns page starts at turn 1 again");
+  ok(shown("turns.counter") === "TURN 44/44", "20 DOWN on the last turn does nothing");
+  setLink(false);
+  const before = bleLog().length;
+  await tap("OK"); await sleep(300);
+  ok(turnSel === 0 && shown("turns.msg") === "蓝牙断开" && bleLog().length === before, "20 OK wraps to page 1. With no link, it names the link and asks for nothing");
+  setLink(true); await sleep(400);
+  ok(/TURN_REQUEST run=1 第 1–3 组/.test(bleLog().slice(before)) && shown("turns.msg") === "", "20 after the reconnect, the device asks again");
+  await tap("DOWN"); await tap("DOWN");
+  await hold("UP");
+  ok(st === "REPORT", "20 a long UP returns to the Report page from any turn");
+  await tap("DOWN"); await sleep(100);
+  ok(st === "TURNS" && turnSel === 0 && turnView(0, turnDrawnPts).drawing, "20 the Turns page opens at turn 1 and draws again");
   await tap("UP");
+  ok(st === "REPORT", "19 a short UP on turn 1 returns to the Report page");
   await tap("UP");
   ok(st === "READY", "17 a short UP returns to the Coach page");
   await hold("OK", 700); release("OK");

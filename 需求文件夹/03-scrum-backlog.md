@@ -210,8 +210,11 @@ As a skier, I want the problem of each run and one tip after the run. Then I kno
 
 As a skier, I want to see the shape of my last run and each turn in it. Then I can connect the tip of the report to a turn.
 
-- Acceptance: on the Report page, a short DOWN press opens the Turns page. A short UP press returns to the Report page.
-- Acceptance: the page draws the whole run from left to right and marks the selected turn. A dot moves along the turn once.
+- Acceptance: on the Report page, a short DOWN press opens the Turns page. On the first group, a short UP press returns to the Report page.
+- Acceptance: the page shows 8 turns at a time, and follows the selected turn. It draws the first page point by point. The rider sits at the head of the line.
+- Acceptance: a short DOWN press selects the next turn, and a short UP press the previous turn. OK goes one page on. An UP hold returns to the Report page.
+- Acceptance: the key bar shows the short press of each key now, and the two holds. A key with no action shows nothing.
+- Acceptance: a run of 255 turns works. The device keeps at most 3 groups and asks the phone for the others.
 - Acceptance: a short OK press selects the next turn. After the last turn, it selects the first turn.
 - Acceptance: each turn shows its side, speed, edge angle, and radius. An unknown value shows "--" and never 0.
 - Acceptance: a shape with source 1 shows "示意". Before the first shape arrives, the page shows "暂无弯型数据".
@@ -236,8 +239,8 @@ Each Sprint lasts four hours. The [Four-hour Sprint roadmap](08-sprint-roadmap.m
 | 5 | Board smoke test, with `phone_sim` as the phone. | Not started. Needs the board. |
 | 6 to 9 | Accept both increments with the real phone application, the real service, and test users. | Not started. Needs a phone application with protocol 0.2. |
 | 10 | Fix defects, and review both increments. | Not started. |
-| 11 | Increment 3: the Turns page and TURN_SHAPE. Host only. | Code on the branch `feat/turn-view`. Device tests NOT RUN. |
-| 12 | Accept Increment 3 on the board with `phone_sim`, then with the real phone application. | Not started. Needs the board and a phone application that sends TURN_SHAPE. |
+| 11 | Increment 3: the Turns page and the three turn messages. Host only. | Code on the branch `feat/turn-view`. Device tests NOT RUN. |
+| 12 | Accept Increment 3 on the board with `phone_sim`, then with the real phone application. | Not started. Needs the board and a phone application that answers TURN_REQUEST. |
 
 ## 9. Definition of Done
 

@@ -431,8 +431,8 @@ void coach_screen_report_destroy(coach_screen_report_t *out) {
     out->hint = NULL;
 }
 
-static const lv_point_precise_t turns_path_points[] = { {110, 6}, {150, 22}, {150, 40}, {110, 54}, {70, 68}, {70, 86}, {110, 102} };
-static const lv_point_precise_t turns_turn_points[] = { {110, 6}, {150, 22}, {150, 40}, {110, 54} };
+static const lv_point_precise_t turns_path_points[] = { {10, 48}, {40, 18}, {70, 48}, {100, 78}, {130, 48}, {160, 18}, {190, 48} };
+static const lv_point_precise_t turns_turn_points[] = { {10, 48}, {40, 18}, {70, 48} };
 
 void coach_screen_turns_build(coach_screen_turns_t *out) {
     if (!out) return;
@@ -442,7 +442,7 @@ void coach_screen_turns_build(coach_screen_turns_t *out) {
     lv_obj_set_style_border_width(out->screen, 0, 0);
     lv_obj_set_style_pad_all(out->screen, 0, 0);
     out->shape_panel = lv_obj_create(out->screen);
-    lv_obj_set_size(out->shape_panel, 220, 108);
+    lv_obj_set_size(out->shape_panel, 220, 96);
     lv_obj_set_pos(out->shape_panel, 10, 108);
     lv_obj_remove_flag(out->shape_panel, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_color(out->shape_panel, ui_color_surface(), 0);
@@ -452,12 +452,12 @@ void coach_screen_turns_build(coach_screen_turns_t *out) {
     lv_obj_set_style_border_color(out->shape_panel, ui_color_surface_hi(), 0);
     lv_obj_set_style_pad_all(out->shape_panel, 0, 0);
     out->hint_panel = lv_obj_create(out->screen);
-    lv_obj_set_size(out->hint_panel, 220, 38);
-    lv_obj_set_pos(out->hint_panel, 10, 272);
+    lv_obj_set_size(out->hint_panel, 220, 52);
+    lv_obj_set_pos(out->hint_panel, 10, 262);
     lv_obj_remove_flag(out->hint_panel, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_color(out->hint_panel, ui_color_accent(), 0);
     lv_obj_set_style_bg_opa(out->hint_panel, LV_OPA_COVER, 0);
-    lv_obj_set_style_radius(out->hint_panel, 19, 0);
+    lv_obj_set_style_radius(out->hint_panel, 18, 0);
     lv_obj_set_style_border_width(out->hint_panel, 0, 0);
     lv_obj_set_style_pad_all(out->hint_panel, 0, 0);
     out->path = lv_line_create(out->screen);
@@ -468,19 +468,38 @@ void coach_screen_turns_build(coach_screen_turns_t *out) {
     lv_obj_set_style_line_rounded(out->path, true, 0);
     out->turn = lv_line_create(out->screen);
     lv_obj_set_pos(out->turn, 10, 108);
-    lv_line_set_points(out->turn, turns_turn_points, 4);
+    lv_line_set_points(out->turn, turns_turn_points, 3);
     lv_obj_set_style_line_width(out->turn, 4, 0);
     lv_obj_set_style_line_color(out->turn, ui_color_accent(), 0);
     lv_obj_set_style_line_rounded(out->turn, true, 0);
-    out->dot = lv_obj_create(out->screen);
-    lv_obj_set_size(out->dot, 10, 10);
-    lv_obj_set_pos(out->dot, 115, 109);
-    lv_obj_remove_flag(out->dot, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_bg_color(out->dot, ui_color_ink(), 0);
-    lv_obj_set_style_bg_opa(out->dot, LV_OPA_COVER, 0);
-    lv_obj_set_style_radius(out->dot, 5, 0);
-    lv_obj_set_style_border_width(out->dot, 0, 0);
-    lv_obj_set_style_pad_all(out->dot, 0, 0);
+    out->track = lv_obj_create(out->screen);
+    lv_obj_set_size(out->track, 200, 3);
+    lv_obj_set_pos(out->track, 20, 199);
+    lv_obj_remove_flag(out->track, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_color(out->track, ui_color_surface_hi(), 0);
+    lv_obj_set_style_bg_opa(out->track, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(out->track, 1, 0);
+    lv_obj_set_style_border_width(out->track, 0, 0);
+    lv_obj_set_style_pad_all(out->track, 0, 0);
+    out->thumb = lv_obj_create(out->screen);
+    lv_obj_set_size(out->thumb, 33, 3);
+    lv_obj_set_pos(out->thumb, 20, 199);
+    lv_obj_remove_flag(out->thumb, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_color(out->thumb, ui_color_accent(), 0);
+    lv_obj_set_style_bg_opa(out->thumb, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(out->thumb, 1, 0);
+    lv_obj_set_style_border_width(out->thumb, 0, 0);
+    lv_obj_set_style_pad_all(out->thumb, 0, 0);
+    out->msg = lv_label_create(out->screen);
+    lv_obj_set_width(out->msg, 220);
+    lv_obj_set_pos(out->msg, 10, 145);
+    lv_label_set_text(out->msg, "");
+    lv_obj_set_style_text_align(out->msg, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_style_text_font(out->msg, &lv_font_heygo_sc_16, 0);
+    lv_obj_set_style_text_color(out->msg, ui_color_muted(), 0);
+    out->rider = lv_image_create(out->screen);
+    lv_obj_set_size(out->rider, 20, 20);
+    lv_obj_set_pos(out->rider, 20, 152);
     out->mode_dot = lv_obj_create(out->screen);
     lv_obj_set_size(out->mode_dot, 7, 7);
     lv_obj_set_pos(out->mode_dot, 14, 19);
@@ -524,15 +543,15 @@ void coach_screen_turns_build(coach_screen_turns_t *out) {
     lv_obj_set_style_text_font(out->source, &lv_font_heygo_sc_16, 0);
     lv_obj_set_style_text_color(out->source, ui_color_muted(), 0);
     out->side = lv_label_create(out->screen);
-    lv_obj_set_width(out->side, 110);
-    lv_obj_set_pos(out->side, 14, 219);
+    lv_obj_set_width(out->side, 96);
+    lv_obj_set_pos(out->side, 14, 208);
     lv_label_set_text(out->side, "SIDE --");
     lv_obj_set_style_text_font(out->side, &lv_font_heygo_display_20, 0);
     lv_obj_set_style_text_letter_space(out->side, 1, 0);
     lv_obj_set_style_text_color(out->side, ui_color_accent(), 0);
     out->counter = lv_label_create(out->screen);
-    lv_obj_set_width(out->counter, 100);
-    lv_obj_set_pos(out->counter, 126, 219);
+    lv_obj_set_width(out->counter, 114);
+    lv_obj_set_pos(out->counter, 112, 208);
     lv_label_set_text(out->counter, "");
     lv_obj_set_style_text_align(out->counter, LV_TEXT_ALIGN_RIGHT, 0);
     lv_obj_set_style_text_font(out->counter, &lv_font_heygo_display_20, 0);
@@ -540,18 +559,39 @@ void coach_screen_turns_build(coach_screen_turns_t *out) {
     lv_obj_set_style_text_color(out->counter, ui_color_muted(), 0);
     out->metrics = lv_label_create(out->screen);
     lv_obj_set_width(out->metrics, 212);
-    lv_obj_set_pos(out->metrics, 14, 245);
+    lv_obj_set_pos(out->metrics, 14, 233);
     lv_label_set_text(out->metrics, "");
     lv_obj_set_style_text_font(out->metrics, &lv_font_heygo_display_20, 0);
     lv_obj_set_style_text_letter_space(out->metrics, 1, 0);
     lv_obj_set_style_text_color(out->metrics, ui_color_ink(), 0);
-    out->hint = lv_label_create(out->screen);
-    lv_obj_set_width(out->hint, 196);
-    lv_obj_set_pos(out->hint, 22, 280);
-    lv_label_set_text(out->hint, "OK 下一弯 · UP 报告");
-    lv_obj_set_style_text_align(out->hint, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_set_style_text_font(out->hint, &lv_font_heygo_sc_16, 0);
-    lv_obj_set_style_text_color(out->hint, ui_color_bg(), 0);
+    out->key_up = lv_label_create(out->screen);
+    lv_obj_set_width(out->key_up, 70);
+    lv_obj_set_pos(out->key_up, 12, 265);
+    lv_label_set_text(out->key_up, "▲报告");
+    lv_obj_set_style_text_align(out->key_up, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_style_text_font(out->key_up, &lv_font_heygo_sc_16, 0);
+    lv_obj_set_style_text_color(out->key_up, ui_color_bg(), 0);
+    out->key_ok = lv_label_create(out->screen);
+    lv_obj_set_width(out->key_ok, 70);
+    lv_obj_set_pos(out->key_ok, 85, 265);
+    lv_label_set_text(out->key_ok, "");
+    lv_obj_set_style_text_align(out->key_ok, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_style_text_font(out->key_ok, &lv_font_heygo_sc_16, 0);
+    lv_obj_set_style_text_color(out->key_ok, ui_color_bg(), 0);
+    out->key_down = lv_label_create(out->screen);
+    lv_obj_set_width(out->key_down, 70);
+    lv_obj_set_pos(out->key_down, 158, 265);
+    lv_label_set_text(out->key_down, "");
+    lv_obj_set_style_text_align(out->key_down, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_style_text_font(out->key_down, &lv_font_heygo_sc_16, 0);
+    lv_obj_set_style_text_color(out->key_down, ui_color_bg(), 0);
+    out->key_hold = lv_label_create(out->screen);
+    lv_obj_set_width(out->key_hold, 216);
+    lv_obj_set_pos(out->key_hold, 12, 288);
+    lv_label_set_text(out->key_hold, "长按▲回报告 · 长按▼退出");
+    lv_obj_set_style_text_align(out->key_hold, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_style_text_font(out->key_hold, &lv_font_heygo_sc_16, 0);
+    lv_obj_set_style_text_color(out->key_hold, ui_color_ridge(), 0);
 }
 
 void coach_screen_turns_destroy(coach_screen_turns_t *out) {
@@ -562,7 +602,10 @@ void coach_screen_turns_destroy(coach_screen_turns_t *out) {
     out->hint_panel = NULL;
     out->path = NULL;
     out->turn = NULL;
-    out->dot = NULL;
+    out->track = NULL;
+    out->thumb = NULL;
+    out->msg = NULL;
+    out->rider = NULL;
     out->mode_dot = NULL;
     out->mode = NULL;
     out->battery = NULL;
@@ -572,7 +615,10 @@ void coach_screen_turns_destroy(coach_screen_turns_t *out) {
     out->side = NULL;
     out->counter = NULL;
     out->metrics = NULL;
-    out->hint = NULL;
+    out->key_up = NULL;
+    out->key_ok = NULL;
+    out->key_down = NULL;
+    out->key_hold = NULL;
 }
 
 

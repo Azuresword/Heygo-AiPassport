@@ -19,6 +19,8 @@ static void send_error(link_core_t *l, uint8_t code, uint8_t ref_type, uint8_t r
     send(l, LINK_LANE_CONTROL, pkt, bp_build_error(pkt, sizeof pkt, code, ref_type, ref_xid));
 }
 
+static void request_turns(link_core_t *l, uint32_t now_ms);
+
 static void send_hello(link_core_t *l, uint32_t now_ms) {
     uint8_t pkt[BP_HEADER_SIZE + 5 + BP_VERSION_TEXT_MAX];
     send(l, LINK_LANE_CONTROL, pkt,
@@ -126,6 +128,8 @@ static void on_hello_ack(link_core_t *l, const bp_packet_t *p, uint32_t now_ms) 
     l->utc = ack.utc;
     l->utc_ms = now_ms;
     send_device_state(l, true, now_ms);
+    // After a reconnect, ask again for the groups that the screen lacks.
+    if (l->has_turns) request_turns(l, now_ms);
 }
 
 static void on_agent_state(link_core_t *l, const bp_packet_t *p) {
@@ -220,7 +224,46 @@ static void on_run_report(link_core_t *l, const bp_packet_t *p, uint32_t now_ms)
     if (l->io.run_report) l->io.run_report(l->io.ctx, &l->report);
 }
 
-static void on_turn_shape(link_core_t *l, const bp_packet_t *p) {
+const link_turn_group_t *link_turns_group(const link_turns_t *t, uint8_t group) {
+    if (!t) return NULL;
+    for (int i = 0; i < LINK_TURN_SLOTS; i++) {
+        if (t->slot[i].used && t->slot[i].group == group) return &t->slot[i];
+    }
+    return NULL;
+}
+
+// The groups that the device keeps: the focus group and its neighbors, LINK_TURN_SLOTS in all.
+static void turn_window(const link_turns_t *t, uint8_t *first, uint8_t *count) {
+    const uint8_t n = t->n_groups;
+    uint8_t start = t->focus > 0 ? (uint8_t)(t->focus - 1) : 0;
+    if (n >= LINK_TURN_SLOTS && start + LINK_TURN_SLOTS > n) start = (uint8_t)(n - LINK_TURN_SLOTS);
+    if (n < LINK_TURN_SLOTS) start = 0;
+    *first = start;
+    *count = n < LINK_TURN_SLOTS ? n : LINK_TURN_SLOTS;
+}
+
+// Drop the groups outside the window. Ask for the missing groups in one TURN_REQUEST.
+static void request_turns(link_core_t *l, uint32_t now_ms) {
+    link_turns_t *t = &l->turns;
+    uint8_t first, count;
+    turn_window(t, &first, &count);
+    for (int i = 0; i < LINK_TURN_SLOTS; i++) {
+        if (t->slot[i].used && (t->slot[i].group < first || t->slot[i].group >= first + count)) t->slot[i].used = false;
+    }
+    int lo = -1, hi = -1;
+    for (uint8_t g = first; g < first + count; g++) {
+        if (link_turns_group(t, g)) continue;
+        if (lo < 0) lo = g;
+        hi = g;
+    }
+    l->turn_req_open = lo >= 0;
+    if (lo < 0 || !can_send(l) || !data_allowed(l)) return;
+    uint8_t pkt[BP_HEADER_SIZE + BP_TURN_REQUEST_SIZE];
+    send(l, LINK_LANE_CONTROL, pkt, bp_build_turn_request(pkt, sizeof pkt, t->run_no, (uint8_t)lo, (uint8_t)(hi - lo + 1)));
+    l->turn_req_ms = now_ms;
+}
+
+static void on_turn_shape(link_core_t *l, const bp_packet_t *p, uint32_t now_ms) {
     if (!data_allowed(l)) return;
     bp_turn_shape_t r;
     const bp_err_t err = bp_read_turn_shape(p, &r);
@@ -229,14 +272,59 @@ static void on_turn_shape(link_core_t *l, const bp_packet_t *p) {
         send_error(l, (uint8_t)err, p->type, p->xid);
         return;
     }
+    memset(&l->turns, 0, sizeof l->turns);
     l->turns.run_no = r.run_no;
     l->turns.source = r.source;
-    l->turns.n_points = r.n_points;
-    memcpy(l->turns.points, r.points, 2u * r.n_points);
     l->turns.n_turns = r.n_turns;
-    memcpy(l->turns.turns, r.turns, sizeof r.turns[0] * r.n_turns);
+    l->turns.n_groups = (uint8_t)((r.n_turns + BP_GROUP_TURNS - 1u) / BP_GROUP_TURNS);
     l->has_turns = true;
+    l->turn_req_tries = 0;
+    request_turns(l, now_ms);
     if (l->io.turn_shape) l->io.turn_shape(l->io.ctx, &l->turns);
+}
+
+static void on_turn_group(link_core_t *l, const bp_packet_t *p, uint32_t now_ms) {
+    if (!data_allowed(l)) return;
+    bp_turn_group_t r;
+    bp_err_t err = bp_read_turn_group(p, &r);
+    link_turns_t *t = &l->turns;
+    if (err == BP_OK && (!l->has_turns || r.run_no != t->run_no)) err = BP_ERR_STATE;
+    if (err == BP_OK && r.group >= t->n_groups) err = BP_ERR_FIELD;
+    if (err == BP_OK) {
+        const unsigned left = t->n_turns - (unsigned)r.group * BP_GROUP_TURNS;
+        if (r.n_turns != (left < BP_GROUP_TURNS ? left : BP_GROUP_TURNS)) err = BP_ERR_FIELD;
+    }
+    if (err != BP_OK) {
+        send_error(l, (uint8_t)err, p->type, p->xid);
+        return;
+    }
+    uint8_t first, count;
+    turn_window(t, &first, &count);
+    if (r.group < first || r.group >= first + count) return;   // A late answer for an old focus.
+    link_turn_group_t *s = (link_turn_group_t *)link_turns_group(t, r.group);
+    for (int i = 0; !s && i < LINK_TURN_SLOTS; i++) {
+        if (!t->slot[i].used) s = &t->slot[i];
+    }
+    if (!s) return;
+    s->used = true;
+    s->group = r.group;
+    s->n_turns = r.n_turns;
+    s->n_points = r.n_points;
+    memcpy(s->turns, r.turns, sizeof r.turns[0] * r.n_turns);
+    memcpy(s->points, r.points, 2u * r.n_points);
+    bool missing = false;
+    for (uint8_t g = first; g < first + count; g++) missing |= link_turns_group(t, g) == NULL;
+    l->turn_req_open = missing;
+    (void)now_ms;
+    if (l->io.turn_shape) l->io.turn_shape(l->io.ctx, t);
+}
+
+void link_turns_focus(link_core_t *l, uint8_t group, uint32_t now_ms) {
+    if (!l->has_turns) return;
+    if (l->turns.n_groups && group >= l->turns.n_groups) group = (uint8_t)(l->turns.n_groups - 1);
+    l->turns.focus = group;
+    l->turn_req_tries = 0;
+    request_turns(l, now_ms);
 }
 
 static void on_show_page(link_core_t *l, const bp_packet_t *p) {
@@ -278,7 +366,8 @@ void link_on_rx(link_core_t *l, const uint8_t *buf, size_t len, uint32_t now_ms)
     case BP_LIVE_STATS: on_live_stats(l, &p, now_ms); break;
     case BP_RUN_REPORT: on_run_report(l, &p, now_ms); break;
     case BP_SHOW_PAGE: on_show_page(l, &p); break;
-    case BP_TURN_SHAPE: on_turn_shape(l, &p); break;
+    case BP_TURN_SHAPE: on_turn_shape(l, &p, now_ms); break;
+    case BP_TURN_GROUP: on_turn_group(l, &p, now_ms); break;
     default:
         // A device-to-phone type that arrives from the phone.
         send_error(l, BP_ERR_STATE, p.type, p.xid);
@@ -289,6 +378,11 @@ void link_on_rx(link_core_t *l, const uint8_t *buf, size_t len, uint32_t now_ms)
 
 void link_tick(link_core_t *l, uint32_t now_ms) {
     update_voice(l, now_ms);
+    // One more TURN_REQUEST when the groups do not arrive in time.
+    if (l->turn_req_open && l->turn_req_tries < 1 && (uint32_t)(now_ms - l->turn_req_ms) >= LINK_TURN_RETRY_MS) {
+        l->turn_req_tries++;
+        request_turns(l, now_ms);
+    }
     if (l->acked && can_send(l) && (uint32_t)(now_ms - l->status_ms) >= LINK_DEVICE_STATUS_MS) {
         send_device_state(l, false, now_ms);
     }

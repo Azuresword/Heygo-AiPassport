@@ -40,7 +40,7 @@ The pilot uses existing boards. It needs no new circuit board or enclosure.
 6. The Agent answers through speech, with short text on the screen.
 7. The user can hold UP to stop the answer.
 8. When the Coach page is idle, a short DOWN press opens the Report page. It shows the report of the last run. A short UP press returns to the Coach page.
-   On the Report page, a short DOWN press opens the Turns page. A short OK press selects the next turn. A short UP press returns to the Report page.
+   On the Report page, a short DOWN press opens the Turns page. DOWN and UP select the next and the previous turn. OK goes one page of 8 turns on. An UP hold returns to the Report page.
 9. Before the next run, the user holds DOWN and then presses OK to return to Ski mode.
 
 Rest mode means that the user states they stopped.
@@ -114,7 +114,7 @@ Each row has test stage Prototype. Owners are roles with no assigned person.
 | REQ-02 | Show the latest ski data packet from the phone. A missing field shows "--" and never 0. Mark data that is out of date. | Phone and firmware. | TC-02: in 300 data packets, the device shows the latest packet each time. Each missing field shows "--". | The phone application sends LIVE_STATS as doc 07 defines. |
 | REQ-21 | During a run, show live data on the Ski page: speed, vertical drop, distance, turn count, and run time. The phone sends one packet each second. | Firmware and design. | TC-21: the screen updates within 300 ms of the packet at the 95th percentile. At least 4 of 5 users read the speed correctly within 2 seconds. | REQ-02. |
 | REQ-03 | After each run, show the report of that run. It holds the distance, the turn count, the Heygo IQ, the core problem, and a tip of at most 20 characters. | Firmware and design. | TC-03: in 30 short DOWN presses on the Coach page, the Report page shows within 500 ms each time. Every value matches the phone log. | REQ-02. |
-| REQ-05 | After each run, show the shape of that run and replay one turn. The user selects each turn in sequence. Each turn shows its side, speed, edge angle, and radius. A schematic shape shows "示意". | Firmware and design. | TC-05: in 20 runs with phone_sim, the Turns page shows the shape within 500 ms of TURN_SHAPE. Each turn value matches the phone log. A schematic shape shows "示意" each time. | REQ-03. TURN_SHAPE as doc 07 defines. |
+| REQ-05 | After each run, show the shape of that run in groups of 8 turns, and replay one turn. The user moves from turn to turn with the keys. The page shows the action of each key. Each turn shows its side, speed, edge angle, and radius. A schematic shape shows "示意". | Firmware and design. | TC-05: in 20 runs with phone_sim and up to 255 turns, each key press shows its turn within 500 milliseconds. Each turn value matches the phone log. A schematic shape shows "示意" each time. | REQ-03. TURN_SHAPE, TURN_GROUP, and TURN_REQUEST as doc 07 defines. |
 
 ### P1, after Increment 2
 
@@ -218,10 +218,15 @@ D-26: after each run, the phone sends the report of that run. D-27 sets two plac
 
 ### Turns page
 
-D-29 adds the Turns page under the Report page. The phone sends the shape of each run after its report.
+D-29 adds the Turns page under the Report page. The phone sends the turn count of each run after its report. The device asks the phone for groups of 8 turns.
 
-- The page draws the run from left to right, and marks the selected turn in the accent color. A dot moves along the turn once.
-- A short OK press selects the next turn. A short UP press returns to the Report page.
+- The page shows 8 turns at a time. When the page opens, it draws the first 8 turns from left to right, one point each 40 milliseconds. A rider sprite sits at the head of the line.
+- Then the page marks the selected turn in the accent color. The rider moves along it once after each key press.
+- A short DOWN press selects the next turn. A short UP press selects the previous turn, or returns to the Report page from turn 1. The page of 8 turns follows the selected turn.
+- A short OK press goes to turn 1 of the next page. On a run of one page, it replays the turn.
+- An UP hold returns to the Report page from any group.
+- A bar at the bottom of the accent color has two rows. Row 1 shows the short press of each key now: "▲上一弯" or "▲报告", "●下一页", "●重放", or "●跳过", "▼下一弯". Row 2 shows the two holds: "长按▲回报告 · 长按▼退出".
+- A thin bar under the line shows where the group is in the whole run.
 - Below the shape, the page shows "TOE SIDE" or "HEEL SIDE", the turn number, the speed, the edge angle, and the radius.
 - A shape that does not come from a measured track shows "示意" (schematic).
 - Before the first shape arrives, the page shows "暂无弯型数据" (no turn data yet).

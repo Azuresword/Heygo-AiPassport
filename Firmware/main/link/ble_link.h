@@ -44,8 +44,10 @@ void ble_link_agent_done(void);
 // Each flag is false when that data never arrived.
 void ble_link_get_data(bp_live_stats_t *live, bool *has_live, bool *stale,
                        link_report_t *report, bool *has_report, uint32_t *report_age_ms);
-// Copy the last turn shape under the link lock. Returns false when none arrived.
+// Copy the last turn shape and its cached groups under the link lock. Returns false when none arrived.
 bool ble_link_get_turns(link_turns_t *out);
+// The Turns page shows this group. The link asks the phone for the groups next to it.
+void ble_link_turns_focus(uint8_t group);
 // The mode and page for CONTEXT and DEVICE_STATUS (doc 07 field values).
 void ble_link_set_context(uint8_t mode, uint8_t page);
 

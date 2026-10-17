@@ -50,7 +50,9 @@ python3 tools/phone_sim/phone_sim.py --runs 3 --run-s 30
 3. Run 2 has no speed. The device must show "--" for the speed, never 0.
 4. When a run ends, it sends one LIVE_STATS with the ended state.
 5. After 2 seconds, it sends one RUN_REPORT.
-6. Then it sends one TURN_SHAPE with a demo shape of the run (D-29). Run 3 sends a schematic shape.
+6. Then it sends one TURN_SHAPE with the turn count of the run (D-29). Run 3 sends a schematic shape.
+   It answers each TURN_REQUEST of the device with one TURN_GROUP for each asked group.
+   Add `--turns 44` to give each run 44 turns, so that the device has 6 groups.
 7. It then sends nothing for 10 seconds, as on a lift. The device marks the data out of date after 5 seconds.
 
 Add `--jump` to send SHOW_PAGE after each report. The device opens the Report page from the Ski page or the idle Coach page (D-28).
@@ -70,7 +72,7 @@ Record the phone, the log, and the result of each step.
 | 6 | Use `fail` mode, then `silent` mode. | The device shows the retry text, and then the timeout text. | TC-06 |
 | 7 | Start `phone_sim.py --runs 3`. | The log shows a LIVE_STATS line each second and a RUN_REPORT line after each run. | TC-02 |
 | 8 | Start `phone_sim.py --runs 2 --jump`. Stay on the Ski page for run 1. Ask a question when run 2 ends. | Run 1 opens the Report page. During the question in run 2, the page does not change. | TC-03 |
-| 9 | Start `phone_sim.py --runs 3`. After each run, open the Report page, and then press DOWN. Press OK a few times. | The Turns page shows the run and its turns. OK selects the next turn. After run 3, the page shows the schematic tag. | TC-05 |
+| 9 | Start `phone_sim.py --runs 3 --turns 44`. After each run, open the Report page, and then press DOWN. Press DOWN, UP, and OK a few times. Hold UP. | The Turns page draws 8 turns. DOWN and UP select the next and the previous turn. OK goes one page on. The key bar shows each action. Holding UP opens the Report page. After run 3, the page shows the schematic tag. | TC-05 |
 
 ## Log analysis
 

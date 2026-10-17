@@ -361,12 +361,30 @@ static void test_live_data(void) {
     CHECK(link_live(&l, 9000, &stale) != NULL && link_report(&l, 9000, &age) != NULL, "a disconnect keeps the data");
 }
 
+// A TURN_GROUP of n_turns turns with 4 points each turn.
+static size_t group_pkt(uint8_t *p, size_t cap, uint8_t run, uint8_t group, uint8_t n_turns, uint8_t edge0) {
+    bp_turn_t turns[BP_GROUP_TURNS];
+    uint8_t pts[2 * BP_GROUP_POINTS_MAX];
+    for (int i = 0; i < n_turns; i++) turns[i] = (bp_turn_t){ (uint8_t)(4 * i), (uint8_t)(4 * i + 4), (uint8_t)(i & 1), 50, 40, 12 };
+    turns[0].edge_deg = edge0;
+    const uint8_t n = (uint8_t)(4 * n_turns + 1);
+    for (int i = 0; i < n; i++) { pts[2 * i] = (uint8_t)(i * 7); pts[2 * i + 1] = group; }
+    return bp_build_turn_group(p, cap, run, group, n_turns, turns, n, pts);
+}
+
+// The last TURN_REQUEST that the device sent, as first and count. Returns false when none.
+static bool last_request(uint8_t *first, uint8_t *count) {
+    const sent_t *s = last();
+    if (!s || s->buf[0] != BP_TURN_REQUEST) return false;
+    *first = s->buf[5];
+    *count = s->buf[6];
+    return true;
+}
+
 static void test_turn_shape(void) {
     link_core_t l;
-    uint8_t pts[8] = { 10, 0, 40, 30, 10, 60, 40, 90 };
-    bp_turn_t turns[2] = { { 0, 2, BP_SIDE_TOE, 54, 55, 12 }, { 1, 3, BP_SIDE_HEEL, 53, 51, 15 } };
-    uint8_t p[256];
-    size_t n = bp_build_turn_shape(p, sizeof p, 4, BP_TURN_SRC_MEASURED, 4, pts, 2, turns);
+    uint8_t p[256], q[256], first = 0, count = 0;
+    size_t n = bp_build_turn_shape(p, sizeof p, 4, BP_TURN_SRC_MEASURED, 44);   // 6 groups
 
     // Before HELLO_ACK the data is not allowed.
     link_init(&l, &IO, "fw");
@@ -378,22 +396,78 @@ static void test_turn_shape(void) {
     CHECK(s_turn_calls == 0 && link_turns(&l) == NULL, "no turn shape before HELLO_ACK");
 
     uint32_t t = ready(&l, 0);
-    CHECK(link_turns(&l) == NULL, "no turn shape yet");
+    size_t m = group_pkt(q, sizeof q, 4, 0, 8, 40);
+    clear();
+    rx(&l, q, m, t + 1);
+    CHECK(last() && last()->buf[4] == BP_ERR_STATE && last()->buf[5] == BP_TURN_GROUP, "a group before the shape gets ERROR 6");
+
+    // The shape asks for the first three groups at once: 24 turns.
+    clear();
     rx(&l, p, n, t + 1);
     const link_turns_t *got = link_turns(&l);
-    CHECK(s_turn_calls == 1 && got, "the turn shape arrives");
-    CHECK(got && got->run_no == 4 && got->n_points == 4 && got->points[3][1] == 90, "points are copied");
-    CHECK(got && got->n_turns == 2 && got->turns[1].side == BP_SIDE_HEEL && got->turns[0].edge_deg == 55,
-          "turns are copied");
+    CHECK(s_turn_calls == 1 && got && got->n_turns == 44 && got->n_groups == 6, "the turn shape arrives");
+    CHECK(last_request(&first, &count) && first == 0 && count == 3, "the shape asks for groups 0 to 2");
 
-    // A bad shape gets an ERROR and keeps the old one.
-    p[4 + 4 + 8 + 4] = 99;   // edge 99 in the first turn
+    for (uint8_t g = 0; g < 3; g++) {
+        m = group_pkt(q, sizeof q, 4, g, 8, 40);
+        rx(&l, q, m, t + 2);
+    }
+    CHECK(s_turn_calls == 4 && link_turns_group(got, 0) && link_turns_group(got, 2), "three groups are cached");
+    const link_turn_group_t *g0 = link_turns_group(got, 0);
+    CHECK(g0 && g0->n_turns == 8 && g0->n_points == 33 && g0->points[32][0] == 224 && g0->turns[7].side == BP_SIDE_HEEL,
+          "the group is copied");
+
+    // The screen moves to group 2: keep 1 to 3, drop 0, and ask for 3.
     clear();
-    rx(&l, p, n, t + 2);
-    CHECK(last() && last()->buf[0] == BP_ERROR && last()->buf[4] == BP_ERR_FIELD && last()->buf[5] == BP_TURN_SHAPE,
-          "a bad edge angle gets ERROR 7");
-    CHECK(link_turns(&l) && link_turns(&l)->turns[0].edge_deg == 55, "the old shape stays");
-    link_on_disconnect(&l, t + 3);
+    link_turns_focus(&l, 2, t + 3);
+    CHECK(!link_turns_group(got, 0) && link_turns_group(got, 1) && link_turns_group(got, 2), "group 0 is dropped");
+    CHECK(last_request(&first, &count) && first == 3 && count == 1, "the device asks for group 3 only");
+
+    // No answer: one more request after 1 s, and no third one.
+    clear();
+    link_tick(&l, t + 3 + LINK_TURN_RETRY_MS - 1);
+    CHECK(!last(), "no retry before 1 s");
+    link_tick(&l, t + 3 + LINK_TURN_RETRY_MS);
+    CHECK(last_request(&first, &count) && first == 3 && count == 1, "one retry after 1 s");
+    clear();
+    link_tick(&l, t + 3 + 3 * LINK_TURN_RETRY_MS);
+    CHECK(!last(), "no second retry");
+
+    // A late answer for a group outside the window is dropped without an error.
+    clear();
+    m = group_pkt(q, sizeof q, 4, 0, 8, 40);
+    rx(&l, q, m, t + 4000);
+    CHECK(!last() && !link_turns_group(got, 0), "a group outside the window is dropped");
+
+    // The last group holds the rest of the turns: 44 - 40 = 4.
+    link_turns_focus(&l, 5, t + 4001);
+    CHECK(last_request(&first, &count) && first == 3 && count == 3, "the last window is groups 3 to 5");
+    clear();
+    m = group_pkt(q, sizeof q, 4, 5, 8, 40);
+    rx(&l, q, m, t + 4002);
+    CHECK(last() && last()->buf[4] == BP_ERR_FIELD, "a last group with 8 turns gets ERROR 7");
+    m = group_pkt(q, sizeof q, 4, 5, 4, 40);
+    rx(&l, q, m, t + 4002);
+    CHECK(link_turns_group(got, 5) && link_turns_group(got, 5)->n_turns == 4, "the last group has 4 turns");
+    clear();
+    m = group_pkt(q, sizeof q, 4, 6, 4, 40);
+    rx(&l, q, m, t + 4003);
+    CHECK(last() && last()->buf[4] == BP_ERR_FIELD, "a group past the run gets ERROR 7");
+    m = group_pkt(q, sizeof q, 5, 4, 8, 40);
+    rx(&l, q, m, t + 4003);
+    CHECK(last() && last()->buf[4] == BP_ERR_STATE, "a group of another run gets ERROR 6");
+    m = group_pkt(q, sizeof q, 4, 4, 8, 40);
+    q[4 + 4 + 4] = 99;   // edge 99 in the first turn
+    rx(&l, q, m, t + 4003);
+    CHECK(last() && last()->buf[4] == BP_ERR_FIELD && !link_turns_group(got, 4), "a bad edge angle gets ERROR 7");
+
+    // A short run fits in one group.
+    clear();
+    n = bp_build_turn_shape(p, sizeof p, 6, BP_TURN_SRC_SCHEMATIC, 5);
+    rx(&l, p, n, t + 5000);
+    CHECK(got->n_groups == 1 && !link_turns_group(got, 5), "a new shape clears the groups");
+    CHECK(last_request(&first, &count) && first == 0 && count == 1, "a short run asks for one group");
+    link_on_disconnect(&l, t + 5001);
     CHECK(link_turns(&l) != NULL, "a disconnect keeps the shape for the screen");
 }
 

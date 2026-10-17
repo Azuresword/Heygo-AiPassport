@@ -41,8 +41,8 @@ Rules:
 | 8 | 1 | Pass TC-08 with the real service. | Sprint 6. HeygoAI coaching tools (Q-01) | Not started |
 | 9 | 1, 2 | Pass TC-15 and the reading part of TC-21 with the U1 usability test. | Sprint 7. Five test users | Not started |
 | 10 | 1, 2 | Fix defects, and review whether the two increments meet the Definition of Done. | Sprint 9 | Not started |
-| 11 | 3 | The device receives TURN_SHAPE, and the Turns page passes the host screen check. | Sprint 4 | Code on the branch `feat/turn-view`. Section 4 gives the result |
-| 12 | 3 | Pass TC-05 on the board with `phone_sim`, and then with the real phone application. | Sprint 11. The board. A phone application that sends TURN_SHAPE | Not started |
+| 11 | 3 | The device asks for and receives the turn groups, and the Turns page passes the host screen check. | Sprint 4 | Code on the branch `feat/turn-view`. Section 4 gives the result |
+| 12 | 3 | Pass TC-05 on the board with `phone_sim`, and then with the real phone application. | Sprint 11. The board. A phone application that answers TURN_REQUEST | Not started |
 
 Sprints 2 to 4 run on the host only. They can start now.
 Sprint 5 is the first Sprint that needs the board.
@@ -209,25 +209,26 @@ Section 8 of the [firmware change notes](../Firmware/docs/heygo-changes.md) list
 
 ### Sprint 11: Turns page (host)
 
-**Sprint Goal.** The device receives TURN_SHAPE, and the Turns page passes the host screen check.
+**Sprint Goal.** The device asks for and receives the turn groups, and the Turns page passes the host screen check.
 
 **Story.** US-05. D-29 sets the scope.
 
 | Order | Task | Time box |
 | --- | --- | --- |
-| 1 | TURN_SHAPE (0x63) in the packet layer and the link session. Host tests for each error code. | 50 min |
-| 2 | The view: fit the run into the box, keep the axis ratio, round the corners, and make the texts. Host tests. | 50 min |
+| 1 | TURN_SHAPE, TURN_GROUP, and TURN_REQUEST in the packet layer. The cache of 3 groups in the link session. Host tests for each error code. | 50 min |
+| 2 | The view: draw one group, round the corners, follow the head while it draws, and make the texts and the key hints. Host tests. | 50 min |
 | 3 | The state machine: REPORT to TURNS on a short DOWN press, the next turn on a short OK press. | 30 min |
-| 4 | The page on the device: two lines, the replay dot, and the texts. | 40 min |
-| 5 | `phone_sim` and the flow simulator send a demo shape. The host renders the page. | 30 min |
+| 4 | The page on the device: two lines, the rider sprite of 16 frames, and the texts. | 40 min |
+| 5 | `phone_sim` and the flow simulator send a demo shape, and the points when the page opens. The host renders the page. | 30 min |
 
 **Exit check.**
 
 - The packet layer and the view have host tests. The Python packet matches the C packet byte for byte.
-- The host renders four Turns page images: with no shape, the first turn, a heel side turn, and a schematic shape with 12 turns. The layout check passes.
+- The host renders four Turns page images. They show no shape, a line that is still drawing, a heel side turn, and a schematic shape with 12 turns.
+- The layout check passes.
 - The gate gives exit code 0.
 
-**Result.** Images 16 to 19 show the Turns page. The flow simulator self-test passes 72 of 72. The protocol version stays 0.2. Nobody recorded the actual time.
+**Result.** Images 16 to 21 show the Turns page. The flow simulator self-test passes 88 of 88. The protocol version stays 0.2. Nobody recorded the actual time.
 
 ### Sprint 12: Increment 3 on the board
 
@@ -236,7 +237,7 @@ Section 8 of the [firmware change notes](../Firmware/docs/heygo-changes.md) list
 | Order | Task | Time box |
 | --- | --- | --- |
 | 1 | Flash the board. Run three runs with `phone_sim`. Run 3 sends a schematic shape. | 60 min |
-| 2 | Check the page on the screen: the shape, the dot, the turn values, and "示意". | 60 min |
+| 2 | Check the page on the screen: the live line, the rider, the turn values, and "示意". | 60 min |
 | 3 | Run the same check with the real phone application. | 80 min |
 
 ## 5. Evidence format
