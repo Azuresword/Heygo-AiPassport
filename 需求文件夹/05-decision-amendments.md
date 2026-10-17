@@ -389,6 +389,7 @@ Four kinds exist: 1 fall alert, 2 voice message, 3 problem report, and 4 achieve
 - After the countdown, or at any key press, the device sends POPUP_END with reason 0 (timeout) or 1 (key).
 - Then the device goes back to the page before the popup: the live data page, the Report page, or the Turns page. The Coach page states go back to READY.
 - During a popup, CONTEXT and DEVICE_STATUS send mode 0 and page 6.
+- Each kind has its own color and a badge of 4 frames. The popup parts move in within 900 ms. The user asked for this on 2026-10-17, so that a popup is easy to see and fun.
 
 The user made four choices on 2026-10-17:
 

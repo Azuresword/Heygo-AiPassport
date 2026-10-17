@@ -259,14 +259,34 @@ The rider is a sprite sheet of 16 frames, one frame for each 22.5 degrees. The d
 | Widget | Position | Font | Content |
 |---|---|---|---|
 | `mode_dot`, `mode` | `x=14..136, y=10` | 16 px Chinese | The kind: "摔倒提醒", "语音播报", "问题报告", or "成就报告" |
-| `dest` | `x=14, y=36` | 34 px brand font | "FALL ALERT", "BROADCAST", "RUN ISSUE", or "ACHIEVED" |
+| `dest` | `x=14, y=36`, width 152 | 34 px brand font | "FALL ALERT", "BROADCAST", "RUN ISSUE", or "ACHIEVED" |
+| `icon` | `x=172, y=14`, 56 × 56 | Image | The badge of the kind. Its 4 frames play in a loop, 160 ms each |
 | `body_panel` | `x=10, y=80`, 220 × 152 | None | The box of the texts |
 | `title` | `x=22, y=92`, height 20 | 16 px Chinese, one line | The title from the phone, at most 12 Chinese characters. With no title, a default title for the kind |
 | `body` | `x=22, y=118`, height 104 | 16 px Chinese, more than one line | The body from the phone, at most 40 Chinese characters |
 | `foot` | `y=242`, centered | 16 px Chinese | "等待语音" (waiting for audio), "正在播报" (playing), or "N 秒后返回" (back in N seconds) |
 | `hint_panel`, `hint` | `x=10, y=272`, 220 × 38 | 16 px Chinese, on the colored bar | "按任意键关闭" (any key closes) |
 
-A fall alert uses the danger color (red) for the dot, `dest`, `title`, and the bar. The other kinds use the accent color.
+Each kind has a color for the dot, `dest`, `title`, the bar, and the badge:
+
+| Kind | Color | Badge |
+|---|---|---|
+| Fall alert | Danger, red `#EF4444` | A rider on the back with the board up. Three stars turn above. |
+| Voice message | Accent, lime `#B1FE2B` | A megaphone. The sound waves come out one by one. |
+| Problem report | Warn, orange `#FF9F1C` | A magnifier with "!". It swings from side to side. |
+| Achievement | Gold `#FFD43B` | A cup. Small stars flash around it. |
+
+`assets/tools/gen_popup_icons.py` draws the badges: 16 images of 56 × 56 px, ARGB8888, 200,704 bytes of Flash.
+When a popup comes, `main/ui/popup_anim.c` moves the parts in:
+
+1. The badge falls from 80 px above and bounces (520 ms). A fall alert then shakes the badge (380 ms).
+2. `dest` slides in from 40 px to the left (300 ms, from 60 ms).
+3. The text box rises from 48 px below, with a small overshoot (360 ms, from 120 ms).
+4. The footer and the bar rise from below (300 ms, from 240 ms).
+
+All movement ends within 900 ms. The animations change only position offsets, so LVGL needs no extra layer memory.
+Each animation belongs to its widget, so the screen delete also stops it. A new popup starts the animation again.
+`assets/mockups/popup-anim.gif` shows the animation, drawn by the host renderer with a fake clock.
 The countdown text changes each second with the data tick. It rounds up, so the first second shows "10".
 `main/ui/popup_view.c` makes all texts. The host test `tests/test_popup_view.c` checks them.
 

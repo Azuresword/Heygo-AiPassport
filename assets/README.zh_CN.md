@@ -19,6 +19,7 @@
 | `tools/gen_lv_font.py` | 从源字体生成字体文件。 |
 | `tools/check_glyphs.py` | 确认每个要显示的字符都在对应字体里。 |
 | `sprites/heygo_board_sprite.c`、`sprites/heygo_sprites.h` | 弯型页的小精灵图：16 帧，每帧 20 × 20 px，ARGB8888。`heygo_board_sprite.png` 是预览图。 |
+| `sprites/heygo_popup_icons.c`、`sprites/heygo_popup_icons.h` | 弹窗徽章（D-31）：4 种类型各 4 帧，56 × 56 px，ARGB8888，由 `tools/gen_popup_icons.py` 生成。`heygo_popup_icons.png` 是预览图，模拟器使用 `heygo_popup_icons_sheet.png`。 |
 | `tools/gen_sprite.py` | 生成小精灵图。 |
 | `mockups/` | 主机界面检查生成的屏幕图片。`compare-A-B.png` 是两个设计方案的对比，目前采用 B 版。 |
 | `sim/coach-flow.html` | Coach 流程的交互模拟器。 |
@@ -100,6 +101,7 @@ python3 tools/check_glyphs.py
 | `24-popup-issue.png` | 问题报告，倒计时中："8 秒后返回" |
 | `25-popup-badge.png` | 成就报告，倒计时刚开始 |
 | `26-popup-max.png` | 标题和正文都是最长的弹窗 |
+| `popup-anim.gif` | 入场动画：先是实时数据页，然后四种弹窗依次作为新弹窗出现 |
 | `contact-sheet.png` | 全部 25 张图，放大 2 倍 |
 
 ## 模拟器

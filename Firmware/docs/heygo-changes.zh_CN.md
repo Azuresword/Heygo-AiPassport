@@ -288,15 +288,18 @@ D-29 去掉滑行模式、休息模式和退出确认，改为三个平级页面
 | --- | --- |
 | `main/protocol/ble_proto.*` | 解析和构建 POPUP（0x66）和 POPUP_END（0x67）。新增通道 2（弹窗语音）和页面 6（弹窗页）。标题最多 36 字节，正文最多 120 字节。协议版本保持 0.2。 |
 | `main/link/link_core.*`、`main/link/ble_link.*` | 只在 HELLO_ACK 之后接受 POPUP，`xid` 必须是 0x80 至 0xFE 的手机 xid。取消未完成的提问。被替换的弹窗发送 POPUP_END 原因 2。通道 2 的 PLAY_START 只接受当前带语音的弹窗。设备关闭弹窗时发送 POPUP_END。链路中断时不发送。 |
-| `main/ui/popup_view.*` | 纯 C。按类型和阶段生成弹窗页文字：中文名称、英文大字、默认标题、底部文字和倒计时。摔倒提醒用危险色。 |
+| `main/ui/popup_view.*` | 纯 C。按类型和阶段生成弹窗页文字：中文名称、英文大字、默认标题、底部文字和倒计时。同时给出该类型的颜色和徽章行号。 |
+| `main/ui/popup_anim.*`、`main/ui/ui_theme.*` | 入场动画和徽章帧循环（见 02 号文档"弹窗页布局"）。新增警示色（橙）和金色。 |
+| `../assets/tools/gen_popup_icons.py`、`../assets/sprites/heygo_popup_icons.*` | 画四种徽章：每种 4 帧，56 x 56 px，ARGB8888，占 Flash 200,704 字节。 |
 | `main/audio/voice.*` | 新增 `voice_play_cut`。它停止喇叭，但保留队列里的块，因为弹窗语音可能已经进了队列。 |
 | `flows/coach.flow.json` | 新增状态 POPUP_WAIT、POPUP_PLAY、POPUP_HOLD 和界面 `popup`。每个状态收到 POPUP 都进入 POPUP_WAIT。每个按键都关闭弹窗。RETURN_* 事件回到 LIVE、REPORT、TURNS 或 READY。 |
 | `main/coach_app.c` | 保存第一个弹窗之前的页面。运行 5 秒语音等待和 10 秒倒计时。丢弃被替换的弹窗的定时器事件。弹窗期间 CONTEXT 发送 mode 0、page 6。 |
 | `../assets/ui/strings.json` | 新增 12 条弹窗文字。字体里已经有所有字形。 |
 | `tools/phone_sim/`、`tools/flow/flow_sim.*` | `phone_sim.py --popups N --popup-gap S` 发送弹窗，并打印每个 POPUP_END 的原因。模拟器有弹窗按钮、状态图里的弹窗区域和倒计时进度条。 |
-| `tools/host_render/` | 新增 `popup` 命令和 22 至 26 号界面图。 |
+| `tools/host_render/` | 新增 `popup`、`anim`、`step` 命令和 22 至 26 号界面图。假时钟只在 `step` 时前进，所以每次生成的 `popup-anim.gif` 都相同。 |
 
-主机上的结果：主机测试通过，流程模拟器自测 102/102 通过。设备测试：未运行。
+主机上的结果：主机测试通过，流程模拟器自测 104/104 通过。设备测试：未运行。
+弹窗页最多占用 LVGL 内存池 13,288 字节（26 号图）。整个运行的峰值仍为 18,760 / 21,656 字节。
 本文没有记录弹窗页占用的 LVGL 内存池大小。
 
 ## 13. 待定事项

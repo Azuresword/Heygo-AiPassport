@@ -22,6 +22,8 @@ extern "C" {
 #define UI_HEX_DANGER      0xEF4444
 #define UI_HEX_RIDGE       0x3A3A3A   // The mountain ridge lines.
 #define UI_HEX_ACCENT_DIM  0x4A6A12   // The lime accent at low strength, for large shapes.
+#define UI_HEX_WARN        0xFF9F1C   // D-31: the problem report popup.
+#define UI_HEX_GOLD        0xFFD43B   // D-31: the achievement popup.
 
 lv_color_t ui_color_bg(void);
 lv_color_t ui_color_surface(void);
@@ -33,6 +35,8 @@ lv_color_t ui_color_ok(void);
 lv_color_t ui_color_danger(void);
 lv_color_t ui_color_ridge(void);
 lv_color_t ui_color_accent_dim(void);
+lv_color_t ui_color_warn(void);
+lv_color_t ui_color_gold(void);
 
 #ifdef __cplusplus
 }

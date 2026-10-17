@@ -56,6 +56,7 @@ LVGL draws the 25 images in `assets/mockups` on a computer with the device setti
 | 13–15 | The Report page: no report, a report, and the longest texts |
 | 16–21 | The Turns page: no shape, the first draw, a heel side turn, a schematic shape, a page on its way, and a short run |
 | 22–26 | The popup page: fall alert, voice message, problem report, achievement, and the longest texts (D-31) |
+| `popup-anim.gif` | The entry animation of the four popup kinds |
 
 ## Folders
 

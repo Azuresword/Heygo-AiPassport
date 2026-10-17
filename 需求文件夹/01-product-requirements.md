@@ -237,12 +237,14 @@ D-30 adds the Turns page to the page loop of D-29, between the Report page and t
 
 D-31 lets the phone show a popup on the device at any time. The popup page is not in the page loop.
 
-| Kind | Screen text | Color | Audio in the phone_sim example |
-| --- | --- | --- | --- |
-| 1, fall alert | 摔倒提醒, FALL ALERT | Red | Yes |
-| 2, voice message | 语音播报, BROADCAST | Accent | Yes |
-| 3, problem report | 问题报告, RUN ISSUE | Accent | No |
-| 4, achievement | 成就报告, ACHIEVED | Accent | No |
+| Kind | Screen text | Color | Badge | Audio in the phone_sim example |
+| --- | --- | --- | --- | --- |
+| 1, fall alert | 摔倒提醒, FALL ALERT | Red | A rider on the back, with stars above | Yes |
+| 2, voice message | 语音播报, BROADCAST | Lime accent | A megaphone with sound waves | Yes |
+| 3, problem report | 问题报告, RUN ISSUE | Orange | A magnifier with "!" | No |
+| 4, achievement | 成就报告, ACHIEVED | Gold | A cup with flashing stars | No |
+
+- Each badge has 4 frames that play in a loop. When a popup comes, the badge falls in and bounces, and the text box rises. A fall alert also shakes its badge.
 
 - A popup interrupts at once, in every state. Capture stops, and the device cancels the question. The wait stops. An answer that plays stops.
 - The popup shows a title of at most 12 Chinese characters and a body of at most 40 Chinese characters. With no title, the device shows a default title for the kind.

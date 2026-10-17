@@ -208,6 +208,10 @@
   phonePopup(4, false); await sleep(50);
   ok(st === "POPUP_HOLD" && on() === "popup" && shown("popup.mode") === "成就报告" && shown("popup.dest") === "ACHIEVED" &&
      shown("popup.title") === "今天完成 10 趟" && shown("popup.foot") === "10 秒后返回", "21 a popup with no audio starts the 10-second countdown at once");
+  const popScr = () => document.querySelector('.scr[data-id="popup"]');
+  const iconRow = () => widgetEls["popup.icon"].style.backgroundPosition.split(" ")[1];
+  ok(popScr().classList.contains("pop") && !popScr().classList.contains("fall") && iconRow() === "-168px",
+     "21 the achievement icon comes in with the entry animation");
   await sleep(5100); paintData();
   ok(st === "POPUP_HOLD" && shown("popup.foot") === "5 秒后返回", "21 the countdown shows the seconds left");
   await sleep(5100);
@@ -217,6 +221,7 @@
   phonePopup(1, true); await sleep(50);
   ok(st === "POPUP_WAIT" && shown("popup.dest") === "FALL ALERT" && shown("popup.title") === "检测到摔倒" &&
      widgetEls["popup.dest"].style.color === red && shown("popup.foot") === "等待语音", "22 a fall popup is red and waits for its audio");
+  ok(popScr().classList.contains("fall") && iconRow() === "0px", "22 the fall icon also shakes");
   await sleep(500);
   ok(st === "POPUP_PLAY" && spk && shown("popup.foot") === "正在播报", "22 the popup audio plays on channel 2");
   await sleep(3100);

@@ -111,8 +111,8 @@ typedef struct {
     lv_obj_t *hint_panel;
     lv_obj_t *mode_dot;
     lv_obj_t *mode;
-    lv_obj_t *battery;
     lv_obj_t *dest;
+    lv_obj_t *icon;
     lv_obj_t *title;
     lv_obj_t *body;
     lv_obj_t *foot;

@@ -89,7 +89,7 @@ def build(sdkconfig):
         [f"-I{ASSETS / 'fonts'}", f"-I{ASSETS / 'sprites'}"]
     app_src = [HERE / "render.c", FW / "main/ui/ui_theme.c",
                FW / "main/ui/ui_state_icon.c", FW / "main/ui/turn_view.c", FW / "main/ui/turn_page.c",
-               FW / "main/ui/popup_view.c",
+               FW / "main/ui/popup_view.c", FW / "main/ui/popup_anim.c", ASSETS / "sprites/heygo_popup_icons.c",
                FW / "main/link/link_core.c", FW / "main/protocol/ble_proto.c",
                FW / "main/generated/coach_screens.c", FW / "main/generated/coach_bindings.c",
                ASSETS / "fonts/heygo_sc_16.c", ASSETS / "fonts/heygo_sc_28.c",
@@ -190,6 +190,41 @@ def check_glyphs(script):
     return sorted(missing)
 
 
+# The popup entry animation (D-31), for assets/mockups/popup-anim.gif. The live data page shows
+# first. Then the four kinds come one after the other, each as a new popup, as on the device.
+ANIM_STEP_MS = 40
+ANIM_POPUPS = [
+    "1 0 0 |需要帮助吗？60 秒内无操作，手机会通知紧急联系人。",
+    "2 1 0 队友消息|小王：我们在 3 号缆车下面集合。",
+    "3 2 10000 第 2 弯重心偏后|入弯时上身后坐，雪板容易甩尾。下一趟把重心放到前脚。",
+    "4 2 10000 今天完成 10 趟|换刃比上午更稳，继续保持。",
+]
+
+
+def anim_commands():
+    """Return the commands and the frame names of the GIF."""
+    cmds, names = ["screen ski", "label sub 第 4 趟 · 滑行中", "label big 38", "snap anim-000"], ["anim-000"]
+    n = 1
+    for i, popup in enumerate(ANIM_POPUPS):
+        if i == 0:
+            cmds.append("screen popup")
+        cmds += [f"popup {popup}", "anim"]
+        for _ in range((1000 + 640 * 2) // ANIM_STEP_MS):
+            name = f"anim-{n:03d}"
+            cmds += [f"step {ANIM_STEP_MS}", f"snap {name}"]
+            names.append(name)
+            n += 1
+    return cmds, names
+
+
+def write_gif(raw_dir, names, out):
+    frames = [to_png(raw_dir / f"{n}.rgb565") for n in names]
+    durations = [800] + [ANIM_STEP_MS] * (len(frames) - 1)
+    frames[0].save(out / "popup-anim.gif", save_all=True, append_images=frames[1:], duration=durations,
+                   loop=0, optimize=True)
+    print(f"Wrote popup-anim.gif ({len(frames)} frames) to {out}")
+
+
 def to_png(raw_path):
     data = raw_path.read_bytes()
     img = Image.new("RGB", (HOR, VER))
@@ -280,6 +315,8 @@ def main():
     # Run every frame twice. The first pass makes LVGL's one-time allocations.
     # A second pass that ends higher than the first shows a leak.
     cmds = cmds + ["drop", "mem cycle1"] + cmds + ["drop", "mem cycle2"]
+    anim_cmds, anim_names = anim_commands()
+    cmds += anim_cmds + ["drop"]
     r = subprocess.run([str(exe), str(raw_dir)], input="\n".join(cmds) + "\n",
                        capture_output=True, text=True)
     if r.returncode:
@@ -311,6 +348,7 @@ def main():
         print("PNG output: SKIPPED (this Python has no Pillow)")
     else:
         write_pngs(script, raw_dir, out)
+        write_gif(raw_dir, anim_names, out)
 
     base = int(mem["after_display"]["used"])
     built = int(mem["coach_built"]["used"])
@@ -324,7 +362,7 @@ def main():
         print(f"  {name:<20} used {mem[name]['used']} B, biggest free {mem[name]['biggest_free']} B")
     print(f"  peak during run      {peak} B of {total} B ({100 * peak // total}%)")
     for name, b in boxes.items():
-        if "body" in b:
+        if "body" in b and not name.startswith("anim-"):
             print(f"  {name:<20} body h={b['body'][3]}")
     body_size = next(x["size"] for x in flow["subjects"] if x["id"] == "body_text")
     try:

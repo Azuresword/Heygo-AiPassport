@@ -19,6 +19,7 @@ The firmware in `../Firmware` compiles the fonts from this folder.
 | `tools/gen_lv_font.py` | Makes a font file from the source font. |
 | `tools/check_glyphs.py` | Makes sure that each shown character exists in its font. |
 | `sprites/heygo_board_sprite.c`, `sprites/heygo_sprites.h` | The rider sprite of the Turns page: 16 frames of 20 x 20 px, ARGB8888. `heygo_board_sprite.png` is a preview. |
+| `sprites/heygo_popup_icons.c`, `sprites/heygo_popup_icons.h` | The popup badges (D-31): 4 kinds of 4 frames, 56 x 56 px, ARGB8888. `tools/gen_popup_icons.py` makes them. `heygo_popup_icons.png` is a preview. The simulator uses `heygo_popup_icons_sheet.png`. |
 | `tools/gen_sprite.py` | Makes the rider sprite. |
 | `mockups/` | Screen images from the host screen check. `compare-A-B.png` shows the two design options. Version B is in use. |
 | `sim/coach-flow.html` | Interactive simulator of the Coach flow. |
@@ -100,6 +101,7 @@ To make the images again, run `python3 tools/host_render/render.py` from `../Fir
 | `24-popup-issue.png` | A problem report during the countdown: "8 秒后返回" (back in 8 seconds) |
 | `25-popup-badge.png` | An achievement at the start of the countdown |
 | `26-popup-max.png` | A popup with the longest title and body |
+| `popup-anim.gif` | The entry animation: the live data page, then the four kinds, each as a new popup |
 | `contact-sheet.png` | All 25 images at 2x scale |
 
 ## Simulator

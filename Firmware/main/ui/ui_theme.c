@@ -11,3 +11,5 @@ lv_color_t ui_color_ok(void)         { return lv_color_hex(UI_HEX_OK); }
 lv_color_t ui_color_danger(void)     { return lv_color_hex(UI_HEX_DANGER); }
 lv_color_t ui_color_ridge(void)      { return lv_color_hex(UI_HEX_RIDGE); }
 lv_color_t ui_color_accent_dim(void) { return lv_color_hex(UI_HEX_ACCENT_DIM); }
+lv_color_t ui_color_warn(void)       { return lv_color_hex(UI_HEX_WARN); }
+lv_color_t ui_color_gold(void)       { return lv_color_hex(UI_HEX_GOLD); }

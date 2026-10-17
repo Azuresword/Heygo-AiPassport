@@ -20,6 +20,7 @@ Usage:
 """
 
 import argparse
+import base64
 import hashlib
 import json
 import re
@@ -72,7 +73,10 @@ def build(flow_path, selftest=False):
     if errors:
         sys.exit("ERROR:\n  " + "\n  ".join(errors))
     colors = theme_colors()
-    data = {"flow": flow, "strings": strings, "colors": colors, "hold_ms": HOLD_MS,
+    # D-31: the popup icons, the same frames as the device (assets/tools/gen_popup_icons.py).
+    sheet = REPO / "assets" / "sprites" / "heygo_popup_icons_sheet.png"
+    icons = "data:image/png;base64," + base64.b64encode(sheet.read_bytes()).decode()
+    data = {"flow": flow, "strings": strings, "colors": colors, "hold_ms": HOLD_MS, "popup_icons": icons,
             "static_issues": static_issues(flow)}
     blob = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     rel = flow_path.resolve().relative_to(FW).as_posix()

@@ -2,7 +2,8 @@
 # The Coach logic, the packet layer, and the codec are plain C and also run in host tests.
 # The Chinese fonts come from ../../assets/fonts, which assets/tools/gen_lv_font.py generates.
 set(HEYGO_FONTS "${CMAKE_CURRENT_LIST_DIR}/../../assets/fonts")
-# The rider sprite of the Turns page comes from ../../assets/sprites, which assets/tools/gen_sprite.py generates.
+# The sprites come from ../../assets/sprites: the rider of the Turns page (assets/tools/gen_sprite.py)
+# and the popup icons (assets/tools/gen_popup_icons.py).
 set(HEYGO_SPRITES "${CMAKE_CURRENT_LIST_DIR}/../../assets/sprites")
 
 idf_component_register(
@@ -30,6 +31,7 @@ idf_component_register(
          "ui/turn_view.c"
          "ui/turn_page.c"
          "ui/popup_view.c"
+         "ui/popup_anim.c"
          "generated/coach_flow.c"
          "generated/coach_screens.c"
          "generated/coach_bindings.c"
@@ -44,6 +46,7 @@ idf_component_register(
          "${HEYGO_FONTS}/heygo_display_34.c"
          "${HEYGO_FONTS}/heygo_display_48.c"
          "${HEYGO_SPRITES}/heygo_board_sprite.c"
+         "${HEYGO_SPRITES}/heygo_popup_icons.c"
     INCLUDE_DIRS "." "ui" "generated" "audio" "protocol" "link" "${HEYGO_FONTS}" "${HEYGO_SPRITES}"
     REQUIRES bsp bt esp_app_format esp_event esp_hw_support esp_netif esp_timer esp_wifi nvs_flash
 )

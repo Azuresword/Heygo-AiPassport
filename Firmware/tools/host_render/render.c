@@ -14,6 +14,8 @@
 //   popup <kind> <phase> <left_ms> <title>|<body>
 //                           Write the popup page through popup_view.c, as the Coach task does.
 //                           phase: 0 wait, 1 play, 2 hold. An empty title gives the kind default.
+//   anim                    Start the entry animation of the last popup, as the Coach task does.
+//   step <ms>               Move the fake clock on by ms, and run LVGL each 10 ms of it.
 //   snap <name>             Draw the screen and write <outdir>/<name>.rgb565.
 //   drop                    Delete the current screen and load a blank screen.
 //   text body               Write the byte length and the bytes of the body label text.
@@ -32,6 +34,8 @@
 #include "turn_page.h"
 #include "turn_view.h"
 #include "popup_view.h"
+#include "popup_anim.h"
+#include "heygo_popup_icons.h"
 #include "ui_theme.h"
 
 #define HOR 240
@@ -54,11 +58,18 @@ static int s_takes, s_gives;
 static bool count_lock(void) { s_takes++; return true; }
 static void count_unlock(void) { s_gives++; }
 
-static uint32_t tick_ms(void)
+// A fake clock. Only the step command moves it, so each animation frame is the same in every run.
+static uint32_t s_now_ms;
+static uint8_t s_popup_icon;
+
+static uint32_t tick_ms(void) { return s_now_ms; }
+
+static void step(uint32_t ms)
 {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (uint32_t)(ts.tv_sec * 1000u + ts.tv_nsec / 1000000u);
+    for (uint32_t t = 0; t < ms; t += 10) {
+        s_now_ms += 10;
+        lv_timer_handler();
+    }
 }
 
 static void flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px)
@@ -193,7 +204,12 @@ static void put_popup(const char *args)
     lv_label_set_text(s_popup.body, v.body);
     lv_label_set_text(s_popup.foot, v.foot);
     lv_label_set_text(s_popup.hint, v.hint);
-    const lv_color_t c = v.danger ? ui_color_danger() : ui_color_accent();
+    const lv_color_t c = v.tone == POPUP_TONE_DANGER ? ui_color_danger()
+                       : v.tone == POPUP_TONE_WARN   ? ui_color_warn()
+                       : v.tone == POPUP_TONE_GOLD   ? ui_color_gold()
+                                                     : ui_color_accent();
+    s_popup_icon = v.icon;
+    popup_anim_icon(&s_popup, v.icon, HEYGO_POPUP_FRAMES - 1);
     lv_obj_set_style_bg_color(s_popup.mode_dot, c, 0);
     lv_obj_set_style_bg_color(s_popup.hint_panel, c, 0);
     lv_obj_set_style_text_color(s_popup.dest, c, 0);
@@ -298,8 +314,8 @@ static void snap(const char *name)
         print_box("key_hold", s_turns.key_hold);
         break;
     case POPUP:
-        print_box("mode", s_popup.mode); print_box("battery", s_popup.battery);
-        print_box("dest", s_popup.dest); print_box("title", s_popup.title);
+        print_box("mode", s_popup.mode);
+        print_box("dest", s_popup.dest); print_box("icon", s_popup.icon); print_box("title", s_popup.title);
         print_box("body", s_popup.body); print_box("foot", s_popup.foot);
         print_box("hint", s_popup.hint);
         break;
@@ -355,6 +371,8 @@ int main(int argc, char **argv)
             snprintf(buf, sizeof buf, "%s %s", arg ? arg : "", rest ? rest : "");
             put_popup(buf);
         }
+        else if (strcmp(cmd, "anim") == 0 && s_kind == POPUP) popup_anim_start(&s_popup, s_popup_icon);
+        else if (strcmp(cmd, "step") == 0 && arg) step((uint32_t)atoi(arg));
         else if (strcmp(cmd, "shape") == 0 && s_kind == TURNS) {
             // strtok already cut the line after the first number. Glue it back.
             char buf[1024];

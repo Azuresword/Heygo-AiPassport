@@ -122,14 +122,14 @@
     },
     {
       "id": "popup",
-      "comment": "D-31. coach_app.c writes every text and the kind color from main/ui/popup_view.c.",
+      "comment": "D-31. coach_app.c writes every text, the kind color, and the icon from main/ui/popup_view.c. main/ui/popup_anim.c moves the widgets in when the popup comes.",
       "widgets": [
         {"id": "body_panel", "type": "obj", "x": 10, "y": 80, "w": 220, "h": 152, "bg": "surface", "radius": 16, "border_width": 1, "border_color": "surface_hi"},
         {"id": "hint_panel", "type": "obj", "x": 10, "y": 272, "w": 220, "h": 38, "bg": "accent", "radius": 19},
         {"id": "mode_dot", "type": "obj", "x": 14, "y": 19, "w": 7, "h": 7, "color": "accent", "radius": 4},
         {"id": "mode", "type": "label", "x": 26, "y": 10, "w": 110, "text": "语音播报", "font": "heygo_sc_16", "color": "ink"},
-        {"id": "battery", "type": "label", "x": 176, "y": 11, "w": 50, "align": "top_right", "text": "", "font": "heygo_display_20", "color": "muted"},
-        {"id": "dest", "type": "label", "x": 14, "y": 36, "w": 212, "text": "BROADCAST", "font": "heygo_display_34", "color": "accent", "letter_space": 1},
+        {"id": "dest", "type": "label", "x": 14, "y": 36, "w": 152, "text": "BROADCAST", "font": "heygo_display_34", "color": "accent", "letter_space": 1},
+        {"id": "icon", "type": "image", "x": 172, "y": 14, "w": 56, "h": 56},
         {"id": "title", "type": "label", "x": 22, "y": 92, "w": 196, "h": 20, "text": "", "font": "heygo_sc_16", "color": "accent", "long_mode": "dots"},
         {"id": "body", "type": "label", "x": 22, "y": 118, "w": 196, "h": 104, "text": "", "font": "heygo_sc_16", "color": "ink", "long_mode": "dots"},
         {"id": "foot", "type": "label", "x": 14, "y": 242, "w": 212, "align": "top_mid", "text": "", "font": "heygo_sc_16", "color": "muted"},

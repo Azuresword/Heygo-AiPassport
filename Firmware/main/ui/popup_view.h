@@ -24,8 +24,12 @@ typedef enum {
     POPUP_PHASE_HOLD,       // The countdown runs.
 } popup_phase_t;
 
+// The color of the kind. The badge, the dot, the English word, the title, and the key bar use it.
+typedef enum { POPUP_TONE_DANGER = 0, POPUP_TONE_ACCENT, POPUP_TONE_WARN, POPUP_TONE_GOLD } popup_tone_t;
+
 typedef struct {
-    bool danger;                         // A fall: the dot, the English word, and the title are red.
+    popup_tone_t tone;                   // fall red, voice lime, problem orange, achievement gold
+    uint8_t icon;                        // Row of heygo_popup_icon: the kind minus 1.
     char mode[16];                       // "摔倒提醒", "语音播报", "问题报告", "成就报告"
     char dest[16];                       // "FALL ALERT", "BROADCAST", "RUN ISSUE", "ACHIEVED"
     char title[BP_POPUP_TITLE_MAX + 1];  // The phone title, or a default title for the kind.

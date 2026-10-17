@@ -20,18 +20,18 @@ int main(void) {
     popup_view_t v;
     link_popup_t p = make(BP_POPUP_FALL, "", "需要帮助请长按手机按钮");
     popup_view_build(&v, &p, POPUP_PHASE_WAIT, 0);
-    assert(v.danger && strcmp(v.mode, "摔倒提醒") == 0 && strcmp(v.dest, "FALL ALERT") == 0);
+    assert(v.tone == POPUP_TONE_DANGER && v.icon == 0 && strcmp(v.mode, "摔倒提醒") == 0 && strcmp(v.dest, "FALL ALERT") == 0);
     assert(strcmp(v.title, "检测到摔倒") == 0 && strcmp(v.body, "需要帮助请长按手机按钮") == 0);
     assert(strcmp(v.foot, "等待语音") == 0 && strcmp(v.hint, "按任意键关闭") == 0);
 
     p = make(BP_POPUP_BADGE, "今天完成 10 趟", "换刃比上午更稳，继续保持。");
     popup_view_build(&v, &p, POPUP_PHASE_PLAY, 0);
-    assert(!v.danger && strcmp(v.mode, "成就报告") == 0 && strcmp(v.dest, "ACHIEVED") == 0);
+    assert(v.tone == POPUP_TONE_GOLD && v.icon == 3 && strcmp(v.mode, "成就报告") == 0 && strcmp(v.dest, "ACHIEVED") == 0);
     assert(strcmp(v.title, "今天完成 10 趟") == 0 && strcmp(v.foot, "正在播报") == 0);
 
     p = make(BP_POPUP_ISSUE, "", "");
     popup_view_build(&v, &p, POPUP_PHASE_HOLD, POPUP_HOLD_MS);
-    assert(strcmp(v.dest, "RUN ISSUE") == 0 && strcmp(v.title, "发现问题") == 0 && strcmp(v.foot, "10 秒后返回") == 0);
+    assert(v.tone == POPUP_TONE_WARN && v.icon == 2 && strcmp(v.dest, "RUN ISSUE") == 0 && strcmp(v.title, "发现问题") == 0 && strcmp(v.foot, "10 秒后返回") == 0);
     popup_view_build(&v, &p, POPUP_PHASE_HOLD, 9001);
     assert(strcmp(v.foot, "10 秒后返回") == 0);
     popup_view_build(&v, &p, POPUP_PHASE_HOLD, 9000);
@@ -41,7 +41,7 @@ int main(void) {
 
     p = make(BP_POPUP_VOICE, "", "");
     popup_view_build(&v, &p, POPUP_PHASE_WAIT, 0);
-    assert(strcmp(v.mode, "语音播报") == 0 && strcmp(v.dest, "BROADCAST") == 0 && strcmp(v.title, "手机播报") == 0);
+    assert(v.tone == POPUP_TONE_ACCENT && v.icon == 1 && strcmp(v.mode, "语音播报") == 0 && strcmp(v.dest, "BROADCAST") == 0 && strcmp(v.title, "手机播报") == 0);
     p.kind = 9;   // An unknown kind never reaches the view. It still shows as a voice message.
     popup_view_build(&v, &p, POPUP_PHASE_WAIT, 0);
     assert(strcmp(v.mode, "语音播报") == 0);

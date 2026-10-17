@@ -31,6 +31,7 @@
 #include "coach_input.h"
 #include "coach_screens.h"
 #include "coach_ui.h"
+#include "popup_anim.h"
 #include "popup_view.h"
 #include "ski_view.h"
 #include "turn_page.h"
@@ -261,13 +262,20 @@ static void refresh_popup(bool force) {
     PUT("popup", s_popup_scr, s_popup_view, body, v, force);
     PUT("popup", s_popup_scr, s_popup_view, foot, v, force);
     PUT("popup", s_popup_scr, s_popup_view, hint, v, force);
-    if (force || v.danger != s_popup_view.danger) {
-        s_popup_view.danger = v.danger;
-        const lv_color_t c = v.danger ? ui_color_danger() : ui_color_accent();
+    if (force) {
+        // A new popup: the kind color, the icon, and the entry animation.
+        s_popup_view.tone = v.tone;
+        s_popup_view.icon = v.icon;
+        const lv_color_t c = v.tone == POPUP_TONE_DANGER ? ui_color_danger()
+                           : v.tone == POPUP_TONE_WARN   ? ui_color_warn()
+                           : v.tone == POPUP_TONE_GOLD   ? ui_color_gold()
+                                                         : ui_color_accent();
         if (s_popup_scr.mode_dot) lv_obj_set_style_bg_color(s_popup_scr.mode_dot, c, 0);
         if (s_popup_scr.hint_panel) lv_obj_set_style_bg_color(s_popup_scr.hint_panel, c, 0);
         if (s_popup_scr.dest) lv_obj_set_style_text_color(s_popup_scr.dest, c, 0);
         if (s_popup_scr.title) lv_obj_set_style_text_color(s_popup_scr.title, c, 0);
+        popup_anim_start(&s_popup_scr, v.icon);
+        ESP_LOGI("screen", "popup.icon = %u, entry animation", v.icon);
     }
 }
 

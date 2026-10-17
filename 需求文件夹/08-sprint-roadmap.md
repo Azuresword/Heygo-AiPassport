@@ -262,7 +262,7 @@ Section 8 of the [firmware change notes](../Firmware/docs/heygo-changes.md) list
 - The layout check passes.
 - The gate gives exit code 0.
 
-**Result.** Images 22 to 26 show the popup page. The flow simulator self-test passes 102 of 102. The protocol version stays 0.2. Nobody recorded the actual time. Device tests are NOT RUN.
+**Result.** Images 22 to 26 show the popup page. The flow simulator self-test passes 104 of 104. The protocol version stays 0.2. Nobody recorded the actual time. Device tests are NOT RUN.
 
 ### Sprint 14: phone popups on the board
 

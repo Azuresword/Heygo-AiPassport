@@ -288,16 +288,18 @@ The Turns page uses 16,824 bytes of the LVGL pool. The page and the data use abo
 | --- | --- |
 | `main/protocol/ble_proto.*` | Parse and build POPUP (0x66) and POPUP_END (0x67). Add channel 2 (popup audio) and page 6 (popup page). The title holds at most 36 bytes, the body at most 120 bytes. The protocol version stays 0.2. |
 | `main/link/link_core.*`, `main/link/ble_link.*` | Accept POPUP only after HELLO_ACK, with a phone `xid` from 0x80 to 0xFE. Cancel the open question. Send POPUP_END reason 2 for a replaced popup. Accept PLAY_START on channel 2 only for the current popup with audio. Send POPUP_END when the device closes the popup. A lost link sends nothing. |
-| `main/ui/popup_view.*` | Plain C. It makes the texts of the popup page for each kind and phase. They are the name, the English word, the default title, the footer, and the countdown. A fall alert uses the danger color. |
+| `main/ui/popup_view.*` | Plain C. It makes the texts of the popup page for each kind and phase. They are the name, the English word, the default title, the footer, and the countdown. It also gives the color of the kind and the badge row. |
+| `main/ui/popup_anim.*`, `main/ui/ui_theme.*` | The entry animation and the badge frame loop (see doc 02, "Popup page layout"). Add the warn color (orange) and the gold color. |
+| `../assets/tools/gen_popup_icons.py`, `../assets/sprites/heygo_popup_icons.*` | Draw the four badges: 4 frames each, 56 x 56 px, ARGB8888, 200,704 bytes of Flash. |
 | `main/audio/voice.*` | Add `voice_play_cut`. It stops the speaker and keeps the queued blocks, because the popup audio can already be in the queue. |
 | `flows/coach.flow.json` | Add the states POPUP_WAIT, POPUP_PLAY, and POPUP_HOLD, and the screen `popup`. Each state goes to POPUP_WAIT on a POPUP. Each key closes the popup. The RETURN_* events go back to LIVE, REPORT, TURNS, or READY. |
 | `main/coach_app.c` | Save the page before the first popup. Run the 5-second wait for the audio and the 10-second countdown. Drop a timer event of a replaced popup. During a popup, CONTEXT sends mode 0 and page 6. |
 | `../assets/ui/strings.json` | Add 12 popup strings. The fonts already hold every glyph. |
 | `tools/phone_sim/`, `tools/flow/flow_sim.*` | `phone_sim.py --popups N --popup-gap S` sends popups and prints the reason of each POPUP_END. The simulator has popup buttons, a popup zone in the state diagram, and a countdown bar. |
-| `tools/host_render/` | Add the `popup` command and screen images 22 to 26. |
+| `tools/host_render/` | Add the `popup`, `anim`, and `step` commands, and screen images 22 to 26. A fake clock moves only on `step`, so `popup-anim.gif` is the same in each run. |
 
-Results on the host: the host tests pass, and the flow simulator self-test passes 102 of 102. Device tests: NOT RUN.
-The pool use of the popup page is not recorded in this note.
+Results on the host: the host tests pass, and the flow simulator self-test passes 104 of 104. Device tests: NOT RUN.
+The popup page uses at most 13,288 bytes of the LVGL pool (image 26). The peak of the whole run stays 18,760 of 21,656 bytes.
 
 ## 13. Open items
 
