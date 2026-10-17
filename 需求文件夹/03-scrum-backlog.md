@@ -70,7 +70,7 @@ The user made every scope decision so far, including D-17.
 
 ### 4.1 P0 progress
 
-This table applies to commit `11b10cc`, dated 2026-10-17. No Increment 2 story has code yet.
+This table applies to commit `11b10cc`, dated 2026-10-17. Section 8 gives the progress of Increment 2.
 "Device code" means that the code is in the repository. It does not mean that the story meets the Definition of Done.
 Per section 9, each story needs device tests. Some stories also need the real phone application.
 
@@ -86,7 +86,7 @@ Per section 9, each story needs device tests. Some stories also need the real ph
 
 The simulator and `phone_sim` show protocol behavior only. They cannot satisfy a device test.
 
-Known gaps, from section 9 of the [firmware change notes](../Firmware/docs/heygo-changes.md):
+Known gaps, from section 10 of the [firmware change notes](../Firmware/docs/heygo-changes.md):
 
 - During capture, wait, or playback, the device ignores a long DOWN press. D-19 accepts this behavior. The code needs no change.
 - A PLAY_START that arrives during capture is lost. The device then shows a timeout. D-20 forbids the phone to send it at that time. The code needs no change. The phone application team must still accept this rule.
@@ -186,7 +186,7 @@ As a skier, I want to read my speed and this run at a glance. Then I need not ta
 
 - Acceptance: during a run, the Ski page shows the speed, vertical drop, distance, turn count, run time, and run number. The phone sends one packet each second.
 - Acceptance: the speed is the largest number on the page.
-- Acceptance: after a run ends, the Ski page shows the Heygo IQ, the core problem, and the tip of that run. They stay until the next run starts (D-27, proposed).
+- Acceptance: after a run ends, the Ski page shows the Heygo IQ, the core problem, and the tip of that run. They stay until the next run starts (D-27).
 - Acceptance: before any data arrives, the page shows "Waiting for phone data".
 - Acceptance: no color, animation, or sound marks a high speed.
 - Dependency: US-02.
@@ -218,7 +218,7 @@ Each Sprint lasts four hours. The [Four-hour Sprint roadmap](08-sprint-roadmap.m
 |---|---|---|
 | 0 | Build the device logic for one Coach question. | Done, commit `a917aaa`. |
 | 1 | Connect voice and the BLE link. | Code done, commits `941f4e7` and `11b10cc`. The planned hardware acceptance moves to Sprints 5 to 8. |
-| 2 to 4 | Increment 2: data layer, Ski page, Report page. Host only. | Not started. |
+| 2 to 4 | Increment 2: data layer, Ski page, Report page. Host only. | Code committed and merged into `main`. Device tests NOT RUN. |
 | 5 | Board smoke test, with `phone_sim` as the phone. | Not started. Needs the board. |
 | 6 to 9 | Accept both increments with the real phone application, the real service, and test users. | Not started. Needs a phone application with protocol 0.2. |
 | 10 | Fix defects, and review both increments. | Not started. |

@@ -97,11 +97,11 @@ The user parked these questions. The user will share answers after a review with
 | Q-10 | Which firmware baseline and license apply? | P0 | Open. D-09 selected the audio format. |
 | Q-11 | Which final memory and queue limits apply? | Deferred | Deferred by D-18 |
 | Q-12 | Which conditions make two sessions comparable? | P2 | Open |
-| Q-13 | Does the phone application accept the BLE protocol draft? | P0 | Open. Doc 07 version 0.4 offers the device draft. |
+| Q-13 | Does the phone application accept the BLE protocol draft? | P0 | Closed. The phone application team accepted protocol 0.2 on 2026-10-17. |
 | Q-14 | What does the device do on a long DOWN press during capture, wait, or playback? | P0 | Closed by D-19. |
 | Q-15 | What does the device do with a PLAY_START that arrives during capture? | P0 | Closed by D-20. The phone application team must still accept it. |
 | Q-16 | Can the phone application calculate each LIVE_STATS and RUN_REPORT field? Which rules detect the start and the end of a run? | Increment 2 | Open. The phone application team answers. |
-| Q-17 | Is the live field "structure" from the user the speed? | Increment 2 | Open. Until then, the protocol keeps the speed field, and the phone can send the unknown value. |
+| Q-17 | Is the live field "structure" from the user the speed? | Increment 2 | Closed. The user stated that "structure" means the speed, on 2026-10-17. |
 
 ## 6. Decision log
 
@@ -122,7 +122,7 @@ The user parked these questions. The user will share answers after a review with
 | D-13 | Build no privacy or authorization feature. | Accepted by the user. |
 | D-14 | The device does four tasks. The phone application does the rest. | Accepted by the user. |
 | D-15 | Two modes. An OK hold enters Rest mode on the Coach page. A DOWN hold and a short OK exit. | Accepted by the user. Version 0.4 changed the landing page. |
-| D-16 | The device team proposes the BLE protocol draft. Document version 0.4 defines protocol version 0.1. | Proposed. Waits for the phone application team. |
+| D-16 | The device team proposes the BLE protocol draft. Document version 0.4 defines protocol version 0.1. | The phone application team accepted protocol 0.2 on 2026-10-17. |
 | D-17 | P0 keeps the Coach voice chain. Reports, charts, the cache, and intercom move to P1. Turn views move to Deferred. | Accepted by the user. |
 | D-18 | The first version builds no power management, and requests the best-performance link settings. REQ-16 moves to Deferred. | Accepted by the user. |
 | D-19 | During capture, wait, or playback, the device ignores a long DOWN press. The user holds UP to cancel, then holds DOWN to exit. | Accepted by the user. |
@@ -130,10 +130,10 @@ The user parked these questions. The user will share answers after a review with
 | D-21 | The Ski page shows live data. Rest mode adds a Report page. | Accepted by the user. |
 | D-22 | Live data and reports form Increment 2. The team develops it in parallel with the device acceptance of Increment 1. Each increment has its own acceptance. | Accepted by the user. |
 | D-23 | The device team defines the data fields, and the phone application team adapts to them. The live fields cover vertical drop, distance, turn count, and run time. The speed waits for Q-17. After a run starts, the phone sends one packet each second. | Accepted by the user. Changed on 2026-10-17. |
-| D-24 | The protocol changes to 0.2 and adds LIVE_STATS. After Sprint 4, the branch merges into `main`, and the team tells the phone application team to change to 0.2. | Proposed. |
-| D-25 | On the idle Coach page, a short DOWN press opens the Report page. On the Report page, a short UP press returns to the Coach page. An OK hold on the Report page does nothing. | Proposed. |
+| D-24 | The protocol changes to 0.2 and adds LIVE_STATS. After Sprint 4, the branch merges into `main`, and the team tells the phone application team to change to 0.2. | Accepted by the user on 2026-10-17. The phone application team accepted protocol 0.2. `d371c1d` merged into `main`. |
+| D-25 | On the idle Coach page, a short DOWN press opens the Report page. On the Report page, a short UP press returns to the Coach page. An OK hold on the Report page does nothing. | Accepted by the user on 2026-10-17. |
 | D-26 | After each run, the phone sends the report of that run. It holds the distance, turn count, Heygo IQ, core problem, and a tip of at most 20 characters. | Accepted by the user. |
-| D-27 | The Heygo IQ is an integer from 0 to 100. The phone sends the core problem as text of at most 12 Chinese characters. The report shows on the Ski page on the lift and on the Report page in Rest mode. | Proposed. Until the user answers, the device team uses these three values. |
+| D-27 | The Heygo IQ is an integer from 0 to 100. The phone sends the core problem as text of at most 12 Chinese characters. The report shows on the Ski page on the lift and on the Report page in Rest mode. | Accepted by the user on 2026-10-17. |
 
 ## 7. Risks
 

@@ -43,7 +43,7 @@ D-17, D-18, and D-22 set the priorities:
 Sprint 0 ended. The Sprint 1 device code is in the repository. Device tests are NOT RUN. The team closed no story.
 Section 4.1 of the [backlog](03-scrum-backlog.md) gives the progress of each story.
 
-The user accepted D-08 to D-15, D-17 to D-23, and D-26. D-16 waits for the phone application team. D-24, D-25, and D-27 wait for the user.
+The user accepted D-08 to D-15 and D-17 to D-27. The phone application team accepted protocol 0.2 (D-16).
 A phone application already exists. Another team develops it.
 No person accepted a Scrum role or a delivery date.
 

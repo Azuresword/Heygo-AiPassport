@@ -316,7 +316,7 @@ Both messages use `xid` 0 and `seq` 0. The device sends no acknowledgment.
 | 8 | 2 | Run turn count | Turns | 0xFFFF |
 | 10 | 2 | Run time | Seconds | 0xFFFF |
 
-The speed field waits for Q-17. If the phone has no speed, it sends the unknown value.
+If the phone has no speed, it sends the unknown value.
 
 **RUN_REPORT payload**
 
@@ -516,7 +516,6 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 - Measure the MTU, the connection interval, and the throughput on the target phones.
 - Check the background behavior of the phone application while a voice exchange runs.
 - The phone application team checks that it can calculate each LIVE_STATS and RUN_REPORT field. It also gives the rules that detect the start and the end of a run. Q-16 tracks this item.
-- Find out whether the first number field of LIVE_STATS is the speed. Q-17 tracks this item.
 - Record the interval, the PHY, and the data length that each target phone grants.
 - A later version measures the battery cost of the link settings. D-18 defers this item.
 

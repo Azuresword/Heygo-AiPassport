@@ -2,7 +2,7 @@
 
 # Decision amendments: D-08 to D-27
 
-Version: 0.6. Date: 2026-10-17. Status: D-08 to D-15, D-17 to D-23, and D-26 accepted by the user. D-16, D-24, D-25, and D-27 proposed.
+Version: 0.6. Date: 2026-10-17. Status: D-08 to D-15 and D-17 to D-27 accepted by the user. The phone application team accepted D-16.
 
 This document gives the reasons behind D-08 to D-27.
 [Validation and decisions](04-validation-and-decisions.md) holds the short log.
@@ -132,7 +132,7 @@ The new-press rule replaces the protection that the Reports page gave.
 
 ## 11. D-16: BLE protocol draft
 
-**Status.** Proposed. The phone application team must review it.
+**Status.** The phone application team accepted protocol 0.2 on 2026-10-17.
 
 **Decision.** The device side follows the [BLE protocol draft](07-ble-protocol-draft.md) until Q-13 has an answer.
 Version 0.2 of the draft marks the Team and Report messages as P1.
@@ -220,7 +220,7 @@ During capture, the device still drops a PLAY_START.
 ## 17. D-23: the device team defines the fields
 
 **Decision.** The device team defines the data fields, and the phone application team adapts to them.
-The live fields cover vertical drop, distance, turn count, and run time. The speed waits for Q-17. After a run starts, the phone sends one packet each second.
+The live fields cover vertical drop, distance, turn count, and run time. The user stated that "structure" means the speed (Q-17). After a run starts, the phone sends one packet each second.
 On 2026-10-17 the user changed the fields and added the turn count. D-26 gives the fields of the run report.
 
 **Reason.**
@@ -246,7 +246,7 @@ After Sprint 4, the branch `feat/report-live-data` merges into `main`. At the sa
 
 **Cost.** Before the change, a phone application with 0.1 only gets no voice with the new firmware. Both sides must therefore change to 0.2 before Sprint 6.
 
-**Status.** Proposed. It waits for the user.
+**Status.** Accepted by the user on 2026-10-17.
 
 ## 19. D-25: the change between the Coach page and the Report page
 
@@ -260,7 +260,7 @@ After Sprint 4, the branch `feat/report-live-data` merges into `main`. At the sa
 
 **Cost.** A gloved hand gives an accidental short press more easily. An accidental press only changes the page. It never starts capture.
 
-**Status.** Proposed. It waits for the user.
+**Status.** Accepted by the user on 2026-10-17.
 
 ## 20. D-26: a report for each run
 
@@ -284,7 +284,7 @@ After Sprint 4, the branch `feat/report-live-data` merges into `main`. At the sa
 
 **Reason.** The three items change only the screen. They do not change the rest of the protocol. A later change costs little.
 
-**Status.** Proposed. It waits for the user.
+**Status.** Accepted by the user on 2026-10-17.
 
 ## 22. Related documents
 

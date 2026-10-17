@@ -2,7 +2,7 @@
 
 # Four-hour Sprint roadmap
 
-Version: 0.2. Date: 2026-10-17. Status: In progress. The Sprint 2 code is in the repository. The Product Owner must accept the Sprint order.
+Version: 0.2. Date: 2026-10-17. Status: In progress. The code of Sprints 2 to 4 is in the repository and merged into `main`. Device tests are NOT RUN.
 
 This document divides the remaining work of Increment 1 and Increment 2 in the [backlog](03-scrum-backlog.md) into four-hour Sprints.
 Each Sprint has one Sprint Goal.
@@ -33,8 +33,8 @@ Rules:
 | 0 | 1 | Build the device logic for one Coach question. | None | Done, commit `a917aaa` |
 | 1 | 1 | Connect voice and the BLE link. | None | Code done, commits `941f4e7` and `11b10cc`. The planned hardware acceptance moves to Sprints 5 to 8 |
 | 2 | 2 | The device receives LIVE_STATS and RUN_REPORT and parses each field as doc 07 defines. | None | Code committed. Section 3 gives the result |
-| 3 | 2 | The Ski page shows live data and passes the host screen check. | Sprint 2 | Not started |
-| 4 | 2 | Rest mode switches between the Coach page and the Report page. The Report page passes the host screen check. | Sprint 3 | Not started |
+| 3 | 2 | The Ski page shows live data and passes the host screen check. | Sprint 2 | Code committed. Section 3 gives the result |
+| 4 | 2 | Rest mode switches between the Coach page and the Report page. The Report page passes the host screen check. | Sprint 3 | Code committed. Section 3 gives the result |
 | 5 | 1, 2 | On the board, run a question and one run of ski data with `phone_sim`, and record the measurements. | The board at hand | Not started |
 | 6 | 1 | Pass TC-01, TC-06, TC-07, and TC-20 with the real phone application. | Sprint 5. A phone application with protocol 0.2 | Not started |
 | 7 | 2 | Pass TC-02, TC-03, and the timing part of TC-21 with the real phone application. | Sprint 6 | Not started |
@@ -94,6 +94,8 @@ Section 8 of the [firmware change notes](../Firmware/docs/heygo-changes.md) list
 
 **Cut line.** If task 1 takes more than 60 minutes, use the current 28-pixel font. Move the large font to Sprint 4.
 
+**Result.** The 48-pixel font exists, with a bitmap of 26,115 bytes. The host renders 4 Ski page images: 01, 10, 11, and 12. A missing field and out-of-date data both show "--". `tests/test_ski_view.c` covers both. The LVGL pool peak is 17,584 of 21,656 bytes (81%). Nobody recorded the actual time.
+
 ### Sprint 4: Report page
 
 **Sprint Goal.** Rest mode switches between the Coach page and the Report page. The Report page passes the host screen check.
@@ -104,7 +106,7 @@ Section 8 of the [firmware change notes](../Firmware/docs/heygo-changes.md) list
 | --- | --- | --- |
 | 1 | The state machine adds the page changes on a short DOWN press and a short UP press. CONTEXT sends page 3. | 60 min |
 | 2 | The Report page layout: Heygo IQ, distance and turns, core problem, and tip. | 60 min |
-| 3 | The data age line: "Updated N min ago". | 30 min |
+| 3 | The report age line: "N MIN AGO". | 30 min |
 | 4 | Host tests: one test for each new transition. A short press during audio changes no page. | 30 min |
 | 5 | The flow simulator adds the Report page and its self-test items. | 20 min |
 
@@ -113,6 +115,8 @@ Section 8 of the [firmware change notes](../Firmware/docs/heygo-changes.md) list
 - Each new transition has a host test.
 - The host renders three Report page images: with a report, with no report yet, and with a report older than 60 seconds. Texts at the limit show in full.
 - The gate gives exit code 0.
+
+**Result.** Images 13, 14, and 15 show the Report page. Image 15 holds the longest texts. The flow simulator self-test passes 53 of 53. Nobody recorded the actual time.
 
 **After Sprint 4.** D-24 merges the branch `feat/report-live-data` into `main`. At the same time, the team tells the phone application team to change to protocol 0.2.
 

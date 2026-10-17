@@ -187,11 +187,11 @@ D-21 puts live data on the Ski page. During a run, the eyes belong on the slope.
 - After 5 seconds with no new packet, the speed shows "--". The other numbers stay, with an out-of-date mark.
 - Before any data arrives, the body shows "Waiting for phone data".
 - The speed shows as a number only. No color, animation, or sound marks a high speed.
-- The speed field waits for Q-17. Until then, the phone can send the unknown value, and the screen shows "--".
+- If the phone has no speed, it sends the unknown value, and the screen shows "--".
 
 ### Run report
 
-D-26: after each run, the phone sends the report of that run. D-27 proposes two places for the report:
+D-26: after each run, the phone sends the report of that run. D-27 sets two places for the report:
 
 - **The Ski page on the lift.** After a run ends, the Ski page shows the Heygo IQ, the core problem, and the tip of that run until the next run starts.
 - **The Report page in Rest mode.** On the idle Coach page, a short DOWN press opens the Report page. A short UP press returns to the Coach page.
@@ -208,7 +208,7 @@ D-26: after each run, the phone sends the report of that run. D-27 proposes two 
 - On the Report page, an OK hold does nothing. The button hint shows "Press UP for coach".
 - On the Report page, a DOWN hold opens the exit question, as on the Coach page.
 - Before the first report arrives, the Report page shows "The report shows after a run".
-- 60 seconds after a report arrives, the Report page shows "N min ago".
+- 60 seconds after a report arrives, the Report page shows "N MIN AGO".
 - After a link loss, the device keeps the last report from RAM on the screen.
 
 ### Data fields
@@ -217,7 +217,7 @@ D-23 lets the device team define the fields. The phone application team calculat
 
 | Field | Unit and format | Live data | Run report |
 | --- | --- | --- | --- |
-| Speed | km/h, integer | Yes, waits for Q-17 | No |
+| Speed | km/h, integer | Yes | No |
 | Vertical drop | m, integer | Yes | No |
 | Distance | Below 1,000 m in m, else in km with one decimal | Yes | Yes |
 | Turn count | Integer | Yes | Yes |

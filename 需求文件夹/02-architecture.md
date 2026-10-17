@@ -122,30 +122,37 @@ Check the glyph coverage of every Chinese string. A successful build does not pr
 
 ### Ski page layout
 
-D-21 replaces the Ski page body with live data. The status bar and the button hints use the same areas as on the Coach page.
+D-21 replaces the Ski page body with ski data. The status bar and the button hints use the same areas as on the Coach page.
+The positions come from `flows/coach.flow.json`, and the host screen check passes. `main/ui/ski_view.c` makes the texts.
 
-| Area | Range | Content |
-|---|---|---|
-| Status bar | `x=32..207, y=0..35` | Mode, link state, battery |
-| Title | `x=12..227, y=36..67` | "Run 4 · 02:31". After the run ends, "Run 4 · Ended" |
-| Speed | `x=12..227, y=68..187` | The speed in 48-pixel digits, then "km/h" in 16 pixels. After the run ends, the Heygo IQ |
-| Second numbers | `x=12..227, y=188..283` | Line 1 "Drop 312 m", line 2 "1.8 km · 24 turns". Out-of-date data adds the line "Data out of date". After the run ends, the core problem and the tip |
-| Button hints | `x=32..207, y=284..319` | "Hold OK to rest" |
+| Widget | Position | Font | Content |
+|---|---|---|---|
+| `dest` | `x=14, y=36` | 34 px brand font | "LIVE RUN". After the run ends, "RUN ENDED". After the report arrives, "REPORT" |
+| `run` | `x=14, y=80` | 20 px brand font | "RUN 4  02:31". After the report arrives, "RUN 4  1.9 km" |
+| `speed` | `x=14..110, y=105`, right-aligned | 48 px brand font | The speed. After the report arrives, the Heygo IQ |
+| `unit` | `x=116, y=129` | 20 px brand font | "KM/H". After the report arrives, "HEYGO IQ" |
+| `line1` | `x=14, y=176` | 16 px Chinese | "落差 312 m · 1.9 km". After the report arrives, the core problem |
+| `line2` | `x=14, y=200`, height 50 | 16 px Chinese, at most two lines | "24 弯", plus an out-of-date mark or a "report on the way" mark. After the report arrives, the tip |
 
-The 48-pixel font uses Staatliches from brand version B. It holds only digits, the decimal point, the colon, and "-". It stays in Flash.
-No color marks a fast or slow speed. When data is out of date, the numbers use the secondary text color.
+- Before any data arrives, `line1` shows "等待手机数据" and `line2` shows "专注雪道，教练随时待命".
+- After 5 seconds with no new packet, the speed shows "--". After the run ends, the phone sends nothing, and the device marks nothing out of date.
+- The 48-pixel font is Staatliches from brand version B. It holds all ASCII characters. It stays in Flash, with a bitmap of 26,115 bytes.
+- No color marks a fast or slow speed.
 
 ### Report page layout
 
-| Area | Range | Content |
-|---|---|---|
-| Status bar | `x=32..207, y=0..35` | Mode, link state, battery |
-| Title | `x=12..227, y=36..67` | "Run 3 report" |
-| Score | `x=12..227, y=68..187` | The Heygo IQ in 48 pixels, with the line "1.9 km · 25 turns" below it |
-| Text | `x=12..227, y=188..283` | The core problem on one line, and the tip on at most two lines. 60 seconds after the report arrives, a line "N min ago" |
-| Button hints | `x=32..207, y=284..319` | "Press UP for coach" |
+| Widget | Position | Font | Content |
+|---|---|---|---|
+| `dest` | `x=14, y=36` | 34 px brand font | "RUN REPORT" |
+| `title` | `x=14, y=80` | 16 px Chinese | "第 3 趟 · 1.9 km · 25 弯". With no report, "滑完一趟后显示报告" |
+| `iq` | `x=14..110, y=105`, right-aligned | 48 px brand font | The Heygo IQ |
+| `iq_name` | `x=116, y=106` | 20 px brand font | "HEYGO IQ" |
+| `age` | `x=116, y=131` | 20 px brand font | "3 MIN AGO", from 60 seconds after the report arrives |
+| `problem` | `x=22, y=182` | 16 px Chinese | The core problem, at most 12 Chinese characters, on one line |
+| `tip` | `x=22, y=206`, height 50 | 16 px Chinese, at most two lines | The tip, at most 20 Chinese characters |
 
 Only one screen exists at a time. On a page change, the task deletes the old screen first and then builds the new screen.
+Images 10 to 15 in `assets/mockups` come from the host renderer. They include the longest texts.
 
 ## 4. Audio state
 
