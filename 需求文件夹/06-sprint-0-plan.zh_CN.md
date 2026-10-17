@@ -2,7 +2,7 @@
 
 # Sprint 0：4 小时计划
 
-版本：0.5。日期：2026-10-16。状态：提案。
+版本：0.6。日期：2026-10-17。状态：已完成。提交 `a917aaa` 交付了全部四项任务。结果见第 7 节。
 
 ## 1. Sprint 目标
 
@@ -112,7 +112,36 @@ Unverified: 真实的手机应用、全部设备行为、全部现场条件
 | 4 小时不够用。 | T-3 延期。 | 执行第 2 节的砍线。 |
 | 纯主机的结果被当成产品结果。 | 状态报告失真。 | 按第 4 节的格式报告。 |
 
-## 7. 相关文档
+## 7. 结果
+
+Sprint 0 于 2026-10-17 结束。提交 `a917aaa` 交付了四项任务。
+T-3 照常交付，没有执行砍线。
+团队没有记录实际用时，所以无法判断 Sprint 0 是否在 4 小时内完成。
+
+| 任务 | 结果 | 证据 |
+| --- | --- | --- |
+| T-1 | 完成 | `Firmware/flows/coach.flow.json` 生成 `Firmware/main/generated/coach_*`。主机测试 `test_coach_flow.c`、`test_coach_paths.c`。 |
+| T-2 | 完成 | `Firmware/main/protocol/ble_proto.*`、`Firmware/main/audio/play_gate.*`。主机测试 `test_ble_proto.c`、`test_play_gate.c`。 |
+| T-3 | 完成 | `Firmware/main/audio/ima_adpcm.*`。主机测试 `test_ima_adpcm.c`。 |
+| T-4 | 完成 | `./tools/validate.sh` 退出码 0。应用镜像 1,252,514 字节。静态 DRAM 105,610 字节。 |
+
+T-4 的数据来自提交 `a917aaa` 的提交信息。
+[固件改动说明](../Firmware/docs/heygo-changes.zh_CN.md)第 2 节列出了文件和测试。
+
+Sprint 0 还提前做了第 5 节中的两项：Coach 界面的 LVGL 绘制和中文字体子集。
+这两项只通过了主机上的界面检查和字形检查，仍需在开发板上检查。
+NimBLE 集成在 Sprint 1 完成，提交为 `941f4e7`。
+
+```text
+Build: PASS（提交 a917aaa）
+Host tests: PASS（提交 a917aaa）
+Device tests: NOT RUN
+Unverified: 真实的手机应用、全部设备行为、全部现场条件
+```
+
+按第 4 节，Sprint 0 不关闭任何故事。
+
+## 8. 相关文档
 
 - [Scrum 待办列表](03-scrum-backlog.zh_CN.md)。
 - [决策修订](05-decision-amendments.zh_CN.md)。

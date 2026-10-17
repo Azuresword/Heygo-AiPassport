@@ -2,7 +2,7 @@
 
 # Sprint 0: four-hour plan
 
-Version: 0.5. Date: 2026-10-16. Status: Proposed.
+Version: 0.6. Date: 2026-10-17. Status: Done. Commit `a917aaa` delivered all four tasks. Section 7 gives the results.
 
 ## 1. Sprint Goal
 
@@ -112,7 +112,36 @@ Unverified: the real phone application, every device behavior, every field condi
 | Four hours prove too short. | T-3 slips. | Apply the cut line in section 2. |
 | A host-only result reads as a product result. | A wrong status report. | Report in the format of section 4. |
 
-## 7. Related documents
+## 7. Results
+
+Sprint 0 ended on 2026-10-17. Commit `a917aaa` delivered the four tasks.
+T-3 shipped as planned. The cut line did not apply.
+The team did not record the actual time. So no record shows whether Sprint 0 stayed inside four hours.
+
+| Task | Result | Evidence |
+| --- | --- | --- |
+| T-1 | Done | `Firmware/flows/coach.flow.json` generates `Firmware/main/generated/coach_*`. Host tests `test_coach_flow.c` and `test_coach_paths.c`. |
+| T-2 | Done | `Firmware/main/protocol/ble_proto.*` and `Firmware/main/audio/play_gate.*`. Host tests `test_ble_proto.c` and `test_play_gate.c`. |
+| T-3 | Done | `Firmware/main/audio/ima_adpcm.*`. Host test `test_ima_adpcm.c`. |
+| T-4 | Done | `./tools/validate.sh` exit code 0. Application image 1,252,514 bytes. Static DRAM 105,610 bytes. |
+
+The T-4 figures come from the message of commit `a917aaa`.
+Section 2 of the [firmware change notes](../Firmware/docs/heygo-changes.md) lists the files and the tests.
+
+Sprint 0 also delivered two items from section 5: the Coach screens in LVGL and the Chinese font subset.
+Only the host screen check and the glyph check cover these two items. They still need a check on the board.
+NimBLE integration came in Sprint 1, in commit `941f4e7`.
+
+```text
+Build: PASS (commit a917aaa)
+Host tests: PASS (commit a917aaa)
+Device tests: NOT RUN
+Unverified: the real phone application, every device behavior, every field condition
+```
+
+Per section 4, Sprint 0 closes no story.
+
+## 8. Related documents
 
 - [Scrum backlog](03-scrum-backlog.md).
 - [Decision amendments](05-decision-amendments.md).
