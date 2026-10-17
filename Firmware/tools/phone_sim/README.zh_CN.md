@@ -52,6 +52,8 @@ python3 tools/phone_sim/phone_sim.py --runs 3 --run-s 30
 5. 2 秒后，发送一个 RUN_REPORT。
 6. 接着 10 秒不发送任何数据，模拟坐缆车。5 秒后，设备标明数据过期。
 
+加上 `--jump` 时，每份报告之后再发送 SHOW_PAGE。设备在滑行页或教练页空闲时打开报告页（D-28）。
+
 ## 设备测试
 
 在刷了当前固件的板子上按下面的步骤做。
@@ -66,6 +68,7 @@ python3 tools/phone_sim/phone_sim.py --runs 3 --run-s 30
 | 5 | 提问过程中停止 `phone_sim.py`。 | 设备停止录音，并显示失败。 | TC-20 |
 | 6 | 先用 `fail` 模式，再用 `silent` 模式。 | 设备先显示重说提示，再显示超时提示。 | TC-06 |
 | 7 | 启动 `phone_sim.py --runs 3`。 | 日志每秒出现一行 LIVE_STATS，每趟结束后出现一行 RUN_REPORT。 | TC-02 |
+| 8 | 启动 `phone_sim.py --runs 2 --jump`。第 1 趟停在滑行页。第 2 趟结束时提一个问题。 | 第 1 趟打开报告页。第 2 趟提问时页面不变。 | TC-03 |
 
 ## 日志分析
 

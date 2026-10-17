@@ -129,6 +129,27 @@
   ok(st === "EXIT_Q", "17 a DOWN hold on the Report page opens the exit question");
   await tap("OK");
   ok(st === "SKI", "17 the exit returns to Ski mode");
+
+  // D-28: SHOW_PAGE opens the Report page from SKI and READY only.
+  showReport(); await sleep(50);
+  ok(st === "REPORT" && document.querySelector(".scr.on").dataset.id === "report", "18 SHOW_PAGE opens the Report page from Ski mode");
+  await tap("UP");
+  ok(st === "READY", "18 a short UP goes to the Coach page");
+  showReport(); await sleep(50);
+  ok(st === "REPORT", "18 SHOW_PAGE opens the Report page from the idle Coach page");
+  await tap("UP");
+  document.getElementById("scenario").value = "normal";
+  press("OK", key("OK")); await sleep(700);
+  showReport(); await sleep(50);
+  ok(st === "CAPTURE" && mic, "18 SHOW_PAGE during capture changes nothing");
+  release("OK"); await sleep(3500);
+  ok(st === "PLAYBACK" && spk, "18 the answer plays");
+  showReport(); await sleep(50);
+  ok(st === "PLAYBACK" && spk, "18 SHOW_PAGE during playback changes nothing");
+  await hold("UP");
+  await hold("DOWN"); showReport(); await sleep(50);
+  ok(st === "EXIT_Q", "18 SHOW_PAGE in the exit question changes nothing");
+  await tap("OK");
   const pre = document.createElement("pre");
   pre.id = "selftest";
   pre.textContent = out.join("\n") + `\nRESULT ${fails ? "FAIL" : "PASS"} ${out.length - fails}/${out.length}`;

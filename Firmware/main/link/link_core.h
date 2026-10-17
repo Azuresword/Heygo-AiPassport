@@ -69,6 +69,8 @@ typedef struct {
     // Increment 2 data. They come only after a HELLO_ACK with the same protocol version.
     void (*live_stats)(void *ctx, const bp_live_stats_t *s);
     void (*run_report)(void *ctx, const link_report_t *r);
+    // The phone asks for a page. The only page now is BP_PAGE_REPORT.
+    void (*show_page)(void *ctx, uint8_t page);
 } link_io_t;
 
 typedef struct {

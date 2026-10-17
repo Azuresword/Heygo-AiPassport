@@ -21,7 +21,8 @@ HELLO, HELLO_ACK, PHONE_STATUS, DEVICE_STATUS, ERROR = 0x01, 0x02, 0x03, 0x04, 0
 CONTEXT = 0x10
 AGENT_START, AGENT_END, AGENT_CANCEL, AGENT_STATE = 0x20, 0x21, 0x22, 0x23
 AUDIO_UP, AUDIO_DOWN, PLAY_START, PLAY_END = 0x30, 0x31, 0x32, 0x33
-LIVE_STATS, RUN_REPORT = 0x60, 0x61
+LIVE_STATS, RUN_REPORT, SHOW_PAGE = 0x60, 0x61, 0x62
+PAGE_REPORT = 3
 
 TYPE_NAMES = {
     HELLO: "HELLO", HELLO_ACK: "HELLO_ACK", PHONE_STATUS: "PHONE_STATUS",
@@ -29,7 +30,7 @@ TYPE_NAMES = {
     AGENT_START: "AGENT_START", AGENT_END: "AGENT_END", AGENT_CANCEL: "AGENT_CANCEL",
     AGENT_STATE: "AGENT_STATE", AUDIO_UP: "AUDIO_UP", AUDIO_DOWN: "AUDIO_DOWN",
     PLAY_START: "PLAY_START", PLAY_END: "PLAY_END",
-    LIVE_STATS: "LIVE_STATS", RUN_REPORT: "RUN_REPORT",
+    LIVE_STATS: "LIVE_STATS", RUN_REPORT: "RUN_REPORT", SHOW_PAGE: "SHOW_PAGE",
 }
 
 ACCEPTED, RECOGNIZING, THINKING, ANSWERING, DONE, FAILED = 1, 2, 3, 4, 5, 6
@@ -96,6 +97,13 @@ def run_report(run_no, distance_m, turns, iq, problem="", tip=""):
     if iq > 100 and iq != U8_UNKNOWN:
         raise ValueError("iq is 0 to 100, or U8_UNKNOWN")
     return packet(RUN_REPORT, payload=struct.pack("<BHHBB", run_no, distance_m, turns, iq, len(p)) + p + t)
+
+
+def show_page(page=PAGE_REPORT):
+    """Ask the device to show a page. Only the Report page (3) is valid."""
+    if page != PAGE_REPORT:
+        raise ValueError("SHOW_PAGE accepts only the Report page (3)")
+    return packet(SHOW_PAGE, payload=bytes([page]))
 
 
 def read_hello(payload):

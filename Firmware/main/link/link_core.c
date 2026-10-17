@@ -220,6 +220,17 @@ static void on_run_report(link_core_t *l, const bp_packet_t *p, uint32_t now_ms)
     if (l->io.run_report) l->io.run_report(l->io.ctx, &l->report);
 }
 
+static void on_show_page(link_core_t *l, const bp_packet_t *p) {
+    if (!data_allowed(l)) return;
+    uint8_t page;
+    const bp_err_t err = bp_read_show_page(p, &page);
+    if (err != BP_OK) {
+        send_error(l, (uint8_t)err, p->type, p->xid);
+        return;
+    }
+    if (l->io.show_page) l->io.show_page(l->io.ctx, page);
+}
+
 void link_on_rx(link_core_t *l, const uint8_t *buf, size_t len, uint32_t now_ms) {
     if (!l->connected) return;
     l->last_rx_ms = now_ms;
@@ -247,6 +258,7 @@ void link_on_rx(link_core_t *l, const uint8_t *buf, size_t len, uint32_t now_ms)
     case BP_PLAY_END: on_play_end(l, &p); break;
     case BP_LIVE_STATS: on_live_stats(l, &p, now_ms); break;
     case BP_RUN_REPORT: on_run_report(l, &p, now_ms); break;
+    case BP_SHOW_PAGE: on_show_page(l, &p); break;
     default:
         // A device-to-phone type that arrives from the phone.
         send_error(l, BP_ERR_STATE, p.type, p.xid);

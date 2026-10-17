@@ -202,6 +202,7 @@ As a skier, I want the problem of each run and one tip after the run. Then I kno
 - Acceptance: before the first report arrives, the Report page shows "The report shows after a run".
 - Acceptance: after a link loss, the Report page keeps the last report and shows its receive time.
 - Acceptance: while audio runs, a short press changes no page.
+- Acceptance: when the phone sends SHOW_PAGE, the device opens the Report page from the Ski page or the idle Coach page. During capture, the wait, the playback, and the exit question, the page does not change (D-28).
 - Dependency: US-02 and US-17.
 - Verification: TC-03.
 

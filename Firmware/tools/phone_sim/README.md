@@ -52,6 +52,8 @@ python3 tools/phone_sim/phone_sim.py --runs 3 --run-s 30
 5. After 2 seconds, it sends one RUN_REPORT.
 6. It then sends nothing for 10 seconds, as on a lift. The device marks the data out of date after 5 seconds.
 
+Add `--jump` to send SHOW_PAGE after each report. The device opens the Report page from the Ski page or the idle Coach page (D-28).
+
 ## Device test
 
 Run these steps on a board with the current firmware.
@@ -66,6 +68,7 @@ Record the phone, the log, and the result of each step.
 | 5 | Stop `phone_sim.py` during a question. | The device stops capture and shows the failure. | TC-20 |
 | 6 | Use `fail` mode, then `silent` mode. | The device shows the retry text, and then the timeout text. | TC-06 |
 | 7 | Start `phone_sim.py --runs 3`. | The log shows a LIVE_STATS line each second and a RUN_REPORT line after each run. | TC-02 |
+| 8 | Start `phone_sim.py --runs 2 --jump`. Stay on the Ski page for run 1. Ask a question when run 2 ends. | Run 1 opens the Report page. During the question in run 2, the page does not change. | TC-03 |
 
 ## Log analysis
 

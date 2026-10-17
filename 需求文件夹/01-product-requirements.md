@@ -102,7 +102,7 @@ Each row has test stage Prototype. Owners are roles with no assigned person.
 | REQ-07 | Play the spoken answer as it arrives. Allow the user to stop it. | Firmware and phone. | TC-07: playback stops within 200 ms of the cancel command in 30 trials. No canceled answer resumes. | The phone must supply synthesized speech. |
 | REQ-08 | Ask the Agent with a button. The phone attaches the current ski session. | Agent, phone, and firmware. | TC-08: the first audible answer starts within 5 seconds of release at the 95th percentile. The Agent marks claims that lack evidence. | HeygoAI coaching tools remain open. |
 | REQ-15 | Support three buttons, gloves, and readable Chinese status text. | Design and firmware. | TC-15: every required glyph shows. At least 4 of 5 users complete each core task. | Test gloves and readability on hardware. |
-| REQ-17 | Keep Ski mode and Rest mode distinct. Require manual entry before any voice use. | Firmware and design. | TC-17: 50 transition trials keep the mode clear. The press that enters Rest mode never starts capture. | No automatic motion detection exists. |
+| REQ-17 | Keep Ski mode and Rest mode distinct. Require manual entry before any voice use. | Firmware and design. | TC-17: 50 transition trials keep the mode clear. The press that enters Rest mode never starts capture. | No automatic motion detection exists. D-28 exception: the phone can change the device to the Report page. That enters Rest mode but never starts capture. |
 | REQ-20 | Explain link failures. Support recovery. | Firmware and phone. | TC-20: 10 reconnect trials create no duplicate question. No stale answer plays. | Test link loss and phone background behavior. |
 
 ### P1, Increment 2
@@ -206,6 +206,7 @@ D-26: after each run, the phone sends the report of that run. D-27 sets two plac
 | Short tip | At most 20 Chinese characters | Next run, keep both hands in front |
 
 - On the Report page, an OK hold does nothing. The button hint shows "Press UP for coach".
+- D-28: when the phone sends SHOW_PAGE, the device changes to the Report page from the Ski page or the idle Coach page. In Ski mode, it also enters Rest mode. During capture, the wait, the playback, and the exit question, the device ignores the message, so it never stops the user.
 - On the Report page, a DOWN hold opens the exit question, as on the Coach page.
 - Before the first report arrives, the Report page shows "The report shows after a run".
 - 60 seconds after a report arrives, the Report page shows "N MIN AGO".

@@ -40,9 +40,12 @@ static bp_live_stats_t s_live;
 static link_report_t s_report;
 static void io_live(void *c, const bp_live_stats_t *s) { (void)c; s_lives++; s_live = *s; }
 static void io_report(void *c, const link_report_t *r) { (void)c; s_reports++; s_report = *r; }
+static int s_pages;
+static uint8_t s_page;
+static void io_page(void *c, uint8_t page) { (void)c; s_pages++; s_page = page; }
 
 static const link_io_t IO = { NULL, io_send, io_drop, io_voice, io_state, io_play_start, io_down, io_play_end, io_dropped,
-                              io_live, io_report };
+                              io_live, io_report, io_page };
 
 static void clear(void) { s_nsent = 0; }
 static const sent_t *last(void) { return s_nsent ? &s_sent[s_nsent - 1] : NULL; }
@@ -339,6 +342,17 @@ static void test_live_data(void) {
     CHECK(e && e->buf[4] == BP_ERR_FIELD && e->buf[5] == BP_RUN_REPORT, "ERROR 7 for an IQ above 100");
     r = link_report(&l, 8100, &age);
     CHECK(s_reports == 1 && r && r->iq == 82, "a bad report keeps the old report");
+
+    // SHOW_PAGE: the Report page reaches the app. Another page gets ERROR 7.
+    s_pages = 0;
+    n = bp_build_show_page(p, sizeof p, BP_PAGE_REPORT);
+    rx(&l, p, n, 8200);
+    CHECK(s_pages == 1 && s_page == BP_PAGE_REPORT, "SHOW_PAGE reaches the app");
+    clear();
+    p[BP_HEADER_SIZE] = BP_PAGE_COACH;
+    rx(&l, p, n, 8300);
+    e = last();
+    CHECK(s_pages == 1 && e && e->buf[4] == BP_ERR_FIELD && e->buf[5] == BP_SHOW_PAGE, "ERROR 7 for another page");
 
     // A disconnect keeps both, so that the screen can still show them.
     link_on_disconnect(&l, 9000);

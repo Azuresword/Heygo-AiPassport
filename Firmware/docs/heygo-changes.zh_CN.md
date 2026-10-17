@@ -244,7 +244,8 @@ Sprint 2 让设备收下增量 2 的两种消息。协议见文档 07 第 6 节�
 | `main/coach_app.c` | 收到数据或每秒一次时，只把有变化的文字写进当前页面。每次写入都记一行 `screen` 日志。CONTEXT 在报告页时发送页面 3。 |
 | `../assets/fonts/heygo_display_48.c` | 48 像素 Staatliches 字体，用于速度和 Heygo IQ。 |
 | `tools/host_render/` | 新增 `label` 命令，以及 10 至 15 号界面图。 |
-| `tools/flow/flow_sim.*` | 模拟器加入报告页、滑行数据按钮和 16 项新自测。 |
+| `tools/flow/flow_sim.*` | 模拟器加入报告页、滑行数据按钮、"跳到报告页"按钮和 23 项新自测。 |
+| `main/protocol/`、`main/link/`、`main/coach_app.c` | D-28：新增 SHOW_PAGE（0x62）。只有 SKI 和 READY 收到后转到 REPORT，其他状态忽略。 |
 
 数据只改屏幕文字，不改状态机的状态。
 flowc 只为第一个界面生成数据绑定，所以滑行页和报告页的文字由 Coach 任务直接写入标签。

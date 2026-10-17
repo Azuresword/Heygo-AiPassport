@@ -151,6 +151,9 @@ The positions come from `flows/coach.flow.json`, and the host screen check passe
 | `problem` | `x=22, y=182` | 16 px Chinese | The core problem, at most 12 Chinese characters, on one line |
 | `tip` | `x=22, y=206`, height 50 | 16 px Chinese, at most two lines | The tip, at most 20 Chinese characters |
 
+D-28: when the phone sends SHOW_PAGE 3, the state machine goes to REPORT from SKI and READY only.
+CAPTURE, WAIT_ANSWER, PLAYBACK, and EXIT_Q have no such transition. They ignore it, so the user is never stopped.
+
 Only one screen exists at a time. On a page change, the task deletes the old screen first and then builds the new screen.
 Images 10 to 15 in `assets/mockups` come from the host renderer. They include the longest texts.
 

@@ -4,7 +4,9 @@
 It connects to an AI Passport over BLE and speaks protocol 0.2 of doc 07.
 It saves each question that the device sends as a WAV file, and then answers.
 With --runs N, it also sends N simulated runs of ski data: LIVE_STATS once each
-second during a run, then one RUN_REPORT after the run ends.
+second during a run, then one RUN_REPORT after the run ends. With --jump, it
+also sends SHOW_PAGE after each report. The device opens the Report page from
+the Ski page or the idle Coach page.
 
 Answer modes:
   echo     Play the question back. This tests the full audio path. (Default.)
@@ -15,7 +17,7 @@ Answer modes:
 Usage:
   pip install bleak
   python3 tools/phone_sim/phone_sim.py [--mode echo|wav|fail|silent] [--wav FILE] [--name HeygoPP-XXXX]
-                                      [--runs N] [--run-s SECONDS]
+                                      [--runs N] [--run-s SECONDS] [--jump]
 
 To make a WAV file on macOS:
   say -o /tmp/a.aiff "上一趟重心偏后" && afconvert -f WAVE -d LEI16@16000 -c 1 /tmp/a.aiff /tmp/a.wav
@@ -182,6 +184,9 @@ class Phone:
             iq = 60 + (run_no * 11) % 40
             await self.send(hl.run_report(run_no, dist, turns, iq, "重心偏后", "下一趟把双手放在身体前方"))
             log(f"-> RUN_REPORT run {run_no}: iq {iq}")
+            if self.args.jump:
+                await self.send(hl.show_page())
+                log("-> SHOW_PAGE 3 (Report page)")
             await asyncio.sleep(10.0)                                             # The lift: no LIVE_STATS.
 
     async def status_loop(self):
@@ -198,6 +203,7 @@ async def main():
     ap.add_argument("--out", default=".", help="folder for the question WAV files")
     ap.add_argument("--runs", type=int, default=0, help="number of simulated runs of ski data (default 0)")
     ap.add_argument("--run-s", type=int, default=30, help="seconds of each simulated run (default 30)")
+    ap.add_argument("--jump", action="store_true", help="send SHOW_PAGE after each report")
     args = ap.parse_args()
     if args.mode == "wav" and not args.wav:
         ap.error("--mode wav needs --wav FILE")

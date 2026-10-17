@@ -244,7 +244,8 @@ If a phone application that supports only protocol 0.1 connects to this firmware
 | `main/coach_app.c` | When data arrives, and once each second, it writes only the changed texts into the current page. It logs one `screen` line for each write. On the Report page, CONTEXT sends page 3. |
 | `../assets/fonts/heygo_display_48.c` | The 48-pixel Staatliches font for the speed and the Heygo IQ. |
 | `tools/host_render/` | Add the `label` command and screen images 10 to 15. |
-| `tools/flow/flow_sim.*` | The simulator adds the Report page, the ski data buttons, and 16 new self-test items. |
+| `tools/flow/flow_sim.*` | The simulator adds the Report page, the ski data buttons, a button that sends SHOW_PAGE, and 23 new self-test items. |
+| `main/protocol/`, `main/link/`, `main/coach_app.c` | D-28: add SHOW_PAGE (0x62). Only SKI and READY go to REPORT. Other states ignore it. |
 
 Data changes only the screen texts. It never changes the state of the state machine.
 flowc makes data bindings for the first screen only. The Coach task therefore writes the texts of the Ski page and the Report page into their labels.

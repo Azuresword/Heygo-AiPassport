@@ -204,6 +204,18 @@ static void run_report(void) {
     assert(bp_parse(raw, BP_HEADER_SIZE + 6, &p) == BP_ERR_LENGTH);
 }
 
+static void show_page(void) {
+    bp_packet_t p;
+    uint8_t page = 0;
+    size_t n = bp_build_show_page(buf, CAP, BP_PAGE_REPORT);
+    assert(n == BP_HEADER_SIZE + 1 && buf[0] == 0x62 && buf[4] == 3);
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_show_page(&p, &page) == BP_OK && page == BP_PAGE_REPORT);
+    assert(bp_build_show_page(buf, CAP, BP_PAGE_COACH) == 0);       // Only the Report page.
+    uint8_t other[5] = { BP_SHOW_PAGE, 0, 0, 0, BP_PAGE_COACH };
+    assert(bp_parse(other, 5, &p) == BP_OK && bp_read_show_page(&p, &page) == BP_ERR_FIELD);
+    assert(bp_parse(other, 4, &p) == BP_ERR_LENGTH);
+}
+
 static void utf8_rules(void) {
     assert(bp_utf8_valid((const uint8_t *)"", 0));
     assert(bp_utf8_valid((const uint8_t *)"ok 重心", 9));
@@ -284,6 +296,7 @@ int main(void) {
     live_stats();
     run_report();
     utf8_rules();
+    show_page();
     trailing_bytes_ignored();
     reader_guards();
     xid_rules();

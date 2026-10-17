@@ -337,6 +337,7 @@ const EVENT_NAME = {
   UP_HOLD: "长按 UP", UP_SHORT: "短按 UP", DOWN_HOLD: "长按 DOWN", DOWN_SHORT: "短按 DOWN",
   CAPTURE_LIMIT: "录满 20 秒", AGENT_TIMEOUT: "10 秒无回应",
   ANSWER_START: "回答开始", ANSWER_END: "回答结束", ANSWER_FAILED: "识别失败", LINK_LOST: "蓝牙断开",
+  SHOW_REPORT: "App 跳到报告页",
 };
 // The main path runs left to right. Returns to READY arc below it. A new question arcs above it.
 const POS = { SKI: [80, 80], EXIT_Q: [80, 350], READY: [290, 210], REPORT: [430, 410], CAPTURE: [500, 210], WAIT_ANSWER: [710, 210], PLAYBACK: [912, 210] };
@@ -349,6 +350,7 @@ const EVENT_SHORT = {
   OK_HOLD: "长按 OK", OK_SHORT: "短按 OK", OK_RELEASE: "松开 OK", UP_HOLD: "长按 UP", UP_SHORT: "短按 UP",
   DOWN_HOLD: "长按 DOWN", DOWN_SHORT: "短按 DOWN", CAPTURE_LIMIT: "录满 20 秒", AGENT_TIMEOUT: "10 秒超时",
   ANSWER_START: "回答开始", ANSWER_END: "回答结束", ANSWER_FAILED: "识别失败", LINK_LOST: "蓝牙断开",
+  SHOW_REPORT: "App 跳转",
 };
 const sname = id => STATE_NAME[id] || id;
 const ename = id => EVENT_NAME[id] || id;
@@ -719,6 +721,12 @@ function skiEnd() {
     paintData();
   });
 }
+// D-28: the phone opens the Report page. Only SKI and READY accept it.
+function showReport() {
+  if (!link) return toast("蓝牙未连接");
+  ble("pd", "SHOW_PAGE", "page=3（报告页）");
+  fire("SHOW_REPORT", "手机");
+}
 function buildSki() {
   const box = $("skiBtns"); box.innerHTML = "";
   const add = (label, title, fn, id) => {
@@ -732,6 +740,7 @@ function buildSki() {
     skiPaused = !skiPaused; $("skiPauseBtn").textContent = skiPaused ? "恢复发送" : "暂停发送";
   }, "skiPauseBtn");
   add("结束这一趟", "结束帧 + 2 秒后 RUN_REPORT", skiEnd, "skiEndBtn");
+  add("跳到报告页", "SHOW_PAGE 3：滑行页或教练页空闲时打开报告页", showReport, "showBtn");
   const lab = document.createElement("label");
   lab.className = "switch-label"; lab.innerHTML = '<input type="checkbox" id="noSpeed"> 速度未知';
   box.appendChild(lab);

@@ -2,7 +2,7 @@
 
 # BLE Protocol Draft
 
-Version: 0.6. Date: 2026-10-17. Status: draft from the device team. The phone application team must review it.
+Version: 0.7. Date: 2026-10-17. Status: the phone application team accepted protocol 0.2. That team must accept SHOW_PAGE, which version 0.7 adds.
 
 ## 1. Purpose and scope
 
@@ -350,6 +350,25 @@ The device follows these rules:
 - The device uses its own receive time to decide that data is out of date. It does not use the phone time.
 - After a link loss, the device keeps both kinds of data, and the screen still shows them.
 
+### Page change (D-28)
+
+| Type | Name | Direction | Payload | When |
+| --- | --- | --- | --- | --- |
+| 0x62 | SHOW_PAGE | P to D | Page (1): only 3, the Report page | When the phone wants the device to show the Report page |
+
+The message uses `xid` 0 and `seq` 0. The device sends no acknowledgment.
+
+The device follows these rules:
+
+- On the Ski page (SKI) or the idle Coach page (READY), SHOW_PAGE 3 changes the device to the Report page.
+- In Ski mode, the device also enters Rest mode. This is the only exception to the rule that the user enters Rest mode by hand (REQ-17).
+- During capture, the wait, the playback, or the exit question, the device ignores SHOW_PAGE, so it never stops the user. It sends no ERROR for it.
+- On the Report page, the device does nothing.
+- For a page value other than 3, the device sends ERROR with code 7 and stays on its page.
+- The device accepts SHOW_PAGE only after a HELLO_ACK with the same protocol version.
+
+After the change, CONTEXT reports mode 1 and page 3.
+
 ## 7. Audio blocks
 
 ### IMA ADPCM block
@@ -509,6 +528,7 @@ The NimBLE host and controller need extra memory. Measure them on hardware.
 12. Send major 0 and minor 2 in HELLO_ACK.
 13. Fill the last downlink block with silence to the full block size.
 14. Before the answer starts, send an AGENT_STATE at least every 10 seconds.
+15. To show the Report page on the device, send SHOW_PAGE 3. The device changes only from the Ski page or the idle Coach page.
 
 ## 12. Open items
 
@@ -552,10 +572,14 @@ The phone application team must accept this rule.
 | 3 | Change the protocol version from 0.1 to 0.2. HELLO and HELLO_ACK carry minor 2. | 5 |
 | 4 | Add four timing rules for the ski data. | 8 |
 | 5 | Remove the report page buffer of 8,192 bytes from the device memory cost. Add 128 bytes. | 10 |
+| 6 | Version 0.7 adds SHOW_PAGE (0x62), from the phone to the device. Per D-28, the device opens the Report page from the Ski page or the idle Coach page. | 6 |
 
 The major version is still 0, so both sides must use the same minor.
 If a phone application that supports only 0.1 connects to 0.2 firmware, the device sends code 3 and disables voice.
 The phone application team and the firmware must therefore change to 0.2 together. D-24 sets the time of the change.
+
+SHOW_PAGE adds one message and changes no current packet, so the protocol version stays 0.2.
+A phone application that never sends SHOW_PAGE sees no change. Firmware at commit `31e511c` or older answers SHOW_PAGE with ERROR code 1.
 
 ## 16. Related documents
 

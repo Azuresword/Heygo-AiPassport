@@ -1,10 +1,10 @@
 [简体中文](05-decision-amendments.zh_CN.md) · **English**
 
-# Decision amendments: D-08 to D-27
+# Decision amendments: D-08 to D-28
 
-Version: 0.6. Date: 2026-10-17. Status: D-08 to D-15 and D-17 to D-27 accepted by the user. The phone application team accepted D-16.
+Version: 0.6. Date: 2026-10-17. Status: D-08 to D-15 and D-17 to D-28 accepted by the user. The phone application team accepted D-16.
 
-This document gives the reasons behind D-08 to D-27.
+This document gives the reasons behind D-08 to D-28.
 [Validation and decisions](04-validation-and-decisions.md) holds the short log.
 Requirement numbers stay stable. This document deletes no requirement.
 
@@ -286,7 +286,24 @@ After Sprint 4, the branch `feat/report-live-data` merges into `main`. At the sa
 
 **Status.** Accepted by the user on 2026-10-17.
 
-## 22. Related documents
+## 22. D-28: the phone opens the Report page
+
+**Decision.** When the phone sends SHOW_PAGE 3, the device changes to the Report page from the Ski page (SKI) or the idle Coach page (READY).
+
+- In Ski mode, the device also enters Rest mode.
+- During capture, the wait, the playback, and the exit question, the device ignores the message.
+
+**Reason.** The user wants the phone to trigger the change only in SKI and READY. The phone can then show the report after a run, and it never stops a question or an answer of the user.
+
+**Cost.**
+
+- This is the only exception to the rule that the user enters Rest mode by hand (REQ-17). The Report page starts no capture, and an OK hold on it does nothing.
+- After a request, the device can stay on its page. The phone application trusts the page in CONTEXT.
+- SHOW_PAGE is a new message. Only firmware from this commit or later can handle it. Older firmware answers with ERROR code 1.
+
+**Status.** Accepted by the user on 2026-10-17. The phone application team must accept this message.
+
+## 23. Related documents
 
 - [Product requirements](01-product-requirements.md).
 - [System architecture](02-architecture.md).

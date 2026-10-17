@@ -124,6 +124,28 @@ static void path_link_loss(void) {
 }
 
 // Invariants over a long, deterministic random walk.
+// D-28: the phone opens the Report page from SKI and READY only.
+// Every other state ignores it, so it never stops a question or an answer.
+static void path_show_report(void) {
+    const coach_state_t go[] = { COACH_STATE_SKI, COACH_STATE_READY };
+    for (size_t i = 0; i < sizeof go / sizeof go[0]; i++) {
+        coach_flow_t f; coach_flow_init(&f); f.state = go[i];
+        coach_step_t s = step(&f, COACH_EVENT_SHOW_REPORT);
+        assert(s.handled && f.state == COACH_STATE_REPORT);
+        assert(apply(OWNER_NONE, &s) == OWNER_NONE);
+    }
+    const coach_state_t stay[] = { COACH_STATE_CAPTURE, COACH_STATE_WAIT_ANSWER, COACH_STATE_PLAYBACK,
+                                   COACH_STATE_EXIT_Q };
+    for (size_t i = 0; i < sizeof stay / sizeof stay[0]; i++) {
+        coach_flow_t f; coach_flow_init(&f); f.state = stay[i];
+        assert(!step(&f, COACH_EVENT_SHOW_REPORT).handled && f.state == stay[i]);
+    }
+    // On the Report page, a second request changes nothing, and an OK hold starts no capture.
+    coach_flow_t f; coach_flow_init(&f); f.state = COACH_STATE_REPORT;
+    assert(!step(&f, COACH_EVENT_SHOW_REPORT).handled);
+    assert(!step(&f, COACH_EVENT_OK_HOLD).handled && f.state == COACH_STATE_REPORT);
+}
+
 static void walk_invariants(void) {
     coach_flow_t f; coach_flow_init(&f);
     owner_t owner = OWNER_NONE;
@@ -134,7 +156,8 @@ static void walk_invariants(void) {
         coach_step_t s = step(&f, e);
         owner = apply(owner, &s);
         if (f.state == COACH_STATE_SKI || f.state == COACH_STATE_READY ||
-            f.state == COACH_STATE_EXIT_Q || f.state == COACH_STATE_WAIT_ANSWER) {
+            f.state == COACH_STATE_EXIT_Q || f.state == COACH_STATE_WAIT_ANSWER ||
+            f.state == COACH_STATE_REPORT) {
             assert(owner == OWNER_NONE);           // no audio outside capture and playback
         }
         if (f.state == COACH_STATE_CAPTURE) assert(owner == OWNER_CAPTURE);
@@ -149,6 +172,7 @@ int main(void) {
     path_barge_in();
     path_exit();
     path_link_loss();
+    path_show_report();
     walk_invariants();
     printf("coach path tests: PASS\n");
     return 0;

@@ -94,6 +94,11 @@ class PacketTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             hl.run_report(1, 0, 0, 101)
 
+    def test_show_page(self):
+        self.assertEqual(hl.show_page(), c_build("bp_build_show_page", ctypes.c_uint8(3)))
+        with self.assertRaises(ValueError):
+            hl.show_page(1)
+
     def test_short_packet(self):
         with self.assertRaises(ValueError):
             hl.parse(b"\x01\x00")

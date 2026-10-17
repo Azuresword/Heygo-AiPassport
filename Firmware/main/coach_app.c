@@ -389,6 +389,10 @@ static void link_data(void) {
 }
 static void link_live_stats(const bp_live_stats_t *s) { (void)s; link_data(); }
 static void link_run_report(const link_report_t *r) { (void)r; link_data(); }
+// D-28: the phone opens the Report page. The flow accepts it in SKI and READY only.
+static void link_show_page(uint8_t page) {
+    if (page == BP_PAGE_REPORT) post_event(COACH_EVENT_SHOW_REPORT);
+}
 
 static void voice_up_block(const uint8_t *block) { ble_link_audio_up(block); }
 static void voice_play_done(void) { post_event(COACH_EVENT_ANSWER_END); }
@@ -433,7 +437,7 @@ esp_err_t coach_app_start(void) {
     const ble_link_app_t app = {
         .voice_changed = link_voice_changed, .agent_state = link_agent_state,
         .play_start = link_play_start, .audio_down = link_audio_down, .play_end = link_play_end,
-        .live_stats = link_live_stats, .run_report = link_run_report,
+        .live_stats = link_live_stats, .run_report = link_run_report, .show_page = link_show_page,
     };
     esp_err_t le = ble_link_start(&app);
     if (le != ESP_OK) ESP_LOGE(TAG, "BLE link start failed: %s", esp_err_to_name(le));

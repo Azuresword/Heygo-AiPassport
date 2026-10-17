@@ -31,6 +31,7 @@ static int min_payload(uint8_t type) {
     case BP_PLAY_END:      return 0;
     case BP_LIVE_STATS:    return BP_LIVE_STATS_SIZE;
     case BP_RUN_REPORT:    return BP_RUN_REPORT_FIXED;
+    case BP_SHOW_PAGE:     return 1;
     default:               return -1;
     }
 }
@@ -233,6 +234,14 @@ bp_err_t bp_read_run_report(const bp_packet_t *p, bp_run_report_t *out) {
     return BP_OK;
 }
 
+bp_err_t bp_read_show_page(const bp_packet_t *p, uint8_t *page) {
+    bp_err_t e = expect(p, BP_SHOW_PAGE);
+    if (e) return e;
+    if (p->payload[0] != BP_PAGE_REPORT) return BP_ERR_FIELD;
+    *page = p->payload[0];
+    return BP_OK;
+}
+
 static size_t header(uint8_t *out, size_t cap, size_t payload, uint8_t type, uint8_t xid, uint8_t seq) {
     if (!out || cap < BP_HEADER_SIZE + payload) return 0;
     out[0] = type; out[1] = 0; out[2] = xid; out[3] = seq;
@@ -382,6 +391,14 @@ size_t bp_build_run_report(uint8_t *out, size_t cap, uint8_t run_no, uint16_t di
     return n;
 }
 
+size_t bp_build_show_page(uint8_t *out, size_t cap, uint8_t page) {
+    if (page != BP_PAGE_REPORT) return 0;
+    size_t n = header(out, cap, 1, BP_SHOW_PAGE, 0, 0);
+    if (!n) return 0;
+    out[4] = page;
+    return n;
+}
+
 bp_err_t bp_check_version(uint8_t major, uint8_t minor) {
     return (major == BP_PROTO_MAJOR && minor == BP_PROTO_MINOR) ? BP_OK : BP_ERR_VERSION;
 }
@@ -436,6 +453,7 @@ const char *bp_type_name(uint8_t type) {
     case BP_PLAY_END: return "PLAY_END";
     case BP_LIVE_STATS: return "LIVE_STATS";
     case BP_RUN_REPORT: return "RUN_REPORT";
+    case BP_SHOW_PAGE: return "SHOW_PAGE";
     default: return "?";
     }
 }

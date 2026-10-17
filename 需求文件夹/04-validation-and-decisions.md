@@ -70,6 +70,8 @@ Measure the release latency from the release itself.
 | TC-21 | Under N1, send 300 packets. Read the receive time and the screen update time from the log. Also run task 5 of U1. | The screen update stays within 300 ms at the 95th percentile. At least 4 of 5 users read the speed correctly within 2 seconds. | Log timing and usability test. Firmware and design. |
 | TC-03 | The phone sends 30 RUN_REPORT packets. 5 hold texts at the limit, and 3 hold texts above the limit. On the idle Coach page, press DOWN 30 times. Cover three cases: no report yet, link loss, and a report older than 60 seconds. | The Report page shows within 500 ms each time. The values and texts match the phone log. Texts at the limit show in full. A report above the limit gets ERROR code 4, and the screen keeps the old report. While audio runs, a short press changes no page. | Screen log and hardware demonstration. Firmware. |
 
+TC-03 adds one more set: send SHOW_PAGE 5 times in each of the 6 states. Pass rule: on the Ski page and the idle Coach page, the Report page shows within 500 ms each time. During capture, the wait, the playback, and the exit question, the page and the audio do not change.
+
 `phone_sim` can check these three tests in Sprint 5, but it cannot pass them.
 
 ## 4. Tests outside Increment 1 and Increment 2
@@ -134,6 +136,7 @@ The user parked these questions. The user will share answers after a review with
 | D-25 | On the idle Coach page, a short DOWN press opens the Report page. On the Report page, a short UP press returns to the Coach page. An OK hold on the Report page does nothing. | Accepted by the user on 2026-10-17. |
 | D-26 | After each run, the phone sends the report of that run. It holds the distance, turn count, Heygo IQ, core problem, and a tip of at most 20 characters. | Accepted by the user. |
 | D-27 | The Heygo IQ is an integer from 0 to 100. The phone sends the core problem as text of at most 12 Chinese characters. The report shows on the Ski page on the lift and on the Report page in Rest mode. | Accepted by the user on 2026-10-17. |
+| D-28 | When the phone sends SHOW_PAGE 3, the device changes to the Report page from the Ski page or the idle Coach page. In Ski mode, it also enters Rest mode. Other states ignore the message. | Accepted by the user on 2026-10-17. |
 
 ## 7. Risks
 
@@ -149,6 +152,7 @@ The user parked these questions. The user will share answers after a review with
 | The first version has no power management. | The battery drains faster than expected, and a pilot session ends early. | Charge the device before each pilot session. Review D-18 before a field pilot. | Product Owner. |
 | A look at the screen during a run takes attention from the slope. | A collision or a fall. | The page shows five numbers only. No animation, color, or sound marks the speed. Nothing rewards high speed. U1 tests a 2-second reading. | Product Owner and design. |
 | The phone gives speed and vertical drop with large errors. | Users stop trusting the data. | The phone owns the accuracy. TC-02 checks only that the device matches the phone. Assess the accuracy before a field pilot. | Phone application team. |
+| The phone sends SHOW_PAGE while the user asks a question. | The phone thinks that the device shows the Report page. | The device ignores the message and reports the real page in CONTEXT. The phone application trusts CONTEXT. | Phone application team. |
 | The change to protocol 0.2 is not at the same time on both sides. | A phone application with 0.1 only gets no voice with the new firmware. | Change both sides together per D-24. Tell the phone application team at the end of Sprint 4. | Firmware and phone application team. |
 
 ## 8. Delivery evidence

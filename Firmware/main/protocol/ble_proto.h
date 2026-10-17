@@ -37,6 +37,7 @@ typedef enum {
     BP_PLAY_END      = 0x33,
     BP_LIVE_STATS    = 0x60,
     BP_RUN_REPORT    = 0x61,
+    BP_SHOW_PAGE     = 0x62,
 } bp_type_t;
 
 typedef enum {
@@ -124,6 +125,8 @@ bp_err_t bp_read_play_start(const bp_packet_t *p, bp_play_start_t *out);
 bp_err_t bp_read_live_stats(const bp_packet_t *p, bp_live_stats_t *out);
 // Gives BP_ERR_TOO_LARGE for a long text and BP_ERR_FIELD for bad UTF-8 or an IQ above 100.
 bp_err_t bp_read_run_report(const bp_packet_t *p, bp_run_report_t *out);
+// The phone asks the device to show a page. Only BP_PAGE_REPORT is valid. Another page gives BP_ERR_FIELD.
+bp_err_t bp_read_show_page(const bp_packet_t *p, uint8_t *page);
 
 // Each builder returns the packet length, or 0 when `cap` is too small or a value is invalid.
 size_t bp_build_hello(uint8_t *out, size_t cap, uint8_t codec_mask, uint16_t mtu, const char *fw);
@@ -143,6 +146,7 @@ size_t bp_build_play_end(uint8_t *out, size_t cap, uint8_t xid);
 size_t bp_build_live_stats(uint8_t *out, size_t cap, const bp_live_stats_t *s);
 size_t bp_build_run_report(uint8_t *out, size_t cap, uint8_t run_no, uint16_t distance_m, uint16_t turns,
                            uint8_t iq, const char *problem, const char *tip);
+size_t bp_build_show_page(uint8_t *out, size_t cap, uint8_t page);
 
 // The name of a type, for logs. Returns "?" for an unknown type.
 const char *bp_type_name(uint8_t type);

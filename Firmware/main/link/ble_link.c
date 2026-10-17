@@ -232,6 +232,11 @@ static void io_report(void *ctx, const link_report_t *r) {
     (void)ctx;
     if (s_app.run_report) s_app.run_report(r);
 }
+static void io_page(void *ctx, uint8_t page) {
+    (void)ctx;
+    ESP_LOGI(TAG, "phone asks for page %u", page);
+    if (s_app.show_page) s_app.show_page(page);
+}
 static void io_dropped(void *ctx, uint8_t type, uint8_t xid, uint8_t current) {
     (void)ctx;
     // AUDIO_DOWN of a stale stream comes 50 times a second. Log the first one only.
@@ -464,7 +469,7 @@ esp_err_t ble_link_start(const ble_link_app_t *app) {
     }
 
     const link_io_t io = { NULL, io_send, io_drop_audio, io_voice, io_state, io_play_start, io_down,
-                           io_play_end, io_dropped, io_live, io_report };
+                           io_play_end, io_dropped, io_live, io_report, io_page };
     link_init(&s_core, &io, s_fw);
 
     esp_err_t err = demo_radio_nvs_prepare();
