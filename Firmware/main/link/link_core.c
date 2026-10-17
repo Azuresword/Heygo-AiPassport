@@ -220,6 +220,25 @@ static void on_run_report(link_core_t *l, const bp_packet_t *p, uint32_t now_ms)
     if (l->io.run_report) l->io.run_report(l->io.ctx, &l->report);
 }
 
+static void on_turn_shape(link_core_t *l, const bp_packet_t *p) {
+    if (!data_allowed(l)) return;
+    bp_turn_shape_t r;
+    const bp_err_t err = bp_read_turn_shape(p, &r);
+    if (err != BP_OK) {
+        // The old shape stays on the screen.
+        send_error(l, (uint8_t)err, p->type, p->xid);
+        return;
+    }
+    l->turns.run_no = r.run_no;
+    l->turns.source = r.source;
+    l->turns.n_points = r.n_points;
+    memcpy(l->turns.points, r.points, 2u * r.n_points);
+    l->turns.n_turns = r.n_turns;
+    memcpy(l->turns.turns, r.turns, sizeof r.turns[0] * r.n_turns);
+    l->has_turns = true;
+    if (l->io.turn_shape) l->io.turn_shape(l->io.ctx, &l->turns);
+}
+
 static void on_show_page(link_core_t *l, const bp_packet_t *p) {
     if (!data_allowed(l)) return;
     uint8_t page;
@@ -259,6 +278,7 @@ void link_on_rx(link_core_t *l, const uint8_t *buf, size_t len, uint32_t now_ms)
     case BP_LIVE_STATS: on_live_stats(l, &p, now_ms); break;
     case BP_RUN_REPORT: on_run_report(l, &p, now_ms); break;
     case BP_SHOW_PAGE: on_show_page(l, &p); break;
+    case BP_TURN_SHAPE: on_turn_shape(l, &p); break;
     default:
         // A device-to-phone type that arrives from the phone.
         send_error(l, BP_ERR_STATE, p.type, p.xid);
@@ -331,6 +351,8 @@ const link_report_t *link_report(const link_core_t *l, uint32_t now_ms, uint32_t
     if (age_ms) *age_ms = (uint32_t)(now_ms - l->report_ms);
     return &l->report;
 }
+
+const link_turns_t *link_turns(const link_core_t *l) { return l->has_turns ? &l->turns : NULL; }
 
 const char *link_voice_name(link_voice_t voice) {
     switch (voice) {

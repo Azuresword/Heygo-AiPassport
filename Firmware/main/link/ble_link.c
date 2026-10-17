@@ -169,6 +169,16 @@ static void log_packet(const char *dir, const uint8_t *buf, size_t len) {
                      (int)r.tip.len, (const char *)r.tip.ptr);
         return;
     }
+    case BP_TURN_SHAPE: {
+        bp_turn_shape_t t;
+        const bp_err_t e = bp_read_turn_shape(&p, &t);
+        if (e == BP_OK)
+            ESP_LOGI(TAG, "%s TURN_SHAPE run=%u source=%u points=%u turns=%u", dir,
+                     t.run_no, t.source, t.n_points, t.n_turns);
+        else
+            ESP_LOGW(TAG, "%s TURN_SHAPE rejected: error %d, %u bytes", dir, (int)e, (unsigned)p.payload_len);
+        return;
+    }
     default:
         ESP_LOGI(TAG, "%s %s xid=0x%02x seq=%u len=%u", dir, name, p.xid, p.seq, (unsigned)p.payload_len);
         return;
@@ -231,6 +241,10 @@ static void io_live(void *ctx, const bp_live_stats_t *s) {
 static void io_report(void *ctx, const link_report_t *r) {
     (void)ctx;
     if (s_app.run_report) s_app.run_report(r);
+}
+static void io_turns(void *ctx, const link_turns_t *t) {
+    (void)ctx;
+    if (s_app.turn_shape) s_app.turn_shape(t);
 }
 static void io_page(void *ctx, uint8_t page) {
     (void)ctx;
@@ -469,7 +483,7 @@ esp_err_t ble_link_start(const ble_link_app_t *app) {
     }
 
     const link_io_t io = { NULL, io_send, io_drop_audio, io_voice, io_state, io_play_start, io_down,
-                           io_play_end, io_dropped, io_live, io_report, io_page };
+                           io_play_end, io_dropped, io_live, io_report, io_page, io_turns };
     link_init(&s_core, &io, s_fw);
 
     esp_err_t err = demo_radio_nvs_prepare();
@@ -560,6 +574,15 @@ void ble_link_get_data(bp_live_stats_t *live, bool *has_live, bool *stale,
     if (stale) *stale = old;
     if (has_report) *has_report = r != NULL;
     if (report_age_ms) *report_age_ms = age;
+}
+
+bool ble_link_get_turns(link_turns_t *out) {
+    if (!s_mu || !out) return false;
+    lock();
+    const link_turns_t *t = link_turns(&s_core);
+    if (t) *out = *t;
+    unlock();
+    return t != NULL;
 }
 
 void ble_link_set_context(uint8_t mode, uint8_t page) {

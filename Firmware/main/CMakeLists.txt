@@ -25,6 +25,8 @@ idf_component_register(
          "ui/ui_state_icon.c"
          "ui/stats_fmt.c"
          "ui/ski_view.c"
+         "ui/turn_view.c"
+         "ui/turn_page.c"
          "generated/coach_flow.c"
          "generated/coach_screens.c"
          "generated/coach_bindings.c"

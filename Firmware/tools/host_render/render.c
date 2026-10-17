@@ -3,10 +3,13 @@
 // Host program that draws the generated coach screens with the device LVGL
 // configuration. render.py builds it and sends commands on stdin:
 //
-//   screen coach|ski|report|exit   Delete the current screen and build this one.
+//   screen coach|ski|report|turns|exit   Delete the current screen and build this one.
 //   set <subject> <value>   Call the generated setter. The value is the rest of the line.
 //   label <widget> <text>   Set a label of the Ski or Report page, as the Coach task does.
 //   panel metrics|report    Show the metric cells or the report lines of the Ski page.
+//   shape <run> <source> <sel> <permille> <n> <x y>... <m> <first last side speed edge radius>...
+//                           Put a TURN_SHAPE on the Turns page through turn_view.c and turn_page.c,
+//                           as the Coach task does. n 0 shows the page with no shape.
 //   snap <name>             Draw the screen and write <outdir>/<name>.rgb565.
 //   drop                    Delete the current screen and load a blank screen.
 //   text body               Write the byte length and the bytes of the body label text.
@@ -22,6 +25,8 @@
 #include "lvgl.h"
 #include "coach_screens.h"
 #include "coach_bindings.h"
+#include "turn_page.h"
+#include "turn_view.h"
 
 #define HOR 240
 #define VER 320
@@ -30,10 +35,11 @@ static uint16_t s_draw_buf[HOR * VER];
 static uint16_t s_frame[HOR * VER];
 static const char *s_outdir;
 
-static enum { NONE, COACH, SKI, REPORT, EXIT } s_kind = NONE;
+static enum { NONE, COACH, SKI, REPORT, TURNS, EXIT } s_kind = NONE;
 static coach_screen_coach_t s_coach;
 static coach_screen_ski_t s_ski;
 static coach_screen_report_t s_report;
+static coach_screen_turns_t s_turns;
 static coach_screen_exit_t s_exit;
 static lv_obj_t *s_blank;
 
@@ -87,6 +93,7 @@ static void drop_screen(void)
     case COACH: coach_teardown(&s_coach); break;
     case SKI: coach_screen_ski_destroy(&s_ski); break;
     case REPORT: coach_screen_report_destroy(&s_report); break;
+    case TURNS: coach_screen_turns_destroy(&s_turns); break;
     case EXIT: coach_screen_exit_destroy(&s_exit); break;
     case NONE: break;
     }
@@ -109,6 +116,10 @@ static void load_screen(const char *name)
         coach_screen_report_build(&s_report);
         lv_screen_load(s_report.screen);
         s_kind = REPORT;
+    } else if (strcmp(name, "turns") == 0) {
+        coach_screen_turns_build(&s_turns);
+        lv_screen_load(s_turns.screen);
+        s_kind = TURNS;
     } else if (strcmp(name, "exit") == 0) {
         coach_screen_exit_build(&s_exit);
         lv_screen_load(s_exit.screen);
@@ -155,6 +166,36 @@ static lv_obj_t *data_label(const char *id)
     return NULL;
 }
 
+// Read the numbers of a shape command, check the shape as link_core.c does, and draw it.
+static void put_shape(char *args)
+{
+    long v[4 + 1 + 2 * BP_TURN_POINTS_MAX + 1 + 6 * BP_TURNS_MAX];
+    size_t n = 0;
+    for (char *tok = strtok(args, " "); tok && n < sizeof v / sizeof v[0]; tok = strtok(NULL, " ")) v[n++] = strtol(tok, NULL, 10);
+    link_turns_t t;
+    memset(&t, 0, sizeof t);
+    size_t i = 0;
+    if (n < 5) { printf("ERR shape needs run, source, sel, permille and n\n"); return; }
+    t.run_no = (uint8_t)v[i++];
+    t.source = (uint8_t)v[i++];
+    const uint8_t sel = (uint8_t)v[i++];
+    const int32_t permille = (int32_t)v[i++];
+    t.n_points = (uint8_t)v[i++];
+    if (t.n_points > BP_TURN_POINTS_MAX || n < i + 2u * t.n_points + 1) { printf("ERR shape points\n"); return; }
+    for (uint8_t k = 0; k < t.n_points; k++) { t.points[k][0] = (uint8_t)v[i++]; t.points[k][1] = (uint8_t)v[i++]; }
+    t.n_turns = (uint8_t)v[i++];
+    if (t.n_turns > BP_TURNS_MAX || n != i + 6u * t.n_turns) { printf("ERR shape turns\n"); return; }
+    for (uint8_t k = 0; k < t.n_turns; k++, i += 6) {
+        t.turns[k] = (bp_turn_t){ (uint8_t)v[i], (uint8_t)v[i + 1], (uint8_t)v[i + 2],
+                                  (uint8_t)v[i + 3], (uint8_t)v[i + 4], (uint8_t)v[i + 5] };
+        if (t.turns[k].first >= t.turns[k].last || t.turns[k].last >= t.n_points) { printf("ERR shape turn %u\n", k); return; }
+    }
+    static turn_view_t view;
+    turn_view_build(&view, t.n_points ? &t : NULL, sel, TURN_PAGE_BOX_W, TURN_PAGE_BOX_H, TURN_PAGE_MARGIN);
+    turn_page_apply(&s_turns, &view);
+    turn_page_place_dot(&s_turns, permille);
+}
+
 static void snap(const char *name)
 {
     lv_obj_invalidate(lv_screen_active());
@@ -196,6 +237,14 @@ static void snap(const char *name)
         print_box("age", s_report.age);
         print_box("problem", s_report.problem); print_box("tip", s_report.tip);
         print_box("hint", s_report.hint);
+        break;
+    case TURNS:
+        // The lines and the dot sit inside shape_panel, so the layout check skips them.
+        print_box("mode", s_turns.mode); print_box("battery", s_turns.battery);
+        print_box("dest", s_turns.dest); print_box("title", s_turns.title);
+        print_box("source", s_turns.source); print_box("shape_panel", s_turns.shape_panel);
+        print_box("side", s_turns.side); print_box("counter", s_turns.counter);
+        print_box("metrics", s_turns.metrics); print_box("hint", s_turns.hint);
         break;
     case EXIT:
         print_box("mode", s_exit.mode); print_box("battery", s_exit.battery);
@@ -249,6 +298,12 @@ int main(int argc, char **argv)
             }
             if (report) { lv_obj_remove_flag(s_ski.problem, LV_OBJ_FLAG_HIDDEN); lv_obj_remove_flag(s_ski.tip, LV_OBJ_FLAG_HIDDEN); }
             else { lv_obj_add_flag(s_ski.problem, LV_OBJ_FLAG_HIDDEN); lv_obj_add_flag(s_ski.tip, LV_OBJ_FLAG_HIDDEN); }
+        }
+        else if (strcmp(cmd, "shape") == 0 && s_kind == TURNS) {
+            // strtok already cut the line after the first number. Glue it back.
+            char buf[1024];
+            snprintf(buf, sizeof buf, "%s %s", arg ? arg : "", rest ? rest : "");
+            put_shape(buf);
         }
         else if (strcmp(cmd, "snap") == 0 && arg) snap(arg);
         else if (strcmp(cmd, "mem") == 0 && arg) print_mem(arg);

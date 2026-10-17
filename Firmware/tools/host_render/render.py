@@ -85,9 +85,9 @@ def build(sdkconfig):
     app_stamp = max([stamp] + [h.stat().st_mtime for h in headers])
     jobs = [(s, BUILD / "lvgl" / s.relative_to(LVGL).with_suffix(".o"), [])
             for s in sorted((LVGL / "src").rglob("*.c"))]
-    app_inc = [f"-I{FW / 'main' / d}" for d in ("ui", "generated")] + [f"-I{ASSETS / 'fonts'}"]
+    app_inc = [f"-I{FW / 'main' / d}" for d in ("ui", "generated", "link", "protocol")] + [f"-I{ASSETS / 'fonts'}"]
     app_src = [HERE / "render.c", FW / "main/ui/ui_theme.c",
-               FW / "main/ui/ui_state_icon.c",
+               FW / "main/ui/ui_state_icon.c", FW / "main/ui/turn_view.c", FW / "main/ui/turn_page.c",
                FW / "main/generated/coach_screens.c", FW / "main/generated/coach_bindings.c",
                ASSETS / "fonts/heygo_sc_16.c", ASSETS / "fonts/heygo_sc_28.c",
                ASSETS / "fonts/heygo_display_20.c", ASSETS / "fonts/heygo_display_34.c",
@@ -106,6 +106,17 @@ def build(sdkconfig):
     if r.returncode:
         sys.exit("ERROR: link failed\n" + r.stderr)
     return exe
+
+
+def shape(run_no, source, sel, permille, n_turns):
+    """A shape command with the demo run of tools/phone_sim, as phone_sim.py sends it."""
+    sys.path.insert(0, str(FW / "tools" / "phone_sim"))
+    import heygo_link
+    if n_turns == 0:
+        return f"{run_no} {source} {sel} {permille} 0 0"
+    pts, turns = heygo_link.demo_turn_shape(run_no, n_turns, source)
+    flat = " ".join(f"{x} {y}" for x, y in pts)
+    return f"{run_no} {source} {sel} {permille} {len(pts)} {flat} {len(turns)} " + " ".join(" ".join(map(str, t)) for t in turns)
 
 
 def frames(s):
@@ -146,6 +157,11 @@ def frames(s):
                              "@tip": "下一趟把双手放在身体前方"}),
         ("15-report-max", None, {"@title": "第 12 趟 · 12.4 km · 136 弯", "@age": "59 MIN AGO", "@iq": "100",
                                  "@problem": "重心偏后" * 3, "@tip": "下一趟把双手放在身体前方，膝盖再多弯一点"}),
+        # Turn shape (Increment 3, D-29). The !shape value goes through turn_view.c and turn_page.c.
+        ("16-turns-empty", "turns", {"!shape": shape(0, 0, 0, 0, 0)}),
+        ("17-turns", None, {"!shape": shape(4, 0, 0, 1000, 8)}),
+        ("18-turns-heel", None, {"!shape": shape(4, 0, 5, 450, 8)}),
+        ("19-turns-schematic", None, {"!shape": shape(12, 1, 11, 1000, 12)}),
     ]
 
 
@@ -154,7 +170,7 @@ def check_glyphs(script):
     missing = set()
     for _, _, sets in script:
         for k, v in sets.items():
-            if isinstance(v, str) and k not in ("link_state", "icon_state"):
+            if isinstance(v, str) and k not in ("link_state", "icon_state", "!shape"):
                 missing |= {c for c in v if c not in have}
     return sorted(missing)
 
@@ -237,7 +253,8 @@ def main():
             cmds.append(f"screen {screen}")
         if screen == "coach":
             cmds.append("mem coach_built")
-        cmds += [f"label {k[1:]} {v}" if k.startswith("@") else f"panel {v}" if k == "!panel" else f"set {k} {v}"
+        cmds += [f"label {k[1:]} {v}" if k.startswith("@") else f"panel {v}" if k == "!panel"
+                 else f"shape {v}" if k == "!shape" else f"set {k} {v}"
                  for k, v in sets.items()]
         cmds.append(f"snap {name}")
     # The body subject holds BODY_SIZE - 1 bytes. One ASCII byte in front of

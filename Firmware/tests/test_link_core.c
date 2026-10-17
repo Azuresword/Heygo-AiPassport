@@ -43,9 +43,11 @@ static void io_report(void *c, const link_report_t *r) { (void)c; s_reports++; s
 static int s_pages;
 static uint8_t s_page;
 static void io_page(void *c, uint8_t page) { (void)c; s_pages++; s_page = page; }
+static int s_turn_calls;
+static void io_turns(void *c, const link_turns_t *t) { (void)c; (void)t; s_turn_calls++; }
 
 static const link_io_t IO = { NULL, io_send, io_drop, io_voice, io_state, io_play_start, io_down, io_play_end, io_dropped,
-                              io_live, io_report, io_page };
+                              io_live, io_report, io_page, io_turns };
 
 static void clear(void) { s_nsent = 0; }
 static const sent_t *last(void) { return s_nsent ? &s_sent[s_nsent - 1] : NULL; }
@@ -359,6 +361,42 @@ static void test_live_data(void) {
     CHECK(link_live(&l, 9000, &stale) != NULL && link_report(&l, 9000, &age) != NULL, "a disconnect keeps the data");
 }
 
+static void test_turn_shape(void) {
+    link_core_t l;
+    uint8_t pts[8] = { 10, 0, 40, 30, 10, 60, 40, 90 };
+    bp_turn_t turns[2] = { { 0, 2, BP_SIDE_TOE, 54, 55, 12 }, { 1, 3, BP_SIDE_HEEL, 53, 51, 15 } };
+    uint8_t p[256];
+    size_t n = bp_build_turn_shape(p, sizeof p, 4, BP_TURN_SRC_MEASURED, 4, pts, 2, turns);
+
+    // Before HELLO_ACK the data is not allowed.
+    link_init(&l, &IO, "fw");
+    link_on_connect(&l, 0);
+    link_on_mtu(&l, 247, 0);
+    link_on_subscribe(&l, true, 0);
+    s_turn_calls = 0;
+    rx(&l, p, n, 5);
+    CHECK(s_turn_calls == 0 && link_turns(&l) == NULL, "no turn shape before HELLO_ACK");
+
+    uint32_t t = ready(&l, 0);
+    CHECK(link_turns(&l) == NULL, "no turn shape yet");
+    rx(&l, p, n, t + 1);
+    const link_turns_t *got = link_turns(&l);
+    CHECK(s_turn_calls == 1 && got, "the turn shape arrives");
+    CHECK(got && got->run_no == 4 && got->n_points == 4 && got->points[3][1] == 90, "points are copied");
+    CHECK(got && got->n_turns == 2 && got->turns[1].side == BP_SIDE_HEEL && got->turns[0].edge_deg == 55,
+          "turns are copied");
+
+    // A bad shape gets an ERROR and keeps the old one.
+    p[4 + 4 + 8 + 4] = 99;   // edge 99 in the first turn
+    clear();
+    rx(&l, p, n, t + 2);
+    CHECK(last() && last()->buf[0] == BP_ERROR && last()->buf[4] == BP_ERR_FIELD && last()->buf[5] == BP_TURN_SHAPE,
+          "a bad edge angle gets ERROR 7");
+    CHECK(link_turns(&l) && link_turns(&l)->turns[0].edge_deg == 55, "the old shape stays");
+    link_on_disconnect(&l, t + 3);
+    CHECK(link_turns(&l) != NULL, "a disconnect keeps the shape for the screen");
+}
+
 int main(void) {
     test_handshake();
     test_version();
@@ -368,6 +406,7 @@ int main(void) {
     test_errors();
     test_reconnect_and_status();
     test_live_data();
+    test_turn_shape();
     if (s_fail) return EXIT_FAILURE;
     printf("link core tests: PASS\n");
     return EXIT_SUCCESS;

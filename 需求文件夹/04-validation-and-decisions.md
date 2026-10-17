@@ -2,7 +2,7 @@
 
 # Validation, open questions, and decisions
 
-Version: 0.8. Date: 2026-10-17. Status: Draft for review.
+Version: 0.9. Date: 2026-10-17. Status: Draft for review.
 Every product test below has status NOT RUN.
 Document checks do not count as firmware or device tests.
 
@@ -88,7 +88,7 @@ The user parked these questions. The user will share answers after a review with
 | ID | Question | Needed for | Status |
 | --- | --- | --- | --- |
 | Q-01 | Which HeygoAI APIs and coaching tools exist? | P0 coaching | Open. After D-23, the Increment 2 fields do not depend on HeygoAI. |
-| Q-02 | Which source supplies metrics and turns, with which units and frame? | Increment 2 metrics, Deferred turns | D-23 closes it for Increment 2: the phone calculates the metrics, and doc 07 gives the units. Turn data stays open. |
+| Q-02 | Which source supplies metrics and turns, with which units and frame? | Increment 2 metrics, Increment 3 turns | D-23 closes it for Increment 2: the phone calculates the metrics, and doc 07 gives the units. D-29 sets the turn packet. The source of real track data stays open. |
 | Q-03 | Which phone platform runs the application? | P0 | Open. D-08 selected the transport. |
 | Q-04 | Which consent and deletion rules apply? | Deferred | Deferred by D-13 |
 | Q-05 | Which speech recognition and synthesis services apply? | P0 | Open. The phone application can supply them. |
@@ -137,6 +137,7 @@ The user parked these questions. The user will share answers after a review with
 | D-26 | After each run, the phone sends the report of that run. It holds the distance, turn count, Heygo IQ, core problem, and a tip of at most 20 characters. | Accepted by the user. |
 | D-27 | The Heygo IQ is an integer from 0 to 100. The phone sends the core problem as text of at most 12 Chinese characters. The report shows on the Ski page on the lift and on the Report page in Rest mode. | Accepted by the user on 2026-10-17. |
 | D-28 | When the phone sends SHOW_PAGE 3, the device changes to the Report page from the Ski page or the idle Coach page. In Ski mode, it also enters Rest mode. Other states ignore the message. | Accepted by the user on 2026-10-17. |
+| D-29 | REQ-05 becomes Increment 3. A short DOWN press on the Report page opens a Turns page. The phone sends the shape in TURN_SHAPE, with a flag that marks a schematic shape. The protocol version stays 0.2. | The user accepted the page and the state machine on 2026-10-17. Waits for the phone application team. |
 
 ## 7. Risks
 

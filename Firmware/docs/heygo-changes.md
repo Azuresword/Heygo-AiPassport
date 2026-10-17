@@ -251,7 +251,23 @@ Data changes only the screen texts. It never changes the state of the state mach
 flowc makes data bindings for the first screen only. The Coach task therefore writes the texts of the Ski page and the Report page into their labels.
 flowc estimates 18,960 bytes of LVGL pool for all four screens. Only one screen exists at run time. The host measures a peak of 17,584 of 21,656 bytes.
 
-## 10. Open items
+## 10. Increment 3: the Turns page (D-29)
+
+| File | Change |
+| --- | --- |
+| `main/protocol/ble_proto.*` | Parse and build TURN_SHAPE (0x63): at most 40 points and 12 turns. The protocol version stays 0.2. |
+| `main/link/link_core.*`, `main/link/ble_link.*` | Keep the last shape. A bad shape gets an ERROR, and the device keeps the old shape. |
+| `main/ui/turn_view.*` | Plain C. It fits the run into the box, keeps the axis ratio, rounds the corners twice, and makes the texts. |
+| `main/ui/turn_page.*` | It puts the view on the screen and moves the replay dot along the selected turn in 1.6 s. |
+| `flows/coach.flow.json` | Add the TURNS state and the Turns page. A short DOWN in REPORT opens TURNS. A short OK selects the next turn. A short UP returns to REPORT. A DOWN hold opens the exit question. |
+| `main/coach_app.c` | It draws the page when a shape arrives and on each turn change. On the Turns page, CONTEXT sends page 5. |
+| `../assets/fonts/heygo_display_*.c` | The three brand fonts add the "°" glyph for the edge angle. |
+| `tools/phone_sim/`, `tools/flow/flow_sim.*` | Both send a demo shape after each report. Run 3 sends a schematic shape. |
+| `tools/host_render/` | Add the `shape` command and screen images 16 to 19. |
+
+The Turns page uses 14,864 bytes of the LVGL pool. The page and the data use about 3.7 KB of static RAM.
+
+## 11. Open items
 
 - During capture, wait, or playback, the state machine ignores a DOWN hold. D-19 accepts this behavior.
 - Device tests: NOT RUN. The board is not at hand, and no phone application build follows doc 07 yet.

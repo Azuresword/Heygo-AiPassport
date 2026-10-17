@@ -99,6 +99,23 @@ class PacketTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             hl.show_page(1)
 
+    def test_turn_shape(self):
+        class Turn(ctypes.Structure):
+            _fields_ = [(n, ctypes.c_uint8) for n in ("first", "last", "side", "speed", "edge", "radius")]
+        for n_turns, src in [(12, hl.SRC_MEASURED), (1, hl.SRC_SCHEMATIC), (8, hl.SRC_MEASURED)]:
+            pts, trs = hl.demo_turn_shape(4, n_turns, src)
+            flat = (ctypes.c_uint8 * (2 * len(pts)))(*[v for p in pts for v in p])
+            ctr = (Turn * len(trs))(*[Turn(*t) for t in trs])
+            c = c_build("bp_build_turn_shape", ctypes.c_uint8(4), ctypes.c_uint8(src), ctypes.c_uint8(len(pts)),
+                        flat, ctypes.c_uint8(len(trs)), ctr)
+            self.assertTrue(c, "the C builder accepts the demo shape")
+            self.assertEqual(hl.turn_shape(4, src, pts, trs), c)
+        self.assertEqual(len(hl.turn_shape(4, 0, *hl.demo_turn_shape(4, 12))), 4 + 4 + 2 * 37 + 6 * 12)
+        with self.assertRaises(ValueError):
+            hl.turn_shape(1, 0, [(0, 0)], [])
+        with self.assertRaises(ValueError):
+            hl.turn_shape(1, 0, [(0, 0), (1, 1)], [(0, 1, 0, 1, 91, 1)])
+
     def test_short_packet(self):
         with self.assertRaises(ValueError):
             hl.parse(b"\x01\x00")

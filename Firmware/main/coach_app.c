@@ -27,6 +27,8 @@
 #include "coach_screens.h"
 #include "coach_ui.h"
 #include "ski_view.h"
+#include "turn_page.h"
+#include "turn_view.h"
 #include "ui_theme.h"
 #include "voice.h"
 #include "esp_log.h"
@@ -67,12 +69,15 @@ static coach_screen_coach_t s_coach;
 static coach_screen_ski_t s_ski;
 static coach_screen_report_t s_report;
 static coach_screen_exit_t s_exit;
+static coach_screen_turns_t s_turns;
 static esp_timer_handle_t s_capture_timer;
 static esp_timer_handle_t s_answer_timer;
 static esp_timer_handle_t s_play_watch;
 static esp_timer_handle_t s_data_tick;
 static ski_view_t s_ski_view;          // The texts on the Ski page now.
 static report_view_t s_report_view;    // The texts on the Report page now.
+static turn_view_t s_turn_view;        // The shape and the texts on the Turns page now.
+static uint8_t s_turn_sel;             // The selected turn. A new Turns page starts at turn 1.
 static coach_screen_id_t s_shown = COACH_SCREEN_COUNT;   // COUNT: no screen yet
 static lv_obj_t *s_blank;   // Active while the old screen is deleted. LVGL must not delete the active screen.
 static link_voice_t s_voice = LINK_VOICE_NO_LINK;
@@ -97,6 +102,7 @@ static const char *screen_name(coach_screen_id_t id) {
     case COACH_SCREEN_COACH: return "coach";
     case COACH_SCREEN_SKI: return "ski";
     case COACH_SCREEN_REPORT: return "report";
+    case COACH_SCREEN_TURNS: return "turns";
     case COACH_SCREEN_EXIT: return "exit";
     default: return "?";
     }
@@ -153,9 +159,30 @@ static void set_hidden(lv_obj_t *obj, bool hidden) {
 #define PUT(screen, view, field, want, force) \
     put_label(screen.field, #view "." #field, view.field, sizeof view.field, want.field, force)
 
+// The Turns page. replay: move the dot along the turn again. A new shape also replays.
+// The caller holds the LVGL lock.
+static void refresh_turns(bool force, bool replay) {
+    link_turns_t t;
+    const bool has = ble_link_get_turns(&t);
+    static turn_view_t v;   // About 800 B. Static, so it stays off the 4 KB task stack.
+    turn_view_build(&v, has ? &t : NULL, s_turn_sel, TURN_PAGE_BOX_W, TURN_PAGE_BOX_H, TURN_PAGE_MARGIN);
+    const bool changed = memcmp(&v, &s_turn_view, sizeof v) != 0;
+    if (!force && !changed && !replay) return;
+    s_turn_view = v;
+    if (force || changed) {
+        turn_page_apply(&s_turns, &v);
+        ESP_LOGI("screen", "turns = \"%s\" %s %s \"%s\" %s", v.title, v.counter, v.side, v.metrics, v.source);
+    }
+    turn_page_replay(&s_turns);
+}
+
 // Copy the ski data texts into the screen that is on now. force: the screen is new.
 // The caller holds the LVGL lock.
 static void refresh_data(bool force) {
+    if (s_shown == COACH_SCREEN_TURNS) {
+        refresh_turns(force, false);
+        return;
+    }
     if (s_shown != COACH_SCREEN_SKI && s_shown != COACH_SCREEN_REPORT) return;
     bp_live_stats_t live;
     link_report_t report;
@@ -210,6 +237,7 @@ static void show_screen(coach_screen_id_t id) {
     case COACH_SCREEN_SKI: coach_screen_ski_destroy(&s_ski); break;
     case COACH_SCREEN_REPORT: coach_screen_report_destroy(&s_report); break;
     case COACH_SCREEN_EXIT: coach_screen_exit_destroy(&s_exit); break;
+    case COACH_SCREEN_TURNS: coach_screen_turns_destroy(&s_turns); break;
     default: break;
     }
     switch (id) {
@@ -230,6 +258,12 @@ static void show_screen(coach_screen_id_t id) {
         coach_screen_exit_build(&s_exit);
         lv_screen_load(s_exit.screen);
         break;
+    case COACH_SCREEN_TURNS:
+        coach_screen_turns_build(&s_turns);
+        lv_screen_load(s_turns.screen);
+        s_turn_sel = 0;
+        memset(&s_turn_view, 0, sizeof s_turn_view);
+        break;
     default:
         break;
     }
@@ -241,6 +275,15 @@ static void run_action(coach_action_t a) {
     if (coach_ui_apply(a)) return;
     switch (a) {
     case COACH_ACTION_AUDIO_CAPTURE_START: s_start_capture = true; break;
+    case COACH_ACTION_TURN_NEXT: {
+        link_turns_t t;
+        s_turn_sel = turn_view_next(ble_link_get_turns(&t) ? &t : NULL, s_turn_sel);
+        if (s_shown == COACH_SCREEN_TURNS && lvgl_lock()) {
+            refresh_turns(false, true);
+            lvgl_unlock();
+        }
+        break;
+    }
     case COACH_ACTION_AUDIO_CAPTURE_STOP: voice_capture_stop(); break;
     case COACH_ACTION_AUDIO_PLAY_START: voice_play_enable(); break;
     case COACH_ACTION_AUDIO_PLAY_STOP: voice_play_stop(); break;
@@ -261,6 +304,7 @@ static void send_context(coach_state_t st) {
     const uint8_t page = st == COACH_STATE_SKI      ? BP_PAGE_SKI
                        : st == COACH_STATE_EXIT_Q   ? BP_PAGE_EXIT
                        : st == COACH_STATE_REPORT   ? BP_PAGE_REPORT
+                       : st == COACH_STATE_TURNS    ? BP_PAGE_TURNS
                                                     : BP_PAGE_COACH;
     ble_link_set_context(mode, page);
 }
@@ -409,6 +453,7 @@ static void link_data(void) {
 }
 static void link_live_stats(const bp_live_stats_t *s) { (void)s; link_data(); }
 static void link_run_report(const link_report_t *r) { (void)r; link_data(); }
+static void link_turn_shape(const link_turns_t *t) { (void)t; link_data(); }
 // D-28: the phone opens the Report page. The flow accepts it in SKI and READY only.
 static void link_show_page(uint8_t page) {
     if (page == BP_PAGE_REPORT) post_event(COACH_EVENT_SHOW_REPORT);
@@ -458,6 +503,7 @@ esp_err_t coach_app_start(void) {
         .voice_changed = link_voice_changed, .agent_state = link_agent_state,
         .play_start = link_play_start, .audio_down = link_audio_down, .play_end = link_play_end,
         .live_stats = link_live_stats, .run_report = link_run_report, .show_page = link_show_page,
+        .turn_shape = link_turn_shape,
     };
     esp_err_t le = ble_link_start(&app);
     if (le != ESP_OK) ESP_LOGE(TAG, "BLE link start failed: %s", esp_err_to_name(le));

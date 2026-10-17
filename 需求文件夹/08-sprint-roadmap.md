@@ -2,9 +2,9 @@
 
 # Four-hour Sprint roadmap
 
-Version: 0.2. Date: 2026-10-17. Status: In progress. The code of Sprints 2 to 4 is in the repository and merged into `main`. Device tests are NOT RUN.
+Version: 0.3. Date: 2026-10-17. Status: In progress. The code of Sprints 2 to 4 is in the repository and merged into `main`. Device tests are NOT RUN.
 
-This document divides the remaining work of Increment 1 and Increment 2 in the [backlog](03-scrum-backlog.md) into four-hour Sprints.
+This document divides the remaining work of Increments 1, 2, and 3 in the [backlog](03-scrum-backlog.md) into four-hour Sprints.
 Each Sprint has one Sprint Goal.
 The minutes are planning limits, not measurements. The team has no velocity data yet.
 
@@ -41,6 +41,8 @@ Rules:
 | 8 | 1 | Pass TC-08 with the real service. | Sprint 6. HeygoAI coaching tools (Q-01) | Not started |
 | 9 | 1, 2 | Pass TC-15 and the reading part of TC-21 with the U1 usability test. | Sprint 7. Five test users | Not started |
 | 10 | 1, 2 | Fix defects, and review whether the two increments meet the Definition of Done. | Sprint 9 | Not started |
+| 11 | 3 | The device receives TURN_SHAPE, and the Turns page passes the host screen check. | Sprint 4 | Code on the branch `feat/turn-view`. Section 4 gives the result |
+| 12 | 3 | Pass TC-05 on the board with `phone_sim`, and then with the real phone application. | Sprint 11. The board. A phone application that sends TURN_SHAPE | Not started |
 
 Sprints 2 to 4 run on the host only. They can start now.
 Sprint 5 is the first Sprint that needs the board.
@@ -204,6 +206,38 @@ Section 8 of the [firmware change notes](../Firmware/docs/heygo-changes.md) list
 | 1 | Fix the defects from Sprints 5 to 9 in order of severity. | 140 min |
 | 2 | Run the affected TCs again. | 40 min |
 | 3 | Update the status and the evidence in the documents. | 20 min |
+
+### Sprint 11: Turns page (host)
+
+**Sprint Goal.** The device receives TURN_SHAPE, and the Turns page passes the host screen check.
+
+**Story.** US-05. D-29 sets the scope.
+
+| Order | Task | Time box |
+| --- | --- | --- |
+| 1 | TURN_SHAPE (0x63) in the packet layer and the link session. Host tests for each error code. | 50 min |
+| 2 | The view: fit the run into the box, keep the axis ratio, round the corners, and make the texts. Host tests. | 50 min |
+| 3 | The state machine: REPORT to TURNS on a short DOWN press, the next turn on a short OK press. | 30 min |
+| 4 | The page on the device: two lines, the replay dot, and the texts. | 40 min |
+| 5 | `phone_sim` and the flow simulator send a demo shape. The host renders the page. | 30 min |
+
+**Exit check.**
+
+- The packet layer and the view have host tests. The Python packet matches the C packet byte for byte.
+- The host renders four Turns page images: with no shape, the first turn, a heel side turn, and a schematic shape with 12 turns. The layout check passes.
+- The gate gives exit code 0.
+
+**Result.** Images 16 to 19 show the Turns page. The flow simulator self-test passes 72 of 72. The protocol version stays 0.2. Nobody recorded the actual time.
+
+### Sprint 12: Increment 3 on the board
+
+**Sprint Goal.** Pass TC-05 on the board with `phone_sim`, and then with the real phone application.
+
+| Order | Task | Time box |
+| --- | --- | --- |
+| 1 | Flash the board. Run three runs with `phone_sim`. Run 3 sends a schematic shape. | 60 min |
+| 2 | Check the page on the screen: the shape, the dot, the turn values, and "示意". | 60 min |
+| 3 | Run the same check with the real phone application. | 80 min |
 
 ## 5. Evidence format
 

@@ -21,7 +21,7 @@ HELLO, HELLO_ACK, PHONE_STATUS, DEVICE_STATUS, ERROR = 0x01, 0x02, 0x03, 0x04, 0
 CONTEXT = 0x10
 AGENT_START, AGENT_END, AGENT_CANCEL, AGENT_STATE = 0x20, 0x21, 0x22, 0x23
 AUDIO_UP, AUDIO_DOWN, PLAY_START, PLAY_END = 0x30, 0x31, 0x32, 0x33
-LIVE_STATS, RUN_REPORT, SHOW_PAGE = 0x60, 0x61, 0x62
+LIVE_STATS, RUN_REPORT, SHOW_PAGE, TURN_SHAPE = 0x60, 0x61, 0x62, 0x63
 PAGE_REPORT = 3
 
 TYPE_NAMES = {
@@ -30,7 +30,7 @@ TYPE_NAMES = {
     AGENT_START: "AGENT_START", AGENT_END: "AGENT_END", AGENT_CANCEL: "AGENT_CANCEL",
     AGENT_STATE: "AGENT_STATE", AUDIO_UP: "AUDIO_UP", AUDIO_DOWN: "AUDIO_DOWN",
     PLAY_START: "PLAY_START", PLAY_END: "PLAY_END",
-    LIVE_STATS: "LIVE_STATS", RUN_REPORT: "RUN_REPORT", SHOW_PAGE: "SHOW_PAGE",
+    LIVE_STATS: "LIVE_STATS", RUN_REPORT: "RUN_REPORT", SHOW_PAGE: "SHOW_PAGE", TURN_SHAPE: "TURN_SHAPE",
 }
 
 ACCEPTED, RECOGNIZING, THINKING, ANSWERING, DONE, FAILED = 1, 2, 3, 4, 5, 6
@@ -43,6 +43,10 @@ CHANNEL_AGENT = 0
 U8_UNKNOWN, U16_UNKNOWN = 0xFF, 0xFFFF
 RUN_UNKNOWN, RUN_SKIING, RUN_STOPPED, RUN_ENDED = 0, 1, 2, 3
 PROBLEM_MAX, TIP_MAX = 36, 60   # UTF-8 bytes: 12 and 20 Chinese characters.
+# Increment 3: TURN_SHAPE, doc 07 section 6.
+SRC_MEASURED, SRC_SCHEMATIC = 0, 1
+SIDE_TOE, SIDE_HEEL = 0, 1
+TURN_POINTS_MAX, TURNS_MAX, EDGE_MAX = 40, 12, 90
 
 
 # ---------------------------------------------------------------- packets
@@ -104,6 +108,48 @@ def show_page(page=PAGE_REPORT):
     if page != PAGE_REPORT:
         raise ValueError("SHOW_PAGE accepts only the Report page (3)")
     return packet(SHOW_PAGE, payload=bytes([page]))
+
+
+def turn_shape(run_no, source, points, turns):
+    """One TURN_SHAPE packet.
+
+    points: (x, y) pairs from 0 to 255. x is the side axis, y grows downhill.
+    turns: (first, last, side, speed_kmh, edge_deg, radius_m). Use U8_UNKNOWN for a missing value.
+    """
+    if not 2 <= len(points) <= TURN_POINTS_MAX or len(turns) > TURNS_MAX:
+        raise ValueError("2 to 40 points, and at most 12 turns")
+    if source not in (SRC_MEASURED, SRC_SCHEMATIC):
+        raise ValueError("source is 0 (measured) or 1 (schematic)")
+    for first, last, side, _speed, edge, _radius in turns:
+        if not first < last < len(points):
+            raise ValueError("a turn needs first < last < point count")
+        if side not in (SIDE_TOE, SIDE_HEEL, U8_UNKNOWN) or (edge > EDGE_MAX and edge != U8_UNKNOWN):
+            raise ValueError("bad side or edge angle")
+    body = bytes([run_no, source, len(points), len(turns)])
+    body += b"".join(bytes([x, y]) for x, y in points)
+    body += b"".join(bytes(t) for t in turns)
+    return packet(TURN_SHAPE, payload=body)
+
+
+def demo_turn_shape(run_no, n_turns=8, source=SRC_MEASURED):
+    """A run of n_turns linked turns for tests and demos: an S line down the slope.
+    The side swing is a third of the run length, as on a real slope.
+
+    Each turn uses 3 segments. Even turns swing to the toe side, odd turns to the heel side.
+    The metrics follow a fixed pattern, so the same run always gives the same packet.
+    """
+    import math
+    n_turns = max(1, min(n_turns, TURNS_MAX))
+    n_points = 3 * n_turns + 1
+    points = []
+    for k in range(n_points):
+        phase = math.pi * k / 3
+        points.append((128 + round(50 * math.sin(phase)), 255 * k // (n_points - 1)))
+    turns = []
+    for i in range(n_turns):
+        turns.append((3 * i, 3 * i + 3, SIDE_TOE if i % 2 == 0 else SIDE_HEEL,
+                      45 + (i * 7) % 15, 38 + (i * 11) % 25, 9 + (i * 5) % 8))
+    return points, turns
 
 
 def read_hello(payload):

@@ -1,10 +1,10 @@
 [简体中文](05-decision-amendments.zh_CN.md) · **English**
 
-# Decision amendments: D-08 to D-28
+# Decision amendments: D-08 to D-29
 
-Version: 0.6. Date: 2026-10-17. Status: D-08 to D-15 and D-17 to D-28 accepted by the user. The phone application team accepted D-16.
+Version: 0.8. Date: 2026-10-17. Status: D-08 to D-15 and D-17 to D-29 accepted by the user. The phone application team accepted D-16. It must accept TURN_SHAPE from D-29.
 
-This document gives the reasons behind D-08 to D-28.
+This document gives the reasons behind D-08 to D-29.
 [Validation and decisions](04-validation-and-decisions.md) holds the short log.
 Requirement numbers stay stable. This document deletes no requirement.
 
@@ -303,7 +303,34 @@ After Sprint 4, the branch `feat/report-live-data` merges into `main`. At the sa
 
 **Status.** Accepted by the user on 2026-10-17. The phone application team must accept this message.
 
-## 23. Related documents
+## 23. D-29: a Turns page under the Report page
+
+**Decision.** REQ-05 leaves Deferred and becomes Increment 3.
+Rest mode adds a Turns page. The phone sends the shape of the last run in a new message, TURN_SHAPE (0x63).
+
+- On the Report page, a short DOWN press opens the Turns page.
+- On the Turns page, a short OK press selects the next turn. A short UP press returns to the Report page. A DOWN hold opens the exit question.
+- The page draws the run from left to right and marks the selected turn. A dot moves along the turn in 1.6 seconds.
+- Below the shape, the page shows the side of the turn, its speed, its edge angle, and its radius.
+- The phone sets a source flag in each shape: measured or schematic. For a schematic shape, the page shows "示意".
+
+**Reason.**
+
+- On 2026-10-17, the user asked for a turn shape effect on top of the reports.
+- The App design (Figma, "Segment details") already shows a turn shape and the metrics of each turn. The device page uses the same terms.
+- The device only draws what the phone sends. The phone and the Agent keep all analysis, as in D-26.
+- D-17 deferred the turn view because a schematic curve cannot support a claim about technique. The source flag answers this risk. The phone must mark each shape that does not come from a measured track. The user then sees that the shape is an example.
+- TURN_SHAPE adds one message and changes no current packet. The protocol version therefore stays 0.2, as for SHOW_PAGE (D-28).
+
+**Cost.**
+
+- Q-02 still has no source of real track data. Until it has one, the phone can send only schematic shapes.
+- The device keeps one shape of at most 40 points and 12 turns. The page and the data use about 3.7 KB of static RAM. The page uses 14,864 bytes of the LVGL pool, about 200 bytes more than the Report page.
+- Firmware at commit `bedcf1a` or older answers TURN_SHAPE with ERROR code 1. The phone application can ignore that error.
+
+**Status.** The user accepted the page and the state machine on 2026-10-17. The phone application team must accept TURN_SHAPE.
+
+## 24. Related documents
 
 - [Product requirements](01-product-requirements.md).
 - [System architecture](02-architecture.md).

@@ -290,7 +290,7 @@
       <div class="row" id="phoneBtns"></div>
       <p class="note">自动模式会在 AGENT_END 后按所选场景回应。关闭后可手动发送手机事件。</p>
       <div class="row" style="margin-top:12px" id="skiBtns"></div>
-      <p class="note">滑行数据：开始后手机每秒发一个 LIVE_STATS。暂停 5 秒后速度显示"--"。结束一趟后 2 秒发 RUN_REPORT。数据只改屏幕文字，不改状态。</p>
+      <p class="note">滑行数据：开始后手机每秒发一个 LIVE_STATS。暂停 5 秒后速度显示"--"。结束一趟后 2 秒发 RUN_REPORT 和 TURN_SHAPE。第 3 趟的弯型是示意。数据只改屏幕文字，不改状态。</p>
     </div>
     <div class="card">
       <div class="section-head">
@@ -331,7 +331,7 @@ const DATA = __DATA__;
 const F = DATA.flow, S = DATA.strings, C = DATA.colors;
 const HOLD_MS = DATA.hold_ms, CAPTURE_LIMIT_MS = 20000, AGENT_TIMEOUT_MS = 10000;
 
-const STATE_NAME = { SKI: "滑行", READY: "就绪", CAPTURE: "录音", WAIT_ANSWER: "等回答", PLAYBACK: "播放回答", REPORT: "报告页", EXIT_Q: "退出确认" };
+const STATE_NAME = { SKI: "滑行", READY: "就绪", CAPTURE: "录音", WAIT_ANSWER: "等回答", PLAYBACK: "播放回答", REPORT: "报告页", TURNS: "弯型页", EXIT_Q: "退出确认" };
 const EVENT_NAME = {
   OK_HOLD: "长按 OK", OK_SHORT: "短按 OK", OK_RELEASE: "松开 OK",
   UP_HOLD: "长按 UP", UP_SHORT: "短按 UP", DOWN_HOLD: "长按 DOWN", DOWN_SHORT: "短按 DOWN",
@@ -340,7 +340,7 @@ const EVENT_NAME = {
   SHOW_REPORT: "App 跳到报告页",
 };
 // The main path runs left to right. Returns to READY arc below it. A new question arcs above it.
-const POS = { SKI: [80, 80], EXIT_Q: [80, 350], READY: [290, 210], REPORT: [430, 410], CAPTURE: [500, 210], WAIT_ANSWER: [710, 210], PLAYBACK: [912, 210] };
+const POS = { SKI: [80, 80], EXIT_Q: [80, 350], READY: [290, 210], REPORT: [430, 410], TURNS: [700, 410], CAPTURE: [500, 210], WAIT_ANSWER: [710, 210], PLAYBACK: [912, 210] };
 const BEND = {
   "READY>CAPTURE": [0, 0], "CAPTURE>WAIT_ANSWER": [0, 0], "WAIT_ANSWER>PLAYBACK": [0, 0],
   "CAPTURE>READY": [0, 70], "WAIT_ANSWER>READY": [0, 190], "PLAYBACK>READY": [0, 300],
@@ -512,6 +512,10 @@ const ACTIONS = {
     ble("dp", "AGENT_END", `xid=${hex(xid)} reason=${reason}`);
     phoneRespond(xid);
   },
+  turn_next() {
+    turnSel = turns && turns.turns.length ? (turnSel + 1) % turns.turns.length : 0;
+    turnReplay = performance.now();
+  },
   link_send_agent_cancel() {
     if (link && xid) ble("dp", "AGENT_CANCEL", `xid=${hex(xid)}`);
     xid = 0;
@@ -519,6 +523,8 @@ const ACTIONS = {
 };
 function runAction(a) {
   if (ACTIONS[a]) return ACTIONS[a]();
+  // The same as show_screen in main/coach_app.c: a new Turns page starts at turn 1.
+  if (a === "ui_show_turns") { turnSel = 0; turnReplay = performance.now(); }
   const eff = F.ui_effects && F.ui_effects[a];
   if (eff) for (const [k, v] of Object.entries(eff)) subj[k] = resolve(v);
   if (a === "ui_show_rest" || a === "ui_show_done") subj.status_text = statusText();
@@ -670,8 +676,89 @@ function reportView(now) {
            iq: fmt.iq(report.iq), age: age >= AGE_MS ? `${Math.floor(age / 60000)} MIN AGO` : "",
            problem: report.problem, tip: report.tip };
 }
+// ---------------------------------------------------------------- turn shape (Increment 3, D-29)
+// The same rules as main/ui/turn_view.c and main/ui/turn_page.c. The page draws downhill from left to right.
+const TURN_BOX = [220, 108, 10], REPLAY_MS = 1600, DOT_R = 5, SRC_SCHEMATIC = 1, SMOOTH = 2;
+let turns, turnSel = 0, turnReplay = 0, turnDrawn = "", turnTimer = 0;
+// The same demo run as demo_turn_shape in tools/phone_sim/heygo_link.py.
+function demoTurns(run_no, n, source) {
+  n = Math.max(1, Math.min(n, 12));
+  const np = 3 * n + 1, points = [], list = [];
+  for (let k = 0; k < np; k++) points.push([128 + Math.round(50 * Math.sin(Math.PI * k / 3)), Math.floor(255 * k / (np - 1))]);
+  for (let i = 0; i < n; i++) list.push({ first: 3 * i, last: 3 * i + 3, side: i % 2, speed: 45 + (i * 7) % 15,
+                                          edge: 38 + (i * 11) % 25, radius: 9 + (i * 5) % 8 });
+  return { run_no, source, points, turns: list };
+}
+function turnView(t, sel) {
+  const [bw, bh, m] = TURN_BOX;
+  const v = { path: [], turn: [], title: S["msg.no_turns"], counter: "", side: "SIDE --", metrics: "", source: "" };
+  if (!t || t.points.length < 2) return v;
+  const xs = t.points.map(p => p[1]), ys = t.points.map(p => p[0]);
+  const minX = Math.min(...xs), minY = Math.min(...ys), sx = Math.max(...xs) - minX, sy = Math.max(...ys) - minY;
+  const aw = bw - 2 * m, ah = bh - 2 * m;
+  let num = 1, den = 1;
+  if (sx === 0 && sy === 0) num = 0;
+  else if (sy === 0 || (sx > 0 && sx * ah > sy * aw)) { num = aw; den = sx; }
+  else { num = ah; den = sy; }
+  const offX = m + Math.trunc((aw - Math.trunc(sx * num / den)) / 2), offY = m + Math.trunc((ah - Math.trunc(sy * num / den)) / 2);
+  v.path = t.points.map(p => [offX + Math.trunc((p[1] - minX) * num / den), offY + Math.trunc((p[0] - minY) * num / den)]);
+  // Chaikin: each segment gives its points at 1/4 and 3/4. The ends stay.
+  const q = (a, b) => [Math.floor((3 * a[0] + b[0] + 2) / 4), Math.floor((3 * a[1] + b[1] + 2) / 4)];
+  for (let pass = 0; pass < SMOOTH; pass++) {
+    const p = v.path;
+    v.path = [p[0], ...p.slice(1).flatMap((b, i) => [q(p[i], b), q(b, p[i])]), p[p.length - 1]];
+  }
+  v.title = `第 ${fmt.count8(t.run_no)} 趟 · ${t.turns.length} 弯`;
+  if (t.source === SRC_SCHEMATIC) v.source = S["tag.schematic"];
+  if (!t.turns.length) return v;
+  if (sel >= t.turns.length) sel = 0;
+  const r = t.turns[sel];
+  v.turn = v.path.slice(r.first << SMOOTH, (r.last + 1) << SMOOTH);
+  v.counter = `TURN ${sel + 1}/${t.turns.length}`;
+  v.side = r.side === 0 ? "TOE SIDE" : r.side === 1 ? "HEEL SIDE" : "SIDE --";
+  v.metrics = `${fmt.count8(r.speed)} KM/H  ${fmt.count8(r.edge)}°  R ${fmt.count8(r.radius)} M`;
+  return v;
+}
+// The dot moves along the selected turn with ease-in-out, as lv_anim_path_ease_in_out.
+function placeDot(v, permille) {
+  const dot = widgetEls["turns.dot"], line = F.screens.find(s => s.id === "turns").widgets.find(w => w.id === "turn");
+  if (!v.turn.length) { dot.style.display = "none"; return; }
+  dot.style.display = "";
+  const cum = [0];
+  for (let i = 1; i < v.turn.length; i++) cum.push(cum[i - 1] + Math.floor(Math.hypot(v.turn[i][0] - v.turn[i - 1][0], v.turn[i][1] - v.turn[i - 1][1])));
+  const want = Math.trunc(cum[cum.length - 1] * permille / 1000);
+  let i = 1;
+  while (i < v.turn.length - 1 && cum[i] < want) i++;
+  let [x, y] = v.turn[0];
+  if (v.turn.length > 1) {
+    const seg = cum[i] - cum[i - 1], into = want - cum[i - 1];
+    x = v.turn[i - 1][0] + (seg ? Math.trunc((v.turn[i][0] - v.turn[i - 1][0]) * into / seg) : 0);
+    y = v.turn[i - 1][1] + (seg ? Math.trunc((v.turn[i][1] - v.turn[i - 1][1]) * into / seg) : 0);
+  }
+  dot.style.left = (line.x + x - DOT_R) + "px"; dot.style.top = (line.y + y - DOT_R) + "px";
+}
+function paintTurns(now) {
+  const v = turnView(turns, turnSel);
+  for (const k of ["title", "counter", "side", "metrics", "source"]) widgetEls["turns." + k].textContent = v[k];
+  widgetEls["turns.title"].style.color = C[v.path.length ? "ink" : "muted"];
+  const key = JSON.stringify([v.path, v.turn]);
+  if (key !== turnDrawn) {
+    turnDrawn = key;
+    for (const id of ["path", "turn"]) {
+      const pts = v[id], el = widgetEls["turns." + id];
+      el.style.display = pts.length ? "" : "none";
+      el.querySelector("polyline").setAttribute("points", pts.map(p => p.join(",")).join(" "));
+    }
+    turnReplay = now;
+  }
+  const f = Math.min(1, (now - turnReplay) / REPLAY_MS);
+  // A 30 ms step, as the LVGL timer. The page keeps stepping until the dot reaches the end.
+  if (f < 1 && !turnTimer) turnTimer = setTimeout(() => { turnTimer = 0; paintTurns(performance.now()); }, 30);
+  placeDot(v, Math.round(1000 * (f < 0.5 ? 2 * f * f : 1 - 2 * (1 - f) * (1 - f))));
+}
 function paintData() {
   const now = performance.now();
+  paintTurns(now);
   for (const [scr, view] of [["ski", skiView(now)], ["report", reportView(now)]]) {
     for (const [k, v] of Object.entries(view)) if (typeof v === "string" && widgetEls[scr + "." + k]) widgetEls[scr + "." + k].textContent = v;
     // The Ski panel shows the four metric cells, or the problem and the tip of the report.
@@ -723,6 +810,9 @@ function skiEnd() {
     if (!link) return;
     report = rep; reportAt = performance.now();
     ble("pd", "RUN_REPORT", `run=${rep.run_no} ${rep.distance_m} m ${rep.turns} 弯 IQ=${rep.iq} "${rep.problem}" "${rep.tip}"`);
+    // Increment 3: the turn shape follows the report. Run 3 sends a schematic shape, as phone_sim.py.
+    turns = demoTurns(rep.run_no, Math.max(1, rep.turns), rep.run_no === 3 ? SRC_SCHEMATIC : 0);
+    ble("pd", "TURN_SHAPE", `run=${turns.run_no} ${turns.points.length} 点 ${turns.turns.length} 弯${turns.source ? "（示意）" : ""}`);
     paintData();
   });
 }
@@ -924,7 +1014,7 @@ function reset() {
   mic = spk = false; link = false; xidNext = 1; xid = 0; last = null; timers = {}; phoneTimers = [];
   upCount = downCount = 0; upLine = downLine = null; seenIssues = new Set();
   if (typeof skiTimer !== "undefined") skiStop();
-  live = report = null; liveAt = reportAt = 0; runNo = 0; skiPaused = false; liveLine = null; liveCount = 0;
+  live = report = turns = null; turnSel = 0; turnDrawn = ""; liveAt = reportAt = 0; runNo = 0; skiPaused = false; liveLine = null; liveCount = 0;
   t0 = performance.now();
   $("fsmLog").innerHTML = ""; $("bleLog").innerHTML = ""; $("issues").innerHTML = "";
   for (const s of DATA.static_issues) { const li = document.createElement("li"); li.textContent = s; $("issues").appendChild(li); }

@@ -88,7 +88,11 @@ To make the images again, run `python3 tools/host_render/render.py` from `../Fir
 | `13-report-empty.png` | The Report page before the first report |
 | `14-report.png` | The Report page with a report |
 | `15-report-max.png` | The Report page with the longest texts and the report age |
-| `contact-sheet.png` | All fifteen images at 2x scale |
+| `16-turns-empty.png` | The Turns page before the first shape |
+| `17-turns.png` | The Turns page: turn 1 of 8, the dot at the end of the turn |
+| `18-turns-heel.png` | The Turns page: a heel side turn, the dot in the middle of the turn |
+| `19-turns-schematic.png` | The Turns page: a schematic shape with 12 turns, with the schematic tag |
+| `contact-sheet.png` | All nineteen images at 2x scale |
 
 ## Simulator
 

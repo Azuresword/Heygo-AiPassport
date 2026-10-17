@@ -84,7 +84,27 @@
         {"id": "age", "type": "label", "x": 116, "y": 131, "w": 110, "text": "", "font": "heygo_display_20", "color": "muted", "letter_space": 1},
         {"id": "problem", "type": "label", "x": 22, "y": 182, "w": 196, "text": "", "font": "heygo_sc_16", "color": "accent"},
         {"id": "tip", "type": "label", "x": 22, "y": 206, "w": 196, "h": 50, "text": "", "font": "heygo_sc_16", "color": "ink", "long_mode": "dots"},
-        {"id": "hint", "type": "label", "x": 22, "y": 280, "w": 196, "align": "top_mid", "text": "短按 UP 回教练", "font": "heygo_sc_16", "color": "bg"}
+        {"id": "hint", "type": "label", "x": 22, "y": 280, "w": 196, "align": "top_mid", "text": "DOWN 弯型 · UP 教练", "font": "heygo_sc_16", "color": "bg"}
+      ]
+    },
+    {
+      "id": "turns",
+      "widgets": [
+        {"id": "shape_panel", "type": "obj", "x": 10, "y": 108, "w": 220, "h": 108, "bg": "surface", "radius": 16, "border_width": 1, "border_color": "surface_hi"},
+        {"id": "hint_panel", "type": "obj", "x": 10, "y": 272, "w": 220, "h": 38, "bg": "accent", "radius": 19},
+        {"id": "path", "type": "line", "x": 10, "y": 108, "points": [[110, 6], [150, 22], [150, 40], [110, 54], [70, 68], [70, 86], [110, 102]], "width": 2, "color": "ridge"},
+        {"id": "turn", "type": "line", "x": 10, "y": 108, "points": [[110, 6], [150, 22], [150, 40], [110, 54]], "width": 4, "color": "accent"},
+        {"id": "dot", "type": "obj", "x": 115, "y": 109, "w": 10, "h": 10, "bg": "ink", "radius": 5},
+        {"id": "mode_dot", "type": "obj", "x": 14, "y": 19, "w": 7, "h": 7, "color": "accent", "radius": 4},
+        {"id": "mode", "type": "label", "x": 26, "y": 10, "w": 110, "text": "休息模式", "font": "heygo_sc_16", "color": "ink"},
+        {"id": "battery", "type": "label", "x": 176, "y": 11, "w": 50, "align": "top_right", "text": "", "font": "heygo_display_20", "color": "muted"},
+        {"id": "dest", "type": "label", "x": 14, "y": 36, "w": 212, "text": "TURN SHAPE", "font": "heygo_display_34", "color": "accent", "letter_space": 1},
+        {"id": "title", "type": "label", "x": 14, "y": 80, "w": 150, "text": "暂无弯型数据", "font": "heygo_sc_16", "color": "muted"},
+        {"id": "source", "type": "label", "x": 170, "y": 80, "w": 56, "align": "top_right", "text": "", "font": "heygo_sc_16", "color": "muted"},
+        {"id": "side", "type": "label", "x": 14, "y": 219, "w": 110, "text": "SIDE --", "font": "heygo_display_20", "color": "accent", "letter_space": 1},
+        {"id": "counter", "type": "label", "x": 126, "y": 219, "w": 100, "align": "top_right", "text": "", "font": "heygo_display_20", "color": "muted", "letter_space": 1},
+        {"id": "metrics", "type": "label", "x": 14, "y": 245, "w": 212, "text": "", "font": "heygo_display_20", "color": "ink", "letter_space": 1},
+        {"id": "hint", "type": "label", "x": 22, "y": 280, "w": 196, "align": "top_mid", "text": "OK 下一弯 · UP 报告", "font": "heygo_sc_16", "color": "bg"}
       ]
     },
     {
@@ -131,6 +151,8 @@
     { "id": "ui_show_done",           "async": false },
     { "id": "ui_show_exit",           "async": false },
     { "id": "ui_show_report",         "async": false },
+    { "id": "ui_show_turns",          "async": false },
+    { "id": "turn_next",              "async": false, "comment": "Select the next turn and replay it. coach_app.c runs it." },
     { "id": "ui_show_listening",      "async": false },
     { "id": "ui_show_thinking",       "async": false },
     { "id": "ui_show_answering",      "async": false },
@@ -161,6 +183,7 @@
     "ui_show_ski":       {},
     "ui_show_exit":      {},
     "ui_show_report":    {},
+    "ui_show_turns":     {},
     "ui_show_rest":      { "tag_text": "tag.ready", "state_text": "state.ready",     "body_text": "msg.ready",     "hint_text": "hint.ready",     "icon_state": 0 },
     "ui_show_done":      { "tag_text": "tag.ready", "state_text": "state.ready",                                    "hint_text": "hint.ready",     "icon_state": 0 },
     "ui_show_listening": { "tag_text": "tag.listening", "state_text": "state.listening", "body_text": "msg.listening", "hint_text": "hint.listening", "icon_state": 1 },
@@ -188,6 +211,7 @@
     { "id": "WAIT_ANSWER", "screen": "coach" },
     { "id": "PLAYBACK",    "screen": "coach" },
     { "id": "REPORT",      "screen": "report" },
+    { "id": "TURNS",       "screen": "turns" },
     { "id": "EXIT_Q",      "screen": "exit" }
   ],
 
@@ -238,6 +262,11 @@
     { "from": "REPORT", "on": "UP_SHORT",  "to": "READY",  "actions": ["ui_show_rest"] },
     { "from": "REPORT", "on": "DOWN_HOLD", "to": "EXIT_Q", "actions": ["ui_show_exit"],
       "comment": "As on the Coach page. An OK hold on the Report page does nothing (D-25)." },
+    { "from": "REPORT", "on": "DOWN_SHORT", "to": "TURNS", "actions": ["ui_show_turns"],
+      "comment": "D-29. A short DOWN goes one page deeper, as from the Coach page to the Report page." },
+    { "from": "TURNS", "on": "OK_SHORT",   "to": "TURNS",  "actions": ["turn_next"] },
+    { "from": "TURNS", "on": "UP_SHORT",   "to": "REPORT", "actions": ["ui_show_report"] },
+    { "from": "TURNS", "on": "DOWN_HOLD",  "to": "EXIT_Q", "actions": ["ui_show_exit"] },
     { "from": "SKI",   "on": "SHOW_REPORT", "to": "REPORT", "actions": ["ui_show_report"],
       "comment": "D-28. The phone sends SHOW_PAGE 3. Only SKI and READY go to the Report page. From SKI the device also enters Rest mode. Every other state ignores the request, so it never stops a question or an answer." },
     { "from": "READY", "on": "SHOW_REPORT", "to": "REPORT", "actions": ["ui_show_report"] },

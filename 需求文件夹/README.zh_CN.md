@@ -16,7 +16,7 @@
 | [系统架构](02-architecture.zh_CN.md) | 组件、模式、按键、页面布局、教练音频流程和设备限制。 |
 | [Scrum 待办列表](03-scrum-backlog.zh_CN.md) | 用户故事、优先级、Sprint 顺序和完成定义。 |
 | [验证与决策](04-validation-and-decisions.zh_CN.md) | 测试用例、待确认问题、决策记录和风险。 |
-| [决策修订](05-decision-amendments.zh_CN.md) | D-08 至 D-28 的理由。 |
+| [决策修订](05-decision-amendments.zh_CN.md) | D-08 至 D-29 的理由。 |
 | [Sprint 0 计划](06-sprint-0-plan.zh_CN.md) | 为第一个教练提问做 4 小时的纯主机开发。已完成。 |
 | [蓝牙协议草案](07-ble-protocol-draft.zh_CN.md) | 设备侧的蓝牙链路方案，包括实时数据消息。 |
 | [4 小时 Sprint 路线图](08-sprint-roadmap.zh_CN.md) | Sprint 0 至 10 的目标、任务、前提条件和砍线。 |
@@ -43,7 +43,7 @@ D-17、D-18 和 D-22 规定了优先级：
 Sprint 0 已完成。Sprint 1 的设备侧代码已提交，设备测试未运行。没有关闭任何故事。
 各故事的进度见[待办列表](03-scrum-backlog.zh_CN.md)第 4.1 节。
 
-用户已确认 D-08 至 D-15、D-17 至 D-28。手机应用团队已确认协议 0.2（D-16）。
+用户已确认 D-08 至 D-15、D-17 至 D-29。手机应用团队已确认协议 0.2（D-16）。
 手机应用已经存在，由另一个团队开发。
 目前没有人接受 Scrum 角色或交付日期。
 

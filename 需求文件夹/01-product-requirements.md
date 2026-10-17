@@ -2,7 +2,7 @@
 
 # HeygoAI and AI Passport: product requirements
 
-Version: 0.6. Date: 2026-10-17. Status: Draft for review.
+Version: 0.7. Date: 2026-10-17. Status: Draft for review.
 The Product Owner role has no assigned person.
 This document defines a concept. It does not describe a working integration.
 
@@ -40,6 +40,7 @@ The pilot uses existing boards. It needs no new circuit board or enclosure.
 6. The Agent answers through speech, with short text on the screen.
 7. The user can hold UP to stop the answer.
 8. When the Coach page is idle, a short DOWN press opens the Report page. It shows the report of the last run. A short UP press returns to the Coach page.
+   On the Report page, a short DOWN press opens the Turns page. A short OK press selects the next turn. A short UP press returns to the Report page.
 9. Before the next run, the user holds DOWN and then presses OK to return to Ski mode.
 
 Rest mode means that the user states they stopped.
@@ -53,9 +54,10 @@ D-17, D-18, and D-22 set these priorities. [Decision amendments](05-decision-ame
 | --- | --- | --- |
 | P0 | Increment 1: the Coach voice chain | REQ-01, REQ-06, REQ-07, REQ-08, REQ-15, REQ-17, REQ-20 |
 | P1 | Increment 2: live data and reports | REQ-02, REQ-03, REQ-21 |
+| P1 | Increment 3: the turn shape (D-29) | REQ-05 |
 | P1 | After Increment 2 | REQ-04, REQ-09, REQ-13 |
 | P2 | Later candidates | REQ-10, REQ-11, REQ-12, REQ-18, REQ-19 |
-| Deferred | No planned increment | REQ-05, REQ-14, REQ-16 |
+| Deferred | No planned increment | REQ-14, REQ-16 |
 
 Increment 1 builds the complete voice chain once: button, BLE link, phone, Agent, phone, BLE link, speaker.
 Increment 2 uses the same BLE link in one direction only, from the phone to the device.
@@ -63,7 +65,7 @@ D-22 lets the team develop Increment 2 in parallel with the device acceptance of
 
 ### Exclusions from the first version
 
-- Metric charts, the offline report cache, turn views, and human intercom. They come after Increment 2 or sit in Deferred.
+- Metric charts, the offline report cache, and human intercom. They come after Increment 2. The turn view is Increment 3.
 - Automatic emergency detection or rescue dispatch.
 - Certified instruction, medical advice, or injury prevention claims.
 - Native measurement of speed, position, edge angle, or body posture.
@@ -105,13 +107,14 @@ Each row has test stage Prototype. Owners are roles with no assigned person.
 | REQ-17 | Keep Ski mode and Rest mode distinct. Require manual entry before any voice use. | Firmware and design. | TC-17: 50 transition trials keep the mode clear. The press that enters Rest mode never starts capture. | No automatic motion detection exists. D-28 exception: the phone can change the device to the Report page. That enters Rest mode but never starts capture. |
 | REQ-20 | Explain link failures. Support recovery. | Firmware and phone. | TC-20: 10 reconnect trials create no duplicate question. No stale answer plays. | Test link loss and phone background behavior. |
 
-### P1, Increment 2
+### P1, Increments 2 and 3
 
 | ID | Value and required behavior | Owner | Acceptance target | Dependency |
 | --- | --- | --- | --- | --- |
 | REQ-02 | Show the latest ski data packet from the phone. A missing field shows "--" and never 0. Mark data that is out of date. | Phone and firmware. | TC-02: in 300 data packets, the device shows the latest packet each time. Each missing field shows "--". | The phone application sends LIVE_STATS as doc 07 defines. |
 | REQ-21 | During a run, show live data on the Ski page: speed, vertical drop, distance, turn count, and run time. The phone sends one packet each second. | Firmware and design. | TC-21: the screen updates within 300 ms of the packet at the 95th percentile. At least 4 of 5 users read the speed correctly within 2 seconds. | REQ-02. |
 | REQ-03 | After each run, show the report of that run. It holds the distance, the turn count, the Heygo IQ, the core problem, and a tip of at most 20 characters. | Firmware and design. | TC-03: in 30 short DOWN presses on the Coach page, the Report page shows within 500 ms each time. Every value matches the phone log. | REQ-02. |
+| REQ-05 | After each run, show the shape of that run and replay one turn. The user selects each turn in sequence. Each turn shows its side, speed, edge angle, and radius. A schematic shape shows "示意". | Firmware and design. | TC-05: in 20 runs with phone_sim, the Turns page shows the shape within 500 ms of TURN_SHAPE. Each turn value matches the phone log. A schematic shape shows "示意" each time. | REQ-03. TURN_SHAPE as doc 07 defines. |
 
 ### P1, after Increment 2
 
@@ -135,7 +138,6 @@ Each row has test stage Prototype. Owners are roles with no assigned person.
 
 | ID | Value | Reason |
 | --- | --- | --- |
-| REQ-05 | Show and replay one turn. | It is the largest story, and Q-02 may never supply trajectory data. |
 | REQ-14 | Access control and data deletion. | D-13 excludes privacy work. |
 | REQ-16 | Keep audio, link, and power use within measured device limits. | D-18: the first version builds no power management. |
 
@@ -207,12 +209,23 @@ D-26: after each run, the phone sends the report of that run. D-27 sets two plac
 | Core problem | At most 12 Chinese characters | Weight too far back |
 | Short tip | At most 20 Chinese characters | Next run, keep both hands in front |
 
-- On the Report page, an OK hold does nothing. The button hint shows "Press UP for coach".
+- On the Report page, an OK hold does nothing. The button hint shows "DOWN 弯型 · UP 教练" (DOWN for turns, UP for the coach).
 - D-28: when the phone sends SHOW_PAGE, the device changes to the Report page from the Ski page or the idle Coach page. In Ski mode, it also enters Rest mode. During capture, the wait, the playback, and the exit question, the device ignores the message, so it never stops the user.
 - On the Report page, a DOWN hold opens the exit question, as on the Coach page.
 - Before the first report arrives, the Report page shows "The report shows after a run".
 - 60 seconds after a report arrives, the Report page shows "N MIN AGO".
 - After a link loss, the device keeps the last report from RAM on the screen.
+
+### Turns page
+
+D-29 adds the Turns page under the Report page. The phone sends the shape of each run after its report.
+
+- The page draws the run from left to right, and marks the selected turn in the accent color. A dot moves along the turn once.
+- A short OK press selects the next turn. A short UP press returns to the Report page.
+- Below the shape, the page shows "TOE SIDE" or "HEEL SIDE", the turn number, the speed, the edge angle, and the radius.
+- A shape that does not come from a measured track shows "示意" (schematic).
+- Before the first shape arrives, the page shows "暂无弯型数据" (no turn data yet).
+- An OK hold does nothing. A DOWN hold opens the exit question.
 
 ### Data fields
 

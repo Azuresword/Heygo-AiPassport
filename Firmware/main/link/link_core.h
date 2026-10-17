@@ -53,6 +53,16 @@ typedef struct {
     char tip[BP_TIP_MAX + 1];
 } link_report_t;
 
+// The last TURN_SHAPE, copied. points[i] is { x, y }, from 0 to 255, y downhill.
+typedef struct {
+    uint8_t run_no;
+    uint8_t source;          // BP_TURN_SRC_*.
+    uint8_t n_points;
+    uint8_t points[BP_TURN_POINTS_MAX][2];
+    uint8_t n_turns;
+    bp_turn_t turns[BP_TURNS_MAX];
+} link_turns_t;
+
 typedef struct {
     void *ctx;
     void (*send)(void *ctx, link_lane_t lane, const uint8_t *pkt, size_t len);
@@ -71,6 +81,8 @@ typedef struct {
     void (*run_report)(void *ctx, const link_report_t *r);
     // The phone asks for a page. The only page now is BP_PAGE_REPORT.
     void (*show_page)(void *ctx, uint8_t page);
+    // Increment 3: the turn shape of a run.
+    void (*turn_shape)(void *ctx, const link_turns_t *t);
 } link_io_t;
 
 typedef struct {
@@ -104,6 +116,8 @@ typedef struct {
     link_report_t report;
     bool has_report;
     uint32_t report_ms;    // Local receive time of report.
+    link_turns_t turns;
+    bool has_turns;
 } link_core_t;
 
 void link_init(link_core_t *l, const link_io_t *io, const char *fw_version);
@@ -135,6 +149,8 @@ void link_set_device(link_core_t *l, uint8_t battery, uint8_t mode, uint8_t page
 const bp_live_stats_t *link_live(const link_core_t *l, uint32_t now_ms, bool *stale);
 // The last RUN_REPORT, or NULL when none arrived. *age_ms is the time since it arrived.
 const link_report_t *link_report(const link_core_t *l, uint32_t now_ms, uint32_t *age_ms);
+// The last TURN_SHAPE, or NULL when none arrived.
+const link_turns_t *link_turns(const link_core_t *l);
 
 const char *link_voice_name(link_voice_t voice);
 

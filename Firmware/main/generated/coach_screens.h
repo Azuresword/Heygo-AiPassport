@@ -79,6 +79,28 @@ void coach_screen_report_destroy(coach_screen_report_t *out);
 
 typedef struct {
     lv_obj_t *screen;
+    lv_obj_t *shape_panel;
+    lv_obj_t *hint_panel;
+    lv_obj_t *path;
+    lv_obj_t *turn;
+    lv_obj_t *dot;
+    lv_obj_t *mode_dot;
+    lv_obj_t *mode;
+    lv_obj_t *battery;
+    lv_obj_t *dest;
+    lv_obj_t *title;
+    lv_obj_t *source;
+    lv_obj_t *side;
+    lv_obj_t *counter;
+    lv_obj_t *metrics;
+    lv_obj_t *hint;
+} coach_screen_turns_t;
+
+void coach_screen_turns_build(coach_screen_turns_t *out);
+void coach_screen_turns_destroy(coach_screen_turns_t *out);
+
+typedef struct {
+    lv_obj_t *screen;
     lv_obj_t *body_panel;
     lv_obj_t *hint_panel;
     lv_obj_t *mode_dot;

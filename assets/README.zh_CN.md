@@ -88,7 +88,11 @@ python3 tools/check_glyphs.py
 | `13-report-empty.png` | 还没有报告时的报告页 |
 | `14-report.png` | 有报告的报告页 |
 | `15-report-max.png` | 最长文本和报告时间的报告页 |
-| `contact-sheet.png` | 全部十五张图，放大 2 倍 |
+| `16-turns-empty.png` | 还没有弯型时的弯型页 |
+| `17-turns.png` | 弯型页：8 个弯中的第 1 个，圆点在弯的终点 |
+| `18-turns-heel.png` | 弯型页：一个 HEEL SIDE 弯，圆点在弯的中段 |
+| `19-turns-schematic.png` | 弯型页：12 个弯的示意弯型，显示"示意" |
+| `contact-sheet.png` | 全部十九张图，放大 2 倍 |
 
 ## 模拟器
 

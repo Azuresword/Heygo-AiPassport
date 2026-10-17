@@ -32,6 +32,7 @@ static int min_payload(uint8_t type) {
     case BP_LIVE_STATS:    return BP_LIVE_STATS_SIZE;
     case BP_RUN_REPORT:    return BP_RUN_REPORT_FIXED;
     case BP_SHOW_PAGE:     return 1;
+    case BP_TURN_SHAPE:    return BP_TURN_SHAPE_FIXED;
     default:               return -1;
     }
 }
@@ -399,6 +400,54 @@ size_t bp_build_show_page(uint8_t *out, size_t cap, uint8_t page) {
     return n;
 }
 
+static bp_err_t check_turn_shape(uint8_t source, uint8_t n_points, uint8_t n_turns, const bp_turn_t *turns) {
+    if (n_points > BP_TURN_POINTS_MAX || n_turns > BP_TURNS_MAX) return BP_ERR_TOO_LARGE;
+    if (n_points < BP_TURN_POINTS_MIN || source > BP_TURN_SRC_SCHEMATIC) return BP_ERR_FIELD;
+    for (uint8_t i = 0; i < n_turns; i++) {
+        const bp_turn_t *t = &turns[i];
+        if (t->first >= t->last || t->last >= n_points) return BP_ERR_FIELD;
+        if (t->side > BP_SIDE_HEEL && t->side != BP_U8_UNKNOWN) return BP_ERR_FIELD;
+        if (t->edge_deg > BP_EDGE_MAX && t->edge_deg != BP_U8_UNKNOWN) return BP_ERR_FIELD;
+    }
+    return BP_OK;
+}
+
+bp_err_t bp_read_turn_shape(const bp_packet_t *p, bp_turn_shape_t *out) {
+    bp_err_t e = expect(p, BP_TURN_SHAPE);
+    if (e) return e;
+    const uint8_t *b = p->payload;
+    const uint8_t n = b[2], m = b[3];
+    if (n > BP_TURN_POINTS_MAX || m > BP_TURNS_MAX) return BP_ERR_TOO_LARGE;
+    if (p->payload_len != (size_t)BP_TURN_SHAPE_FIXED + 2u * n + (size_t)BP_TURN_ENTRY * m) return BP_ERR_LENGTH;
+    out->run_no = b[0];
+    out->source = b[1];
+    out->n_points = n;
+    out->points = b + BP_TURN_SHAPE_FIXED;
+    out->n_turns = m;
+    const uint8_t *t = out->points + 2u * n;
+    for (uint8_t i = 0; i < m; i++, t += BP_TURN_ENTRY) {
+        out->turns[i] = (bp_turn_t){ t[0], t[1], t[2], t[3], t[4], t[5] };
+    }
+    return check_turn_shape(out->source, n, m, out->turns);
+}
+
+size_t bp_build_turn_shape(uint8_t *out, size_t cap, uint8_t run_no, uint8_t source, uint8_t n_points,
+                           const uint8_t *points, uint8_t n_turns, const bp_turn_t *turns) {
+    if (!points || (n_turns && !turns) || check_turn_shape(source, n_points, n_turns, turns) != BP_OK) return 0;
+    const size_t len = BP_TURN_SHAPE_FIXED + 2u * n_points + (size_t)BP_TURN_ENTRY * n_turns;
+    size_t n = header(out, cap, len, BP_TURN_SHAPE, 0, 0);
+    if (!n) return 0;
+    uint8_t *b = out + 4;
+    b[0] = run_no; b[1] = source; b[2] = n_points; b[3] = n_turns;
+    memcpy(b + BP_TURN_SHAPE_FIXED, points, 2u * n_points);
+    uint8_t *t = b + BP_TURN_SHAPE_FIXED + 2u * n_points;
+    for (uint8_t i = 0; i < n_turns; i++, t += BP_TURN_ENTRY) {
+        t[0] = turns[i].first; t[1] = turns[i].last; t[2] = turns[i].side;
+        t[3] = turns[i].speed_kmh; t[4] = turns[i].edge_deg; t[5] = turns[i].radius_m;
+    }
+    return n;
+}
+
 bp_err_t bp_check_version(uint8_t major, uint8_t minor) {
     return (major == BP_PROTO_MAJOR && minor == BP_PROTO_MINOR) ? BP_OK : BP_ERR_VERSION;
 }
@@ -454,6 +503,7 @@ const char *bp_type_name(uint8_t type) {
     case BP_LIVE_STATS: return "LIVE_STATS";
     case BP_RUN_REPORT: return "RUN_REPORT";
     case BP_SHOW_PAGE: return "SHOW_PAGE";
+    case BP_TURN_SHAPE: return "TURN_SHAPE";
     default: return "?";
     }
 }

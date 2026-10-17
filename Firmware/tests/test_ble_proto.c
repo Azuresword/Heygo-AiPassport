@@ -101,7 +101,9 @@ static void error_codes(void) {
     assert(bp_parse(team, 4, &p) == BP_ERR_UNKNOWN_TYPE);
 
     // Code 3: any version other than 0.2 while the major is 0.
+    // TURN_SHAPE adds one message and changes no current packet, so the version stays 0.2.
     assert(bp_check_version(0, 2) == BP_OK);
+    assert(bp_check_version(0, 3) == BP_ERR_VERSION);
     assert(bp_check_version(0, 1) == BP_ERR_VERSION);
     assert(bp_check_version(1, 2) == BP_ERR_VERSION);
 
@@ -288,8 +290,63 @@ static void type_names(void) {
     assert(strcmp(bp_type_name(0x55), "?") == 0);
 }
 
+static void turn_shape(void) {
+    uint8_t buf[256], pts[2 * BP_TURN_POINTS_MAX];
+    for (int i = 0; i < BP_TURN_POINTS_MAX; i++) { pts[2 * i] = (uint8_t)(i * 6); pts[2 * i + 1] = (uint8_t)(i * 6 + 1); }
+    bp_turn_t turns[BP_TURNS_MAX];
+    for (int i = 0; i < BP_TURNS_MAX; i++)
+        turns[i] = (bp_turn_t){ (uint8_t)(i * 3), (uint8_t)(i * 3 + 3), (uint8_t)(i & 1), 50, 40, 12 };
+    bp_packet_t p;
+    bp_turn_shape_t r;
+
+    // The largest packet: 4 + 80 + 72 payload bytes. It fits the MTU of 172 that voice needs.
+    size_t n = bp_build_turn_shape(buf, sizeof buf, 4, BP_TURN_SRC_MEASURED, BP_TURN_POINTS_MAX, pts, BP_TURNS_MAX, turns);
+    assert(n == 4 + 156);
+    assert(n + 3 <= BP_MTU_MIN);
+    assert(buf[0] == BP_TURN_SHAPE && buf[2] == 0);
+    assert(bp_parse(buf, n, &p) == BP_OK);
+    assert(bp_read_turn_shape(&p, &r) == BP_OK);
+    assert(r.run_no == 4 && r.n_points == 40 && r.n_turns == 12);
+    assert(r.points[2 * 39] == 234 && r.points[2 * 39 + 1] == 235);
+    assert(r.turns[11].first == 33 && r.turns[11].last == 36 && r.turns[11].side == BP_SIDE_HEEL);
+    assert(r.turns[0].edge_deg == 40 && r.turns[0].radius_m == 12 && r.turns[0].speed_kmh == 50);
+
+    // A schematic shape with no turns, and unknown metrics.
+    turns[0] = (bp_turn_t){ 0, 1, BP_U8_UNKNOWN, BP_U8_UNKNOWN, BP_U8_UNKNOWN, BP_U8_UNKNOWN };
+    n = bp_build_turn_shape(buf, sizeof buf, BP_U8_UNKNOWN, BP_TURN_SRC_SCHEMATIC, 2, pts, 1, turns);
+    assert(n == 4 + 4 + 4 + 6);
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_turn_shape(&p, &r) == BP_OK);
+    assert(r.source == BP_TURN_SRC_SCHEMATIC && r.turns[0].side == BP_U8_UNKNOWN);
+
+    // Errors.
+    assert(bp_build_turn_shape(buf, sizeof buf, 1, 0, 1, pts, 0, turns) == 0);            // 1 point
+    assert(bp_build_turn_shape(buf, sizeof buf, 1, 2, 4, pts, 0, turns) == 0);            // source 2
+    turns[0] = (bp_turn_t){ 3, 3, 0, 1, 1, 1 };
+    assert(bp_build_turn_shape(buf, sizeof buf, 1, 0, 4, pts, 1, turns) == 0);            // first == last
+    turns[0] = (bp_turn_t){ 0, 4, 0, 1, 1, 1 };
+    assert(bp_build_turn_shape(buf, sizeof buf, 1, 0, 4, pts, 1, turns) == 0);            // last >= points
+    turns[0] = (bp_turn_t){ 0, 2, 2, 1, 1, 1 };
+    assert(bp_build_turn_shape(buf, sizeof buf, 1, 0, 4, pts, 1, turns) == 0);            // side 2
+    turns[0] = (bp_turn_t){ 0, 2, 0, 1, 91, 1 };
+    assert(bp_build_turn_shape(buf, sizeof buf, 1, 0, 4, pts, 1, turns) == 0);            // edge 91
+
+    // The reader checks the same rules on raw bytes.
+    turns[0] = (bp_turn_t){ 0, 2, 0, 1, 1, 1 };
+    n = bp_build_turn_shape(buf, sizeof buf, 1, 0, 4, pts, 1, turns);
+    buf[4 + 4 + 8 + 4] = 91;                                                                // edge 91
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_turn_shape(&p, &r) == BP_ERR_FIELD);
+    buf[4 + 4 + 8 + 4] = 1;
+    assert(bp_parse(buf, n - 1, &p) == BP_OK && bp_read_turn_shape(&p, &r) == BP_ERR_LENGTH); // one byte short
+    buf[4 + 2] = 41;                                                                        // 41 points
+    assert(bp_parse(buf, n, &p) == BP_OK && bp_read_turn_shape(&p, &r) == BP_ERR_TOO_LARGE);
+    const uint8_t short_pkt[] = { BP_TURN_SHAPE, 0, 0, 0, 1, 0, 2 };
+    assert(bp_parse(short_pkt, sizeof short_pkt, &p) == BP_ERR_LENGTH);                     // below 4 bytes
+    assert(strcmp(bp_type_name(BP_TURN_SHAPE), "TURN_SHAPE") == 0);
+}
+
 int main(void) {
     type_names();
+    turn_shape();
     roundtrip_link();
     roundtrip_agent_and_audio();
     error_codes();

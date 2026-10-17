@@ -2,9 +2,9 @@
 
 # HeygoAI × AI Passport: architecture
 
-Version: 0.7. Date: 2026-10-17. Status: Draft for engineering review.
+Version: 0.8. Date: 2026-10-17. Status: Draft for engineering review.
 
-This document proposes a design for Increment 1 and Increment 2 in [product requirements](01-product-requirements.md).
+This document proposes a design for Increments 1, 2, and 3 in [product requirements](01-product-requirements.md).
 It does not describe a working integration.
 [Decision amendments](05-decision-amendments.md) gives the reason behind each decision.
 The [BLE protocol draft](07-ble-protocol-draft.md) defines the packets.
@@ -95,6 +95,11 @@ Capture needs a new OK press that starts in Rest mode.
 | Report page | Short UP press | Return to the Coach page. |
 | Report page | Hold DOWN for 500 ms | Open the exit question, as on the Coach page. |
 | Report page | Hold OK for 500 ms | Do nothing. |
+| Report page | Short DOWN press | Open the Turns page (D-29). |
+| Turns page | Short OK press | Select the next turn. Replay the dot along it. |
+| Turns page | Short UP press | Return to the Report page. |
+| Turns page | Hold DOWN for 500 ms | Open the exit question, as on the Coach page. |
+| Turns page | Hold OK for 500 ms | Do nothing. |
 | Any page | Other short presses | No action, except OK in the exit question. |
 
 A hold never also triggers a short press.
@@ -158,8 +163,26 @@ The positions come from `flows/coach.flow.json`, and the host screen check passe
 D-28: when the phone sends SHOW_PAGE 3, the state machine goes to REPORT from SKI and READY only.
 CAPTURE, WAIT_ANSWER, PLAYBACK, and EXIT_Q have no such transition. They ignore it, so the user is never stopped.
 
+### Turns page layout
+
+| Widget | Position | Font | Content |
+|---|---|---|---|
+| `dest` | `x=14, y=36` | 34 px brand font | "TURN SHAPE" |
+| `title` | `x=14, y=80` | 16 px Chinese | "第 4 趟 · 8 弯". With no shape, "暂无弯型数据" |
+| `source` | `x=170..226, y=80`, right-aligned | 16 px Chinese | "示意" for a schematic shape. Else empty |
+| `shape_panel` | `x=10, y=108`, 220 × 108 | None | The box of the shape |
+| `path` | In the box | Line, 2 px | The whole run, from left to right |
+| `turn` | In the box | Line, 4 px, accent color | The selected turn |
+| `dot` | In the box | 10 px circle | Moves along the selected turn in 1.6 s |
+| `side` | `x=14, y=219` | 20 px brand font | "TOE SIDE" or "HEEL SIDE" |
+| `counter` | `x=126..226, y=219`, right-aligned | 20 px brand font | "TURN 3/8" |
+| `metrics` | `x=14, y=245` | 20 px brand font | "54 KM/H  55°  R 12 M". An unknown value shows "--" |
+
+The view keeps the ratio between the two axes and centers the run in the box.
+It rounds the corners of the line twice (Chaikin), so 40 points become 160 points on the screen.
+
 Only one screen exists at a time. On a page change, the task deletes the old screen first and then builds the new screen.
-Images 10 to 15 in `assets/mockups` come from the host renderer. They include the longest texts.
+Images 10 to 19 in `assets/mockups` come from the host renderer. They include the longest texts.
 
 ## 4. Audio state
 
@@ -212,6 +235,7 @@ The device has no PSRAM. Streaming makes a full recording unnecessary.
 | LVGL pool | 24 KiB | Current `sdkconfig.defaults` value. |
 | BLE packet queues | 3,440 bytes | Doc 07, section 10. |
 | The last LIVE_STATS and RUN_REPORT | 128 bytes | Doc 07, section 10. The struct sizes measured on the host. |
+| The last TURN_SHAPE and the Turns page | About 3.7 KB | Doc 07, section 10. The symbol table of the firmware build. |
 | 48-pixel digit font | In Flash, not in RAM | Measure the size in Sprint 3. |
 | ADPCM codec state | A few bytes in each direction | D-09. |
 | BLE stack, task stacks, fonts, firmware | Measure on hardware | Do not claim that the rest is enough. |
@@ -258,7 +282,7 @@ D-17 moved these items out of P0. Each item needs its own design work before it 
 - **Live data and the Report page (Increment 2).** Section 3 gives the page design. Doc 07 gives LIVE_STATS. The device keeps only the last packet, in RAM.
 - **Charts and the offline cache (P1, after Increment 2).** Charts need many data points over time. The offline cache writes the last data to Flash. Neither item has a design yet.
 - **Human intercom (P1).** The Team page waits for a start message from the phone before capture. It reuses the Coach audio path. Each speech path crosses two BLE links. The 500 ms audio target lacks a measurement.
-- **Turn visualization (Deferred).** It returns only if Q-02 shows trajectory data with a coordinate frame.
+- **Turn shape (Increment 3, D-29).** Section 3 gives the page design. Doc 07 gives TURN_SHAPE. The device keeps only the last shape, in RAM. Until Q-02 gives a measured track, the phone sends schematic shapes, and the page shows "示意".
 
 Commit `970bb8e` holds the version 0.3 design for these items.
 

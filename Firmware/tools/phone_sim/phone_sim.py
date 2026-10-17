@@ -184,6 +184,12 @@ class Phone:
             iq = 60 + (run_no * 11) % 40
             await self.send(hl.run_report(run_no, dist, turns, iq, "重心偏后", "下一趟把双手放在身体前方"))
             log(f"-> RUN_REPORT run {run_no}: iq {iq}")
+            # Increment 3: the turn shape follows the report. Run 3 sends a schematic shape.
+            n_shape = max(1, min(turns, hl.TURNS_MAX))
+            src = hl.SRC_SCHEMATIC if run_no == 3 else hl.SRC_MEASURED
+            pts, trs = hl.demo_turn_shape(run_no, n_shape, src)
+            await self.send(hl.turn_shape(run_no, src, pts, trs))
+            log(f"-> TURN_SHAPE run {run_no}: {len(pts)} points, {len(trs)} turns, source {src}")
             if self.args.jump:
                 await self.send(hl.show_page())
                 log("-> SHOW_PAGE 3 (Report page)")

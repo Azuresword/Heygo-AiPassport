@@ -27,6 +27,8 @@ typedef struct {
     void (*live_stats)(const bp_live_stats_t *s);
     void (*run_report)(const link_report_t *r);
     void (*show_page)(uint8_t page);
+    // Increment 3 data: the turn shape of a run.
+    void (*turn_shape)(const link_turns_t *t);
 } ble_link_app_t;
 
 // Start NimBLE, register the service, and advertise. Call once.
@@ -42,6 +44,8 @@ void ble_link_agent_done(void);
 // Each flag is false when that data never arrived.
 void ble_link_get_data(bp_live_stats_t *live, bool *has_live, bool *stale,
                        link_report_t *report, bool *has_report, uint32_t *report_age_ms);
+// Copy the last turn shape under the link lock. Returns false when none arrived.
+bool ble_link_get_turns(link_turns_t *out);
 // The mode and page for CONTEXT and DEVICE_STATUS (doc 07 field values).
 void ble_link_set_context(uint8_t mode, uint8_t page);
 
