@@ -182,10 +182,14 @@ static void run_report(void) {
     assert(n == BP_HEADER_SIZE + 7 + 36 + 60 && n <= CAP);
     assert(bp_parse(buf, n, &p) == BP_OK && bp_read_run_report(&p, &r) == BP_OK);
 
-    // The builder refuses a text above the limit, and an IQ above 100.
+    // The builder refuses a text above the limit, and an IQ above 200 (D-27).
     strcat(longt, "雪");
     assert(bp_build_run_report(buf, CAP, 2, 100, 10, 100, longp, longt) == 0);
-    assert(bp_build_run_report(buf, CAP, 2, 100, 10, 101, "", "") == 0);
+    assert(bp_build_run_report(buf, CAP, 2, 100, 10, 201, "", "") == 0);
+    n = bp_build_run_report(buf, CAP, 2, 100, 10, 200, "", "");
+    assert(n && bp_parse(buf, n, &p) == BP_OK && bp_read_run_report(&p, &r) == BP_OK && r.iq == 200);
+    n = bp_build_run_report(buf, CAP, 2, 100, 10, 127, "", "");
+    assert(n && bp_parse(buf, n, &p) == BP_OK && bp_read_run_report(&p, &r) == BP_OK && r.iq == 127);
 
     // The reader gives code 4 for a long text, code 2 for a length past the end,
     // and code 7 for a bad IQ or bad UTF-8.
@@ -198,7 +202,9 @@ static void run_report(void) {
     assert(bp_parse(raw, sizeof raw, &p) == BP_OK && bp_read_run_report(&p, &r) == BP_ERR_LENGTH);
     raw[10] = 0;
     assert(bp_parse(raw, BP_HEADER_SIZE + 7 + 10, &p) == BP_OK && bp_read_run_report(&p, &r) == BP_OK);
-    raw[9] = 101;
+    raw[9] = 200;                                                   // the top of the range (D-27)
+    assert(bp_parse(raw, BP_HEADER_SIZE + 7 + 10, &p) == BP_OK && bp_read_run_report(&p, &r) == BP_OK && r.iq == 200);
+    raw[9] = 201;
     assert(bp_parse(raw, BP_HEADER_SIZE + 7 + 10, &p) == BP_OK && bp_read_run_report(&p, &r) == BP_ERR_FIELD);
     raw[9] = 50;
     raw[11] = 0xE6; raw[12] = 0xBB;                                 // a cut 3-byte character

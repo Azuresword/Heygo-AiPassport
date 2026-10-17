@@ -330,7 +330,7 @@ If the phone has no speed, it sends the unknown value.
 | 0 | 1 | Run number, as in LIVE_STATS | Runs | 0xFF |
 | 1 | 2 | Distance | Meters | 0xFFFF |
 | 3 | 2 | Turn count | Turns | 0xFFFF |
-| 5 | 1 | Heygo IQ, 0 to 100 | Points | 0xFF |
+| 5 | 1 | Heygo IQ, 0 to 200 | Points | 0xFF |
 | 6 | 1 | Byte count n of the core problem, at most 36 | Bytes | 0 for none |
 | 7 | n | Core problem, UTF-8, at most 12 Chinese characters | None | Empty |
 | 7 + n | The rest | Short tip, UTF-8, at most 20 Chinese characters or 60 bytes | None | Empty |
@@ -351,7 +351,7 @@ The device follows these rules:
 - The device shows an unknown value as "--".
 - The device treats an unknown run state value as 0. It sends no ERROR for it.
 - If a LIVE_STATS payload is shorter than 12 bytes, the device sends ERROR with code 2 and keeps the old packet.
-- For a RUN_REPORT, a text above its limit gets code 4. A length past the end gets code 2. An IQ above 100 or text that is not valid UTF-8 gets code 7. In all three cases, the device keeps the old report.
+- For a RUN_REPORT, a text above its limit gets code 4. A length past the end gets code 2. An IQ above 200 or text that is not valid UTF-8 gets code 7. In all three cases, the device keeps the old report.
 - The device uses its own receive time to decide that data is out of date. It does not use the phone time.
 - After a link loss, the device keeps both kinds of data, and the screen still shows them.
 
@@ -701,6 +701,7 @@ D-30 adds the Turns page and three turn messages for Increment 3.
 | 2 | Add TURN_REQUEST (0x65), from the device to the phone. It is the first request for data from the device. | 6 |
 | 3 | Add page 5, the Turns page. On it, the mode field is 0. | 6 |
 | 4 | Add about 4.0 KB of static RAM for the turn cache and the page. | 10 |
+| 5 | The Heygo IQ in RUN_REPORT runs from 0 to 200, not 0 to 100 (D-27). Firmware at commit `49573f9` or older answers an IQ above 100 with ERROR code 7. | 6 |
 
 The turn messages add messages and change no current packet, so the protocol version stays 0.2.
 Firmware at commit `bedcf1a` or older answers TURN_SHAPE and TURN_GROUP with ERROR code 1. A phone application that does not know page 5 treats it as an unknown page.

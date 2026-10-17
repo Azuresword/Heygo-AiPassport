@@ -44,6 +44,7 @@ CHANNEL_AGENT = 0
 U8_UNKNOWN, U16_UNKNOWN = 0xFF, 0xFFFF
 RUN_UNKNOWN, RUN_SKIING, RUN_STOPPED, RUN_ENDED = 0, 1, 2, 3
 PROBLEM_MAX, TIP_MAX = 36, 60   # UTF-8 bytes: 12 and 20 Chinese characters.
+IQ_MAX = 200                    # D-27: the Heygo IQ runs from 0 to 200.
 # Increment 3: TURN_SHAPE, TURN_GROUP, and TURN_REQUEST, doc 07 section 6.
 SRC_MEASURED, SRC_SCHEMATIC = 0, 1
 SIDE_TOE, SIDE_HEEL = 0, 1
@@ -95,12 +96,12 @@ def live_stats(run_state, run_no, speed_dkmh, drop_m, distance_m, turns, time_s)
 
 
 def run_report(run_no, distance_m, turns, iq, problem="", tip=""):
-    """One RUN_REPORT packet. iq is 0 to 100, or U8_UNKNOWN."""
+    """One RUN_REPORT packet. iq is 0 to 200 (D-27), or U8_UNKNOWN."""
     p, t = problem.encode(), tip.encode()
     if len(p) > PROBLEM_MAX or len(t) > TIP_MAX:
         raise ValueError("problem holds at most 36 bytes, tip at most 60 bytes")
-    if iq > 100 and iq != U8_UNKNOWN:
-        raise ValueError("iq is 0 to 100, or U8_UNKNOWN")
+    if iq > IQ_MAX and iq != U8_UNKNOWN:
+        raise ValueError("iq is 0 to 200, or U8_UNKNOWN")
     return packet(RUN_REPORT, payload=struct.pack("<BHHBB", run_no, distance_m, turns, iq, len(p)) + p + t)
 
 

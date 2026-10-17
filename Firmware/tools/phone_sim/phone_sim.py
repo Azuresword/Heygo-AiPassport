@@ -201,7 +201,7 @@ class Phone:
             await self.send(hl.live_stats(hl.RUN_ENDED, run_no, hl.U16_UNKNOWN, drop, dist, turns, run_s))
             log(f"run {run_no}: end, drop {drop} m, {dist} m, {turns} turns")
             await asyncio.sleep(2.0)                                              # The phone needs time for the report.
-            iq = 60 + (run_no * 11) % 40
+            iq = 90 + (run_no * 37) % 111                                     # 0 to 200 (D-27): run 1 gives 127
             await self.send(hl.run_report(run_no, dist, turns, iq, "重心偏后", "下一趟把双手放在身体前方"))
             log(f"-> RUN_REPORT run {run_no}: iq {iq}")
             # Increment 3: the turn shape follows the report. Run 3 sends a schematic shape.

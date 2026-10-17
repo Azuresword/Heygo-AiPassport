@@ -286,13 +286,13 @@ After Sprint 4, the branch `feat/report-live-data` merges into `main`. At the sa
 
 **Decision.** The user did not answer these three items. The device team uses these values until the user answers:
 
-- The Heygo IQ is an integer from 0 to 100, in 1 byte.
+- The Heygo IQ is an integer from 0 to 200, in 1 byte.
 - The phone sends the core problem as text of at most 12 Chinese characters.
 - The report shows on the live data page on the lift and on the Report page in Rest mode.
 
 **Reason.** The three items change only the screen. They do not change the rest of the protocol. A later change costs little.
 
-**Status.** Accepted by the user on 2026-10-17.
+**Status.** Accepted by the user on 2026-10-17. Later on the same day, the user changed the range: the highest Heygo IQ is 200, not 100. The App design shows values above 100, for example 127. The value still fits in 1 byte, so no packet format changes.
 
 ## 22. D-28: the phone opens the Report page
 

@@ -73,7 +73,7 @@ enum { BP_CHANNEL_AGENT = 0, BP_CHANNEL_TEAM = 1 };
 enum { BP_RUN_UNKNOWN = 0, BP_RUN_SKIING = 1, BP_RUN_STOPPED = 2, BP_RUN_ENDED = 3 };
 #define BP_LIVE_STATS_SIZE   12
 #define BP_RUN_REPORT_FIXED  7
-#define BP_IQ_MAX            100
+#define BP_IQ_MAX            200    // D-27: the Heygo IQ runs from 0 to 200.
 #define BP_PROBLEM_MAX       36     // 12 Chinese characters in UTF-8.
 #define BP_TIP_MAX           60     // 20 Chinese characters in UTF-8.
 #define BP_FLAG_LAST       0x01

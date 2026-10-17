@@ -666,7 +666,7 @@ const fmt = {
   count8: v => v === U8 ? "--" : String(v),
   time: v => v === U16 ? "--" : v < 3600 ? `${String(Math.floor(v / 60)).padStart(2, "0")}:${String(v % 60).padStart(2, "0")}`
                                            : `${Math.floor(v / 3600)}:${String(Math.floor(v / 60) % 60).padStart(2, "0")}`,
-  iq: v => v > 100 ? "--" : String(v),
+  iq: v => v > 200 ? "--" : String(v),   // D-27: the Heygo IQ runs from 0 to 200.
 };
 let live, liveAt, report, reportAt, runNo, skiTimer, skiPaused, liveLine, liveCount;
 function skiView(now) {
@@ -925,7 +925,7 @@ function skiEnd() {
   skiStop(); skiPaused = false;
   live.state = RUN_ENDED; live.speed_dkmh = U16; sendLive();
   const r = REPORTS[(live.run_no - 1) % REPORTS.length];
-  const rep = { run_no: live.run_no, distance_m: live.distance_m, turns: live.turns, iq: 60 + (live.run_no * 11) % 40,
+  const rep = { run_no: live.run_no, distance_m: live.distance_m, turns: live.turns, iq: 90 + (live.run_no * 37) % 111,
                 problem: r[0], tip: r[1] };
   later(2000, () => {
     if (!link) return;

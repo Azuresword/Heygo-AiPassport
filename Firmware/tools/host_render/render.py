@@ -161,7 +161,7 @@ def frames(s):
         ("13-report-empty", "report", {}),
         ("14-report", None, {"@title": "第 3 趟 · 1.9 km · 25 弯", "@iq": "82", "@problem": "重心偏后",
                              "@tip": "下一趟把双手放在身体前方"}),
-        ("15-report-max", None, {"@title": "第 12 趟 · 12.4 km · 136 弯", "@age": "59 MIN AGO", "@iq": "100",
+        ("15-report-max", None, {"@title": "第 12 趟 · 12.4 km · 136 弯", "@age": "59 MIN AGO", "@iq": "200",
                                  "@problem": "重心偏后" * 3, "@tip": "下一趟把双手放在身体前方，膝盖再多弯一点"}),
         # Turn shape (Increment 3, D-29). The !shape value goes through turn_view.c and turn_page.c.
         ("16-turns-empty", "turns", {"!shape": shape(0, 0, None, 0)}),

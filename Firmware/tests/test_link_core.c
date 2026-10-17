@@ -338,10 +338,10 @@ static void test_live_data(void) {
 
     // A bad report gets an ERROR and keeps the old report.
     clear();
-    p[BP_HEADER_SIZE + 5] = 101;
+    p[BP_HEADER_SIZE + 5] = 201;
     rx(&l, p, n, 8100);
     e = last();
-    CHECK(e && e->buf[4] == BP_ERR_FIELD && e->buf[5] == BP_RUN_REPORT, "ERROR 7 for an IQ above 100");
+    CHECK(e && e->buf[4] == BP_ERR_FIELD && e->buf[5] == BP_RUN_REPORT, "ERROR 7 for an IQ above 200");
     r = link_report(&l, 8100, &age);
     CHECK(s_reports == 1 && r && r->iq == 82, "a bad report keeps the old report");
 

@@ -17,6 +17,9 @@ extern "C" {
 #define STATS_UNKNOWN  "--"
 #define STATS_TEXT_MAX 16
 
+// D-27: the Heygo IQ runs from 0 to 200, as BP_IQ_MAX in ble_proto.h.
+#define STATS_IQ_MAX 200u
+
 // 0.1 km/h to whole km/h, rounded half up. No unit: "38".
 size_t stats_fmt_speed(char *out, size_t cap, uint16_t speed_dkmh);
 // Meters with the unit: "312 m".
@@ -28,7 +31,7 @@ size_t stats_fmt_count(char *out, size_t cap, uint16_t count);
 size_t stats_fmt_count8(char *out, size_t cap, uint8_t count);
 // Below 1 hour as min:s ("02:31"). From 1 hour as h:min ("1:02").
 size_t stats_fmt_time(char *out, size_t cap, uint16_t time_s);
-// Heygo IQ, 0 to 100: "82". A value above 100 also gives STATS_UNKNOWN.
+// Heygo IQ, 0 to 200 (D-27): "127". A value above 200 also gives STATS_UNKNOWN.
 size_t stats_fmt_iq(char *out, size_t cap, uint8_t iq);
 
 #ifdef __cplusplus
