@@ -2,7 +2,7 @@
 
 # HeygoAI × AI Passport: architecture
 
-Version: 0.12. Date: 2026-10-18. Status: Draft for engineering review.
+Version: 0.13. Date: 2026-10-18. Status: Draft for engineering review.
 
 This document proposes a design for Increments 1 to 4 in [product requirements](01-product-requirements.md).
 It does not describe a working integration.
@@ -200,6 +200,7 @@ The interactive simulator gives the full state diagram from `flows/coach.flow.js
 | Turns page | Hold UP for 500 ms | Select the previous turn. |
 | Turns page | Hold DOWN for 500 ms | Go to turn 1 of the next page of 8 turns. After the last page, go to page 1. |
 | Other pages | Short OK press, UP hold, or DOWN hold | No action. |
+| Boot screen | Any short press or hold | Skip the boot screen and open the first page. The key starts no other action, until its release (D-35). |
 | Popup page | Any short press or hold | Close the popup and go back to the saved page (D-31). No page change and no capture. |
 | Any page or state | RUN_START from the phone | Open the live data page (D-32). During a talk with the coach, open it after the talk ends. During a popup, open it after the popup closes. |
 
@@ -208,6 +209,29 @@ A hold never also triggers a short press.
 The cancel command comes with the short UP or DOWN press. Playback stops within 200 ms of that command. Capture stops within 100 ms of that command.
 
 Button callbacks queue an event and return at once. A task handles the link and the audio.
+
+### Boot screen (D-35)
+
+`main/ui/boot_screen.c` builds the boot screen. `coach_app_start()` loads it before the first page. The flow starts at the same time, and its state stays LIVE until an event comes.
+
+| Part | Position | Look |
+|---|---|---|
+| Logo | `x=20, y=108`, 200 × 79 px, in six A8 images | White. The snowboard is the top layer, as in Figma |
+| Tagline | Centered, top at `y=214` | 20 px brand font. "MAKE EVERY RUN" in ink, "COUNT" in lime |
+| Line | Centered at `y=242`, 3 px high | Lime. It grows to the width of the tagline |
+
+Each logo part and each tagline label has one `lv_anim`. Its value goes from 0 to 256 and moves both the offset and the opacity. The animations change only position offsets, `image_opa`, and `text_opa`, so LVGL needs no layer.
+The A8 images keep only alpha. The image recolor style gives them the white color.
+
+- At 2,000 ms, a one-shot timer posts `MSG_BOOT_DONE`. The Coach task then deletes the boot screen and shows the screen of the current state.
+- During the boot screen, `show_screen()` does nothing. So a popup or a run start shows when the boot screen ends.
+- A key on the boot screen ends it at once. The Coach task drops all events of that key until its release, so the key starts no page action.
+- The page rail stays hidden until the boot screen ends.
+
+`assets/tools/fetch_figma_logo.py` exports the six parts from the Figma file "Logo" (node `665:23`) at 4 times the screen size, and reduces them. The PNG files are in `assets/brand`, so a build does not need Figma.
+`assets/tools/gen_boot_logo.py` turns them into `assets/sprites/heygo_logo.c`: 12,288 bytes of A8 data in Flash.
+The host renderer draws `27-boot-board.png`, `28-boot-logo.png`, `29-boot-tagline.png`, and `boot-anim.gif` with a fake clock. The pool use peaks at 14,032 bytes on the boot screen, below the pages.
+The power key cuts the power in hardware, and no GPIO reads it (hardware guide, section 3). So the firmware has no shutdown screen. The simulator shows a shutdown design only.
 
 ### Status bar (D-34)
 
@@ -457,6 +481,7 @@ The device has no PSRAM. Streaming makes a full recording unnecessary.
 | The last TURN_SHAPE, 3 cached groups, and the Turns page | About 4.0 KB | Doc 07, section 10. The symbol table of the firmware build. |
 | The current popup and the popup page texts | About 0.7 KB | D-31. Estimated from the struct sizes: three copies of the popup and one set of page texts. Not measured. |
 | Page rail | One LVGL object, 312 bytes in the pool | D-33. Measured by the host renderer. |
+| Boot logo | 12,288 bytes of A8 in Flash, not in RAM | D-35. `assets/sprites/heygo_logo.c`. The boot screen peaks at 14,032 bytes of pool, measured by the host renderer. |
 | Rider sprite | 25.6 KB in Flash, not in RAM | `assets/sprites`, made by `assets/tools/gen_sprite.py`. |
 | 48-pixel digit font | In Flash, not in RAM | Measure the size in Sprint 3. |
 | ADPCM codec state | A few bytes in each direction | D-09. |
