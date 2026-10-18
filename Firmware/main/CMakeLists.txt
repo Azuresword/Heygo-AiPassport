@@ -5,6 +5,8 @@ set(HEYGO_FONTS "${CMAKE_CURRENT_LIST_DIR}/../../assets/fonts")
 # The sprites come from ../../assets/sprites: the rider of the Turns page (assets/tools/gen_sprite.py)
 # and the popup icons (assets/tools/gen_popup_icons.py).
 set(HEYGO_SPRITES "${CMAKE_CURRENT_LIST_DIR}/../../assets/sprites")
+# The boot sound comes from ../../assets/audio (assets/tools/gen_boot_sound.py).
+set(HEYGO_AUDIO "${CMAKE_CURRENT_LIST_DIR}/../../assets/audio")
 
 idf_component_register(
     SRCS "main.c"
@@ -50,6 +52,7 @@ idf_component_register(
          "${HEYGO_SPRITES}/heygo_board_sprite.c"
          "${HEYGO_SPRITES}/heygo_popup_icons.c"
          "${HEYGO_SPRITES}/heygo_logo.c"
-    INCLUDE_DIRS "." "ui" "generated" "audio" "protocol" "link" "${HEYGO_FONTS}" "${HEYGO_SPRITES}"
+         "${HEYGO_AUDIO}/heygo_boot_sound.c"
+    INCLUDE_DIRS "." "ui" "generated" "audio" "protocol" "link" "${HEYGO_FONTS}" "${HEYGO_SPRITES}" "${HEYGO_AUDIO}"
     REQUIRES bsp bt esp_app_format esp_event esp_hw_support esp_netif esp_timer esp_wifi nvs_flash
 )
