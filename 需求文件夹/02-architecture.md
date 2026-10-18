@@ -79,7 +79,7 @@ The device has no Ski mode and no Rest mode. Four pages sit at one level and for
 
 The device cannot check whether the user stopped moving. So an OK hold on another page only opens the Coach page, and never starts capture.
 Capture needs one more OK hold on the Coach page.
-A rail on the right edge shows the current page and the targets of the short UP and DOWN presses (D-33). The page rail layout section gives its design.
+A rail on the right edge shows the current page in the page loop (D-33). The page rail layout section gives its design.
 
 ```mermaid
 stateDiagram-v2
@@ -318,16 +318,15 @@ The rail sits on the right edge of the four pages. The popup page hides it.
 |---|---|---|
 | Rail | `x=231..238, y=64..251` | No background |
 | 4 stops | `x=234..235`, 2 × 44 px, `y=64 + 48 × i`, 4 px gap | Dark gray `#3A3A3A`. Order: live data, report, turns, coach |
-| Target stops | The stops of the short UP and DOWN targets | Light gray `#94A3B8` |
 | Thumb | `x=232..237`, 6 × 44 px, corner radius 3 | Accent lime `#B1FE2B`, with a 6 px glow |
 
-The rail reads the targets from the flow graph `flows/coach.flow.json`. It does not keep a second copy of the page order. So a change of the loop also changes the targets.
+The rail marks only the current page. All stops have one color. It does not mark the targets of the short UP and DOWN presses.
 The thumb slides to the new stop in 180 ms, with an ease-out curve.
 Two page changes wrap: UP from live data to coach, and DOWN from coach to live data. In a wrap, the thumb uses 90 ms to slide out past one end. Then it jumps to the other end and uses 90 ms to slide in.
 The rail starts at `y=64`. So it stays below the corner mask and the status bar, and above the key hints.
 The text, the boxes, and the key hints of every page stay at `x≤230`. Only the decorative ridge line of the Coach page and the Report page goes under the rail, at `y=146..174`.
 
-The simulator `assets/sim/coach-flow.html` shows the rail. Its self-test checks the stops, the targets, and the wrap on three pages.
+The simulator `assets/sim/coach-flow.html` shows the rail. Its self-test checks the thumb, the one stop color, and the wrap on three pages.
 `main/ui/page_rail.c` draws the rail in the firmware. Only one screen exists at a time, so the rail lives on the top layer of LVGL. Then the thumb can move while the task deletes the old screen and builds the new screen.
 The rail is one LVGL object. Its draw callback draws the 4 stops and the thumb, so it needs no object for each part. The host renderer measures 312 bytes for it.
 The device has no shadow buffer for a glow. A 1 px lime edge at 40% opacity around the thumb takes its place.
