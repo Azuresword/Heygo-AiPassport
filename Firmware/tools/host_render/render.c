@@ -35,6 +35,7 @@
 #include "turn_view.h"
 #include "popup_view.h"
 #include "page_rail.h"
+#include "boot_screen.h"
 #include "popup_anim.h"
 #include "heygo_popup_icons.h"
 #include "ui_theme.h"
@@ -46,7 +47,7 @@ static uint16_t s_draw_buf[HOR * VER];
 static uint16_t s_frame[HOR * VER];
 static const char *s_outdir;
 
-static enum { NONE, COACH, SKI, REPORT, TURNS, POPUP } s_kind = NONE;
+static enum { NONE, COACH, SKI, REPORT, TURNS, POPUP, BOOT } s_kind = NONE;
 static coach_screen_coach_t s_coach;
 static coach_screen_ski_t s_ski;
 static coach_screen_report_t s_report;
@@ -113,6 +114,7 @@ static void drop_screen(void)
     case REPORT: coach_teardown_report(&s_report); break;
     case TURNS: coach_teardown_turns(&s_turns); break;
     case POPUP: coach_teardown_popup(&s_popup); break;
+    case BOOT: boot_screen_delete(); break;
     case NONE: break;
     }
     s_kind = NONE;
@@ -151,6 +153,11 @@ static void load_screen(const char *name)
         lv_screen_load(s_popup.screen);
         s_kind = POPUP;
         page_rail_follow(COACH_STATE_POPUP_HOLD, false);
+    } else if (strcmp(name, "boot") == 0) {
+        // D-35: as coach_app_start() does. The rail stays hidden, as on the popup page.
+        page_rail_follow(COACH_STATE_POPUP_HOLD, false);
+        lv_screen_load(boot_screen_create());
+        s_kind = BOOT;
     } else {
         printf("ERR unknown screen %s\n", name);
     }
