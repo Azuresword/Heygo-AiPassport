@@ -24,7 +24,7 @@ static const char *TAG = "voice";
 // The codec curve maps 90 to -5 dB, before the board's hardware compensation.
 #define VOLUME           90
 
-typedef enum { MODE_IDLE = 0, MODE_CAPTURE, MODE_PLAY } voice_mode_t;
+typedef enum { MODE_IDLE = 0, MODE_CAPTURE, MODE_PLAY, MODE_CUE } voice_mode_t;
 
 static voice_cb_t s_cb;
 static TaskHandle_t s_task;
@@ -36,6 +36,8 @@ static unsigned s_down_dropped;   // Protected by s_gate_mu.
 static volatile voice_mode_t s_mode;
 static volatile bool s_stop;
 static volatile uint32_t s_progress_ms;   // Last speaker write, or the playback start.
+static const int16_t *s_cue;             // D-36: the local sound, and its length in samples.
+static size_t s_cue_len;
 
 static uint32_t now_ms(void) { return (uint32_t)(esp_timer_get_time() / 1000); }
 
@@ -155,6 +157,23 @@ static void play_loop(void) {
     if (completed && s_cb.play_done) s_cb.play_done();
 }
 
+// D-36: play the local sound in blocks of 20 ms, so a stop takes effect within one block.
+static void cue_loop(void) {
+    size_t done = 0;
+    unsigned write_errors = 0;
+    const uint32_t start_ms = now_ms();
+    while (!s_stop && done < s_cue_len) {
+        const size_t n = s_cue_len - done < IMA_BLOCK_SAMPLES ? s_cue_len - done : IMA_BLOCK_SAMPLES;
+        if (bsp_audio_write(s_cue + done, n * sizeof(int16_t)) != ESP_OK) {
+            write_errors++;
+            break;
+        }
+        done += n;
+    }
+    ESP_LOGI(TAG, "cue: %u of %u samples in %lu ms, %u write errors%s", (unsigned)done, (unsigned)s_cue_len,
+             (unsigned long)(now_ms() - start_ms), write_errors, s_stop ? ", stopped" : "");
+}
+
 static void voice_task(void *arg) {
     (void)arg;
     for (;;) {
@@ -162,6 +181,7 @@ static void voice_task(void *arg) {
         const voice_mode_t m = s_mode;
         if (m == MODE_CAPTURE) capture_loop();
         else if (m == MODE_PLAY) play_loop();
+        else if (m == MODE_CUE) cue_loop();
         s_mode = MODE_IDLE;
         if (s_stop) {
             s_stop = false;
@@ -192,8 +212,13 @@ esp_err_t voice_start(const voice_cb_t *cb) {
     return ESP_OK;
 }
 
+static bool stop_mode(voice_mode_t m);
+
 static void start_mode(voice_mode_t m) {
-    if (!s_task || s_mode != MODE_IDLE) return;
+    if (!s_task) return;
+    // D-36: a capture or an answer is more important than a local sound. Stop the sound first.
+    if (m != MODE_CUE && s_mode == MODE_CUE) (void)stop_mode(MODE_CUE);
+    if (s_mode != MODE_IDLE) return;
     s_stop = false;
     s_mode = m;
     xTaskNotifyGive(s_task);
@@ -216,7 +241,7 @@ static bool stop_mode(voice_mode_t m) {
     }
     // TC-06 and TC-07 measure this time. For playback, the I2S DMA still holds up to
     // 90 ms of sound after the task stops, so the speaker goes quiet up to 90 ms later.
-    ESP_LOGI(TAG, "%s stop: %d ms", m == MODE_CAPTURE ? "capture" : "playback",
+    ESP_LOGI(TAG, "%s stop: %d ms", m == MODE_CAPTURE ? "capture" : m == MODE_CUE ? "cue" : "playback",
              (int)((esp_timer_get_time() - t0) / 1000));
     return true;
 }
@@ -263,6 +288,13 @@ void voice_play_enable(void) {
 uint32_t voice_play_idle_ms(void) { return now_ms() - s_progress_ms; }
 
 bool voice_play_cut(void) { return stop_mode(MODE_PLAY); }
+
+void voice_play_cue(const int16_t *pcm, size_t samples) {
+    if (!s_task || !pcm || !samples || s_mode != MODE_IDLE) return;
+    s_cue = pcm;
+    s_cue_len = samples;
+    start_mode(MODE_CUE);
+}
 
 bool voice_play_stop(void) {
     const bool ok = stop_mode(MODE_PLAY);
