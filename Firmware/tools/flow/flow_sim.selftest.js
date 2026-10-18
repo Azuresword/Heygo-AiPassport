@@ -18,6 +18,18 @@
   fire = (ev, src) => { const r = realFire(ev, src); if (mic && spk) both = true; return r; };
 
   const on = () => document.querySelector(".scr.on").dataset.id;
+  // D-35: the boot screen comes first. It ends after 2 s, or at a key. That key does nothing else.
+  const bootOn = () => !document.getElementById("boot").classList.contains("off");
+  ok(bootOn() && booting && document.querySelectorAll("#boot .part").length === 6, "0 the boot screen shows the six logo parts at power-on");
+  ok(document.querySelector("#boot .tag").textContent === "MAKE EVERY RUN COUNT", "0 the boot screen shows the tagline");
+  await sleep(2100);
+  ok(!bootOn() && st === "LIVE", "0 the boot screen ends after 2 s on the live data page");
+  bootStart(); await sleep(300);
+  await tap("DOWN");
+  ok(!bootOn() && st === "LIVE" && on() === "ski", "0 a short DOWN on the boot screen only skips it");
+  bootStart(); await sleep(300);
+  await hold("OK");
+  ok(!bootOn() && st === "LIVE", "0 an OK hold on the boot screen only skips it, and opens no Coach page");
   ok(st === "LIVE" && on() === "ski", "1 starts on the live data page (D-29)");
 
   // D-29 and D-30: four flat pages in a loop. DOWN goes forward, UP goes back.
