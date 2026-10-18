@@ -1,10 +1,10 @@
 [简体中文](05-decision-amendments.zh_CN.md) · **English**
 
-# Decision amendments: D-08 to D-35
+# Decision amendments: D-08 to D-36
 
-Version: 0.14. Date: 2026-10-18. Status: D-08 to D-15 and D-17 to D-32 accepted by the user. The phone application team accepted D-16. It must accept D-29, the three turn messages of D-30, the two popup messages of D-31, and the run start message of D-32. The user asked for D-33, D-34, and D-35, and must review the look of D-33.
+Version: 0.15. Date: 2026-10-18. Status: D-08 to D-15 and D-17 to D-32 accepted by the user. The phone application team accepted D-16. It must accept D-29, the three turn messages of D-30, the two popup messages of D-31, and the run start message of D-32. The user asked for D-33 to D-36, and must review the look of D-33.
 
-This document gives the reasons behind D-08 to D-35.
+This document gives the reasons behind D-08 to D-36.
 [Validation and decisions](04-validation-and-decisions.md) holds the short log.
 Requirement numbers stay stable. This document deletes no requirement.
 
@@ -543,7 +543,32 @@ The user made three choices on 2026-10-18:
 
 **Status.** The user asked for the boot screen on 2026-10-18. The code is in the repository. Device tests are NOT RUN.
 
-## 30. Related documents
+## 30. D-36: a boot sound
+
+**Decision.** A boot sound of 2.0 s plays with the boot animation of D-35. REQ-27 belongs to Increment 2.
+
+- The sound follows the animation: a carve for the snowboard, five rising plucks for the letters, and a bell chord for the tagline.
+- The device keeps the sound as 16 kHz, 16-bit, mono PCM in Flash.
+- A fourth voice mode plays it in 20 ms blocks. A capture, an answer, or popup audio stops it first.
+- A key that skips the boot screen does not stop the sound.
+
+**Reason.**
+
+- A sound tells the user that the device started, also when the screen is hard to read in the sun.
+- The same time line makes the picture and the sound one event.
+- `gen_boot_sound.py` makes the sound from code with a fixed seed. So the team can change it and get the same file each time. No sound file with an unknown license comes into the repository.
+- PCM needs no decoder at boot. The project has 6.3 MB of free app space, so 64,000 bytes are not a problem.
+- The speech of the user and the coach is more important than a boot sound. So every voice mode stops the cue first.
+
+**Cost.**
+
+- The sound uses 64,000 bytes of Flash. The voice task writes it directly from Flash, so it uses no RAM.
+- A capture that starts during the sound starts up to about 20 ms late.
+- The team has not heard the sound on the device speaker. TC-27 checks the level, the rattle, and the click.
+
+**Status.** The user asked for the boot sound on 2026-10-18. The code is in the repository. Device tests are NOT RUN.
+
+## 31. Related documents
 
 - [Product requirements](01-product-requirements.md).
 - [System architecture](02-architecture.md).
