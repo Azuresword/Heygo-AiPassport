@@ -2,7 +2,7 @@
 
 # Scrum backlog and delivery plan
 
-Version: 0.12. Date: 2026-10-18. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. Increment 2 is in the backlog. The team closed no story.
+Version: 0.13. Date: 2026-10-18. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. Increment 2 is in the backlog. The team closed no story.
 
 Related documents: [Requirements](01-product-requirements.md), [Architecture](02-architecture.md), [Validation and decisions](04-validation-and-decisions.md), [Decision amendments](05-decision-amendments.md), [Sprint 0 plan](06-sprint-0-plan.md), [BLE protocol draft](07-ble-protocol-draft.md), and [Four-hour Sprint roadmap](08-sprint-roadmap.md).
 
@@ -14,7 +14,7 @@ The skier keeps the phone in a pocket and the gloves on.
 Two increments move toward this goal:
 
 - **Increment 1, the Coach voice chain.** P0 stories US-01, US-06, US-07, US-08, US-15, US-17, and US-20.
-- **Increment 2, live data and reports.** P1 stories US-02, US-21, US-23, US-24, and US-03. D-22 lets the team develop it in parallel with the device acceptance of Increment 1.
+- **Increment 2, live data and reports.** P1 stories US-02, US-21, US-23, US-24, US-25, and US-03. D-22 lets the team develop it in parallel with the device acceptance of Increment 1.
 
 ## 2. Planning assumptions
 
@@ -55,6 +55,7 @@ The user made every scope decision so far, including D-17.
 | US-21 Live data on the live data page | REQ-21 | P1, Increment 2 | 5–8 | Firmware and design | Sprint 3 code, Sprints 7 and 9 acceptance |
 | US-23 Run start opens the live data page | REQ-23 | P1, Increment 2 (D-32) | 2–3 | Phone and firmware | Sprint 15 code and acceptance |
 | US-24 Page rail | REQ-24 | P1, Increment 2 (D-33) | 2–3 | Firmware and design | Sprint 16 simulator, firmware, and acceptance |
+| US-25 Link state on every page | REQ-25 | P1, Increment 2 (D-34) | 1–2 | Firmware and design | Sprint 17 code and acceptance |
 | US-03 Run report | REQ-03 | P1, Increment 2 | 3–5 | Firmware and design | Sprint 4 code, Sprint 7 acceptance |
 | US-05 Turn shape and replay | REQ-05 | P1, Increment 3 (D-30) | 5–8 | Phone, firmware, and design | Sprint 11 code, Sprint 12 acceptance |
 | US-22 Phone popups | REQ-22 | P1, Increment 4 (D-31) | 5–8 | Phone and firmware | Sprint 13 code, Sprint 14 acceptance |
@@ -222,6 +223,18 @@ As a skier, I want to see where I am in the pages, and where the next press goes
 - Dependency: US-17 and US-05.
 - Verification: TC-24.
 
+### US-25: the link state on every page
+
+As a skier, I want to see the link to the phone on every page. Then I know at once when the data and the coach stop.
+
+- Acceptance: the four pages of the loop and the popup page show the link dot and the link text at the same position (D-34).
+- Acceptance: the texts are "已连接" with a lime dot, "未连接" with a red dot, and "无语音" with a red dot.
+- Acceptance: at a link loss or a reconnect, the page that is on changes its status bar at once. The page does not change.
+- Acceptance: a new page shows the current link state when it opens.
+- Acceptance: no status text wraps to a second line.
+- Dependency: US-20.
+- Verification: TC-25.
+
 ### US-03: run report
 
 As a skier, I want the problem of each run and one tip after the run. Then I know what to change on the next run.
@@ -291,6 +304,7 @@ Each Sprint lasts four hours. The [Four-hour Sprint roadmap](08-sprint-roadmap.m
 | 14 | Accept Increment 4 on the board with `phone_sim --popups`. | Not started. Needs the board. |
 | 15 | The run start (D-32): the phone starts a run, and the device opens the live data page. | Code on the branch `feat/run-start`. Host tests pass. Device test of TC-23 NOT RUN. |
 | 16 | The page rail (D-33): first the simulator, then the firmware. | Simulator done. Its self-test passes. Firmware not started. Device test of TC-24 NOT RUN. |
+| 17 | The link state on every page (D-34): flow graph, generator, firmware, and simulator. | Code done. Host tests and the simulator self-test pass. Device test of TC-25 NOT RUN. |
 
 ## 9. Definition of Done
 
