@@ -68,6 +68,20 @@ def ident(name):
 
 # ---------------------------------------------------------------- validation
 
+def binding_screens(g, b):
+    """The screens and the widget of one binding.
+
+    A target "<screen>.<widget>.<property>" binds that screen only. A target
+    "<widget>.<property>" binds each screen in b["screens"], or screen 0 without it.
+    Returns the screen ids and the widget id.
+    """
+    wid = b["target"].rsplit(".", 1)[0]
+    if "." in wid:
+        scr, wid = wid.split(".", 1)
+        return [scr], wid
+    return list(b.get("screens") or [g["screens"][0]["id"]]), wid
+
+
 def validate(g, path):
     """Apply the seven validator rules. Collect every error before failing."""
     errors = []
@@ -175,15 +189,22 @@ def validate(g, path):
         if "." not in target:
             errors.append(f"rule 4: binding target {target!r} must be '<widget>.<property>'")
             continue
-        wid, prop = target.rsplit(".", 1)
-        key = wid if "." in wid else f"{g['screens'][0]['id']}.{wid}"
-        if key not in widgets:
-            errors.append(f"rule 4: binding target {target!r} names no widget")
+        prop = target.rsplit(".", 1)[1]
+        scrs, wid = binding_screens(g, b)
+        keys = [f"{scr}.{wid}" for scr in scrs]
+        missing = [k for k in keys if k not in widgets]
+        if missing:
+            errors.append(f"rule 4: binding target {target!r} names no widget {', '.join(missing)}")
             continue
         if prop not in BINDABLE:
             errors.append(f"rule 4: property {prop!r} is not bindable")
             continue
         ok_types, need = BINDABLE[prop]
+        types = {widgets[k]["type"] for k in keys}
+        if len(types) > 1:
+            errors.append(f"rule 4: binding target {target!r} is not the same widget type on each screen")
+            continue
+        key = keys[0]
         if widgets[key]["type"] not in ok_types:
             errors.append(
                 f"rule 4: widget {key} is a {widgets[key]['type']}, "
@@ -214,11 +235,17 @@ def validate(g, path):
     # --- rule 5: estimated LVGL pool use must fit ------------------------
     # By default all screens live together. With "one_screen_at_a_time", the app
     # deletes the old screen before it builds the new one, so only the largest counts.
-    costs = [SCREEN_POOL_COST + sum(WIDGET_POOL_COST.get(w["type"], 0) for w in scr.get("widgets", []))
-             for scr in g.get("screens", [])]
-    pool = (max(costs) if costs else 0) if g.get("one_screen_at_a_time") else sum(costs)
+    # Each binding adds one observer on each screen that it binds.
     # String subject buffers are static arrays, not LVGL pool memory.
-    pool += OBSERVER_POOL_COST * len(g.get("bindings", []))
+    observers = {scr["id"]: 0 for scr in g.get("screens", [])}
+    for b in g.get("bindings", []):
+        if "." in b["target"]:
+            for scr in binding_screens(g, b)[0]:
+                if scr in observers:
+                    observers[scr] += 1
+    costs = [SCREEN_POOL_COST + sum(WIDGET_POOL_COST.get(w["type"], 0) for w in scr.get("widgets", []))
+             + OBSERVER_POOL_COST * observers[scr["id"]] for scr in g.get("screens", [])]
+    pool = (max(costs) if costs else 0) if g.get("one_screen_at_a_time") else sum(costs)
     ceiling = g.get("lvgl_pool_ceiling_bytes", 20480)
     if pool > ceiling:
         errors.append(
@@ -519,18 +546,30 @@ def emit_bindings(g, src):
     setter. A single-thread host program passes NULL and runs without a lock.
     """
     app = ident(g["app"])
-    scr0 = ident(g["screens"][0]["id"])
     subjects = {s["id"]: s for s in g["subjects"]}
     transforms = {t["id"]: t for t in g["transforms"]}
 
     h = [BANNER.format(src=src), "#pragma once", "", '#include "lvgl.h"',
          f'#include "{app}_screens.h"', "", "#ifdef __cplusplus", 'extern "C" {', "#endif", ""]
     h.append(f"void {app}_bindings_init(void);")
-    h.append(f"void {app}_bindings_attach(const {app}_screen_{scr0}_t *screen);")
+    # The screens with bindings, in graph order. Screen 0 keeps the short names.
+    bound = {}
+    for i, b in enumerate(g["bindings"]):
+        scrs, wid = binding_screens(g, b)
+        for scr in scrs:
+            bound.setdefault(scr, []).append((i, ident(wid)))
+    order = [s["id"] for s in g["screens"] if s["id"] in bound]
+    suffix = {scr: ("" if scr == g["screens"][0]["id"] else "_" + ident(scr)) for scr in order}
+    max_bound = max((len({w for _, w in v}) for v in bound.values()), default=1)
+
+    h.append("// Each attach binds the widgets of one screen. Only one screen has bindings at a time.")
+    for scr in order:
+        h.append(f"void {app}_bindings_attach{suffix[scr]}(const {app}_screen_{ident(scr)}_t *screen);")
     h.append("// Unbind while the widgets are still alive. Call before destroying the screen.")
     h.append(f"void {app}_bindings_detach(void);")
     h.append("// Rule 7: detach then destroy, in that order. Prefer this over calling both.")
-    h.append(f"void {app}_teardown({app}_screen_{scr0}_t *screen);")
+    for scr in order:
+        h.append(f"void {app}_teardown{suffix[scr]}({app}_screen_{ident(scr)}_t *screen);")
     h.append("")
     h.append("// Lock hooks. Each setter takes the LVGL lock through these hooks, so a caller")
     h.append("// on any task can use it. The firmware passes the BSP lock, which allows")
@@ -586,7 +625,9 @@ def emit_bindings(g, src):
             c.append(f"static char s_buf_{sid}[{n}];")
             c.append(f"static char s_prev_{sid}[{n}];")
     c.append("")
-    c.append(f"static {app}_screen_{scr0}_t s_screen;")
+    c.append("// The widgets with observers on the screen that is on now.")
+    c.append(f"static lv_obj_t *s_bound[{max_bound}];")
+    c.append("static size_t s_n_bound;")
     # LVGL auto-unsubscribes an observer when its widget is deleted, so we keep
     # no observer pointers. lv_observer_remove() is forbidden for observers made
     # by lv_subject_add_observer_obj(); see lv_observer.h.
@@ -604,8 +645,10 @@ def emit_bindings(g, src):
         c.append("")
 
     for i, b in enumerate(g["bindings"]):
-        wid, prop = b["target"].rsplit(".", 1)
-        wid = ident(wid.split(".")[-1])
+        prop = b["target"].rsplit(".", 1)[1]
+        scrs, wid = binding_screens(g, b)
+        wscr = next(s2 for s2 in g["screens"] if s2["id"] == scrs[0])
+        wt = next(w2["type"] for w2 in wscr["widgets"] if w2["id"] == wid)
         subj = subjects[b["subject"]]
         c.append(f"static void observer_{i}(lv_observer_t *observer, lv_subject_t *subject) {{")
         c.append("    lv_obj_t *w = (lv_obj_t *)lv_observer_get_target(observer);")
@@ -614,8 +657,6 @@ def emit_bindings(g, src):
             c.append("    lv_label_set_text(w, lv_subject_get_string(subject));")
         elif prop == "value":
             c.append("    int32_t value = lv_subject_get_int(subject);")
-            wt = next(w2["type"] for s2 in g["screens"] for w2 in s2["widgets"]
-                      if ident(w2["id"]) == wid)
             # lv_arc_set_value takes no animation argument. bar and slider do.
             if wt == "arc":
                 c.append("    lv_arc_set_value(w, value);")
@@ -632,8 +673,6 @@ def emit_bindings(g, src):
                 )
             else:
                 c.append("    lv_color_t col = lv_color_hex((uint32_t)lv_subject_get_int(subject));")
-            wt = next(w2["type"] for s2 in g["screens"] for w2 in s2["widgets"]
-                      if ident(w2["id"]) == wid)
             part = "LV_PART_INDICATOR" if wt in ("arc", "bar", "slider") else "0"
             style = "lv_obj_set_style_arc_color" if wt == "arc" else (
                 "lv_obj_set_style_text_color" if wt == "label" else "lv_obj_set_style_bg_color")
@@ -659,37 +698,38 @@ def emit_bindings(g, src):
     c.append("    s_ready = true;")
     c.append("}")
     c.append("")
-    c.append(f"void {app}_bindings_attach(const {app}_screen_{scr0}_t *screen) {{")
-    c.append("    if (!screen) return;")
-    c.append(f"    {app}_bindings_init();")
-    c.append(f"    {app}_bindings_detach();")
-    c.append("    s_screen = *screen;")
-    for i, b in enumerate(g["bindings"]):
-        wid = ident(b["target"].rsplit(".", 1)[0].split(".")[-1])
-        sid = ident(b["subject"])
-        c.append(
-            f"    (void)lv_subject_add_observer_obj("
-            f"&s_subject_{sid}, observer_{i}, s_screen.{wid}, NULL);"
-        )
-    c.append("}")
-    c.append("")
+    for scr in order:
+        c.append(f"void {app}_bindings_attach{suffix[scr]}(const {app}_screen_{ident(scr)}_t *screen) {{")
+        c.append("    if (!screen) return;")
+        c.append(f"    {app}_bindings_init();")
+        c.append(f"    {app}_bindings_detach();")
+        for i, wid in bound[scr]:
+            sid = ident(g["bindings"][i]["subject"])
+            c.append(
+                f"    (void)lv_subject_add_observer_obj("
+                f"&s_subject_{sid}, observer_{i}, screen->{wid}, NULL);"
+            )
+        for wid in sorted({w for _, w in bound[scr]}):
+            c.append(f"    s_bound[s_n_bound++] = screen->{wid};")
+        c.append("}")
+        c.append("")
     # Rule 7. lv_obj_remove_from_subject() is the supported way to unbind an
     # observer created by lv_subject_add_observer_obj(). The widgets must still
     # exist here, so detach has to run before the screen is destroyed.
-    bound_widgets = sorted({
-        ident(b["target"].rsplit(".", 1)[0].split(".")[-1]) for b in g["bindings"]
-    })
     c.append(f"void {app}_bindings_detach(void) {{")
-    for wid in bound_widgets:
-        c.append(f"    if (s_screen.{wid}) lv_obj_remove_from_subject(s_screen.{wid}, NULL);")
-    c.append("    memset(&s_screen, 0, sizeof(s_screen));")
+    c.append("    for (size_t i = 0; i < s_n_bound; i++) {")
+    c.append("        if (s_bound[i]) lv_obj_remove_from_subject(s_bound[i], NULL);")
+    c.append("        s_bound[i] = NULL;")
+    c.append("    }")
+    c.append("    s_n_bound = 0;")
     c.append("}")
     c.append("")
-    c.append(f"void {app}_teardown({app}_screen_{scr0}_t *screen) {{")
-    c.append(f"    {app}_bindings_detach();")
-    c.append(f"    {app}_screen_{scr0}_destroy(screen);")
-    c.append("}")
-    c.append("")
+    for scr in order:
+        c.append(f"void {app}_teardown{suffix[scr]}({app}_screen_{ident(scr)}_t *screen) {{")
+        c.append(f"    {app}_bindings_detach();")
+        c.append(f"    {app}_screen_{ident(scr)}_destroy(screen);")
+        c.append("}")
+        c.append("")
     for s in g["subjects"]:
         sid = ident(s["id"])
         if s["type"] == "string":
