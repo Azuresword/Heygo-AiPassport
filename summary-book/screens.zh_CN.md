@@ -4,7 +4,7 @@
 
 # 界面一览
 
-25 张界面图由 `host_render` 用 LVGL 在主机上渲染，和设备上的像素一致。全部在 `assets/mockups/`。
+以下 25 张界面样例使用固件的 LVGL 界面代码在主机上渲染，覆盖正常、边界和异常状态。实际屏幕的色彩、刷新和显示效果需在设备上验证。
 
 ## 教练对话：一次提问的四个状态
 
@@ -23,7 +23,7 @@
 <figcaption>图 4　一次教练提问。对应的蓝牙消息见 <a href="architecture.zh_CN.html">架构与协议</a> 图 7。</figcaption>
 </figure>
 
-出错时设备给出明确提示，用户再长按 OK 重来：
+识别失败后可长按 OK 重试。连接中断时，需先恢复手机连接。
 
 <div class="screens">
 <div class="screen"><img src="../assets/mockups/07-failed.png" alt="没听清"><div class="cap">没听清</div><div class="sub">FAILED</div></div>
@@ -64,5 +64,5 @@
 
 <figure>
 <div class="figure-panel"><img src="../assets/mockups/contact-sheet.png" alt="25 张界面总览"></div>
-<figcaption>图 5　全部 25 张界面，来自 <code>assets/mockups/contact-sheet.png</code>。</figcaption>
+<figcaption>图 5　25 种界面状态总览。</figcaption>
 </figure>

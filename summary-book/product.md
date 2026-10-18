@@ -4,15 +4,13 @@
 
 # Product and pages
 
-## Users and use
+## Use case
 
 A skier uses the device after a run, on the lift or during a rest break. The phone stays in a pocket with Bluetooth on. The user keeps the gloves on and pushes only three physical keys: UP, OK, and DOWN.
 
-Source: `需求文件夹/01-product-requirements.md`, lines 12 to 26.
-
 ## Four pages in one loop
 
-The four pages are at the same level. A short press of DOWN opens the next page. A short press of UP opens the previous page. At the end, the loop starts again (D-29, D-30). A long press of OK on any page opens the Coach page.
+The four pages are at the same level. A short press of DOWN opens the next page. A short press of UP opens the previous page. The loop wraps at each end. A long press of OK opens the Coach page from Live data, Run report, or Turns. On the Coach page, another long press of OK starts recording. Releasing OK sends the question.
 
 <figure>
 <div class="figure-panel">
@@ -27,48 +25,51 @@ The four pages are at the same level. A short press of DOWN opens the next page.
 </div>
 <div class="loop-back">◀ DOWN on the Coach page opens the live data page · UP goes in the other direction</div>
 </div>
-<figcaption>Figure 1. The page loop. LVGL renders these screens on the host. Source: <code>assets/mockups/</code>.</figcaption>
+<figcaption>Figure 1. Page loop and key directions.</figcaption>
 </figure>
 
-| Page | Content | Decision |
-|---|---|---|
-| Live data | Speed, drop, distance, turns, and time. The phone sends one frame each second. | D-23 |
-| Run report | Heygo IQ (0 to 200), the main issue, and one tip. One report for each run. | D-26, D-27 |
-| Turns | The line of the run, 8 turns on each page, with speed, angle, and radius. | D-30 |
-| AI coach | The user holds OK, speaks, and releases OK. The device plays the answer. | D-17 |
+| Page | Content |
+|---|---|
+| Live data | Speed, drop, distance, turns, and time. The phone sends one frame each second. |
+| Run report | Heygo IQ (0 to 200), the main issue, and one tip. One report for each run. |
+| Turns | The line of the run, 8 turns on each page, with speed, angle, and radius. |
+| AI coach | The user holds OK, speaks, and releases OK. The device plays the answer. |
 
-## How to read the Turns page
+## Turn browsing
 
-On the Turns page, OK selects the next turn. A long press of UP selects the previous turn. A long press of DOWN opens the next page. The device keeps 3 groups of turns. It asks the phone for other groups with TURN_REQUEST.
+A short press of OK selects the next turn. A long press of UP selects the previous turn. A long press of DOWN selects the next group. Each group contains at most 8 turns. The device caches 3 groups and requests missing groups through TURN_REQUEST.
 
 <figure>
 <div class="figure-panel">
 <div class="screens big">
-<div class="screen"><img src="../assets/sim/turns-demo.gif" alt="Turns page animation"><div class="cap">Turn by turn</div><div class="sub">turns-demo.gif</div></div>
+<div class="screen"><img src="../assets/sim/turns-demo.gif" alt="Turns page animation"><div class="cap">Turn by turn</div><div class="sub">8 turns per group · loaded as needed</div></div>
 </div>
 </div>
-<figcaption>Figure 2. Turns page animation. Source: <code>assets/sim/turns-demo.gif</code>.</figcaption>
+<figcaption>Figure 2. Turn selection and group changes.</figcaption>
 </figure>
 
-## Events that the phone starts
+## Phone events
 
 <div class="cards">
-<div class="card"><span class="tag">D-31 · POPUP 0x66</span><h4>Popup</h4><p>A popup stops any state. The device plays the voice and then counts down 10 s. Any key closes the popup. The device then shows the previous page. A new popup replaces an old popup.</p></div>
-<div class="card"><span class="tag">D-32 · RUN_START 0x68</span><h4>Run start</h4><p>The phone finds a run start. The device opens the live data page. During a talk or a popup, the device waits until it ends. A run start cancels nothing.</p></div>
-<div class="card"><span class="tag">D-33</span><h4>Page rail</h4><p>A rail on the right side shows the position in the loop. A lime thumb shows the current page. All stops have one color. The rail does not mark the UP and DOWN targets, and it has no arrows. The thumb slides to the new stop in 180 ms.</p></div>
-<div class="card"><span class="tag">D-34</span><h4>Link state on every page</h4><p>All five screens use one status bar.
+<div class="card"><span class="tag">POPUP 0x66</span><h4>Popup</h4><p>A popup opens immediately and cancels an active coach conversation. A 10-second countdown starts after playback, or immediately without audio. Any key closes the popup and restores the previous page. The Coach page returns to Ready. A new popup replaces the old popup.</p></div>
+<div class="card"><span class="tag">RUN_START 0x68</span><h4>Run start</h4><p>When the phone detects a run start, it requests the live data page. The device waits for an active conversation or popup to end before it changes the page.</p></div>
+</div>
+
+## Navigation and link feedback
+
+<div class="cards">
+<div class="card"><span class="tag">Navigation</span><h4>Page rail</h4><p>The right rail has four positions in page order. A lime thumb marks the current page. Each page change animates for 180 ms. Popups hide the rail.</p></div>
+<div class="card"><span class="tag">Connection</span><h4>Link state on every page</h4><p>All five screens use one status bar.
 It has a page dot, the page name, a link dot, and the link text. The link text is "connected", "not connected", or "no voice".</p></div>
 </div>
 
 <figure>
 <div class="figure-panel">
 <div class="screens">
-<div class="screen"><img src="../assets/mockups/popup-anim.gif" alt="Popup animation"><div class="cap">Popup entry</div><div class="sub">popup-anim.gif</div></div>
+<div class="screen"><img src="../assets/mockups/popup-anim.gif" alt="Popup animation"><div class="cap">Popup entry</div><div class="sub">Countdown after playback</div></div>
 <div class="screen"><img src="../assets/mockups/22-popup-fall.png" alt="Fall alert"><div class="cap">Fall alert</div><div class="sub">FALL ALERT</div></div>
 <div class="screen"><img src="../assets/mockups/25-popup-badge.png" alt="Achievement report"><div class="cap">Achievement</div><div class="sub">ACHIEVED</div></div>
 </div>
 </div>
 <figcaption>Figure 3. Phone popups. Each popup kind has its own color and animated badge.</figcaption>
 </figure>
-
-Source: `需求文件夹/04-validation-and-decisions.md`, rows D-29 to D-34.

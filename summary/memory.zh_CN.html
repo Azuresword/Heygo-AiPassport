@@ -3,7 +3,7 @@
 <html lang="en" >
     <head>
         <meta charset="UTF-8">
-        <title>内存分布 · Heygo AI Passport — Project Summary</title>
+        <title>内存分布 · Heygo AI Passport — Technical Report</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="HonKit 6.2.2">
@@ -87,7 +87,7 @@
                 <a href="./">
             
                     
-                    Overview
+                    Technical overview
             
                 </a>
             
@@ -243,20 +243,7 @@
                 <a href="followups.html">
             
                     
-                    Follow-up items
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="1.14" data-path="sources.html">
-            
-                <a href="sources.html">
-            
-                    
-                    Sources
+                    Limits and next steps
             
                 </a>
             
@@ -276,7 +263,7 @@
                 <a href="README.zh_CN.html">
             
                     
-                    总览
+                    技术概览
             
                 </a>
             
@@ -341,7 +328,7 @@
                 <a href="build-flash.zh_CN.html">
             
                     
-                    制作方法
+                    构建与烧录
             
                 </a>
             
@@ -367,7 +354,7 @@
                 <a href="scrum.zh_CN.html">
             
                     
-                    用 Scrum 落地
+                    开发流程
             
                 </a>
             
@@ -432,20 +419,7 @@
                 <a href="followups.zh_CN.html">
             
                     
-                    后续事项
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="2.14" data-path="sources.zh_CN.html">
-            
-                <a href="sources.zh_CN.html">
-            
-                    
-                    数据来源
+                    限制与后续工作
             
                 </a>
             
@@ -503,18 +477,19 @@
 <p class="eyebrow">Memory</p>
 
 <h1 id="内存分布">内存分布</h1>
-<p>本页数字来自 2026-10-18 在 <code>main</code> 提交 <code>284ab00</code> 上的构建：<code>idf.py size</code>、<code>idf.py size-components</code>、<code>idf.py size-files</code>。LVGL 内存池的数字来自主机实测（<code>Firmware/docs/heygo-changes.zh_CN.md</code>）。</p>
+<p>构建快照：2026-10-18，提交 <code>284ab00</code>。Flash 和静态 RAM 数据对应此次构建。LVGL 内存池数据来自主机渲染，不是设备实测。KiB 和 MiB 分别表示 1,024 字节和 1,048,576 字节。</p>
 <div class="tiles">
 <div class="tile accent"><div class="k">应用 / factory 分区</div><div class="v">23.4<small>%</small></div></div>
-<div class="tile accent"><div class="k">静态 DRAM</div><div class="v">47.2<small>%</small></div></div>
-<div class="tile"><div class="k">LVGL 内存池峰值</div><div class="v">76.6<small>%</small></div></div>
+<div class="tile accent"><div class="k">静态内部 RAM</div><div class="v">47.2<small>%</small></div></div>
+<div class="tile"><div class="k">主机 LVGL 内存池峰值</div><div class="v">76.6<small>%</small></div></div>
 <div class="tile"><div class="k">PSRAM</div><div class="v">0</div></div>
 </div>
 
-<h2 id="flash：8-mb-怎么分">Flash：8 MB 怎么分</h2>
+<p><a id="flash：8-mb-怎么分"></a></p>
+<h2 id="flash：8-mib-分区布局">Flash：8 MiB 分区布局</h2>
 <figure>
 <img src="images/flash-map-zh.svg" alt="Flash 分布图"></img>
-<figcaption>图 12　Flash 分布。上面是整片 8 MB，下面放大前 64 KB。来源：<code>Firmware/partitions.csv</code>、构建日志。</figcaption>
+<figcaption>图 12　Flash 分布。上方为整片 8 MiB，下方放大前 64 KiB。</figcaption>
 </figure>
 
 <table>
@@ -528,77 +503,77 @@
 </thead>
 <tbody>
 <tr>
-<td>Bootloader</td>
+<td>Bootloader 区域</td>
 <td><code>0x0</code></td>
-<td>32 KB</td>
-<td>实占 21,024 字节</td>
+<td>32 KiB</td>
+<td>Bootloader 镜像为 21,024 字节</td>
 </tr>
 <tr>
-<td>分区表</td>
+<td>分区表区域</td>
 <td><code>0x8000</code></td>
-<td>4 KB</td>
-<td></td>
+<td>4 KiB</td>
+<td>分区表镜像为 3,072 字节</td>
 </tr>
 <tr>
 <td><code>nvs</code></td>
 <td><code>0x9000</code></td>
-<td>24 KB</td>
+<td>24 KiB</td>
 <td>键值存储</td>
 </tr>
 <tr>
 <td><code>phy_init</code></td>
 <td><code>0xF000</code></td>
-<td>4 KB</td>
-<td>射频校准数据</td>
+<td>4 KiB</td>
+<td>PHY 初始化数据</td>
 </tr>
 <tr>
 <td><code>factory</code></td>
 <td><code>0x10000</code></td>
 <td>8,323,072 字节</td>
-<td>唯一的应用分区，占满剩余 Flash。没有 OTA 分区</td>
+<td>唯一应用分区，占用剩余 Flash。无 OTA 分区</td>
 </tr>
 </tbody>
 </table>
-<p>应用镜像 1,948,640 字节，<code>factory</code> 还剩 6,374,432 字节（76.6%）。</p>
-<h2 id="flash：应用镜像里装了什么">Flash：应用镜像里装了什么</h2>
-<p>只读数据 1,015,232 字节，代码 825,880 字节，合计 1,841,112 字节。按来源分：</p>
+<p>应用镜像占 1,948,640 字节，为 <code>factory</code> 的 23.4%。分区剩余容量为 6,374,432 字节（76.6%）。</p>
+<p><a id="flash：应用镜像里装了什么"></a></p>
+<h2 id="flash：应用镜像组成">Flash：应用镜像组成</h2>
+<p>驻留 Flash 的代码为 825,880 字节，只读数据为 1,014,976 字节，应用描述符为 256 字节。这些段合计 1,841,112 字节。完整应用镜像还包含加载至 RAM 的段、镜像头和填充。</p>
 <div class="chart"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 960 268" role="img" aria-label="Flash" font-family="-apple-system, 'PingFang SC', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif"><g><title>中文字体 16 px: 516,932 B (28.1%)</title><rect x="0" y="10" width="960" height="34" fill="transparent"></rect><rect x="250" y="14" width="520.0" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="30" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">中文字体 16 px</text><text x="780.0" y="30" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">504.8 KiB · 28.1%</text><g><title>ESP-IDF 其他部分: 439,142 B (23.9%)</title><rect x="0" y="44" width="960" height="34" fill="transparent"></rect><rect x="250" y="48" width="441.7" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="64" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">ESP-IDF 其他部分</text><text x="701.7483150588472" y="64" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">428.8 KiB · 23.9%</text><g><title>LVGL: 332,036 B (18.0%)</title><rect x="0" y="78" width="960" height="34" fill="transparent"></rect><rect x="250" y="82" width="334.0" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="98" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">LVGL</text><text x="594.0066391711096" y="98" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">324.3 KiB · 18.0%</text><g><title>弹窗徽章（4 种 × 4 帧）: 201,152 B (10.9%)</title><rect x="0" y="112" width="960" height="34" fill="transparent"></rect><rect x="250" y="116" width="202.3" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="132" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">弹窗徽章（4 种 × 4 帧）</text><text x="462.34584045870633" y="132" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">196.4 KiB · 10.9%</text><g><title>蓝牙控制器 + NimBLE: 168,668 B (9.2%)</title><rect x="0" y="146" width="960" height="34" fill="transparent"></rect><rect x="250" y="150" width="169.7" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="166" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">蓝牙控制器 + NimBLE</text><text x="429.6690473795393" y="166" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">164.7 KiB · 9.2%</text><g><title>其他字体和滑雪小人: 127,789 B (6.9%)</title><rect x="0" y="180" width="960" height="34" fill="transparent"></rect><rect x="250" y="184" width="128.5" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="200" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">其他字体和滑雪小人</text><text x="388.5474298360326" y="200" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">124.8 KiB · 6.9%</text><g><title>Heygo 应用代码: 55,393 B (3.0%)</title><rect x="0" y="214" width="960" height="34" fill="transparent"></rect><rect x="250" y="218" width="55.7" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="234" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Heygo 应用代码</text><text x="315.72175837440903" y="234" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">54.1 KiB · 3.0%</text></svg></div>
 
 
-<p><strong>表格视图</strong></p>
 <table>
 <thead>
 <tr>
-<th>来源</th>
+<th>组件</th>
 <th>字节</th>
-<th>依据</th>
+<th>内容</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>中文字体 16 px</td>
 <td>516,932</td>
-<td><code>heygo_sc_16.c.obj</code>，3,871 个字形</td>
+<td><code>heygo_sc_16</code>，3,872 个字形</td>
 </tr>
 <tr>
 <td>ESP-IDF 其他部分</td>
 <td>439,142</td>
-<td>总数减去其他各项</td>
+<td>其余 SDK 组件和段开销</td>
 </tr>
 <tr>
 <td>LVGL</td>
 <td>332,036</td>
-<td><code>liblvgl__lvgl.a</code> 代码 + 只读数据</td>
+<td>驻留 Flash 的代码和只读数据</td>
 </tr>
 <tr>
 <td>弹窗徽章</td>
 <td>201,152</td>
-<td><code>heygo_popup_icons.c.obj</code>，4 种 × 4 帧，56×56 ARGB8888</td>
+<td>4 种 × 4 帧，56 × 56 ARGB8888</td>
 </tr>
 <tr>
-<td>蓝牙控制器 + NimBLE</td>
+<td>蓝牙控制器和 NimBLE</td>
 <td>168,668</td>
-<td><code>libbtdm_app.a</code> + <code>libbt.a</code></td>
+<td>蓝牙控制器和主机协议栈</td>
 </tr>
 <tr>
 <td>其他字体和滑雪小人</td>
@@ -608,18 +583,18 @@
 <tr>
 <td>Heygo 应用代码</td>
 <td>55,393</td>
-<td><code>libmain.a</code> 去掉字体和图片之后</td>
+<td>应用代码和常量，不含字体及图片</td>
 </tr>
 </tbody>
 </table>
-<div class="callout"><b>结论：字体和图片占了一半。</b>字体和精灵图合计 845,873 字节，占 Flash 内容的 45.9%。其中 16 px 中文字体最大，因为它要显示手机发来的任意回答，所以带了 GB2312 一级字。Heygo 自己的应用代码只有约 54 KB。</div>
+<div class="callout"><b>字体和图片占这些 Flash 段的 45.9%。</b>合计 845,873 字节。16 px 中文字体是最大的资源，包含 GB2312 一级字，用于常见中文转写和回答。字表之外的字符需要补充字形。应用代码和常量约占 54.1 KiB。</div>
 
-<h2 id="ram：320-kb-怎么分">RAM：320 KB 怎么分</h2>
-<p>ESP32-C3 可用的内部 RAM 是 321,296 字节，没有 PSRAM。下图是静态分配的部分：</p>
-<div class="chart"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 960 166" role="img" aria-label="DRAM" font-family="-apple-system, 'PingFang SC', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif"><g><title>IRAM 代码（.text）: 96,852 B (30.1%)</title><rect x="0" y="10" width="960" height="34" fill="transparent"></rect><rect x="250" y="14" width="296.7" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="30" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">IRAM 代码（.text）</text><text x="556.741927881216" y="30" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">94.6 KiB · 30.1%</text><g><title>.bss（含 28 KiB LVGL 内存池）: 44,200 B (13.8%)</title><rect x="0" y="44" width="960" height="34" fill="transparent"></rect><rect x="250" y="48" width="135.4" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="64" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">.bss（含 28 KiB LVGL 内存池）</text><text x="395.42304972896534" y="64" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">43.2 KiB · 13.8%</text><g><title>.data: 10,524 B (3.3%)</title><rect x="0" y="78" width="960" height="34" fill="transparent"></rect><rect x="250" y="82" width="32.2" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="98" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">.data</text><text x="292.2441668630686" y="98" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">10.3 KiB · 3.3%</text><g><title>留给堆、栈和缓冲区: 169,720 B (52.8%)</title><rect x="0" y="112" width="960" height="34" fill="transparent"></rect><rect x="250" y="116" width="520.0" height="22" rx="4" fill="#6f7782"></rect></g><text x="238" y="132" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">留给堆、栈和缓冲区</text><text x="780.0" y="132" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">165.7 KiB · 52.8%</text></svg></div>
+<p><a id="ram：320-kb-怎么分"></a></p>
+<h2 id="ram：指令与数据共用的内存">RAM：指令与数据共用的内存</h2>
+<p>链接器报告的指令 RAM（IRAM）与数据 RAM（DRAM）共用区域为 321,296 字节。静态分配占 151,576 字节，即 47.2%。该比例包含 IRAM 代码，不能视为单独的 DRAM 用量，也不代表芯片的全部物理 SRAM 容量。</p>
+<div class="chart"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 960 166" role="img" aria-label="内部 RAM" font-family="-apple-system, 'PingFang SC', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif"><g><title>IRAM 代码（.text）: 96,852 B (30.1%)</title><rect x="0" y="10" width="960" height="34" fill="transparent"></rect><rect x="250" y="14" width="296.7" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="30" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">IRAM 代码（.text）</text><text x="556.741927881216" y="30" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">94.6 KiB · 30.1%</text><g><title>.bss（含 28 KiB LVGL 内存池）: 44,200 B (13.8%)</title><rect x="0" y="44" width="960" height="34" fill="transparent"></rect><rect x="250" y="48" width="135.4" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="64" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">.bss（含 28 KiB LVGL 内存池）</text><text x="395.42304972896534" y="64" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">43.2 KiB · 13.8%</text><g><title>.data: 10,524 B (3.3%)</title><rect x="0" y="78" width="960" height="34" fill="transparent"></rect><rect x="250" y="82" width="32.2" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="98" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">.data</text><text x="292.2441668630686" y="98" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">10.3 KiB · 3.3%</text><g><title>链接后未分配空间: 169,720 B (52.8%)</title><rect x="0" y="112" width="960" height="34" fill="transparent"></rect><rect x="250" y="116" width="520.0" height="22" rx="4" fill="#6f7782"></rect></g><text x="238" y="132" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">链接后未分配空间</text><text x="780.0" y="132" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">165.7 KiB · 52.8%</text></svg></div>
 
 
-<p><strong>表格视图</strong></p>
 <table>
 <thead>
 <tr>
@@ -632,42 +607,44 @@
 <tr>
 <td>IRAM 代码</td>
 <td>96,852</td>
-<td>中断、Flash 操作、FreeRTOS 等必须在 RAM 里跑的代码</td>
+<td>驻留 RAM 的代码，包括中断、Flash 和 FreeRTOS 相关例程</td>
 </tr>
 <tr>
 <td><code>.bss</code></td>
 <td>44,200</td>
-<td>其中 LVGL 29,180（含 28 KiB 内存池），应用 9,156</td>
+<td>零初始化数据。LVGL 占 29,180 字节，含 28 KiB 内存池。应用占 9,156 字节</td>
 </tr>
 <tr>
 <td><code>.data</code></td>
 <td>10,524</td>
-<td>有初值的全局变量</td>
+<td>有初值的数据</td>
 </tr>
 <tr>
-<td>留给运行时</td>
+<td>链接后余量</td>
 <td>169,720</td>
-<td>堆：任务栈、蓝牙协议栈、LVGL 绘制缓冲、队列</td>
+<td>尚未计入运行时分配，不是实测空闲堆</td>
 </tr>
 </tbody>
 </table>
-<h3 id="运行时从堆里拿走的">运行时从堆里拿走的</h3>
+<p><a id="运行时从堆里拿走的"></a></p>
+<h3 id="运行时堆分配">运行时堆分配</h3>
+<p>以下配置会占用剩余 RAM。队列数据仅计算条目存储，不含 FreeRTOS 控制结构和分配器开销。</p>
 <table>
 <thead>
 <tr>
 <th>用途</th>
 <th>字节</th>
-<th>来源</th>
+<th>计算或配置</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>LVGL 绘制缓冲</td>
 <td>19,200</td>
-<td>240 × 40 行 × 2 字节（RGB565），<code>bsp_display_lvgl.c:12</code></td>
+<td>240 × 40 行 × 2 字节，RGB565</td>
 </tr>
 <tr>
-<td>自建任务栈</td>
+<td>应用任务栈</td>
 <td>11,264</td>
 <td>voice 4,096 + coach 4,096 + ble_tx 3,072</td>
 </tr>
@@ -677,65 +654,65 @@
 <td>esp_lvgl_port 默认值</td>
 </tr>
 <tr>
-<td>NimBLE host 任务栈</td>
+<td>NimBLE 主机任务栈</td>
 <td>4,096</td>
 <td><code>CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE</code></td>
 </tr>
 <tr>
-<td>蓝牙包队列</td>
-<td>3,440</td>
-<td>07 号协议第 10 节</td>
+<td>BLE 发送队列</td>
+<td>3,936</td>
+<td>两个队列 × 8 条目 × 246 字节，包含各条目的长度字段</td>
 </tr>
 <tr>
 <td>音频下行队列</td>
 <td>1,312</td>
-<td>8 × 164 字节</td>
+<td>8 × 164 字节 ADPCM 块</td>
 </tr>
 </tbody>
 </table>
-<p>蓝牙控制器和协议栈运行时还会从堆里分配内存。这部分要在设备上测量，本页没有给出。</p>
+<p>上表不是完整堆预算。BLE 缓冲、I2S DMA、coach 事件队列、计时器、任务控制块及其他分配也会占用 RAM。设备测试需测量空闲堆、最低空闲堆和最大可用块。</p>
 <h2 id="lvgl-内存池：28-kib">LVGL 内存池：28 KiB</h2>
-<p><code>CONFIG_LV_MEM_SIZE_KILOBYTES=28</code>（<code>sdkconfig.defaults</code>）。扣掉管理开销后可用 25,752 字节。</p>
-<div class="callout"><b>为什么从 24 KiB 加到 28 KiB。</b>加上页面导轨（D-33）后，24 KiB 的内存池让实时数据页在画速度数字时卡死，当时最大空闲块只有 1,936 字节。内存池改为 28 KiB，多占 4 KiB 系统 RAM（<code>需求文件夹/02-architecture.zh_CN.md:334</code>、<code>05-decision-amendments.zh_CN.md:484</code>）。构建结果对得上：LVGL 的 <code>.bss</code> 从 25,084 字节变成 29,180 字节，正好多 4,096 字节。</div>
+<p><code>CONFIG_LV_MEM_SIZE_KILOBYTES=28</code> 为 LVGL 预留 28,672 字节。扣除管理开销后，主机分配器报告的可用容量为 25,752 字节。</p>
+<div class="callout"><b>页面导轨需要更大的内存池。</b>24 KiB 配置在渲染速度数字时停滞，当时最大空闲块为 1,936 字节。内存池增至 28 KiB 后，静态 RAM 增加 4,096 字节。LVGL 的 <code>.bss</code> 从 25,084 字节增至 29,180 字节。</div>
 
 <table>
 <thead>
 <tr>
-<th>项</th>
+<th>测量项</th>
 <th>数值</th>
-<th>来源</th>
+<th>条件</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>可用内存池</td>
 <td>25,752 字节</td>
-<td><code>02-architecture.zh_CN.md:334</code></td>
+<td>28 KiB 配置，64 位主机</td>
 </tr>
 <tr>
 <td>全程峰值</td>
-<td><strong>19,728 / 25,752（76.6%）</strong></td>
-<td>同上，主机渲染</td>
+<td><strong>19,728 / 25,752 字节（76.6%）</strong></td>
+<td>主机渲染</td>
 </tr>
 <tr>
-<td>最大空闲块</td>
+<td>已记录的最大空闲块</td>
 <td>至少 6,032 字节</td>
-<td>同上</td>
+<td>页面采样</td>
 </tr>
 <tr>
-<td>导轨占用</td>
-<td>每页 1 个 LVGL 对象</td>
-<td><code>main/ui/page_rail.h</code></td>
+<td>导轨分配</td>
+<td>一个常驻 LVGL 对象</td>
+<td>页面间共用</td>
 </tr>
 <tr>
-<td>24 KiB 时的峰值（加导轨之前）</td>
-<td>18,760 / 21,656（86.6%）</td>
-<td><code>heygo-changes.zh_CN.md</code> 第 12 节，提交 <code>5658911</code></td>
+<td>增加导轨前的峰值</td>
+<td>18,760 / 21,656 字节（86.6%）</td>
+<td>早期 24 KiB 配置，提交 <code>5658911</code></td>
 </tr>
 </tbody>
 </table>
-<p>这些是 64 位主机上的数字。主机指针 8 字节，ESP32-C3 指针 4 字节，所以设备上的占用会更低。内存池紧，所以固件一次只保留一个界面。</p>
-<p>设备每次翻页都会在日志里记下内存池用量、最大空闲块和系统剩余堆。设备上的内存测试读的就是这几行（<code>02-architecture.zh_CN.md:335</code>）。</p>
+<p>页面采样不能确定分配峰值瞬间的最大空闲块。主机指针为 8 字节，ESP32-C3 指针为 4 字节，设备分配大小可能不同。主机数据不能证明设备的内存余量。</p>
+<p>每次切换页面都会记录 LVGL 用量、内存池最大空闲块、当前空闲堆和最低空闲堆，供设备内存测试使用。</p>
 
                                 
                                 </section>
@@ -763,12 +740,12 @@
 
             
                 
-                <a href="build-flash.zh_CN.html" class="navigation navigation-prev " aria-label="Previous page: 制作方法">
+                <a href="build-flash.zh_CN.html" class="navigation navigation-prev " aria-label="Previous page: 构建与烧录">
                     <i class="fa fa-angle-left"></i>
                 </a>
                 
                 
-                <a href="scrum.zh_CN.html" class="navigation navigation-next " aria-label="Next page: 用 Scrum 落地">
+                <a href="scrum.zh_CN.html" class="navigation navigation-next " aria-label="Next page: 开发流程">
                     <i class="fa fa-angle-right"></i>
                 </a>
                 
@@ -779,7 +756,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"内存分布","level":"2.7","depth":1,"next":{"title":"用 Scrum 落地","level":"2.8","depth":1,"path":"scrum.zh_CN.md","ref":"scrum.zh_CN.md","articles":[]},"previous":{"title":"制作方法","level":"2.6","depth":1,"path":"build-flash.zh_CN.md","ref":"build-flash.zh_CN.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"memory.zh_CN.md","mtime":"2026-10-18T04:29:11.140Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T04:33:29.883Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"内存分布","level":"2.7","depth":1,"next":{"title":"开发流程","level":"2.8","depth":1,"path":"scrum.zh_CN.md","ref":"scrum.zh_CN.md","articles":[]},"previous":{"title":"构建与烧录","level":"2.6","depth":1,"path":"build-flash.zh_CN.md","ref":"build-flash.zh_CN.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Technical Report","language":"en","gitbook":"*"},"file":{"path":"memory.zh_CN.md","mtime":"2026-10-18T09:04:59.320Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T09:09:29.593Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>

@@ -3,7 +3,7 @@
 <html lang="en" >
     <head>
         <meta charset="UTF-8">
-        <title>决策 D-01 至 D-34 · Heygo AI Passport — Project Summary</title>
+        <title>决策 D-01 至 D-34 · Heygo AI Passport — Technical Report</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="HonKit 6.2.2">
@@ -87,7 +87,7 @@
                 <a href="./">
             
                     
-                    Overview
+                    Technical overview
             
                 </a>
             
@@ -243,20 +243,7 @@
                 <a href="followups.html">
             
                     
-                    Follow-up items
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="1.14" data-path="sources.html">
-            
-                <a href="sources.html">
-            
-                    
-                    Sources
+                    Limits and next steps
             
                 </a>
             
@@ -276,7 +263,7 @@
                 <a href="README.zh_CN.html">
             
                     
-                    总览
+                    技术概览
             
                 </a>
             
@@ -341,7 +328,7 @@
                 <a href="build-flash.zh_CN.html">
             
                     
-                    制作方法
+                    构建与烧录
             
                 </a>
             
@@ -367,7 +354,7 @@
                 <a href="scrum.zh_CN.html">
             
                     
-                    用 Scrum 落地
+                    开发流程
             
                 </a>
             
@@ -432,20 +419,7 @@
                 <a href="followups.zh_CN.html">
             
                     
-                    后续事项
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="2.14" data-path="sources.zh_CN.html">
-            
-                <a href="sources.zh_CN.html">
-            
-                    
-                    数据来源
+                    限制与后续工作
             
                 </a>
             
@@ -502,135 +476,170 @@
 
 <p class="eyebrow">Decisions</p>
 
-<h1 id="决策-d-01-至-d-34">决策 D-01 至 D-34</h1>
-<p>来源：<code>需求文件夹/04-validation-and-decisions.zh_CN.md</code> 决策表（<code>main</code> 提交 <code>284ab00</code>）。下面的状态按文档原文。</p>
+<h1 id="决策与范围">决策与范围</h1>
+<p>本报告覆盖 D-01–D-34。决策确认、代码实现和设备验收分别记录。</p>
 <div class="tiles">
-<div class="tile accent"><div class="k">已确认</div><div class="v">21</div></div>
-<div class="tile accent"><div class="k">用户新提出</div><div class="v">2</div></div>
+<div class="tile accent"><div class="k">已确认</div><div class="v">18</div></div>
+<div class="tile"><div class="k">待 App 确认</div><div class="v">3</div></div>
+<div class="tile accent"><div class="k">10-18 新增</div><div class="v">2</div></div>
 <div class="tile"><div class="k">已被替代</div><div class="v">6</div></div>
 <div class="tile"><div class="k">提议</div><div class="v">4</div></div>
-<div class="tile"><div class="k">用户要求</div><div class="v">1</div></div>
+<div class="tile"><div class="k">文档要求</div><div class="v">1</div></div>
 </div>
 
-<p>“已确认”包括：与 App 团队一起确认的 7 条、用户确认的 11 条、等 App 团队确认的 3 条。“用户新提出”是 10-18 加入的 D-33 和 D-34。</p>
-<h2 id="已确认（2026-10-17，含-app-团队）">已确认（2026-10-17，含 App 团队）</h2>
+<p>3 项待确认决策已获用户认可，仍需手机应用团队确认。
+2 项新增决策分别是页面导轨和连接状态栏，代码均已实现。</p>
+<h2 id="已确认决策">已确认决策</h2>
 <table>
 <thead>
 <tr>
 <th>编号</th>
-<th>内容</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>D-16</td>
-<td>协议草案。App 团队已确认协议 0.2</td>
-</tr>
-<tr>
-<td>D-23</td>
-<td>实时数据字段由设备团队定，每 1 秒一帧</td>
-</tr>
-<tr>
-<td>D-24</td>
-<td>协议 0.2 和 LIVE_STATS</td>
-</tr>
-<tr>
-<td>D-27</td>
-<td>Heygo IQ 取 0–200</td>
-</tr>
-<tr>
-<td>D-28</td>
-<td>SHOW_PAGE 3，只在实时数据页或教练页空闲时生效</td>
-</tr>
-<tr>
-<td>D-29</td>
-<td>四个页面平级循环</td>
-</tr>
-<tr>
-<td>D-30</td>
-<td>弯型页，8 弯一页，TURN_REQUEST 分组请求</td>
-</tr>
-</tbody>
-</table>
-<h2 id="用户已确认">用户已确认</h2>
-<table>
-<thead>
-<tr>
-<th>编号</th>
-<th>内容</th>
+<th>决策</th>
+<th>确认方</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>D-08</td>
-<td>走 BLE，经手机桥接</td>
+<td>通过手机桥接 BLE，设备不使用 Wi-Fi</td>
+<td>用户</td>
 </tr>
 <tr>
 <td>D-09</td>
-<td>音频 IMA ADPCM</td>
+<td>16 kHz IMA ADPCM 音频，每块 20 ms</td>
+<td>用户</td>
 </tr>
 <tr>
 <td>D-11</td>
-<td>录音立即流式上传</td>
+<td>麦克风音频块立即流式上传手机</td>
+<td>用户</td>
 </tr>
 <tr>
 <td>D-12</td>
-<td>不加密、不配对</td>
+<td>链路不加密，不设配对码或绑定检查</td>
+<td>用户</td>
 </tr>
 <tr>
 <td>D-13</td>
-<td>不做隐私功能</td>
+<td>不实现隐私与授权功能</td>
+<td>用户</td>
 </tr>
 <tr>
 <td>D-14</td>
-<td>设备只做按键、麦克风、喇叭、屏幕</td>
+<td>设备负责按键、麦克风、喇叭和屏幕，其他功能由手机处理</td>
+<td>用户</td>
+</tr>
+<tr>
+<td>D-16</td>
+<td>BLE 协议 0.2</td>
+<td>手机应用团队</td>
 </tr>
 <tr>
 <td>D-17</td>
-<td>P0 只留教练语音链路</td>
+<td>P0 仅保留教练语音链路</td>
+<td>用户</td>
 </tr>
 <tr>
 <td>D-18</td>
-<td>不做功耗管理</td>
+<td>首版不实现功耗管理</td>
+<td>用户</td>
 </tr>
 <tr>
 <td>D-21</td>
-<td>实时数据页加报告页</td>
+<td>实时数据页和报告页</td>
+<td>用户</td>
 </tr>
 <tr>
 <td>D-22</td>
-<td>增量 2 和增量 1 的验收并行</td>
+<td>增量 2 开发与增量 1 验收并行，各增量独立验收</td>
+<td>用户</td>
+</tr>
+<tr>
+<td>D-23</td>
+<td>设备团队定义实时数据字段，手机在滑行中每秒发送一帧</td>
+<td>用户</td>
+</tr>
+<tr>
+<td>D-24</td>
+<td>协议 0.2 加入 LIVE_STATS</td>
+<td>用户、手机应用团队</td>
 </tr>
 <tr>
 <td>D-26</td>
-<td>每趟一份报告</td>
+<td>手机为每趟滑行发送一份报告</td>
+<td>用户</td>
+</tr>
+<tr>
+<td>D-27</td>
+<td>Heygo IQ 范围为 0–200</td>
+<td>用户</td>
+</tr>
+<tr>
+<td>D-28</td>
+<td>SHOW_PAGE 3 从实时数据页或空闲教练页打开报告，音频活动状态下忽略该消息</td>
+<td>用户</td>
+</tr>
+<tr>
+<td>D-29</td>
+<td>页面循环替代滑行和休息模式，短按 UP、DOWN 切页并取消进行中的教练对话</td>
+<td>用户</td>
+</tr>
+<tr>
+<td>D-30</td>
+<td>弯型页成为第四页，每页显示 8 弯，通过 TURN_REQUEST 请求分组</td>
+<td>用户</td>
 </tr>
 </tbody>
 </table>
-<h2 id="用户已确认，等-app-团队确认">用户已确认，等 App 团队确认</h2>
+<p>D-29 建立三页循环，D-30 再将弯型页加入报告页与教练页之间。
+按手机应用团队的变更请求，弯型页显示最后一份 RUN_REPORT 对应的滑行。</p>
+<h2 id="待-app-确认">待 App 确认</h2>
 <table>
 <thead>
 <tr>
 <th>编号</th>
-<th>内容</th>
+<th>设备约定</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>D-20</td>
-<td>手机收到 AGENT_END 后才发 PLAY_START</td>
+<td>手机收到 AGENT_END 后才发送 PLAY_START。录音期间的 PLAY_START 不触发播放</td>
 </tr>
 <tr>
 <td>D-31</td>
-<td>手机弹窗 POPUP 0x66 / POPUP_END 0x67，10 秒倒计时</td>
+<td>POPUP 0x66 打断当前交互。按键、替换或 10 秒倒计时结束后，POPUP_END 0x67 报告关闭原因</td>
 </tr>
 <tr>
 <td>D-32</td>
-<td>RUN_START 0x68，开始滑行跳到实时数据页</td>
+<td>RUN_START 0x68 打开实时数据页。教练音频进行中延后切页；弹窗关闭后返回实时数据页</td>
 </tr>
 </tbody>
 </table>
-<h2 id="用户新提出（2026-10-18）">用户新提出（2026-10-18）</h2>
+<h2 id="2026-10-18-新增">2026-10-18 新增</h2>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>行为</th>
+<th>实现</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D-33</td>
+<td>右侧导轨按页面顺序显示四格，荧光绿滑块标记当前页。所有格子同色，不显示箭头或按键目标。滑块在 180 ms 内移动，循环时跨端滑入、滑出。弹窗隐藏导轨，按键行为不变</td>
+<td>模拟器和固件均已实现。LVGL 内存池为 28 KiB。对应 Sprint 16、REQ-24、TC-24</td>
+</tr>
+<tr>
+<td>D-34</td>
+<td>五个屏幕共用状态栏，显示页面与连接标记。连接文字为“已连接”“未连接”“无语音”。连接变化只更新当前屏幕，不切页。一个流程图绑定可作用于多个屏幕的同名控件</td>
+<td>代码已实现。对应 Sprint 17、REQ-25、US-25</td>
+</tr>
+</tbody>
+</table>
+<p>上述功能的交付与验证边界见 <a href="sprints.zh_CN.html">Sprint 完成情况</a>。</p>
+<h2 id="提议与文档要求">提议与文档要求</h2>
 <table>
 <thead>
 <tr>
@@ -641,101 +650,112 @@
 </thead>
 <tbody>
 <tr>
-<td>D-33</td>
-<td>屏幕右侧页面导轨：四格，顺序与短按 DOWN 一致。当前页是荧光绿滑块，所有格子同一种颜色，不标 UP/DOWN 目标，没有箭头。滑块 180 ms 滑到新格，绕回时从一端滑出、另一端滑入。弹窗页不显示。不改任何按键</td>
-<td>模拟器和固件都已显示导轨。LVGL 内存池改为 28 KiB。Sprint 16 由项目负责人确认完成。对应 REQ-24、TC-24</td>
+<td>D-02</td>
+<td>设备负责交互，分析在外部执行</td>
+<td>提议</td>
 </tr>
 <tr>
-<td>D-34</td>
-<td>五个屏幕用同一个状态栏显示连接状态：页面圆点、页面名称、连接圆点和连接文字（已连接、未连接、无语音）。流程图里一个绑定可以驱动多个屏幕上的同名控件</td>
-<td>代码已完成。Sprint 17 由项目负责人确认完成。对应 REQ-25、US-25</td>
+<td>D-04</td>
+<td>同时只有一个音频占用者</td>
+<td>提议</td>
+</tr>
+<tr>
+<td>D-05</td>
+<td>初期使用现有硬件开展室内试用</td>
+<td>提议</td>
+</tr>
+<tr>
+<td>D-07</td>
+<td>时延、手势和容量数值仍为目标值</td>
+<td>提议</td>
+</tr>
+<tr>
+<td>D-06</td>
+<td>中英文档成对，采用 asd-ste100 写作指导</td>
+<td>用户要求</td>
 </tr>
 </tbody>
 </table>
-<h2 id="提议，未确认">提议，未确认</h2>
-<ul>
-<li>D-02 设备管交互，分析放在别处。</li>
-<li>D-04 同一时间只有一个音频使用者。</li>
-<li>D-05 先用现有硬件做室内试用。</li>
-<li>D-07 数值都当作目标值。</li>
-</ul>
-<h2 id="用户要求">用户要求</h2>
-<p>D-06 中英成对文档，遵循 asd-ste100。</p>
-<h2 id="已被替代">已被替代</h2>
+<h2 id="已被替代的决策">已被替代的决策</h2>
 <table>
 <thead>
 <tr>
 <th>编号</th>
-<th>被谁替代</th>
+<th>原范围</th>
+<th>替代决策</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>D-01</td>
+<td>六项请求能力全部纳入核心范围</td>
 <td>D-17</td>
 </tr>
 <tr>
-<td>D-03 只在休息模式用语音</td>
+<td>D-03</td>
+<td>仅在休息模式使用语音</td>
 <td>D-29</td>
 </tr>
 <tr>
-<td>D-10 取消和退出用不同长按</td>
+<td>D-10</td>
+<td>取消和退出使用不同长按</td>
 <td>D-29</td>
 </tr>
 <tr>
-<td>D-15 两种模式</td>
+<td>D-15</td>
+<td>两种操作模式</td>
 <td>D-29</td>
 </tr>
 <tr>
-<td>D-19 忽略 DOWN 长按</td>
+<td>D-19</td>
+<td>音频活动期间忽略 DOWN 长按</td>
 <td>D-29</td>
 </tr>
 <tr>
-<td>D-25 短按 DOWN 进报告页</td>
+<td>D-25</td>
+<td>空闲教练页短按 DOWN 打开报告</td>
 <td>D-29</td>
 </tr>
 </tbody>
 </table>
-<p>D-29 一次替代了 5 条，是交互上最大的一次简化。</p>
-<h2 id="需求条目">需求条目</h2>
-<p>来源：<code>需求文件夹/01-product-requirements.zh_CN.md:54-62</code></p>
+<h2 id="需求分配">需求分配</h2>
 <table>
 <thead>
 <tr>
 <th>优先级</th>
 <th>增量</th>
-<th>条目</th>
+<th>需求</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>P0</td>
-<td>增量 1 教练语音</td>
+<td>1 教练语音</td>
 <td>REQ-01、06、07、08、15、17、20</td>
 </tr>
 <tr>
 <td>P1</td>
-<td>增量 2 实时数据与报告</td>
+<td>2 实时数据与报告</td>
 <td>REQ-02、03、21、23、24、25</td>
 </tr>
 <tr>
 <td>P1</td>
-<td>增量 3 弯型</td>
+<td>3 弯型</td>
 <td>REQ-05</td>
 </tr>
 <tr>
 <td>P1</td>
-<td>增量 4 手机弹窗</td>
+<td>4 手机弹窗</td>
 <td>REQ-22</td>
 </tr>
 <tr>
 <td>P1</td>
-<td>增量 2 之后</td>
+<td>后续</td>
 <td>REQ-04、09、13</td>
 </tr>
 <tr>
 <td>P2</td>
-<td>后续候选</td>
+<td>后续</td>
 <td>REQ-10、11、12、18、19</td>
 </tr>
 <tr>
@@ -788,7 +808,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"决策 D-01 至 D-34","level":"2.10","depth":1,"next":{"title":"开发历程","level":"2.11","depth":1,"path":"history.zh_CN.md","ref":"history.zh_CN.md","articles":[]},"previous":{"title":"Sprint 完成情况","level":"2.9","depth":1,"path":"sprints.zh_CN.md","ref":"sprints.zh_CN.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"decisions.zh_CN.md","mtime":"2026-10-18T04:29:11.139Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T04:33:29.883Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"决策 D-01 至 D-34","level":"2.10","depth":1,"next":{"title":"开发历程","level":"2.11","depth":1,"path":"history.zh_CN.md","ref":"history.zh_CN.md","articles":[]},"previous":{"title":"Sprint 完成情况","level":"2.9","depth":1,"path":"sprints.zh_CN.md","ref":"sprints.zh_CN.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Technical Report","language":"en","gitbook":"*"},"file":{"path":"decisions.zh_CN.md","mtime":"2026-10-18T09:09:26.379Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T09:09:29.593Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>

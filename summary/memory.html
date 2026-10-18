@@ -3,7 +3,7 @@
 <html lang="en" >
     <head>
         <meta charset="UTF-8">
-        <title>Memory map · Heygo AI Passport — Project Summary</title>
+        <title>Memory map · Heygo AI Passport — Technical Report</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="HonKit 6.2.2">
@@ -87,7 +87,7 @@
                 <a href="./">
             
                     
-                    Overview
+                    Technical overview
             
                 </a>
             
@@ -243,20 +243,7 @@
                 <a href="followups.html">
             
                     
-                    Follow-up items
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="1.14" data-path="sources.html">
-            
-                <a href="sources.html">
-            
-                    
-                    Sources
+                    Limits and next steps
             
                 </a>
             
@@ -276,7 +263,7 @@
                 <a href="README.zh_CN.html">
             
                     
-                    总览
+                    技术概览
             
                 </a>
             
@@ -341,7 +328,7 @@
                 <a href="build-flash.zh_CN.html">
             
                     
-                    制作方法
+                    构建与烧录
             
                 </a>
             
@@ -367,7 +354,7 @@
                 <a href="scrum.zh_CN.html">
             
                     
-                    用 Scrum 落地
+                    开发流程
             
                 </a>
             
@@ -432,20 +419,7 @@
                 <a href="followups.zh_CN.html">
             
                     
-                    后续事项
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="2.14" data-path="sources.zh_CN.html">
-            
-                <a href="sources.zh_CN.html">
-            
-                    
-                    数据来源
+                    限制与后续工作
             
                 </a>
             
@@ -503,18 +477,19 @@
 <p class="eyebrow">Memory</p>
 
 <h1 id="memory-map">Memory map</h1>
-<p>The numbers on this page come from a build on 2026-10-18 at <code>main</code> commit <code>284ab00</code>. The tools were <code>idf.py size</code>, <code>idf.py size-components</code>, and <code>idf.py size-files</code>. The LVGL pool numbers come from host measurements (<code>Firmware/docs/heygo-changes.md</code>).</p>
+<p>Build snapshot: 2026-10-18, commit <code>284ab00</code>. Flash and static RAM values describe this build. LVGL pool values describe host rendering, not device measurements. KiB and MiB denote 1,024 bytes and 1,048,576 bytes.</p>
 <div class="tiles">
 <div class="tile accent"><div class="k">App / factory</div><div class="v">23.4<small>%</small></div></div>
-<div class="tile accent"><div class="k">Static DRAM</div><div class="v">47.2<small>%</small></div></div>
-<div class="tile"><div class="k">LVGL pool peak</div><div class="v">76.6<small>%</small></div></div>
+<div class="tile accent"><div class="k">Static internal RAM</div><div class="v">47.2<small>%</small></div></div>
+<div class="tile"><div class="k">Host LVGL pool peak</div><div class="v">76.6<small>%</small></div></div>
 <div class="tile"><div class="k">PSRAM</div><div class="v">0</div></div>
 </div>
 
-<h2 id="flash-the-8-mb-layout">Flash: the 8 MB layout</h2>
+<p><a id="flash-the-8-mb-layout"></a></p>
+<h2 id="flash-the-8-mib-layout">Flash: the 8 MiB layout</h2>
 <figure>
 <img src="images/flash-map-en.svg" alt="Flash map"></img>
-<figcaption>Figure 12. Flash map. The top bar is the full 8 MB. The bottom bar shows the first 64 KB. Sources: <code>Firmware/partitions.csv</code> and the build log.</figcaption>
+<figcaption>Figure 12. Flash layout. The top bar shows 8 MiB. The bottom bar shows the first 64 KiB.</figcaption>
 </figure>
 
 <table>
@@ -528,77 +503,76 @@
 </thead>
 <tbody>
 <tr>
-<td>Bootloader</td>
+<td>Bootloader area</td>
 <td><code>0x0</code></td>
-<td>32 KB</td>
-<td>21,024 bytes used</td>
+<td>32 KiB</td>
+<td>Bootloader image: 21,024 bytes</td>
 </tr>
 <tr>
-<td>Partition table</td>
+<td>Partition table area</td>
 <td><code>0x8000</code></td>
-<td>4 KB</td>
-<td></td>
+<td>4 KiB</td>
+<td>Partition table image: 3,072 bytes</td>
 </tr>
 <tr>
 <td><code>nvs</code></td>
 <td><code>0x9000</code></td>
-<td>24 KB</td>
+<td>24 KiB</td>
 <td>Key-value storage</td>
 </tr>
 <tr>
 <td><code>phy_init</code></td>
 <td><code>0xF000</code></td>
-<td>4 KB</td>
-<td>Radio calibration data</td>
+<td>4 KiB</td>
+<td>PHY initialization data</td>
 </tr>
 <tr>
 <td><code>factory</code></td>
 <td><code>0x10000</code></td>
 <td>8,323,072 bytes</td>
-<td>The only application partition. It uses all remaining flash. There are no OTA partitions.</td>
+<td>The only application partition. It occupies the remaining flash. No OTA partition exists.</td>
 </tr>
 </tbody>
 </table>
-<p>The application image is 1,948,640 bytes. The <code>factory</code> partition has 6,374,432 bytes (76.6%) free.</p>
+<p>The application image occupies 1,948,640 bytes, or 23.4% of <code>factory</code>. The partition has 6,374,432 bytes (76.6%) of unused capacity.</p>
 <h2 id="flash-the-content-of-the-application-image">Flash: the content of the application image</h2>
-<p>Read-only data is 1,015,232 bytes. Code is 825,880 bytes. The total is 1,841,112 bytes. By source:</p>
+<p>Flash-resident code occupies 825,880 bytes. Read-only data occupies 1,014,976 bytes, plus a 256-byte application descriptor. These sections total 1,841,112 bytes. The complete application image also includes RAM-loaded sections, image headers, and padding.</p>
 <div class="chart"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 960 268" role="img" aria-label="Flash" font-family="-apple-system, 'PingFang SC', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif"><g><title>Chinese font 16 px: 516,932 B (28.1%)</title><rect x="0" y="10" width="960" height="34" fill="transparent"></rect><rect x="250" y="14" width="520.0" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="30" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Chinese font 16 px</text><text x="780.0" y="30" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">504.8 KiB · 28.1%</text><g><title>Other ESP-IDF parts: 439,142 B (23.9%)</title><rect x="0" y="44" width="960" height="34" fill="transparent"></rect><rect x="250" y="48" width="441.7" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="64" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Other ESP-IDF parts</text><text x="701.7483150588472" y="64" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">428.8 KiB · 23.9%</text><g><title>LVGL: 332,036 B (18.0%)</title><rect x="0" y="78" width="960" height="34" fill="transparent"></rect><rect x="250" y="82" width="334.0" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="98" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">LVGL</text><text x="594.0066391711096" y="98" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">324.3 KiB · 18.0%</text><g><title>Popup badges (4 × 4 frames): 201,152 B (10.9%)</title><rect x="0" y="112" width="960" height="34" fill="transparent"></rect><rect x="250" y="116" width="202.3" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="132" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Popup badges (4 × 4 frames)</text><text x="462.34584045870633" y="132" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">196.4 KiB · 10.9%</text><g><title>BLE controller + NimBLE: 168,668 B (9.2%)</title><rect x="0" y="146" width="960" height="34" fill="transparent"></rect><rect x="250" y="150" width="169.7" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="166" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">BLE controller + NimBLE</text><text x="429.6690473795393" y="166" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">164.7 KiB · 9.2%</text><g><title>Other fonts and rider sprite: 127,789 B (6.9%)</title><rect x="0" y="180" width="960" height="34" fill="transparent"></rect><rect x="250" y="184" width="128.5" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="200" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Other fonts and rider sprite</text><text x="388.5474298360326" y="200" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">124.8 KiB · 6.9%</text><g><title>Heygo app code: 55,393 B (3.0%)</title><rect x="0" y="214" width="960" height="34" fill="transparent"></rect><rect x="250" y="218" width="55.7" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="234" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Heygo app code</text><text x="315.72175837440903" y="234" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">54.1 KiB · 3.0%</text></svg></div>
 
 
-<p><strong>Table view</strong></p>
 <table>
 <thead>
 <tr>
-<th>Source</th>
+<th>Component</th>
 <th>Bytes</th>
-<th>Basis</th>
+<th>Content</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Chinese font 16 px</td>
 <td>516,932</td>
-<td><code>heygo_sc_16.c.obj</code>, 3,871 glyphs</td>
+<td><code>heygo_sc_16</code>, 3,872 glyphs</td>
 </tr>
 <tr>
 <td>Other ESP-IDF parts</td>
 <td>439,142</td>
-<td>The total minus the other rows</td>
+<td>Remaining SDK components and section overhead</td>
 </tr>
 <tr>
 <td>LVGL</td>
 <td>332,036</td>
-<td>Code and read-only data of <code>liblvgl__lvgl.a</code></td>
+<td>Flash-resident code and read-only data</td>
 </tr>
 <tr>
 <td>Popup badges</td>
 <td>201,152</td>
-<td><code>heygo_popup_icons.c.obj</code>, 4 kinds × 4 frames, 56×56 ARGB8888</td>
+<td>Four kinds × four frames, 56 × 56 ARGB8888</td>
 </tr>
 <tr>
 <td>BLE controller and NimBLE</td>
 <td>168,668</td>
-<td><code>libbtdm_app.a</code> and <code>libbt.a</code></td>
+<td>Bluetooth controller and host stack</td>
 </tr>
 <tr>
 <td>Other fonts and rider sprite</td>
@@ -608,19 +582,19 @@
 <tr>
 <td>Heygo app code</td>
 <td>55,393</td>
-<td><code>libmain.a</code> without fonts and images</td>
+<td>Application code and constants, excluding fonts and images</td>
 </tr>
 </tbody>
 </table>
-<div class="callout"><b>Result: fonts and images use almost half of the flash content.</b>
-Fonts and sprites use 845,873 bytes, 45.9% of the flash content. The 16 px Chinese font is the largest. It must show any answer from the phone, so it has GB2312 level 1. The Heygo app code is only approximately 54 KB.</div>
+<div class="callout"><b>Fonts and images occupy 45.9% of these flash sections.</b>
+They total 845,873 bytes. The 16 px Chinese font is the largest asset. It includes GB2312 level 1 for common Chinese transcripts and answers. Characters outside its glyph set need additional coverage. App code and constants occupy approximately 54.1 KiB.</div>
 
-<h2 id="ram-the-320-kb-layout">RAM: the 320 KB layout</h2>
-<p>The ESP32-C3 has 321,296 bytes of internal RAM for this use. It has no PSRAM. The chart shows the static allocation:</p>
-<div class="chart"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 960 166" role="img" aria-label="DRAM" font-family="-apple-system, 'PingFang SC', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif"><g><title>IRAM code (.text): 96,852 B (30.1%)</title><rect x="0" y="10" width="960" height="34" fill="transparent"></rect><rect x="250" y="14" width="296.7" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="30" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">IRAM code (.text)</text><text x="556.741927881216" y="30" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">94.6 KiB · 30.1%</text><g><title>.bss (incl. 28 KiB LVGL pool): 44,200 B (13.8%)</title><rect x="0" y="44" width="960" height="34" fill="transparent"></rect><rect x="250" y="48" width="135.4" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="64" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">.bss (incl. 28 KiB LVGL pool)</text><text x="395.42304972896534" y="64" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">43.2 KiB · 13.8%</text><g><title>.data: 10,524 B (3.3%)</title><rect x="0" y="78" width="960" height="34" fill="transparent"></rect><rect x="250" y="82" width="32.2" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="98" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">.data</text><text x="292.2441668630686" y="98" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">10.3 KiB · 3.3%</text><g><title>Free for heap, stacks, buffers: 169,720 B (52.8%)</title><rect x="0" y="112" width="960" height="34" fill="transparent"></rect><rect x="250" y="116" width="520.0" height="22" rx="4" fill="#6f7782"></rect></g><text x="238" y="132" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Free for heap, stacks, buffers</text><text x="780.0" y="132" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">165.7 KiB · 52.8%</text></svg></div>
+<p><a id="ram-the-320-kb-layout"></a></p>
+<h2 id="ram-shared-instruction-and-data-memory">RAM: shared instruction and data memory</h2>
+<p>The linker reports a 321,296-byte region shared by instruction RAM (IRAM) and data RAM (DRAM). Static allocation uses 151,576 bytes, or 47.2%. This percentage includes code in IRAM. It is not a DRAM-only measurement or the chip's total physical SRAM capacity.</p>
+<div class="chart"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 960 166" role="img" aria-label="Internal RAM" font-family="-apple-system, 'PingFang SC', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif"><g><title>IRAM code (.text): 96,852 B (30.1%)</title><rect x="0" y="10" width="960" height="34" fill="transparent"></rect><rect x="250" y="14" width="296.7" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="30" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">IRAM code (.text)</text><text x="556.741927881216" y="30" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">94.6 KiB · 30.1%</text><g><title>.bss (incl. 28 KiB LVGL pool): 44,200 B (13.8%)</title><rect x="0" y="44" width="960" height="34" fill="transparent"></rect><rect x="250" y="48" width="135.4" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="64" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">.bss (incl. 28 KiB LVGL pool)</text><text x="395.42304972896534" y="64" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">43.2 KiB · 13.8%</text><g><title>.data: 10,524 B (3.3%)</title><rect x="0" y="78" width="960" height="34" fill="transparent"></rect><rect x="250" y="82" width="32.2" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="98" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">.data</text><text x="292.2441668630686" y="98" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">10.3 KiB · 3.3%</text><g><title>Unallocated at link time: 169,720 B (52.8%)</title><rect x="0" y="112" width="960" height="34" fill="transparent"></rect><rect x="250" y="116" width="520.0" height="22" rx="4" fill="#6f7782"></rect></g><text x="238" y="132" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Unallocated at link time</text><text x="780.0" y="132" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">165.7 KiB · 52.8%</text></svg></div>
 
 
-<p><strong>Table view</strong></p>
 <table>
 <thead>
 <tr>
@@ -633,44 +607,45 @@ Fonts and sprites use 845,873 bytes, 45.9% of the flash content. The 16 px Chine
 <tr>
 <td>IRAM code</td>
 <td>96,852</td>
-<td>Code that must run from RAM, for example interrupts, flash operations, and FreeRTOS</td>
+<td>Code in RAM, including interrupt, flash, and FreeRTOS routines</td>
 </tr>
 <tr>
 <td><code>.bss</code></td>
 <td>44,200</td>
-<td>LVGL 29,180 (with the 28 KiB pool) and the app 9,156</td>
+<td>Zero-initialized data. LVGL uses 29,180 bytes, including its 28 KiB pool. The app uses 9,156 bytes.</td>
 </tr>
 <tr>
 <td><code>.data</code></td>
 <td>10,524</td>
-<td>Global variables with initial values</td>
+<td>Data with initial values</td>
 </tr>
 <tr>
-<td>Free at runtime</td>
+<td>Link-time remainder</td>
 <td>169,720</td>
-<td>Heap for task stacks, the BLE stack, the LVGL draw buffer, and queues</td>
+<td>Capacity before runtime allocations. This is not measured free heap.</td>
 </tr>
 </tbody>
 </table>
 <h3 id="heap-use-at-runtime">Heap use at runtime</h3>
+<p>The following configured allocations consume part of the remaining RAM. Queue figures count item storage only. They exclude FreeRTOS control structures and allocator overhead.</p>
 <table>
 <thead>
 <tr>
 <th>Use</th>
 <th>Bytes</th>
-<th>Source</th>
+<th>Calculation or configuration</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>LVGL draw buffer</td>
 <td>19,200</td>
-<td>240 × 40 lines × 2 bytes (RGB565), <code>bsp_display_lvgl.c:12</code></td>
+<td>240 × 40 lines × 2 bytes, RGB565</td>
 </tr>
 <tr>
-<td>Own task stacks</td>
+<td>App task stacks</td>
 <td>11,264</td>
-<td>voice 4,096, coach 4,096, and ble_tx 3,072</td>
+<td>voice 4,096 + coach 4,096 + ble_tx 3,072</td>
 </tr>
 <tr>
 <td>LVGL task stack</td>
@@ -683,61 +658,61 @@ Fonts and sprites use 845,873 bytes, 45.9% of the flash content. The 16 px Chine
 <td><code>CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE</code></td>
 </tr>
 <tr>
-<td>BLE packet queues</td>
-<td>3,440</td>
-<td>Document 07, section 10</td>
+<td>BLE TX queues</td>
+<td>3,936</td>
+<td>Two queues × 8 items × 246 bytes, including each item's length field</td>
 </tr>
 <tr>
 <td>Audio down queue</td>
 <td>1,312</td>
-<td>8 × 164 bytes</td>
+<td>8 × 164-byte ADPCM blocks</td>
 </tr>
 </tbody>
 </table>
-<p>The BLE controller and stack also allocate heap memory at runtime. A device measurement is necessary for that part. This page does not show it.</p>
+<p>This table is not a complete heap budget. BLE buffers, I2S DMA, the coach event queue, timers, task control blocks, and other allocations also consume RAM. Device tests must measure free heap, minimum free heap, and the largest available block.</p>
 <h2 id="lvgl-pool-28-kib">LVGL pool: 28 KiB</h2>
-<p><code>CONFIG_LV_MEM_SIZE_KILOBYTES=28</code> (<code>sdkconfig.defaults</code>). After the management overhead, 25,752 bytes are available.</p>
-<div class="callout"><b>Why the pool changed from 24 KiB to 28 KiB.</b>
-With the page rail (D-33), the 24 KiB pool stopped the live data page when it drew the speed digits. The largest free block was then only 1,936 bytes. The pool is now 28 KiB, and it uses 4 KiB more system RAM (<code>需求文件夹/02-architecture.md:334</code> and <code>05-decision-amendments.md</code>). The build agrees: the LVGL <code>.bss</code> changed from 25,084 to 29,180 bytes, exactly 4,096 bytes more.</div>
+<p><code>CONFIG_LV_MEM_SIZE_KILOBYTES=28</code> reserves 28,672 bytes for LVGL. The host allocator reports 25,752 usable bytes after management overhead.</p>
+<div class="callout"><b>The page rail required a larger pool.</b>
+The 24 KiB configuration stalled during speed-digit rendering, with a largest free block of 1,936 bytes. Increasing the pool to 28 KiB adds 4,096 bytes of static RAM. LVGL <code>.bss</code> increased from 25,084 to 29,180 bytes.</div>
 
 <table>
 <thead>
 <tr>
-<th>Item</th>
+<th>Measurement</th>
 <th>Value</th>
-<th>Source</th>
+<th>Conditions</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Available pool</td>
+<td>Usable pool</td>
 <td>25,752 bytes</td>
-<td><code>02-architecture.md:334</code></td>
+<td>28 KiB configuration, 64-bit host</td>
 </tr>
 <tr>
-<td>Peak of a full run</td>
-<td><strong>19,728 / 25,752 (76.6%)</strong></td>
-<td>Same, host render</td>
+<td>Full-run peak</td>
+<td><strong>19,728 / 25,752 bytes (76.6%)</strong></td>
+<td>Host rendering</td>
 </tr>
 <tr>
-<td>Largest free block</td>
+<td>Reported largest free block</td>
 <td>At least 6,032 bytes</td>
-<td>Same</td>
+<td>Page samples</td>
 </tr>
 <tr>
-<td>Rail cost</td>
-<td>1 LVGL object on each page</td>
-<td><code>main/ui/page_rail.h</code></td>
+<td>Rail allocation</td>
+<td>One persistent LVGL object</td>
+<td>Shared across pages</td>
 </tr>
 <tr>
-<td>Peak at 24 KiB (before the rail)</td>
-<td>18,760 / 21,656 (86.6%)</td>
-<td><code>heygo-changes.md</code>, section 12, commit <code>5658911</code></td>
+<td>Peak before the rail</td>
+<td>18,760 / 21,656 bytes (86.6%)</td>
+<td>Earlier 24 KiB configuration, commit <code>5658911</code></td>
 </tr>
 </tbody>
 </table>
-<p>These numbers come from a 64-bit host. A host pointer has 8 bytes. An ESP32-C3 pointer has 4 bytes. Thus, the device uses less pool memory. The pool is small, so the firmware keeps only one screen at a time.</p>
-<p>At each page change, the device logs the pool use, the largest free block, and the free system heap. The device memory test reads these lines (<code>02-architecture.md:335</code>).</p>
+<p>The page samples do not establish the largest free block at the instant of peak allocation. Host pointers use eight bytes, while ESP32-C3 pointers use four bytes. Device allocation sizes can differ. Host measurements do not establish the device's memory margin.</p>
+<p>Each page change logs LVGL usage, the largest free pool block, current free heap, and minimum free heap. These measurements support device memory tests.</p>
 
                                 
                                 </section>
@@ -781,7 +756,7 @@ With the page rail (D-33), the 24 KiB pool stopped the live data page when it dr
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Memory map","level":"1.7","depth":1,"next":{"title":"Delivery with Scrum","level":"1.8","depth":1,"path":"scrum.md","ref":"scrum.md","articles":[]},"previous":{"title":"Firmware build","level":"1.6","depth":1,"path":"build-flash.md","ref":"build-flash.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"memory.md","mtime":"2026-10-18T04:15:29.202Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T04:33:29.883Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Memory map","level":"1.7","depth":1,"next":{"title":"Delivery with Scrum","level":"1.8","depth":1,"path":"scrum.md","ref":"scrum.md","articles":[]},"previous":{"title":"Firmware build","level":"1.6","depth":1,"path":"build-flash.md","ref":"build-flash.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Technical Report","language":"en","gitbook":"*"},"file":{"path":"memory.md","mtime":"2026-10-18T09:04:59.320Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T09:09:29.593Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>

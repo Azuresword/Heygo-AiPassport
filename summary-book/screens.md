@@ -4,7 +4,7 @@
 
 # Screen gallery
 
-`host_render` uses LVGL to render 25 screens on the host. The pixels are the same as on the device. All screens are in `assets/mockups/`.
+These 25 examples use the firmware LVGL screen code on the host. They cover normal, boundary, and error states. Screen color, refresh behavior, and display quality require device checks.
 
 ## Coach talk: the four states of one question
 
@@ -23,7 +23,7 @@
 <figcaption>Figure 4. One coach question. For the BLE messages, see Figure 7 in <a href="architecture.html">Architecture and protocol</a>.</figcaption>
 </figure>
 
-If an error occurs, the device shows a clear message. The user then gives a long press of OK again.
+After a recognition error, the user can retry with a long press of OK. A lost phone connection must recover first.
 
 <div class="screens">
 <div class="screen"><img src="../assets/mockups/07-failed.png" alt="Not heard"><div class="cap">Not heard</div><div class="sub">FAILED</div></div>
@@ -64,5 +64,5 @@ If an error occurs, the device shows a clear message. The user then gives a long
 
 <figure>
 <div class="figure-panel"><img src="../assets/mockups/contact-sheet.png" alt="All 25 screens"></div>
-<figcaption>Figure 5. All 25 screens. Source: <code>assets/mockups/contact-sheet.png</code>.</figcaption>
+<figcaption>Figure 5. Overview of 25 screen states.</figcaption>
 </figure>

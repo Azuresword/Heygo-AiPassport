@@ -3,7 +3,7 @@
 <html lang="en" >
     <head>
         <meta charset="UTF-8">
-        <title>Follow-up items · Heygo AI Passport — Project Summary</title>
+        <title>Limits and next steps · Heygo AI Passport — Technical Report</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="HonKit 6.2.2">
@@ -48,7 +48,7 @@
     <link rel="shortcut icon" href="gitbook/images/favicon.ico" type="image/x-icon">
 
     
-    <link rel="next" href="sources.html" />
+    <link rel="next" href="README.zh_CN.html" />
     
     
     <link rel="prev" href="quality.html" />
@@ -87,7 +87,7 @@
                 <a href="./">
             
                     
-                    Overview
+                    Technical overview
             
                 </a>
             
@@ -243,20 +243,7 @@
                 <a href="followups.html">
             
                     
-                    Follow-up items
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="1.14" data-path="sources.html">
-            
-                <a href="sources.html">
-            
-                    
-                    Sources
+                    Limits and next steps
             
                 </a>
             
@@ -276,7 +263,7 @@
                 <a href="README.zh_CN.html">
             
                     
-                    总览
+                    技术概览
             
                 </a>
             
@@ -341,7 +328,7 @@
                 <a href="build-flash.zh_CN.html">
             
                     
-                    制作方法
+                    构建与烧录
             
                 </a>
             
@@ -367,7 +354,7 @@
                 <a href="scrum.zh_CN.html">
             
                     
-                    用 Scrum 落地
+                    开发流程
             
                 </a>
             
@@ -432,20 +419,7 @@
                 <a href="followups.zh_CN.html">
             
                     
-                    后续事项
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="2.14" data-path="sources.zh_CN.html">
-            
-                <a href="sources.zh_CN.html">
-            
-                    
-                    数据来源
+                    限制与后续工作
             
                 </a>
             
@@ -483,7 +457,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href="." >Follow-up items</a>
+        <a href="." >Limits and next steps</a>
     </h1>
 </div>
 
@@ -502,68 +476,89 @@
 
 <p class="eyebrow">Follow-up</p>
 
-<h1 id="follow-up-items">Follow-up items</h1>
-<p>The team delivered the project. This page lists items outside the scope and items that the team did not do on purpose. Use it for the next phase.</p>
-<h2 id="accepted-risks">Accepted risks</h2>
-<p>Source: <code>需求文件夹/04-validation-and-decisions.md</code>, risk table.</p>
+<h1 id="limits-and-next-steps">Limits and next steps</h1>
+<p>The delivery scope excludes power management, privacy functions, and team talk. These limits and integration gaps define the next phase.</p>
+<h2 id="design-limits">Design limits</h2>
 <div class="cards">
-<div class="card"><span class="tag">D-12</span><h4 id="no-ble-encryption">No BLE encryption</h4><p>People near the user can hear the audio. The team did not use pairing, to keep the connection simple.</p></div>
-<div class="card"><span class="tag">D-18</span><h4 id="no-power-management">No power management</h4><p>This delivery has no power-saving strategy.</p></div>
-<div class="card"><span class="tag">D-31</span><h4 id="fall-popup-closes-after-10-s">Fall popup closes after 10 s</h4><p>The phone controls the escalation. POPUP_END reason 0 tells the phone that nobody pushed a key.</p></div>
-<div class="card"><span class="tag">D-32</span><h4 id="the-phone-finds-the-run-start">The phone finds the run start</h4><p>If the phone is not correct, the device changes the page but cancels nothing. On the live data page, a short press of DOWN opens the report page.</p></div>
+<div class="card"><span class="tag">D-12</span><h4 id="no-ble-encryption">No BLE encryption</h4><p>The link has no pairing or binding check. A nearby client can connect and receive audio blocks. Review this decision before a public trial.</p></div>
+<div class="card"><span class="tag">D-18</span><h4 id="no-power-management">No power management</h4><p>The firmware has no power-saving strategy. Battery use needs assessment before a field pilot.</p></div>
+<div class="card"><span class="tag">D-31</span><h4 id="fall-alert-timeout">Fall alert timeout</h4><p>The popup closes after a 10 s countdown. POPUP_END reason 0 reports no key press. The phone owns escalation.</p></div>
+<div class="card"><span class="tag">D-32</span><h4 id="phone-detects-run-start">Phone detects run start</h4><p>A false run start can interrupt report reading. It cancels no audio. A short DOWN press reopens the Report page from live data.</p></div>
 </div>
 
-<h2 id="design-limits-in-the-documents">Design limits in the documents</h2>
-<p>Source: <code>Firmware/docs/heygo-changes.md</code>, known issues.</p>
 <table>
 <thead>
 <tr>
 <th>Limit</th>
-<th>Explanation</th>
+<th>Effect</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>The screen does not show the battery level</td>
-<td>The device sends the battery level to the phone in DEVICE_STATUS.</td>
+<td>No battery level on the screen</td>
+<td>DEVICE_STATUS sends the battery level to the phone.</td>
 </tr>
 <tr>
-<td>A PLAY_START during a recording is lost</td>
-<td>D-20 tells the phone not to send it at that time.</td>
+<td>PLAY_START does not switch capture to playback</td>
+<td>The answer may time out. D-20 requires the phone to wait for AGENT_END.</td>
 </tr>
 <tr>
-<td>The body text has a maximum of four lines</td>
-<td>Longer text ends with three dots. The voice plays the full answer.</td>
+<td>Body text has a four-line limit</td>
+<td>Longer text ends with three dots. Audio supplies the full answer.</td>
 </tr>
 </tbody>
 </table>
-<h2 id="possible-next-work">Possible next work</h2>
+<h2 id="integration-and-acceptance-records">Integration and acceptance records</h2>
 <table>
 <thead>
 <tr>
-<th>Area</th>
-<th>Basis</th>
+<th>Item</th>
+<th>Required result</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Team talk</td>
-<td>The protocol defines 0x50 to 0x55. It is P1.</td>
+<td>App confirmation</td>
+<td>Resolve D-20 audio timing, D-31 popups, and D-32 run start with the phone app team.</td>
 </tr>
 <tr>
-<td>P1 and P2 requirements</td>
-<td>REQ-04, 09, and 13 (P1). REQ-10, 11, 12, 18, and 19 (P2).</td>
+<td>Device acceptance</td>
+<td>Record firmware and app versions, test conditions, measurements, and results for each acceptance test.</td>
 </tr>
 <tr>
-<td>Document update</td>
-<td>Make the status text of Sprints 5 to 15 in document <code>08</code> agree with "all complete".</td>
+<td>Delivery status</td>
+<td>Reconcile the roadmap and acceptance tables with the recorded Sprint completion.</td>
 </tr>
 <tr>
-<td>CI</td>
-<td>Move the workflows to <code>.github/workflows/</code> at the repository root.</td>
+<td>CI activation</td>
+<td>Place the required workflows in the repository root under <code>.github/workflows/</code>.</td>
 </tr>
 </tbody>
 </table>
+<h2 id="later-features">Later features</h2>
+<table>
+<thead>
+<tr>
+<th>Priority</th>
+<th>Scope</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>Metric charts (REQ-04), team talk (REQ-09), and cached reports (REQ-13).</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Focused practice, quests and badges, reflection journal, session comparison, and sharing (REQ-10, 11, 12, 18, 19).</td>
+</tr>
+<tr>
+<td>Deferred</td>
+<td>Privacy and authorization (REQ-14), and resource limits (REQ-16).</td>
+</tr>
+</tbody>
+</table>
+<p>The protocol reserves messages 0x50–0x55 for team talk. The current firmware ignores playback for the Team channel.</p>
 
                                 
                                 </section>
@@ -596,7 +591,7 @@
                 </a>
                 
                 
-                <a href="sources.html" class="navigation navigation-next " aria-label="Next page: Sources">
+                <a href="README.zh_CN.html" class="navigation navigation-next " aria-label="Next page: 技术概览">
                     <i class="fa fa-angle-right"></i>
                 </a>
                 
@@ -607,7 +602,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Follow-up items","level":"1.13","depth":1,"next":{"title":"Sources","level":"1.14","depth":1,"path":"sources.md","ref":"sources.md","articles":[]},"previous":{"title":"Quality and deployment","level":"1.12","depth":1,"path":"quality.md","ref":"quality.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"followups.md","mtime":"2026-10-18T04:25:24.591Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T04:33:29.883Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Limits and next steps","level":"1.13","depth":1,"next":{"title":"技术概览","level":"2.1","depth":1,"path":"README.zh_CN.md","ref":"README.zh_CN.md","articles":[]},"previous":{"title":"Quality and deployment","level":"1.12","depth":1,"path":"quality.md","ref":"quality.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Technical Report","language":"en","gitbook":"*"},"file":{"path":"followups.md","mtime":"2026-10-18T09:09:26.379Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T09:09:29.593Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>

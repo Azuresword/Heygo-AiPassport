@@ -3,7 +3,7 @@
 <html lang="en" >
     <head>
         <meta charset="UTF-8">
-        <title>用 Scrum 落地 · Heygo AI Passport — Project Summary</title>
+        <title>开发流程 · Heygo AI Passport — Technical Report</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="HonKit 6.2.2">
@@ -87,7 +87,7 @@
                 <a href="./">
             
                     
-                    Overview
+                    Technical overview
             
                 </a>
             
@@ -243,20 +243,7 @@
                 <a href="followups.html">
             
                     
-                    Follow-up items
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="1.14" data-path="sources.html">
-            
-                <a href="sources.html">
-            
-                    
-                    Sources
+                    Limits and next steps
             
                 </a>
             
@@ -276,7 +263,7 @@
                 <a href="README.zh_CN.html">
             
                     
-                    总览
+                    技术概览
             
                 </a>
             
@@ -341,7 +328,7 @@
                 <a href="build-flash.zh_CN.html">
             
                     
-                    制作方法
+                    构建与烧录
             
                 </a>
             
@@ -367,7 +354,7 @@
                 <a href="scrum.zh_CN.html">
             
                     
-                    用 Scrum 落地
+                    开发流程
             
                 </a>
             
@@ -432,20 +419,7 @@
                 <a href="followups.zh_CN.html">
             
                     
-                    后续事项
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="2.14" data-path="sources.zh_CN.html">
-            
-                <a href="sources.zh_CN.html">
-            
-                    
-                    数据来源
+                    限制与后续工作
             
                 </a>
             
@@ -483,7 +457,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href="." >用 Scrum 落地</a>
+        <a href="." >开发流程</a>
     </h1>
 </div>
 
@@ -502,82 +476,61 @@
 
 <p class="eyebrow">Scrum</p>
 
-<h1 id="用-scrum-落地">用 Scrum 落地</h1>
-<p>本项目把 Scrum 压成 4 小时一个 Sprint。每个 Sprint 只有一个目标。完成与否看证据，不看感觉。</p>
-<p>本章按项目实际的做法梳理 Scrum 流程，每一步都给出仓库里的出处。</p>
+<h1 id="交付方法">交付方法</h1>
+<p>项目采用每个 Sprint 四小时、单一目标的计划。主机开发与设备验收分别记录结果。
+实际 Sprint 用时未记录。</p>
 <div class="tiles">
 <div class="tile accent"><div class="k">Sprint</div><div class="v">18</div></div>
-<div class="tile"><div class="k">每个 Sprint</div><div class="v">4<small>小时</small></div></div>
+<div class="tile"><div class="k">计划时长</div><div class="v">4<small>小时</small></div></div>
 <div class="tile"><div class="k">用户故事</div><div class="v">25</div></div>
 <div class="tile"><div class="k">需求条目</div><div class="v">25</div></div>
 <div class="tile"><div class="k">决策</div><div class="v">34</div></div>
 </div>
 
-<h2 id="1-全景">1. 全景</h2>
+<h2 id="交付与变更管理">交付与变更管理</h2>
 <figure>
-<img src="images/scrum-zh.svg" alt="本项目的 Scrum 流程"></img>
-<figcaption>图 13　Scrum 流程。上面一行是交付主线，下面一行是变更回路。来源：<code>需求文件夹/03-scrum-backlog.zh_CN.md</code>、<code>08-sprint-roadmap.zh_CN.md</code>。</figcaption>
+<img src="images/scrum-zh.svg" alt="交付主线与变更回路"></img>
+<figcaption>图 13　上方为交付主线，下方为变更回路。</figcaption>
 </figure>
 
-<p>整个流程有两条线：</p>
-<ol>
-<li><strong>交付主线。</strong> 产品目标决定待办列表。待办列表的条目排进 Sprint。每个 Sprint 交付一个增量和一份证据。</li>
-<li><strong>变更回路。</strong> 用户的反馈先写成一条决策（D-xx），再改需求文档，最后重排待办列表。</li>
-</ol>
-<h2 id="2-产品目标和待办列表">2. 产品目标和待办列表</h2>
-<h3 id="产品目标">产品目标</h3>
-<blockquote>
-<p>滑雪者滑行时在设备上看实时数据，休息时用语音向 AI 教练提问并听到回答。手机留在口袋里，手套不用摘。</p>
-</blockquote>
-<p>来源：<code>03-scrum-backlog.zh_CN.md</code> 第 1 节</p>
-<h3 id="四层追溯">四层追溯</h3>
-<p>每项功能都能从需求一路追到 Sprint。四层编号放在四份文档里：</p>
+<p>产品目标确定待办列表，每个 Sprint 选择一个交付切片并报告结果。
+反馈通过编号决策进入需求，再按需调整待办优先级与估算。</p>
+<p>产品目标是在滑行中显示实时数据，在休息时提供语音教练服务。
+滑雪者无需拿出手机或摘下手套。</p>
 <table>
 <thead>
 <tr>
-<th>层</th>
+<th>层级</th>
 <th>编号</th>
-<th>文档</th>
-<th>例子：页面导轨</th>
+<th>页面导轨示例</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>需求</td>
 <td>REQ-xx</td>
-<td><code>01-product-requirements</code></td>
-<td>REQ-24 显示用户在页面循环中的位置</td>
+<td>REQ-24：显示用户在页面循环中的位置</td>
 </tr>
 <tr>
 <td>用户故事</td>
 <td>US-xx</td>
-<td><code>03-scrum-backlog</code></td>
-<td>US-24 侧边条，故事点 2–3</td>
+<td>US-24：页面导轨，2–3 故事点</td>
 </tr>
 <tr>
 <td>验收用例</td>
 <td>TC-xx</td>
-<td><code>04-validation-and-decisions</code></td>
-<td>TC-24 40 次翻页，滑块每次 200 ms 内到位</td>
+<td>TC-24：40 次翻页，滑块每次在 200 ms 内到位</td>
 </tr>
 <tr>
 <td>Sprint</td>
 <td>0–17</td>
-<td><code>08-sprint-roadmap</code>、<code>03</code></td>
-<td>Sprint 16 模拟器、固件和验收</td>
+<td>Sprint 16：模拟器、固件和验收</td>
 </tr>
 </tbody>
 </table>
-<p>这样做的作用：评审一个增量时，可以直接查到它对应哪条需求、用哪个用例验收。</p>
-<h3 id="故事点的用法">故事点的用法</h3>
-<ul>
-<li>故事点比较不确定性和工作量，不代表小时数。</li>
-<li>团队没有速度数据，所以计划不假定速度。</li>
-<li>P0 范围在 0.4 版缩小后，5 个 P0 故事标为"待重新估算"。</li>
-</ul>
-<p>来源：<code>03-scrum-backlog.zh_CN.md</code> 第 2、4 节</p>
-<h2 id="3-4-小时-sprint">3. 4 小时 Sprint</h2>
-<h3 id="固定结构">固定结构</h3>
+<p>故事点比较工作量和不确定性，不代表小时数。
+计划不假定团队速度。P0 范围收窄后，5 个故事仍需重新估算。</p>
+<h2 id="sprint-结构">Sprint 结构</h2>
 <div class="figure-panel">
 <div class="timebox"><div class="f15">计划 15</div><div class="f200 dev">开发 200 分钟</div><div class="f15">评审 15</div><div class="f10">回顾</div></div>
 </div>
@@ -592,149 +545,134 @@
 </thead>
 <tbody>
 <tr>
-<td>Sprint 计划</td>
+<td>计划</td>
 <td>15 分钟</td>
-<td>确认 Sprint 目标和任务。检查前提条件</td>
+<td>Sprint 目标、任务和前提条件检查</td>
 </tr>
 <tr>
 <td>开发</td>
 <td>200 分钟</td>
-<td>可用的增量，通过本 Sprint 的完成检查</td>
+<td>通过 Sprint 检查的增量</td>
 </tr>
 <tr>
-<td>Sprint 评审</td>
+<td>评审</td>
 <td>15 分钟</td>
-<td>演示增量，按固定格式报告证据</td>
+<td>演示结果，分别报告构建、主机和设备测试</td>
 </tr>
 <tr>
-<td>Sprint 回顾</td>
+<td>回顾</td>
 <td>10 分钟</td>
-<td>记录一项改进，在下一个 Sprint 执行</td>
+<td>下一 Sprint 的一项改进</td>
 </tr>
 </tbody>
 </table>
-<h3 id="四条规则">四条规则</h3>
+<p>计划包含四项控制：</p>
 <ol>
-<li>前提条件不满足时，Sprint 不开始。团队改做下一个前提条件已满足的 Sprint。</li>
-<li>开发超时，就按砍线去掉任务。去掉的任务回到待办列表。</li>
-<li>Sprint 目标没有达成时，由产品负责人决定下一步。团队不延长 Sprint。</li>
-<li>每个 Sprint 结束时，<code>./tools/validate.sh</code> 的退出码必须是 0。</li>
+<li>所需输入齐备后才开始。</li>
+<li>达到任务裁剪线时，将指定任务退回待办列表。</li>
+<li>未达成目标时仍保持时间限制，由产品负责人决定下一步。</li>
+<li>仓库门禁的退出码必须为 0。</li>
 </ol>
-<p>来源：<code>08-sprint-roadmap.zh_CN.md</code> 第 1 节</p>
-<h3 id="例子：sprint-0">例子：Sprint 0</h3>
+<h3 id="sprint-0-示例">Sprint 0 示例</h3>
 <table>
 <thead>
 <tr>
-<th>顺序</th>
 <th>任务</th>
-<th>时间盒</th>
+<th>预算</th>
 <th>完成检查</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>1</td>
-<td>T-1 模式与音频状态机</td>
+<td>模式与音频状态机</td>
 <td>60 分钟</td>
-<td>每条转移各有一项主机测试</td>
+<td>每条转移有主机测试</td>
 </tr>
 <tr>
-<td>2</td>
-<td>T-2 P0 消息的包层</td>
+<td>P0 消息包层</td>
 <td>75 分钟</td>
-<td>主机测试覆盖组包、解包、<code>xid</code> 和错误码</td>
+<td>组包、解析、<code>xid</code> 和错误码</td>
 </tr>
 <tr>
-<td>3</td>
-<td>T-3 IMA ADPCM 编解码</td>
+<td>IMA ADPCM 编解码</td>
 <td>60 分钟</td>
-<td>主机测试覆盖块大小、往返、丢块和满幅输入</td>
+<td>块大小、往返、丢块和满幅输入</td>
 </tr>
 <tr>
-<td>4</td>
-<td>T-4 门禁与构建</td>
+<td>门禁与构建</td>
 <td>45 分钟</td>
-<td>门禁和构建通过，报告写明静态 RAM</td>
+<td>门禁和构建通过，记录静态 RAM</td>
 </tr>
 </tbody>
 </table>
-<p><strong>砍线：</strong> T-1 和 T-2 合计超过 150 分钟时，去掉 T-3。T-4 一定要做。</p>
-<p><strong>为什么可以砍 T-3：</strong> 07 号协议有裸 PCM 回退。没有 ADPCM，链路照样能测。</p>
-<p><strong>结果：</strong> 四项任务都在提交 <code>a917aaa</code> 交付，没有执行砍线。按完成定义，Sprint 0 不关闭任何故事，因为每个 P0 故事还需要设备测试和真实的手机应用。</p>
-<p>来源：<code>06-sprint-0-plan.zh_CN.md</code> 第 2、4、7 节</p>
-<h2 id="4-完成定义和证据">4. 完成定义和证据</h2>
-<h3 id="完成定义">完成定义</h3>
-<p>每个增量切片都要满足下面适用的检查：</p>
+<p>初期 Sprint 0 计划将 240 分钟全部分配给开发，后续模板则在 240 分钟总时长内分配 200 分钟开发。
+两者均为预算，不代表实际用时。</p>
+<p>任务裁剪线规定：前两项任务合计超过 150 分钟时，移除编解码任务。计划中的裸 PCM 回退可继续支持协议测试。
+门禁与构建必须保留。
+四项任务均已完成，未触发裁剪线。Sprint 0 当时未关闭用户故事，仍需设备与手机应用验收。</p>
+<h2 id="验收与验证">验收与验证</h2>
+<p>每个交付切片需满足适用的条件：</p>
 <ul>
-<li>用户在实体 AI Passport 上完成操作。</li>
-<li>切片需要时，使用真实的手机应用。</li>
-<li>主机测试、仓库检查和固件构建全部通过。</li>
-<li>设备测试在记录的条件下通过。</li>
-<li>中文显示、按键动作、模式切换和取消行为通过各自的测试。</li>
-<li>时延满足切片的限制。</li>
-<li>中英文文档描述相同的行为。</li>
-<li>团队记录每一项剩余缺口。</li>
+<li>用户在设备上完成操作，需要时使用真实手机应用。</li>
+<li>主机测试、仓库检查和固件构建通过。</li>
+<li>设备测试在记录的条件下覆盖中文、按键、状态变化、取消和时延。</li>
+<li>中英文档描述相同行为。</li>
+<li>报告列出所有剩余缺口。</li>
 </ul>
-<p><strong>关键约束：</strong> 模拟器或桩程序不能代替设备测试，也不能代替真实服务测试。</p>
-<p>来源：<code>03-scrum-backlog.zh_CN.md</code> 第 9 节</p>
-<h3 id="证据格式">证据格式</h3>
-<p>每次 Sprint 评审都用这个格式报告：</p>
+<p>模拟器或桩程序不能替代设备测试或真实服务测试。
+评审格式分别列出结果：</p>
 <pre><code class="lang-text">Sprint: N
 Sprint Goal: 达成 / 未达成
 Build: PASS / FAIL / NOT RUN
 Host tests: PASS / FAIL / NOT RUN
-Device tests: PASS / FAIL / PARTIAL / NOT RUN（写明手机是真实应用还是 phone_sim）
-Unverified: 每一项未验证的内容
+Device tests: PASS / FAIL / PARTIAL / NOT RUN
+Phone endpoint: 真实应用 / phone_sim
+Unverified: 剩余事项
 </code></pre>
-<p>来源：<code>08-sprint-roadmap.zh_CN.md</code> 第 5 节</p>
-<p>这个格式把"构建通过""主机通过""设备通过"分成三栏。Sprint 0 的计划把一条风险写得很直接："纯主机的结果被当成产品结果，状态报告失真。"证据格式就是这条风险的对策（<code>06-sprint-0-plan.zh_CN.md</code> 第 6 节）。</p>
-<h3 id="测试条件">测试条件</h3>
 <table>
 <thead>
 <tr>
-<th>条件</th>
-<th>内容</th>
+<th>测试条件</th>
+<th>范围</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>N1 室内参考链路</td>
-<td>一台 AI Passport、一部手机、真实的手机应用。往返时延、抖动、丢包率取第 95 百分位</td>
+<td>N1：室内参考链路</td>
+<td>一台设备、一部手机及真实应用。建议上限：往返时延 p95 为 150 ms、抖动 p95 为 30 ms、丢包率为 1%</td>
 </tr>
 <tr>
-<td>N2 故障</td>
-<td>逐项测：链路中断 30 秒、应用切到后台、权限失败、MTU 低于 172、时钟偏移 5 分钟</td>
+<td>N2：故障</td>
+<td>分别测试链路中断 30 秒、应用后台运行、权限失败、MTU 低于 172、时钟偏移 5 分钟</td>
 </tr>
 <tr>
-<td>U1 可用性</td>
-<td>5 名成年人，徒手和戴手套各做一遍同一份任务脚本，过程中不提供帮助</td>
+<td>U1：可用性</td>
+<td>5 名成年人分别徒手和戴手套完成相同任务，过程中无辅助</td>
 </tr>
 </tbody>
 </table>
-<p>来源：<code>04-validation-and-decisions.zh_CN.md</code> 第 2 节</p>
-<h2 id="5-代码-sprint-和验收-sprint-分开">5. 代码 Sprint 和验收 Sprint 分开</h2>
-<p>每个故事都有两个 Sprint：一个写代码，一个验收。</p>
+<h3 id="代码与验收分开安排">代码与验收分开安排</h3>
 <table>
 <thead>
 <tr>
-<th>故事</th>
+<th>用户故事</th>
 <th>代码 Sprint</th>
 <th>验收 Sprint</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>US-06 语音采集、US-07 语音播放</td>
+<td>US-06 采集、US-07 播放</td>
 <td>0–1</td>
 <td>6</td>
 </tr>
 <tr>
-<td>US-08 按键 Agent 交流</td>
+<td>US-08 教练交流</td>
 <td>1</td>
 <td>8</td>
 </tr>
 <tr>
-<td>US-15 手套操作与中文显示</td>
+<td>US-15 手套与中文</td>
 <td>1</td>
 <td>9</td>
 </tr>
@@ -744,7 +682,7 @@ Unverified: 每一项未验证的内容
 <td>7</td>
 </tr>
 <tr>
-<td>US-21 实时数据页</td>
+<td>US-21 实时数据</td>
 <td>3</td>
 <td>7、9</td>
 </tr>
@@ -765,43 +703,33 @@ Unverified: 每一项未验证的内容
 </tr>
 </tbody>
 </table>
-<p>来源：<code>03-scrum-backlog.zh_CN.md</code> 第 4 节</p>
-<p>这样分的原因：</p>
-<ol>
-<li>开发板当时不在手边。代码 Sprint 只在主机上就能完成，不用等硬件。</li>
-<li>验收 Sprint 有自己的前提条件：开发板、支持协议 0.2 的手机应用、5 名测试者。前提条件不满足，验收 Sprint 就不开始。</li>
-<li>代码和验收分开记录，状态就不会混。"代码已完成"和"验收通过"是两件事。</li>
-</ol>
-<h2 id="6-变更怎样进入-sprint">6. 变更怎样进入 Sprint</h2>
-<h3 id="四步变更流程">四步变更流程</h3>
-<ol>
-<li>记录反馈和受影响的需求。</li>
-<li>产品负责人重新为待办列表排序。</li>
-<li>开发人员更新估算。</li>
-<li>把每项已接受的变更记入决策记录。</li>
-</ol>
-<p>来源：<code>03-scrum-backlog.zh_CN.md</code> 第 10 节</p>
-<p>34 条决策都按这个流程进入项目。其中 6 条后来被替代，5 条被同一条 D-29（四页平级循环）替代。决策的理由写在 <code>05-decision-amendments</code>。</p>
-<h3 id="实例：d-33-和-d-34-的落地顺序">实例：D-33 和 D-34 的落地顺序</h3>
+<p>这项安排让主机开发在开发板到位前继续进行。
+验收按内容需要开发板、协议 0.2 应用、真实服务或测试者。
+Sprint 15–17 则在同一计划中包含实现与验收。</p>
+<h2 id="变更实现">变更实现</h2>
+<p>变更流程记录反馈、调整待办优先级、修订估算，并分配决策编号。
+34 项决策中有 6 项被替代。D-29 替代了 5 项早期交互决策，D-30 再将页面循环扩展为四页。</p>
 <figure>
-<img src="images/change-zh.svg" alt="D-33 和 D-34 的落地时间线"></img>
-<figcaption>图 14　一条决策变成固件的过程。空心圆是用户评审后的修改。来源：<code>git log</code>。</figcaption>
+<img src="images/change-zh.svg" alt="D-33 与 D-34 实现时间线"></img>
+<figcaption>图 14　决策、实现与评审顺序。空心圆标记评审修改。</figcaption>
 </figure>
 
-<p>两条决策都是先改文档，再改代码，最后重绘界面图：</p>
+<p>D-33 与 D-34 均按以下顺序实现：</p>
 <ol>
-<li><strong>先改文档。</strong> 01–05 号需求文档中英成对更新。</li>
-<li><strong>再改代码。</strong> D-33 先做模拟器（10:47），用户评审后才写固件（11:49）。D-34 的流程图、固件和模拟器在同一批提交里完成（11:22）。</li>
-<li><strong>用户评审随时插入。</strong> D-33 改了两轮。第一轮（11:39）去掉箭头，在固件之前。第二轮（12:05）改成同一种颜色，在固件之后，只改了 <code>page_rail.c</code>（<code>ea4815a</code>）。</li>
-<li><strong>最后重绘界面图。</strong> <code>host_render</code> 重绘 25 张界面图，让文档里的图和固件一致。</li>
+<li>更新中英成对的需求文档。</li>
+<li>实现模拟器、流程图和固件行为。</li>
+<li>应用评审修改，重新渲染 25 张界面图。</li>
 </ol>
+<p>D-33 于 10:47 先进入模拟器。11:39 的评审移除了箭头，固件于 11:49 实现。
+12:05 的评审统一了导轨格子的颜色。
+D-34 于 11:22 同步更新流程图、固件和模拟器。</p>
 <table>
 <thead>
 <tr>
 <th>决策</th>
-<th>文档</th>
-<th>固件</th>
-<th>用时</th>
+<th>首次文档变更</th>
+<th>固件变更</th>
+<th>时间间隔</th>
 </tr>
 </thead>
 <tbody>
@@ -812,104 +740,61 @@ Unverified: 每一项未验证的内容
 <td>64 分钟，含一轮评审</td>
 </tr>
 <tr>
-<td>D-34 链路状态</td>
+<td>D-34 连接状态</td>
 <td>11:08</td>
 <td>11:22</td>
 <td>14 分钟</td>
 </tr>
 </tbody>
 </table>
-<p>用时是首尾提交的时间差，不是实测的工作时间。</p>
-<h2 id="7-支撑-scrum-的工程手段">7. 支撑 Scrum 的工程手段</h2>
-<p>Scrum 规定了节奏。下面这些工程手段让 4 小时的 Sprint 真正跑得起来：</p>
+<p>上述间隔按提交时间计算，不代表工作用时。</p>
+<h2 id="工程支撑">工程支撑</h2>
 <div class="cards">
-<div class="card"><span class="tag">单一来源</span><h4 id="一个流程图">一个流程图</h4><p><code>coach.flow.json</code> 同时生成固件的转移表和浏览器模拟器。改一处，两边一起变。</p></div>
-<div class="card"><span class="tag">评审</span><h4 id="在线模拟器">在线模拟器</h4><p>模拟器发布在 GitHub Pages。评审一个增量，打开网页就能按键试，不需要开发板。</p></div>
-<div class="card"><span class="tag">完成定义</span><h4 id="门禁自动检查">门禁自动检查</h4><p><code>validate.sh</code> 跑主机测试、字形、界面检查、模拟器自测和固件构建。完成定义里能自动查的部分都交给它。</p></div>
-<div class="card"><span class="tag">增量</span><h4 id="一个增量一个分支">一个增量一个分支</h4><p><code>feat/report-live-data</code>、<code>feat/turn-view</code>、<code>feat/app-popups</code>、<code>feat/run-start</code>。增量完成后合入 <code>main</code>。</p></div>
-<div class="card"><span class="tag">文档</span><h4 id="中英成对，遵循-asd-ste100">中英成对，遵循 asd-ste100</h4><p>D-06 规定所有文档中英成对。英文用 <code>ste-lint.py</code> 检查。手机应用团队读同一套协议文档。</p></div>
-<div class="card"><span class="tag">测试</span><h4 id="纯-c-主机测试">纯 C 主机测试</h4><p>状态机、协议、ADPCM 都是纯 C。33 个主机测试在没有硬件时也能证明逻辑。</p></div>
+<div class="card"><span class="tag">共享模型</span><h4 id="单一流程图">单一流程图</h4><p><code>coach.flow.json</code> 定义固件转移表与浏览器模拟器行为。</p></div>
+<div class="card"><span class="tag">评审</span><h4 id="在线模拟器">在线模拟器</h4><p>GitHub Pages 支持无开发板条件下的按键、状态和外观评审。</p></div>
+<div class="card"><span class="tag">验证</span><h4 id="自动门禁">自动门禁</h4><p>门禁执行主机测试、字形与界面检查、模拟器自测和固件构建。</p></div>
+<div class="card"><span class="tag">集成</span><h4 id="功能分支">功能分支</h4><p>报告、弯型、弹窗和开始滑行分别使用开发分支，再集成至 main。</p></div>
+<div class="card"><span class="tag">文档</span><h4 id="中英文配对">中英文配对</h4><p>D-06 要求中英文档成对，英文采用 asd-ste100 写作指导。</p></div>
+<div class="card"><span class="tag">测试</span><h4 id="主机覆盖">主机覆盖</h4><p>状态机、协议和 ADPCM 编解码使用纯 C，快照包含 33 个测试文件。</p></div>
 </div>
 
-<h3 id="模拟器跟着-sprint-一起长">模拟器跟着 Sprint 一起长</h3>
-<p>每个和界面有关的 Sprint 都有一项"更新流程模拟器"的任务，所以自测项数随增量增加：</p>
+<p>模拟器自测覆盖随界面范围扩大而增加：</p>
 <div class="chart"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 960 260" role="img" aria-label="各 Sprint 的模拟器自测项数" font-family="-apple-system, 'PingFang SC', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif"><line x1="46" y1="212.0" x2="944" y2="212.0" stroke="#2a3038" stroke-width="1"></line><text x="36" y="216.0" font-size="11" fill="#6f7782" font-weight="400" text-anchor="end" font-family="'SF Mono', Menlo, Consolas, monospace">0</text><line x1="46" y1="166.5" x2="944" y2="166.5" stroke="#2a3038" stroke-width="1"></line><text x="36" y="170.5" font-size="11" fill="#6f7782" font-weight="400" text-anchor="end" font-family="'SF Mono', Menlo, Consolas, monospace">35</text><line x1="46" y1="121.0" x2="944" y2="121.0" stroke="#2a3038" stroke-width="1"></line><text x="36" y="125.0" font-size="11" fill="#6f7782" font-weight="400" text-anchor="end" font-family="'SF Mono', Menlo, Consolas, monospace">70</text><line x1="46" y1="75.5" x2="944" y2="75.5" stroke="#2a3038" stroke-width="1"></line><text x="36" y="79.5" font-size="11" fill="#6f7782" font-weight="400" text-anchor="end" font-family="'SF Mono', Menlo, Consolas, monospace">105</text><line x1="46" y1="30.0" x2="944" y2="30.0" stroke="#2a3038" stroke-width="1"></line><text x="36" y="34.0" font-size="11" fill="#6f7782" font-weight="400" text-anchor="end" font-family="'SF Mono', Menlo, Consolas, monospace">140</text><g><title>Sprint 4: 53 项自测</title><rect x="46.0" y="30" width="149.7" height="182" fill="transparent"></rect><path d="M83.4,212 V147.1 Q83.4,143.1 87.4,143.1 H154.2 Q158.2,143.1 158.2,147.1 V212 Z" fill="#b1fe2b"></path></g><text x="120.83333333333331" y="135.1" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="middle" font-family="'SF Mono', Menlo, Consolas, monospace">53</text><text x="120.83333333333331" y="233" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="middle">Sprint 4</text><g><title>Sprint 11: 88 项自测</title><rect x="195.7" y="30" width="149.7" height="182" fill="transparent"></rect><path d="M233.1,212 V101.6 Q233.1,97.6 237.1,97.6 H303.9 Q307.9,97.6 307.9,101.6 V212 Z" fill="#b1fe2b"></path></g><text x="270.5" y="89.6" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="middle" font-family="'SF Mono', Menlo, Consolas, monospace">88</text><text x="270.5" y="233" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="middle">Sprint 11</text><g><title>Sprint 13: 104 项自测</title><rect x="345.3" y="30" width="149.7" height="182" fill="transparent"></rect><path d="M382.8,212 V80.8 Q382.8,76.8 386.8,76.8 H453.6 Q457.6,76.8 457.6,80.8 V212 Z" fill="#b1fe2b"></path></g><text x="420.1666666666667" y="68.80000000000001" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="middle" font-family="'SF Mono', Menlo, Consolas, monospace">104</text><text x="420.1666666666667" y="233" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="middle">Sprint 13</text><g><title>Sprint 15: 117 项自测</title><rect x="495.0" y="30" width="149.7" height="182" fill="transparent"></rect><path d="M532.4,212 V63.9 Q532.4,59.9 536.4,59.9 H603.2 Q607.2,59.9 607.2,63.9 V212 Z" fill="#b1fe2b"></path></g><text x="569.8333333333333" y="51.900000000000006" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="middle" font-family="'SF Mono', Menlo, Consolas, monospace">117</text><text x="569.8333333333333" y="233" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="middle">Sprint 15</text><g><title>Sprint 16 模拟器: 122 项自测</title><rect x="644.7" y="30" width="149.7" height="182" fill="transparent"></rect><path d="M682.1,212 V57.4 Q682.1,53.4 686.1,53.4 H752.9 Q756.9,53.4 756.9,57.4 V212 Z" fill="#b1fe2b"></path></g><text x="719.4999999999999" y="45.400000000000006" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="middle" font-family="'SF Mono', Menlo, Consolas, monospace">122</text><text x="719.4999999999999" y="233" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="middle">Sprint 16 模拟器</text><g><title>Sprint 16–17: 128 项自测</title><rect x="794.3" y="30" width="149.7" height="182" fill="transparent"></rect><path d="M831.7,212 V49.6 Q831.7,45.6 835.7,45.6 H902.6 Q906.6,45.6 906.6,49.6 V212 Z" fill="#b1fe2b"></path></g><text x="869.1666666666665" y="37.599999999999994" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="middle" font-family="'SF Mono', Menlo, Consolas, monospace">128</text><text x="869.1666666666665" y="233" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="middle">Sprint 16–17</text><line x1="46" y1="212" x2="944" y2="212" stroke="#6f7782" stroke-width="1"></line></svg></div>
 
 
-<p>来源：<code>08-sprint-roadmap.zh_CN.md</code> 第 3、4 节的 Sprint 结果，<code>Firmware/docs/heygo-changes.zh_CN.md</code> 第 12、13 节，本书在 <code>c865ba8</code> 和 <code>284ab00</code> 上的实测。</p>
-<h2 id="8-角色">8. 角色</h2>
-<table>
-<thead>
-<tr>
-<th>角色</th>
-<th>文档里的人员</th>
-<th>实际情况</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>产品负责人</td>
-<td>未指定</td>
-<td>所有范围决策都由用户做出，包括 D-17</td>
-</tr>
-<tr>
-<td>Scrum Master</td>
-<td>未指定</td>
-<td>—</td>
-</tr>
-<tr>
-<td>开发人员</td>
-<td>未指定</td>
-<td>一名固件开发人员，手机应用团队并行开发</td>
-</tr>
-</tbody>
-</table>
-<p>来源：<code>03-scrum-backlog.zh_CN.md</code> 第 2、3 节</p>
-<h2 id="9-回头看：哪些有效，哪些可以改进">9. 回头看：哪些有效，哪些可以改进</h2>
-<h3 id="有效的做法">有效的做法</h3>
-<ul>
-<li><strong>4 小时时间盒配砍线。</strong> 超时就砍任务，不延长 Sprint。Sprint 0 和 Sprint 2 都定了砍线，结果都写着"没有执行砍线"。</li>
-<li><strong>证据分栏。</strong> 构建、主机、设备、未验证四栏分开写，主机结果不会被当成产品结果。</li>
-<li><strong>决策记录。</strong> 34 条决策都有编号、状态和理由，替代关系也写清楚了。</li>
-<li><strong>先模拟器后固件。</strong> 用户先在浏览器里评审外观。D-33 的第一轮修改（去掉箭头）发生在写固件之前，固件不用为这一轮返工。</li>
-</ul>
-<h3 id="可以改进的地方">可以改进的地方</h3>
+<h2 id="流程缺口">流程缺口</h2>
 <table>
 <thead>
 <tr>
 <th>缺口</th>
-<th>证据</th>
-<th>建议</th>
+<th>改进要求</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>没有记录实际用时</td>
-<td>Sprint 0、2、3、4、11、13、15 的结果都写明没有记录实际用时</td>
-<td>每个 Sprint 记录开始和结束时间，积累速度数据</td>
+<td>未记录实际用时</td>
+<td>记录 Sprint 起止时间，再评估四小时计划</td>
 </tr>
 <tr>
-<td>回顾的改进项没有书面记录</td>
-<td>文档里找不到回顾记录</td>
-<td>每次回顾写一行改进项，放进下一个 Sprint 的计划</td>
+<td>未书面记录回顾行动</td>
+<td>为下一 Sprint 指定一项行动</td>
 </tr>
 <tr>
-<td>路线图状态列没有同步</td>
-<td><code>08-sprint-roadmap</code> 里 Sprint 5–15 仍写"未开始"</td>
-<td>Sprint 评审后同步状态列</td>
+<td>路线图保留早期状态</td>
+<td>每次评审后同步开发和验收条目</td>
 </tr>
 <tr>
-<td>角色没有指定</td>
-<td><code>03</code> 第 3 节三个角色都写"未指定"</td>
-<td>写明产品负责人，排序和验收就有明确的人负责</td>
+<td>Scrum 角色未具名</td>
+<td>明确待办排序和验收责任人，目前范围决策由用户做出</td>
 </tr>
 <tr>
-<td>故事点待重新估算</td>
-<td>5 个 P0 故事写"待重新估算"</td>
-<td>下一次计划会上补齐</td>
+<td>5 个 P0 故事待估算</td>
+<td>在计划阶段重新估算</td>
 </tr>
 </tbody>
 </table>
+<p>人员计划为一名固件开发人员，以及独立的手机应用团队。
+产品负责人、Scrum Master 和开发人员的正式指派仍为空。</p>
 
                                 
                                 </section>
@@ -953,7 +838,7 @@ Unverified: 每一项未验证的内容
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"用 Scrum 落地","level":"2.8","depth":1,"next":{"title":"Sprint 完成情况","level":"2.9","depth":1,"path":"sprints.zh_CN.md","ref":"sprints.zh_CN.md","articles":[]},"previous":{"title":"内存分布","level":"2.7","depth":1,"path":"memory.zh_CN.md","ref":"memory.zh_CN.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"scrum.zh_CN.md","mtime":"2026-10-18T04:30:43.398Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T04:33:29.883Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"开发流程","level":"2.8","depth":1,"next":{"title":"Sprint 完成情况","level":"2.9","depth":1,"path":"sprints.zh_CN.md","ref":"sprints.zh_CN.md","articles":[]},"previous":{"title":"内存分布","level":"2.7","depth":1,"path":"memory.zh_CN.md","ref":"memory.zh_CN.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Technical Report","language":"en","gitbook":"*"},"file":{"path":"scrum.zh_CN.md","mtime":"2026-10-18T09:04:10.469Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T09:09:29.593Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>

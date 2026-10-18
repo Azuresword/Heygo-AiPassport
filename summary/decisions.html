@@ -3,7 +3,7 @@
 <html lang="en" >
     <head>
         <meta charset="UTF-8">
-        <title>Decisions D-01 to D-34 · Heygo AI Passport — Project Summary</title>
+        <title>Decisions D-01 to D-34 · Heygo AI Passport — Technical Report</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="HonKit 6.2.2">
@@ -87,7 +87,7 @@
                 <a href="./">
             
                     
-                    Overview
+                    Technical overview
             
                 </a>
             
@@ -243,20 +243,7 @@
                 <a href="followups.html">
             
                     
-                    Follow-up items
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="1.14" data-path="sources.html">
-            
-                <a href="sources.html">
-            
-                    
-                    Sources
+                    Limits and next steps
             
                 </a>
             
@@ -276,7 +263,7 @@
                 <a href="README.zh_CN.html">
             
                     
-                    总览
+                    技术概览
             
                 </a>
             
@@ -341,7 +328,7 @@
                 <a href="build-flash.zh_CN.html">
             
                     
-                    制作方法
+                    构建与烧录
             
                 </a>
             
@@ -367,7 +354,7 @@
                 <a href="scrum.zh_CN.html">
             
                     
-                    用 Scrum 落地
+                    开发流程
             
                 </a>
             
@@ -432,20 +419,7 @@
                 <a href="followups.zh_CN.html">
             
                     
-                    后续事项
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="2.14" data-path="sources.zh_CN.html">
-            
-                <a href="sources.zh_CN.html">
-            
-                    
-                    数据来源
+                    限制与后续工作
             
                 </a>
             
@@ -502,135 +476,170 @@
 
 <p class="eyebrow">Decisions</p>
 
-<h1 id="decisions-d-01-to-d-34">Decisions D-01 to D-34</h1>
-<p>Source: <code>需求文件夹/04-validation-and-decisions.md</code>, decision table, at <code>main</code> commit <code>284ab00</code>. The status below is the text of that document.</p>
+<h1 id="decisions-and-scope">Decisions and scope</h1>
+<p>The report covers D-01–D-34. Decision approval, implementation, and device acceptance are separate statuses.</p>
 <div class="tiles">
-<div class="tile accent"><div class="k">Confirmed</div><div class="v">21</div></div>
-<div class="tile accent"><div class="k">New from the user</div><div class="v">2</div></div>
+<div class="tile accent"><div class="k">Approved</div><div class="v">18</div></div>
+<div class="tile"><div class="k">App approval pending</div><div class="v">3</div></div>
+<div class="tile accent"><div class="k">Added on 10-18</div><div class="v">2</div></div>
 <div class="tile"><div class="k">Replaced</div><div class="v">6</div></div>
 <div class="tile"><div class="k">Proposed</div><div class="v">4</div></div>
-<div class="tile"><div class="k">Required</div><div class="v">1</div></div>
+<div class="tile"><div class="k">Document rule</div><div class="v">1</div></div>
 </div>
 
-<p>"Confirmed" includes 7 decisions with the phone app team, 11 decisions by the user, and 3 decisions that wait for the phone app team. "New from the user" is D-33 and D-34, from 10-18.</p>
-<h2 id="confirmed-on-2026-10-17-with-the-phone-app-team">Confirmed on 2026-10-17, with the phone app team</h2>
+<p>The three pending decisions have user approval. They still need phone app approval.
+The two additions cover the page rail and link status bar. Their implementation is complete.</p>
+<h2 id="approved-decisions">Approved decisions</h2>
 <table>
 <thead>
 <tr>
 <th>ID</th>
-<th>Content</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>D-16</td>
-<td>Protocol draft. The phone app team confirmed protocol 0.2.</td>
-</tr>
-<tr>
-<td>D-23</td>
-<td>The device team sets the live data fields. One frame each second.</td>
-</tr>
-<tr>
-<td>D-24</td>
-<td>Protocol 0.2 and LIVE_STATS.</td>
-</tr>
-<tr>
-<td>D-27</td>
-<td>Heygo IQ is 0 to 200.</td>
-</tr>
-<tr>
-<td>D-28</td>
-<td>SHOW_PAGE 3 works only on the live data page or an idle Coach page.</td>
-</tr>
-<tr>
-<td>D-29</td>
-<td>Four pages at the same level in a loop.</td>
-</tr>
-<tr>
-<td>D-30</td>
-<td>Turns page: 8 turns on each page, groups through TURN_REQUEST.</td>
-</tr>
-</tbody>
-</table>
-<h2 id="confirmed-by-the-user">Confirmed by the user</h2>
-<table>
-<thead>
-<tr>
-<th>ID</th>
-<th>Content</th>
+<th>Decision</th>
+<th>Approval</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>D-08</td>
-<td>BLE, with the phone as the bridge.</td>
+<td>BLE connection through the phone. No device Wi-Fi.</td>
+<td>User</td>
 </tr>
 <tr>
 <td>D-09</td>
-<td>IMA ADPCM audio.</td>
+<td>IMA ADPCM audio at 16 kHz, in 20 ms blocks.</td>
+<td>User</td>
 </tr>
 <tr>
 <td>D-11</td>
-<td>Stream the recording at once.</td>
+<td>Stream microphone blocks to the phone immediately.</td>
+<td>User</td>
 </tr>
 <tr>
 <td>D-12</td>
-<td>No encryption and no pairing.</td>
+<td>No link encryption, passkey, or binding check.</td>
+<td>User</td>
 </tr>
 <tr>
 <td>D-13</td>
-<td>No privacy functions.</td>
+<td>No privacy or authorization functions.</td>
+<td>User</td>
 </tr>
 <tr>
 <td>D-14</td>
-<td>The device controls only keys, microphone, speaker, and screen.</td>
+<td>The device handles keys, microphone, speaker, and screen. The phone handles the other functions.</td>
+<td>User</td>
+</tr>
+<tr>
+<td>D-16</td>
+<td>BLE protocol 0.2.</td>
+<td>Phone app team</td>
 </tr>
 <tr>
 <td>D-17</td>
-<td>P0 keeps only the coach voice path.</td>
+<td>P0 contains only the Coach voice path.</td>
+<td>User</td>
 </tr>
 <tr>
 <td>D-18</td>
-<td>No power management.</td>
+<td>No power management in the first version.</td>
+<td>User</td>
 </tr>
 <tr>
 <td>D-21</td>
-<td>Live data page and report page.</td>
+<td>Live data page and Report page.</td>
+<td>User</td>
 </tr>
 <tr>
 <td>D-22</td>
-<td>Acceptance of increment 2 and increment 1 runs in parallel.</td>
+<td>Develop increment 2 during increment 1 acceptance. Each increment has separate acceptance.</td>
+<td>User</td>
+</tr>
+<tr>
+<td>D-23</td>
+<td>The device team defines the live data fields. The phone sends one frame each second during a run.</td>
+<td>User</td>
+</tr>
+<tr>
+<td>D-24</td>
+<td>Protocol 0.2 adds LIVE_STATS.</td>
+<td>User and phone app team</td>
 </tr>
 <tr>
 <td>D-26</td>
-<td>One report for each run.</td>
+<td>The phone sends one report for each run.</td>
+<td>User</td>
+</tr>
+<tr>
+<td>D-27</td>
+<td>Heygo IQ ranges from 0 to 200.</td>
+<td>User</td>
+</tr>
+<tr>
+<td>D-28</td>
+<td>SHOW_PAGE 3 opens the Report page from live data or the idle Coach page. Active audio states ignore it.</td>
+<td>User</td>
+</tr>
+<tr>
+<td>D-29</td>
+<td>Replace Ski and Rest modes with a page loop. Short UP and DOWN presses change pages and cancel any active Coach exchange.</td>
+<td>User</td>
+</tr>
+<tr>
+<td>D-30</td>
+<td>Add Turns as the fourth page. Show eight turns per page and request groups through TURN_REQUEST.</td>
+<td>User</td>
 </tr>
 </tbody>
 </table>
-<h2 id="confirmed-by-the-user-waiting-for-the-phone-app-team">Confirmed by the user, waiting for the phone app team</h2>
+<p>D-29 introduced a three-page loop. D-30 added the Turns page between Report and Coach.
+The Turns page shows the run of the last RUN_REPORT, following the phone app team's change request.</p>
+<h2 id="app-approval-pending">App approval pending</h2>
 <table>
 <thead>
 <tr>
 <th>ID</th>
-<th>Content</th>
+<th>Device contract</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>D-20</td>
-<td>The phone sends PLAY_START only after it gets AGENT_END.</td>
+<td>The phone sends PLAY_START only after it receives AGENT_END. PLAY_START does not switch capture to playback.</td>
 </tr>
 <tr>
 <td>D-31</td>
-<td>Phone popups: POPUP 0x66 and POPUP_END 0x67, with a 10 s countdown.</td>
+<td>POPUP 0x66 interrupts the current interaction. POPUP_END 0x67 reports closure after a key press, replacement, or the 10 s countdown.</td>
 </tr>
 <tr>
 <td>D-32</td>
-<td>RUN_START 0x68 opens the live data page at run start.</td>
+<td>RUN_START 0x68 opens live data. During Coach audio, the page change waits. A popup closes to live data.</td>
 </tr>
 </tbody>
 </table>
-<h2 id="new-from-the-user-2026-10-18">New from the user (2026-10-18)</h2>
+<h2 id="additions-on-2026-10-18">Additions on 2026-10-18</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Behavior</th>
+<th>Implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D-33</td>
+<td>A right-edge rail shows four stops in page order. A lime thumb marks the current page. All stops share one color. The rail has no arrows or key targets. The thumb slides in 180 ms and wraps across the ends. Popups hide the rail. Key behavior stays unchanged.</td>
+<td>Simulator and firmware complete. LVGL pool: 28 KiB. Sprint 16, REQ-24, TC-24.</td>
+</tr>
+<tr>
+<td>D-34</td>
+<td>Five screens share a status bar with page and link indicators. Link text shows connected, disconnected, or no voice. A link change updates the current screen without a page change. One flow binding can address matching widgets across screens.</td>
+<td>Code complete. Sprint 17, REQ-25, US-25.</td>
+</tr>
+</tbody>
+</table>
+<p>The <a href="sprints.html">Sprint completion record</a> states the delivery and verification boundary for these additions.</p>
+<h2 id="proposals-and-document-rule">Proposals and document rule</h2>
 <table>
 <thead>
 <tr>
@@ -641,70 +650,81 @@
 </thead>
 <tbody>
 <tr>
-<td>D-33</td>
-<td>Page rail on the right side. It has four stops in the order of the short DOWN press. A lime thumb shows the current page. All stops have one color. The rail does not mark the UP and DOWN targets, and it has no arrows. The thumb slides in 180 ms. The popup page hides the rail. The rail changes no key.</td>
-<td>The simulator and the firmware show the rail. The LVGL pool is now 28 KiB. The project owner confirmed Sprint 16 as complete. Related items: REQ-24 and TC-24.</td>
+<td>D-02</td>
+<td>The device handles interaction. Analysis runs elsewhere.</td>
+<td>Proposed</td>
 </tr>
 <tr>
-<td>D-34</td>
-<td>All five screens use one status bar for the link state: a page dot, the page name, a link dot, and the link text. One binding in the flow graph can drive the same widget on more screens.</td>
-<td>Code complete. The project owner confirmed Sprint 17 as complete. Related items: REQ-25 and US-25.</td>
+<td>D-04</td>
+<td>One audio owner at a time.</td>
+<td>Proposed</td>
+</tr>
+<tr>
+<td>D-05</td>
+<td>Initial trials use existing hardware indoors.</td>
+<td>Proposed</td>
+</tr>
+<tr>
+<td>D-07</td>
+<td>Latency, gesture, and capacity values remain targets.</td>
+<td>Proposed</td>
+</tr>
+<tr>
+<td>D-06</td>
+<td>Paired English and Chinese documents, with asd-ste100 writing guidance.</td>
+<td>User instruction</td>
 </tr>
 </tbody>
 </table>
-<h2 id="proposed-not-confirmed">Proposed, not confirmed</h2>
-<ul>
-<li>D-02: The device controls the interaction. Analysis is in a different place.</li>
-<li>D-04: Only one audio user at a time.</li>
-<li>D-05: First, test indoors with the current hardware.</li>
-<li>D-07: All numbers are targets.</li>
-</ul>
-<h2 id="required-by-the-user">Required by the user</h2>
-<p>D-06: Documents in English and Chinese pairs, with asd-ste100.</p>
-<h2 id="replaced">Replaced</h2>
+<h2 id="replaced-decisions">Replaced decisions</h2>
 <table>
 <thead>
 <tr>
 <th>ID</th>
-<th>Replaced by</th>
+<th>Previous scope</th>
+<th>Replacement</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>D-01</td>
+<td>All six requested capabilities in the core scope</td>
 <td>D-17</td>
 </tr>
 <tr>
-<td>D-03 Voice only in rest mode</td>
+<td>D-03</td>
+<td>Voice only in Rest mode</td>
 <td>D-29</td>
 </tr>
 <tr>
-<td>D-10 Different long presses for cancel and exit</td>
+<td>D-10</td>
+<td>Separate long presses for cancel and exit</td>
 <td>D-29</td>
 </tr>
 <tr>
-<td>D-15 Two modes</td>
+<td>D-15</td>
+<td>Two operating modes</td>
 <td>D-29</td>
 </tr>
 <tr>
-<td>D-19 Ignore a long press of DOWN</td>
+<td>D-19</td>
+<td>Ignore a long DOWN press during audio</td>
 <td>D-29</td>
 </tr>
 <tr>
-<td>D-25 A short press of DOWN opens the report page</td>
+<td>D-25</td>
+<td>Short DOWN opens Report from the idle Coach page</td>
 <td>D-29</td>
 </tr>
 </tbody>
 </table>
-<p>D-29 replaced five decisions. It is the largest simplification of the interaction.</p>
-<h2 id="requirements">Requirements</h2>
-<p>Source: <code>需求文件夹/01-product-requirements.md</code>, section 4.</p>
+<h2 id="requirement-allocation">Requirement allocation</h2>
 <table>
 <thead>
 <tr>
 <th>Priority</th>
 <th>Increment</th>
-<th>Items</th>
+<th>Requirements</th>
 </tr>
 </thead>
 <tbody>
@@ -730,12 +750,12 @@
 </tr>
 <tr>
 <td>P1</td>
-<td>After increment 2</td>
+<td>Later</td>
 <td>REQ-04, 09, 13</td>
 </tr>
 <tr>
 <td>P2</td>
-<td>Later candidates</td>
+<td>Later</td>
 <td>REQ-10, 11, 12, 18, 19</td>
 </tr>
 <tr>
@@ -788,7 +808,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Decisions D-01 to D-34","level":"1.10","depth":1,"next":{"title":"Project history","level":"1.11","depth":1,"path":"history.md","ref":"history.md","articles":[]},"previous":{"title":"Sprints","level":"1.9","depth":1,"path":"sprints.md","ref":"sprints.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"decisions.md","mtime":"2026-10-18T04:25:24.590Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T04:33:29.883Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Decisions D-01 to D-34","level":"1.10","depth":1,"next":{"title":"Project history","level":"1.11","depth":1,"path":"history.md","ref":"history.md","articles":[]},"previous":{"title":"Sprints","level":"1.9","depth":1,"path":"sprints.md","ref":"sprints.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Technical Report","language":"en","gitbook":"*"},"file":{"path":"decisions.md","mtime":"2026-10-18T09:09:26.379Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T09:09:29.593Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>

@@ -3,7 +3,7 @@
 <html lang="en" >
     <head>
         <meta charset="UTF-8">
-        <title>Product and pages · Heygo AI Passport — Project Summary</title>
+        <title>Product and pages · Heygo AI Passport — Technical Report</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="HonKit 6.2.2">
@@ -87,7 +87,7 @@
                 <a href="./">
             
                     
-                    Overview
+                    Technical overview
             
                 </a>
             
@@ -243,20 +243,7 @@
                 <a href="followups.html">
             
                     
-                    Follow-up items
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="1.14" data-path="sources.html">
-            
-                <a href="sources.html">
-            
-                    
-                    Sources
+                    Limits and next steps
             
                 </a>
             
@@ -276,7 +263,7 @@
                 <a href="README.zh_CN.html">
             
                     
-                    总览
+                    技术概览
             
                 </a>
             
@@ -341,7 +328,7 @@
                 <a href="build-flash.zh_CN.html">
             
                     
-                    制作方法
+                    构建与烧录
             
                 </a>
             
@@ -367,7 +354,7 @@
                 <a href="scrum.zh_CN.html">
             
                     
-                    用 Scrum 落地
+                    开发流程
             
                 </a>
             
@@ -432,20 +419,7 @@
                 <a href="followups.zh_CN.html">
             
                     
-                    后续事项
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="2.14" data-path="sources.zh_CN.html">
-            
-                <a href="sources.zh_CN.html">
-            
-                    
-                    数据来源
+                    限制与后续工作
             
                 </a>
             
@@ -503,11 +477,10 @@
 <p class="eyebrow">Product</p>
 
 <h1 id="product-and-pages">Product and pages</h1>
-<h2 id="users-and-use">Users and use</h2>
+<h2 id="use-case">Use case</h2>
 <p>A skier uses the device after a run, on the lift or during a rest break. The phone stays in a pocket with Bluetooth on. The user keeps the gloves on and pushes only three physical keys: UP, OK, and DOWN.</p>
-<p>Source: <code>需求文件夹/01-product-requirements.md</code>, lines 12 to 26.</p>
 <h2 id="four-pages-in-one-loop">Four pages in one loop</h2>
-<p>The four pages are at the same level. A short press of DOWN opens the next page. A short press of UP opens the previous page. At the end, the loop starts again (D-29, D-30). A long press of OK on any page opens the Coach page.</p>
+<p>The four pages are at the same level. A short press of DOWN opens the next page. A short press of UP opens the previous page. The loop wraps at each end. A long press of OK opens the Coach page from Live data, Run report, or Turns. On the Coach page, another long press of OK starts recording. Releasing OK sends the question.</p>
 <figure>
 <div class="figure-panel">
 <div class="loop">
@@ -521,7 +494,7 @@
 </div>
 <div class="loop-back">◀ DOWN on the Coach page opens the live data page · UP goes in the other direction</div>
 </div>
-<figcaption>Figure 1. The page loop. LVGL renders these screens on the host. Source: <code>assets/mockups/</code>.</figcaption>
+<figcaption>Figure 1. Page loop and key directions.</figcaption>
 </figure>
 
 <table>
@@ -529,64 +502,61 @@
 <tr>
 <th>Page</th>
 <th>Content</th>
-<th>Decision</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Live data</td>
 <td>Speed, drop, distance, turns, and time. The phone sends one frame each second.</td>
-<td>D-23</td>
 </tr>
 <tr>
 <td>Run report</td>
 <td>Heygo IQ (0 to 200), the main issue, and one tip. One report for each run.</td>
-<td>D-26, D-27</td>
 </tr>
 <tr>
 <td>Turns</td>
 <td>The line of the run, 8 turns on each page, with speed, angle, and radius.</td>
-<td>D-30</td>
 </tr>
 <tr>
 <td>AI coach</td>
 <td>The user holds OK, speaks, and releases OK. The device plays the answer.</td>
-<td>D-17</td>
 </tr>
 </tbody>
 </table>
-<h2 id="how-to-read-the-turns-page">How to read the Turns page</h2>
-<p>On the Turns page, OK selects the next turn. A long press of UP selects the previous turn. A long press of DOWN opens the next page. The device keeps 3 groups of turns. It asks the phone for other groups with TURN_REQUEST.</p>
+<h2 id="turn-browsing">Turn browsing</h2>
+<p>A short press of OK selects the next turn. A long press of UP selects the previous turn. A long press of DOWN selects the next group. Each group contains at most 8 turns. The device caches 3 groups and requests missing groups through TURN_REQUEST.</p>
 <figure>
 <div class="figure-panel">
 <div class="screens big">
-<div class="screen"><img src="../assets/sim/turns-demo.gif" alt="Turns page animation"></img><div class="cap">Turn by turn</div><div class="sub">turns-demo.gif</div></div>
+<div class="screen"><img src="../assets/sim/turns-demo.gif" alt="Turns page animation"></img><div class="cap">Turn by turn</div><div class="sub">8 turns per group · loaded as needed</div></div>
 </div>
 </div>
-<figcaption>Figure 2. Turns page animation. Source: <code>assets/sim/turns-demo.gif</code>.</figcaption>
+<figcaption>Figure 2. Turn selection and group changes.</figcaption>
 </figure>
 
-<h2 id="events-that-the-phone-starts">Events that the phone starts</h2>
+<h2 id="phone-events">Phone events</h2>
 <div class="cards">
-<div class="card"><span class="tag">D-31 · POPUP 0x66</span><h4 id="popup">Popup</h4><p>A popup stops any state. The device plays the voice and then counts down 10 s. Any key closes the popup. The device then shows the previous page. A new popup replaces an old popup.</p></div>
-<div class="card"><span class="tag">D-32 · RUN_START 0x68</span><h4 id="run-start">Run start</h4><p>The phone finds a run start. The device opens the live data page. During a talk or a popup, the device waits until it ends. A run start cancels nothing.</p></div>
-<div class="card"><span class="tag">D-33</span><h4 id="page-rail">Page rail</h4><p>A rail on the right side shows the position in the loop. A lime thumb shows the current page. All stops have one color. The rail does not mark the UP and DOWN targets, and it has no arrows. The thumb slides to the new stop in 180 ms.</p></div>
-<div class="card"><span class="tag">D-34</span><h4 id="link-state-on-every-page">Link state on every page</h4><p>All five screens use one status bar.
+<div class="card"><span class="tag">POPUP 0x66</span><h4 id="popup">Popup</h4><p>A popup opens immediately and cancels an active coach conversation. A 10-second countdown starts after playback, or immediately without audio. Any key closes the popup and restores the previous page. The Coach page returns to Ready. A new popup replaces the old popup.</p></div>
+<div class="card"><span class="tag">RUN_START 0x68</span><h4 id="run-start">Run start</h4><p>When the phone detects a run start, it requests the live data page. The device waits for an active conversation or popup to end before it changes the page.</p></div>
+</div>
+
+<h2 id="navigation-and-link-feedback">Navigation and link feedback</h2>
+<div class="cards">
+<div class="card"><span class="tag">Navigation</span><h4 id="page-rail">Page rail</h4><p>The right rail has four positions in page order. A lime thumb marks the current page. Each page change animates for 180 ms. Popups hide the rail.</p></div>
+<div class="card"><span class="tag">Connection</span><h4 id="link-state-on-every-page">Link state on every page</h4><p>All five screens use one status bar.
 It has a page dot, the page name, a link dot, and the link text. The link text is "connected", "not connected", or "no voice".</p></div>
 </div>
 
 <figure>
 <div class="figure-panel">
 <div class="screens">
-<div class="screen"><img src="../assets/mockups/popup-anim.gif" alt="Popup animation"></img><div class="cap">Popup entry</div><div class="sub">popup-anim.gif</div></div>
+<div class="screen"><img src="../assets/mockups/popup-anim.gif" alt="Popup animation"></img><div class="cap">Popup entry</div><div class="sub">Countdown after playback</div></div>
 <div class="screen"><img src="../assets/mockups/22-popup-fall.png" alt="Fall alert"></img><div class="cap">Fall alert</div><div class="sub">FALL ALERT</div></div>
 <div class="screen"><img src="../assets/mockups/25-popup-badge.png" alt="Achievement report"></img><div class="cap">Achievement</div><div class="sub">ACHIEVED</div></div>
 </div>
 </div>
 <figcaption>Figure 3. Phone popups. Each popup kind has its own color and animated badge.</figcaption>
 </figure>
-
-<p>Source: <code>需求文件夹/04-validation-and-decisions.md</code>, rows D-29 to D-34.</p>
 
                                 
                                 </section>
@@ -614,7 +584,7 @@ It has a page dot, the page name, a link dot, and the link text. The link text i
 
             
                 
-                <a href="./" class="navigation navigation-prev " aria-label="Previous page: Overview">
+                <a href="./" class="navigation navigation-prev " aria-label="Previous page: Technical overview">
                     <i class="fa fa-angle-left"></i>
                 </a>
                 
@@ -630,7 +600,7 @@ It has a page dot, the page name, a link dot, and the link text. The link text i
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Product and pages","level":"1.2","depth":1,"next":{"title":"Screen gallery","level":"1.3","depth":1,"path":"screens.md","ref":"screens.md","articles":[]},"previous":{"title":"Overview","level":"1.1","depth":1,"path":"README.md","ref":"README.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"product.md","mtime":"2026-10-18T04:13:14.787Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T04:33:29.883Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Product and pages","level":"1.2","depth":1,"next":{"title":"Screen gallery","level":"1.3","depth":1,"path":"screens.md","ref":"screens.md","articles":[]},"previous":{"title":"Technical overview","level":"1.1","depth":1,"path":"README.md","ref":"README.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Technical Report","language":"en","gitbook":"*"},"file":{"path":"product.md","mtime":"2026-10-18T09:04:45.052Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T09:09:29.593Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>

@@ -2,62 +2,62 @@
 
 <p class="eyebrow">Build</p>
 
-# 制作方法
+<a id="制作方法"></a>
+
+# 固件构建
 
 ## 从源文件到固件
 
 <figure>
-<img src="images/fw-build-zh.svg" alt="固件制作流程">
-<figcaption>图 11　从源文件到可烧录的固件。来源：<code>tools/validate.sh</code>、<code>main/CMakeLists.txt</code>。</figcaption>
+<img src="images/fw-build-zh.svg" alt="固件构建流程">
+<figcaption>图 11　生成、验证和固件打包流程。</figcaption>
 </figure>
 
-固件里有四类内容是脚本生成的，不手写：
+`284ab00` 快照使用四类生成物：
 
 | 生成物 | 输入 | 生成脚本 | 输出 |
 |---|---|---|---|
 | 状态机和界面 | `flows/coach.flow.json` | `tools/flow/flowc.py` | `main/generated/` 四组 `.c/.h` |
 | 交互模拟器 | 同一个流程图 | `tools/flow/flow_sim.py` | `assets/sim/coach-flow.html` |
-| 字体 | Noto Sans SC、Staatliches（OFL 1.1）+ 字表 | `assets/tools/gen_lv_font.py` | `assets/fonts/heygo_*.c` |
-| 精灵图 | 脚本内的绘制定义 | `gen_sprite.py`、`gen_popup_icons.py` | `assets/sprites/*.c` |
+| 字体 | Noto Sans SC、Staatliches，OFL 1.1，附字符表 | `assets/tools/gen_lv_font.py` | `assets/fonts/heygo_*.c` |
+| 精灵图 | 绘制定义 | `gen_sprite.py`、`gen_popup_icons.py` | `assets/sprites/*.c` |
 
-状态机和模拟器来自同一个流程图，所以模拟器里试到的行为就是设备的行为。`flowc.py --check` 和 `flow_sim.py --check` 会在生成物过期时报错。
+状态机和模拟器共用流程图，使声明的转移规则保持一致。模拟器测试不能证明 BLE 时序、音频行为、任务调度或硬件渲染完全等同于设备。`flowc.py --check` 和 `flow_sim.py --check` 在生成物过期时会报错。
 
 ### 字体
 
 | 字体 | 字形数 | 用途 |
 |---|---|---|
-| `heygo_sc_16` | 3,871 | 正文。含 GB2312 一级字（3,755 个），因为要显示手机发来的转写和回答 |
-| `heygo_sc_28` | 202 | 大号状态词，只含界面词汇 |
-| `heygo_display_20/34/48` | 各 95 | 品牌字体 Staatliches，数字和英文标签 |
+| `heygo_sc_16` | 3,872 | 正文、转写和回答。包含 3,755 个 GB2312 一级字、ASCII、标点和应用词汇 |
+| `heygo_sc_28` | 203 | 大号状态标签、ASCII 和应用词汇 |
+| `heygo_display_20/34/48` | 各 96 | Staatliches，用于数字和英文标签。包含 95 个可打印 ASCII 字符和度数符号 |
 
-来源：`assets/fonts/*.chars.txt`，`assets/tools/gen_lv_font.py` 文件头。
+字形数包含空格。中文字体使用固定字表，不支持任意 Unicode 文本。
 
 ## 构建
 
 1. 安装 ESP-IDF 5.5.3。
-2. 激活环境：`. $IDF_PATH/export.sh`。
-3. 在 `Firmware/` 里运行门禁：`./tools/validate.sh`。
+2. 执行 `. "$IDF_PATH/export.sh"`，激活环境。
+3. 进入 `Firmware/` 目录。
+4. 执行 `./tools/validate.sh`。
 
-门禁会在一个临时目录里构建，所以不会污染工作区。构建步骤（`tools/validate.sh:145-175`）：
+门禁先运行仓库检查、主机测试、生成物检查和字形检查，再用独立的 `sdkconfig` 在临时目录构建固件。随后合并镜像、检查镜像偏移和分区、渲染界面，并归档调试文件。
 
-```bash
-SDKCONFIG_DEFAULTS=sdkconfig.defaults idf.py -B <临时目录> build
-idf.py -B <临时目录> merge-bin -o FoloToy-AI-Passport-full.bin
-python3 tools/verify_firmware.py <临时目录>        # 检查分区和镜像位置
-python3 tools/host_render/render.py ...             # 渲染界面图
-python3 tools/archive_firmware.py create ...        # 归档调试文件
-```
+`./tools/validate.sh --static` 运行不含固件构建的检查。`./tools/validate.sh --firmware` 运行固件构建和镜像检查。
 
-产物：
-
-| 文件 | 内容 | 用途 |
+| 产物 | 内容 | 位置 |
 |---|---|---|
-| `build/FoloToy-AI-Passport-full.bin` | bootloader + 分区表 + 应用，合并成一个文件 | 从 `0x0` 烧录，用于新设备或完整刷新 |
-| `build/FoloToy-AI-Passport.bin` | 只有应用 | 不含 bootloader 和分区表，不要单独上传 |
+| 合并镜像 | Bootloader、分区表和应用 | `build/FoloToy-AI-Passport-full.bin` |
+| 调试归档 | 镜像、ELF、map、清单和烧录参数 | `build/firmware/<full-image-sha256>/` |
+| 应用镜像 | 不含 Bootloader 和分区表的应用 | `build/firmware/<full-image-sha256>/FoloToy-AI-Passport.bin` |
 
-## 本书写作时的构建结果
+门禁完成后删除临时构建目录。单独运行 `idf.py build` 会保留构建目录，供 `idf.py -p <port> flash` 使用。
 
-2026-10-18 在 `main` 提交 `284ab00` 上运行完整门禁，退出码 0：
+<a id="本书写作时的构建结果"></a>
+
+## 构建快照
+
+完整门禁于 2026-10-18 在提交 `284ab00` 上通过，退出码为 0。以下结果仅描述该快照，不代表硬件验收通过。
 
 <div class="tiles">
 <div class="tile accent"><div class="k">门禁</div><div class="v" style="font-size:24px">PASS</div></div>
@@ -68,23 +68,22 @@ python3 tools/archive_firmware.py create ...        # 归档调试文件
 
 | 检查 | 结果 |
 |---|---|
-| 主机测试 | 全部 PASS，含协议、ADPCM、播放规则、按键、链路核心、界面组件 |
+| 主机测试 | PASS，含协议、ADPCM、播放规则、按键、链路核心和界面组件 |
 | 模拟器 | `--check` PASS，自测 128/128 |
-| 字形 | PASS，72 条界面词汇，47 条流程文字 |
-| 布局 | 应用 1,948,640 / 8,323,072 字节，在 `factory` 的 `0x10000` |
-| 合并镜像 | 2,014,176 字节，从 `0x0` 烧录 |
+| 字形 | PASS，72 条界面词汇、47 条流程文字 |
+| 应用布局 | 镜像为 1,948,640 字节，位于容量为 8,323,072 字节的 `factory` 分区，偏移 `0x10000` |
+| 合并镜像 | 2,014,176 字节，烧录地址 `0x0` |
 
-编译选项：`-Og`（调试优化），断言开启。Flash 用 DIO 模式、80 MHz（生成的 `sdkconfig`）。
+编译选项使用 `-Og` 调试优化并启用断言。Flash 使用 DIO 模式，频率为 80 MHz。
 
 ## 烧录
 
-来源：`Firmware/docs/development/engineering/firmware-layout.md` "Flashing and stored data" 一节。
-
-| 场景 | 方法 | 注意 |
+| 场景 | 方法 | 数据影响 |
 |---|---|---|
-| 新设备或完整刷新 | 把 `…-full.bin` 写到 `0x0` | 合并文件会填满镜像之间的空隙，可能清掉 NVS 和 PHY 数据 |
-| 日常开发 | 分段烧录：`idf.py -p <端口> flash` | 能保留 NVS。前提是分区布局兼容 |
-| 擦除整片 | `idf.py erase-flash` | 会清掉所有用户数据。不要当成例行步骤 |
+| 新设备或完整刷新 | 将 `FoloToy-AI-Passport-full.bin` 写入 `0x0` | 合并文件填充镜像间空隙，可能覆盖 NVS 和 PHY 初始化数据 |
+| 日常开发 | 在保留的构建目录中执行 `idf.py -p <port> flash` | 分段烧录在分区布局兼容时保留 NVS |
+| 整片擦除 | 执行 `idf.py erase-flash` | 擦除全部用户数据，仅用于明确需要完整擦除的场景 |
 
-- 日志和烧录走 ESP32-C3 自带的 USB Serial/JTAG。GPIO18/19 留给 USB（`Firmware/docs/README.md`）。
-- 烧录新固件之前不需要备份旧固件，但新固件不保留回滚副本。
+单独的应用镜像依赖兼容的 Bootloader 和分区表，不能独立完成新设备初始化。
+
+日志和烧录使用 ESP32-C3 的 USB Serial/JTAG 接口，占用 GPIO18 和 GPIO19。烧录前不要求备份旧固件。单 factory 分区不提供固件回滚槽位。

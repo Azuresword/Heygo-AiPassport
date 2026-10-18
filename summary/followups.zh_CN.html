@@ -3,7 +3,7 @@
 <html lang="en" >
     <head>
         <meta charset="UTF-8">
-        <title>后续事项 · Heygo AI Passport — Project Summary</title>
+        <title>限制与后续工作 · Heygo AI Passport — Technical Report</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="HonKit 6.2.2">
@@ -48,8 +48,6 @@
     <link rel="shortcut icon" href="gitbook/images/favicon.ico" type="image/x-icon">
 
     
-    <link rel="next" href="sources.zh_CN.html" />
-    
     
     <link rel="prev" href="quality.zh_CN.html" />
     
@@ -87,7 +85,7 @@
                 <a href="./">
             
                     
-                    Overview
+                    Technical overview
             
                 </a>
             
@@ -243,20 +241,7 @@
                 <a href="followups.html">
             
                     
-                    Follow-up items
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="1.14" data-path="sources.html">
-            
-                <a href="sources.html">
-            
-                    
-                    Sources
+                    Limits and next steps
             
                 </a>
             
@@ -276,7 +261,7 @@
                 <a href="README.zh_CN.html">
             
                     
-                    总览
+                    技术概览
             
                 </a>
             
@@ -341,7 +326,7 @@
                 <a href="build-flash.zh_CN.html">
             
                     
-                    制作方法
+                    构建与烧录
             
                 </a>
             
@@ -367,7 +352,7 @@
                 <a href="scrum.zh_CN.html">
             
                     
-                    用 Scrum 落地
+                    开发流程
             
                 </a>
             
@@ -432,20 +417,7 @@
                 <a href="followups.zh_CN.html">
             
                     
-                    后续事项
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="2.14" data-path="sources.zh_CN.html">
-            
-                <a href="sources.zh_CN.html">
-            
-                    
-                    数据来源
+                    限制与后续工作
             
                 </a>
             
@@ -483,7 +455,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href="." >后续事项</a>
+        <a href="." >限制与后续工作</a>
     </h1>
 </div>
 
@@ -502,68 +474,89 @@
 
 <p class="eyebrow">Follow-up</p>
 
-<h1 id="后续事项">后续事项</h1>
-<p>项目已经交付。下面是交付范围之外、或者有意不做的事，供下一阶段参考。</p>
-<h2 id="有意不做的（已接受的风险）">有意不做的（已接受的风险）</h2>
-<p>来源：<code>需求文件夹/04-validation-and-decisions.zh_CN.md</code> 风险表</p>
+<h1 id="限制与后续工作">限制与后续工作</h1>
+<p>本次交付不包含功耗管理、隐私功能和队伍对讲。这些限制与联调缺口构成下一阶段的工作范围。</p>
+<h2 id="设计限制">设计限制</h2>
 <div class="cards">
-<div class="card"><span class="tag">D-12</span><h4 id="蓝牙不加密">蓝牙不加密</h4><p>附近的人能听到音频。为了降低连接复杂度，有意不配对。</p></div>
-<div class="card"><span class="tag">D-18</span><h4 id="没有功耗管理">没有功耗管理</h4><p>这次交付不做省电策略。</p></div>
-<div class="card"><span class="tag">D-31</span><h4 id="摔倒弹窗-10-秒后关闭">摔倒弹窗 10 秒后关闭</h4><p>升级处理由手机负责。POPUP_END 原因 0 告诉手机：没人按键。</p></div>
-<div class="card"><span class="tag">D-32</span><h4 id="开始滑行由手机判定">开始滑行由手机判定</h4><p>手机误判时设备会跳页，但不取消任何操作。在实时数据页短按 DOWN 就能回报告页。</p></div>
+<div class="card"><span class="tag">D-12</span><h4 id="ble-不加密">BLE 不加密</h4><p>链路没有配对或绑定检查。附近的客户端可以连接并接收音频块。公开试用前需复审此决策。</p></div>
+<div class="card"><span class="tag">D-18</span><h4 id="没有功耗管理">没有功耗管理</h4><p>固件没有省电策略。开展户外试用前需要评估电池消耗。</p></div>
+<div class="card"><span class="tag">D-31</span><h4 id="摔倒提醒超时关闭">摔倒提醒超时关闭</h4><p>弹窗在 10 秒倒计时结束后关闭。POPUP_END 原因 0 表示没有按键操作。手机负责后续升级处理。</p></div>
+<div class="card"><span class="tag">D-32</span><h4 id="手机判定开始滑行">手机判定开始滑行</h4><p>误判可能打断报告阅读，但不会取消音频。在实时数据页短按 DOWN 可重新打开报告页。</p></div>
 </div>
 
-<h2 id="文档里记录的设计限制">文档里记录的设计限制</h2>
-<p>来源：<code>Firmware/docs/heygo-changes.zh_CN.md:329-331</code></p>
 <table>
 <thead>
 <tr>
 <th>限制</th>
-<th>说明</th>
+<th>影响</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>屏幕不显示电量</td>
-<td>电量通过 DEVICE_STATUS 发给手机</td>
+<td>DEVICE_STATUS 将电量发送给手机</td>
 </tr>
 <tr>
-<td>录音时到达的 PLAY_START 会丢</td>
-<td>D-20 规定手机不能在这时发送</td>
+<td>录音期间的 PLAY_START 不触发播放</td>
+<td>回答可能超时。D-20 要求手机收到 AGENT_END 后再发送</td>
 </tr>
 <tr>
 <td>正文最多四行</td>
-<td>更长的文字以三个点结尾，语音会播完整回答</td>
+<td>超长文字以三个点结尾，音频提供完整回答</td>
 </tr>
 </tbody>
 </table>
-<h2 id="下一阶段可以做的">下一阶段可以做的</h2>
+<h2 id="联调与验收记录">联调与验收记录</h2>
 <table>
 <thead>
 <tr>
-<th>方向</th>
-<th>依据</th>
+<th>事项</th>
+<th>目标</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>队伍对讲</td>
-<td>协议已定义 0x50–0x55，属于 P1</td>
+<td>App 确认</td>
+<td>与手机应用团队确认 D-20 音频时序、D-31 弹窗和 D-32 开始滑行</td>
 </tr>
 <tr>
-<td>P1、P2 需求</td>
-<td>REQ-04、09、13（P1），REQ-10、11、12、18、19（P2）</td>
+<td>设备验收</td>
+<td>为各验收用例补齐固件与应用版本、测试条件、测量值和结果</td>
 </tr>
 <tr>
-<td>文档同步</td>
-<td><code>08-sprint-roadmap</code> 里 Sprint 5–15 的状态写法与"全部完成"对齐</td>
+<td>交付状态</td>
+<td>将路线图和验收表与已记录的 Sprint 完成状态核对并同步</td>
 </tr>
 <tr>
-<td>CI</td>
-<td>把 workflow 移到仓库根目录的 <code>.github/workflows/</code></td>
+<td>CI 启用</td>
+<td>将所需 workflow 放到仓库根目录的 <code>.github/workflows/</code></td>
 </tr>
 </tbody>
 </table>
+<h2 id="后续功能">后续功能</h2>
+<table>
+<thead>
+<tr>
+<th>优先级</th>
+<th>范围</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>指标图表（REQ-04）、队伍对讲（REQ-09）、缓存报告（REQ-13）</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>专项练习、任务与徽章、复盘日志、会话比较、分享（REQ-10、11、12、18、19）</td>
+</tr>
+<tr>
+<td>延后</td>
+<td>隐私与授权（REQ-14）、资源限制（REQ-16）</td>
+</tr>
+</tbody>
+</table>
+<p>协议为队伍对讲预留了 0x50–0x55 消息。当前固件忽略 Team 通道的播放请求。</p>
 
                                 
                                 </section>
@@ -591,14 +584,10 @@
 
             
                 
-                <a href="quality.zh_CN.html" class="navigation navigation-prev " aria-label="Previous page: 质量与部署">
+                <a href="quality.zh_CN.html" class="navigation navigation-prev navigation-unique" aria-label="Previous page: 质量与部署">
                     <i class="fa fa-angle-left"></i>
                 </a>
                 
-                
-                <a href="sources.zh_CN.html" class="navigation navigation-next " aria-label="Next page: 数据来源">
-                    <i class="fa fa-angle-right"></i>
-                </a>
                 
             
         
@@ -607,7 +596,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"后续事项","level":"2.13","depth":1,"next":{"title":"数据来源","level":"2.14","depth":1,"path":"sources.zh_CN.md","ref":"sources.zh_CN.md","articles":[]},"previous":{"title":"质量与部署","level":"2.12","depth":1,"path":"quality.zh_CN.md","ref":"quality.zh_CN.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"followups.zh_CN.md","mtime":"2026-10-18T04:29:11.139Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T04:33:29.883Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"限制与后续工作","level":"2.13","depth":1,"previous":{"title":"质量与部署","level":"2.12","depth":1,"path":"quality.zh_CN.md","ref":"quality.zh_CN.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Technical Report","language":"en","gitbook":"*"},"file":{"path":"followups.zh_CN.md","mtime":"2026-10-18T09:09:26.379Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T09:09:29.593Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>

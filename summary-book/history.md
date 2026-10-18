@@ -2,46 +2,42 @@
 
 <p class="eyebrow">History</p>
 
-# Project history
+# Development history
+
+This snapshot ends at commit `284ab00`, dated 2026-10-18 12:05, UTC+8. Later development does not change these totals.
 
 <div class="tiles">
 <div class="tile accent"><div class="k">Commits on main</div><div class="v">209</div></div>
-<div class="tile"><div class="k">Duration</div><div class="v">42<small>h</small></div></div>
-<div class="tile"><div class="k">Phases</div><div class="v">7</div></div>
+<div class="tile"><div class="k">Elapsed span</div><div class="v">42<small>h</small></div></div>
+<div class="tile"><div class="k">Development phases</div><div class="v">7</div></div>
 <div class="tile"><div class="k">First commit</div><div class="v" style="font-size:20px">10-16 18:02</div></div>
 </div>
 
-## Commits in each phase
+The span is approximately 42 elapsed hours. It does not measure development effort or Sprint duration.
+
+## Phases and results
 
 {% include "./_partials/commits-en.html" %}
 
-**Table view**
-
-| Phase | Time | Commits | Range |
+| Phase | Period | Commits | Result |
 |---|---|---|---|
-| 1 Requirements | 10-16 evening | 6 | `f431fe6` … `cfa30fe` |
-| 2 Voice path | 10-17 morning | 10 | … `344c8e5` |
-| 3 Run data | 10-17 midday | 9 | … `c996e14` |
-| 4 Page loop, turns | 10-17 evening | 4 | … `49573f9` |
-| 5 Popups, run start | 10-17 night | 8 | … `5658911` |
-| 6 Page rail docs | 10-18 10:45 | 18 | … `c865ba8` |
-| 7 Rail firmware, D-34 | 10-18 10:55–12:05 | 149 | … `284ab00`, without the 5 commits of this book |
-| This book | 10-18 11:00–11:23 | 5 | `0865929` and others |
-| Total | | 209 | Up to `284ab00` |
+| 1 Requirements | 10-16 evening | 6 | Product scope, BLE protocol draft, and P0 reduction to Coach voice. |
+| 2 Voice path | 10-17 morning | 10 | State machine, audio codec, voice and BLE integration, brand screens, and playback start correction. |
+| 3 Run data | 10-17 midday | 9 | LIVE_STATS, run reports, live data and Report pages, and SHOW_PAGE. |
+| 4 Page loop and turns | 10-17 evening | 4 | Flat page navigation and the Turns page with group requests. |
+| 5 Popups and run start | 10-17 night | 8 | Phone popups, IQ range 0–200, animated badges, and RUN_START. |
+| 6 Page rail design | 10-18 morning | 18 | Page rail requirements, simulator behavior, self-tests, and preview. |
+| 7 Page rail firmware and link state | 10-18 10:55–12:05 | 149 | Shared widget bindings, link status on five screens, page rail firmware, 28 KiB LVGL pool, and 25 rendered screens. |
+| Report preparation | 10-18 11:00–11:23 | 5 | Initial technical report. These commits are separate from phase 7. |
+| Total | | 209 | Seven development phases and report preparation. |
 
-Source: `git rev-list --count <range>`, with the commit limits in the table.
+The phase totals count commits, including generated assets. They do not compare engineering effort.
 
-## Timeline
+## Interaction changes
 
-<div class="timeline">
-<div class="ev"><div class="when">10-16 · 18:02</div><div class="what">Requirements</div><div class="how">Start <code>f431fe6</code>. Eight decisions <code>6f5b6af</code>. BLE protocol draft <code>970bb8e</code>. Smaller P0 <code>48926ff</code>.</div></div>
-<div class="ev"><div class="when">10-17 · morning</div><div class="what">Sprints 0 and 1: voice path</div><div class="how">Firmware added, 406 files <code>a917aaa</code>. Voice and BLE connected <code>941f4e7</code>. Heygo brand screens <code>4ff7f13</code>. Audio start fix <code>344c8e5</code>.</div></div>
-<div class="ev"><div class="when">10-17 · midday to afternoon</div><div class="what">Increment 2: run data and report</div><div class="how">Sprint 2 data layer <code>d371c1d</code>. Sprints 3 and 4: live data page and report page. D-28 SHOW_PAGE <code>9238eaf</code>.</div></div>
-<div class="ev"><div class="when">10-17 · evening</div><div class="what">Page loop and Turns page</div><div class="how">D-29 four-page loop. D-30 Turns page <code>49573f9</code>.</div></div>
-<div class="ev"><div class="when">10-17 · night</div><div class="what">Popups and run start</div><div class="how">D-31 phone popups <code>93b6498</code>. IQ range 0 to 200 <code>816f043</code>. Animated popup badges <code>2234275</code>. D-32 run start <code>5658911</code>.</div></div>
-<div class="ev"><div class="when">10-18 · morning</div><div class="what">Page rail D-33</div><div class="how">Documents 01 to 05 add REQ-24, US-24, and TC-24, from <code>eef9c65</code>. The simulator shows the rail <code>30ba3c7</code>. Self-test coverage <code>258f6fa</code>. Preview image <code>c865ba8</code>.</div></div>
-<div class="ev"><div class="when">10-18 · 10:55–12:05</div><div class="what">Rail firmware and D-34</div><div class="how">One flowc binding drives more screens <code>373a314</code>. D-34 link state on every page, from <code>21280e6</code>. Rail arrows deleted <code>9efc313</code>. Rail firmware <code>be8671d</code>. LVGL pool raised to 28 KB <code>2446683</code>. All rail stops in one color <code>ea4815a</code>. 25 screens redrawn, last <code>284ab00</code>.</div></div>
-<div class="ev"><div class="when">10-18</div><div class="what">All 18 sprints complete</div><div class="how">The project owner confirmed it. The team did the board and device work on physical devices.</div></div>
-</div>
+- P0 narrowed to the Coach voice path. Data reports, turns, and popups followed as separate increments.
+- D-29 replaced Ski and Rest modes with a page loop. D-30 added Turns as the fourth page.
+- D-33 added the page rail. Review removed directional arrows and gave every stop the same color.
+- D-34 added one link status bar across the four pages and the popup screen.
 
-Authors: up to `284ab00`, Dylan Li made all commits except 3 from a local account (`git log --format=%an`). The repository has no tags.
+The [Sprint record](sprints.html) retains the project owner's completion confirmation and its verification boundary.

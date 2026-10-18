@@ -51,23 +51,23 @@ def box(x, y, w, h, fill=PANEL2, stroke=LINE, rx=12, dash=False):
 ARCH = {
     "en": dict(
         title="System architecture: device, BLE link, phone app, and HeygoAI",
-        dev="DEVICE", devsub="ESP32-C3 · 8 MB flash · no PSRAM",
+        dev="DEVICE", devsub="ESP32-C3 · 8 MiB flash · no PSRAM",
         devitems=["3 keys · UP / OK / DOWN", "Microphone + speaker · ES8311", "Screen 240×320 · ST7789P3", "Fuel gauge · CW2017"],
-        devrole="Keys, microphone, speaker, screen",
+        devrole="Input, display, recording, playback",
         link="BLE · NUS", linkitems=["Protocol 0.2", "IMA ADPCM 16 kHz", "20 ms audio blocks", "No pairing (D-12)"],
         phone="PHONE APP", phoneitems=["Speech to text", "Text to speech", "Run data · reports · turns", "Popups · run start"],
-        phonerole="All analysis and voice",
+        phonerole="Analysis, speech, AI service access",
         cloud="HEYGOAI", clouditems=["AI coach answers"],
         up="audio up · events", down="audio down · data · popups",
     ),
     "zh": dict(
         title="系统架构：设备、蓝牙链路、手机应用和 HeygoAI",
-        dev="设备 DEVICE", devsub="ESP32-C3 · 8 MB Flash · 无 PSRAM",
+        dev="设备 DEVICE", devsub="ESP32-C3 · 8 MiB Flash · 无 PSRAM",
         devitems=["三键 · UP / OK / DOWN", "麦克风 + 喇叭 · ES8311", "屏幕 240×320 · ST7789P3", "电量计 · CW2017"],
-        devrole="只管按键、麦克风、喇叭、屏幕",
+        devrole="按键、显示、录音和播放",
         link="BLE · NUS", linkitems=["协议 0.2", "IMA ADPCM 16 kHz", "20 ms 一块音频", "不配对（D-12）"],
         phone="手机应用 PHONE", phoneitems=["语音识别", "语音合成", "滑行数据 · 报告 · 弯型", "弹窗 · 开始滑行"],
-        phonerole="分析和语音都在这里",
+        phonerole="数据分析、语音处理、AI 服务接入",
         cloud="HEYGOAI", clouditems=["AI 教练回答"],
         up="上行：音频 · 事件", down="下行：音频 · 数据 · 弹窗",
     ),
@@ -123,7 +123,7 @@ SEQ = {
             ("p", "AGENT_STATE 0x23", "Speech to text, AI answer", ""),
             ("p", "PLAY_START 0x32 · ch 0", "Only after AGENT_END (D-20)", "ANSWERING"),
             ("p", "AUDIO_DOWN 0x31 × n", "Real-time pace", ""),
-            ("p", "PLAY_END 0x33", "Last block", "READY"),
+            ("p", "PLAY_END 0x33", "Finish queued audio, then READY", ""),
         ],
     ),
     "zh": dict(
@@ -136,7 +136,7 @@ SEQ = {
             ("p", "AGENT_STATE 0x23", "转写、问 AI", ""),
             ("p", "PLAY_START 0x32 · 通道 0", "收到 AGENT_END 之后才发（D-20）", "回答中"),
             ("p", "AUDIO_DOWN 0x31 × n", "按实时节奏", ""),
-            ("p", "PLAY_END 0x33", "最后一块", "就绪"),
+            ("p", "PLAY_END 0x33", "队列播放完毕后回到就绪", ""),
         ],
     ),
 }
@@ -169,12 +169,12 @@ def seq(lang):
 
 # ---------------------------------------------------------------- gate
 GATE = {
-    "en": dict(title="Firmware gate: tools/validate.sh",
+    "en": dict(title="Firmware validation checks",
                steps=[("Baseline", "upstream checks"), ("Host tests", "33 test_* files"), ("Glyphs", "every string has a glyph"),
-                      ("host_render", "overlap · leaks · UTF-8"), ("flow_sim", "--check · 128/128 self-test"), ("Build", "Firmware build: PASS")]),
-    "zh": dict(title="固件门禁：tools/validate.sh",
+                      ("host_render", "overlap · leaks · UTF-8"), ("flow_sim", "--check · 128/128 self-test"), ("Build", "compile · link · image layout")]),
+    "zh": dict(title="固件验证项目",
                steps=[("基线检查", "上游自带"), ("主机测试", "33 个 test_*"), ("字形检查", "文字都有字形"),
-                      ("host_render", "重叠 · 泄漏 · UTF-8"), ("flow_sim", "--check · 自测 128/128"), ("构建", "Firmware build: PASS")]),
+                      ("host_render", "重叠 · 泄漏 · UTF-8"), ("flow_sim", "--check · 自测 128/128"), ("构建", "编译 · 链接 · 镜像布局")]),
 }
 
 
@@ -186,11 +186,8 @@ def gate(lang):
         x = 24 + i * (w + gap)
         last = i == n - 1
         b.append(box(x, y, w, 76, fill=BG if not last else "#1a230d", stroke=GREEN if last else LINE, rx=10))
-        b.append(text(x + 14, y + 22, f"{i + 1:02d}", 11, INK3, mono=True))
-        b.append(text(x + 14, y + 44, a, 14, GREEN if last else INK, 700))
-        b.append(text(x + 14, y + 63, s, 10.5, INK2))
-        if not last:
-            b.append(f'<line x1="{x + w + 2}" y1="{y + 38}" x2="{x + w + gap - 2}" y2="{y + 38}" stroke="{GREEN}" stroke-width="2" marker-end="url(#ah)"/>')
+        b.append(text(x + 14, y + 32, a, 14, GREEN if last else INK, 700))
+        b.append(text(x + 14, y + 56, s, 10.5, INK2))
     return svg(24 * 2 + n * w + (n - 1) * gap, 140, "".join(b), L["title"])
 
 
@@ -286,7 +283,7 @@ LAYERS = {
         ("AUDIO", "Voice", ["audio/voice · capture and playback", "audio/ima_adpcm · 164 B blocks", "audio/play_gate · envelope"]),
         ("BSP", "Board support", ["display · LVGL port · SPI 80 MHz", "button · ADC on GPIO0", "audio ES8311 · battery CW2017 · I2C"]),
         ("LIBS", "Libraries", ["LVGL 9.5.0 · esp_lvgl_port 2.9.0", "NimBLE (peripheral only)", "esp_codec_dev 1.6.2 · button 4.2.0"]),
-        ("IDF", "ESP-IDF 5.5.3", ["ESP32-C3 · RISC-V 160 MHz", "FreeRTOS · 1000 Hz tick", "8 MB flash · DIO 80 MHz"]),
+        ("IDF", "ESP-IDF 5.5.3", ["ESP32-C3 · RISC-V 160 MHz", "FreeRTOS · 1000 Hz tick", "8 MiB flash · DIO 80 MHz"]),
     ], pure=[(0, 1), (2, 0), (2, 1), (3, 1), (3, 2)]),
     "zh": dict(title="固件分层", host="纯 C · 有主机测试", rows=[
         ("APP", "Coach 应用", ["coach_app.c · 状态机任务", "coach_input.c · 按键 → 事件", "generated/ · 流程、界面、绑定"]),
@@ -295,7 +292,7 @@ LAYERS = {
         ("AUDIO", "语音", ["audio/voice · 录音和播放", "audio/ima_adpcm · 164 字节一块", "audio/play_gate · envelope"]),
         ("BSP", "板级支持", ["显示 · LVGL 适配 · SPI 80 MHz", "按键 · GPIO0 ADC", "音频 ES8311 · 电量 CW2017 · I2C"]),
         ("LIBS", "第三方库", ["LVGL 9.5.0 · esp_lvgl_port 2.9.0", "NimBLE（只做外设）", "esp_codec_dev 1.6.2 · button 4.2.0"]),
-        ("IDF", "ESP-IDF 5.5.3", ["ESP32-C3 · RISC-V 160 MHz", "FreeRTOS · 1000 Hz 节拍", "8 MB Flash · DIO 80 MHz"]),
+        ("IDF", "ESP-IDF 5.5.3", ["ESP32-C3 · RISC-V 160 MHz", "FreeRTOS · 1000 Hz 节拍", "8 MiB Flash · DIO 80 MHz"]),
     ], pure=[(0, 1), (2, 0), (2, 1), (3, 1), (3, 2)]),
 }
 
@@ -326,18 +323,18 @@ def layers(lang):
 TASKS = {
     "en": dict(title="Tasks, priorities, stacks, and queues",
                prio="priority", stack="stack", note="Higher number = higher priority. Stacks in bytes.",
-               tasks=[("voice", 7, 4096, "Encodes the mic, feeds the speaker"), ("ble_tx", 6, 3072, "Sends control first, then audio"),
+               tasks=[("voice", 7, 4096, "Encodes the mic, feeds the speaker"), ("ble_tx", 6, 3072, "Sends the control queue first"),
                       ("coach", 5, 4096, "State machine, one event at a time"), ("LVGL", 4, 7168, "esp_lvgl_port, 5 ms tick"),
                       ("NimBLE host", None, 4096, "GATT, connection, RX callbacks")],
-               queues=[("coach queue", "16 messages", "keys · timers · link events"), ("control TX", "8 packets", "never dropped"),
-                       ("audio TX", "8 packets", "drop the oldest"), ("audio down", "8 × 164 B", "drop the oldest")]),
+               queues=[("coach queue", "16 messages", "keys · timers · link events"), ("control TX", "8 packets", "drop new packet if full"),
+                       ("audio TX", "8 packets", "drop oldest · AGENT_END follows audio"), ("audio down", "8 × 164 B", "drop the oldest")]),
     "zh": dict(title="任务、优先级、栈和队列",
                prio="优先级", stack="栈", note="数字越大优先级越高。栈的单位是字节。",
-               tasks=[("voice", 7, 4096, "录音编码、喂给喇叭"), ("ble_tx", 6, 3072, "先发控制包，再发音频"),
+               tasks=[("voice", 7, 4096, "录音编码、喂给喇叭"), ("ble_tx", 6, 3072, "优先发送控制队列"),
                       ("coach", 5, 4096, "状态机，一次处理一个事件"), ("LVGL", 4, 7168, "esp_lvgl_port，5 ms 节拍"),
                       ("NimBLE host", None, 4096, "GATT、连接、接收回调")],
-               queues=[("coach 队列", "16 条消息", "按键 · 计时器 · 链路事件"), ("控制发送", "8 个包", "不丢"),
-                       ("音频发送", "8 个包", "满了丢最旧的"), ("音频下行", "8 × 164 字节", "满了丢最旧的")]),
+               queues=[("coach 队列", "16 条消息", "按键 · 计时器 · 链路事件"), ("控制发送", "8 个包", "队列满时丢弃新包"),
+                       ("音频发送", "8 个包", "丢最旧包，AGENT_END 排在音频后"), ("音频下行", "8 × 164 字节", "满了丢最旧的")]),
 }
 
 
@@ -374,7 +371,7 @@ BUILD = {
         ("BUILD", ["idf.py build", "FoloToy-AI-Passport.bin", "idf.py merge-bin", "…-full.bin · flash at 0x0"]),
         ("CHECKS", ["host tests · glyphs", "host_render screens", "flow_sim --check · self-test", "verify_firmware.py layout"]),
     ]),
-    "zh": dict(title="固件是怎么做出来的", cols=[
+    "zh": dict(title="固件生成与构建", cols=[
         ("源文件", ["flows/coach.flow.json", "assets/ui/strings.json", "TTF 字体 + 字表", "精灵图脚本", "C 源码 · sdkconfig.defaults"]),
         ("生成器", ["flowc.py → main/generated/", "flow_sim.py → simulator", "gen_lv_font.py → fonts", "gen_sprite.py → rider", "gen_popup_icons.py → badges"]),
         ("构建", ["idf.py build", "FoloToy-AI-Passport.bin", "idf.py merge-bin", "…-full.bin · 从 0x0 烧录"]),
@@ -407,7 +404,7 @@ FMAP = [  # (label_en, label_zh, start, end, used)
     ("Table", "分区表", 0x8000, 0x9000, None),
     ("nvs", "nvs", 0x9000, 0xF000, None),
     ("phy", "phy", 0xF000, 0x10000, None),
-    ("factory app", "factory 应用", 0x10000, 0x800000, 1945536),
+    ("factory app", "factory 应用", 0x10000, 0x800000, 1948640),
 ]
 
 
@@ -416,8 +413,8 @@ def flashmap(lang):
     x0, x1 = 24, W - 24
     full = 0x800000
     b = []
-    t = "Flash map, 8 MB" if lang == "en" else "Flash 分布，8 MB"
-    b.append(text(x0, 36, "FULL 8 MB" if lang == "en" else "整片 8 MB", 11, INK3, mono=True, ls=1.5))
+    t = "Flash map, 8 MiB" if lang == "en" else "Flash 分布，8 MiB"
+    b.append(text(x0, 36, "FULL 8 MiB" if lang == "en" else "整片 8 MiB", 11, INK3, mono=True, ls=1.5))
     y = 48
     sc = (x1 - x0) / full
     # factory partition
@@ -432,9 +429,9 @@ def flashmap(lang):
         xx = x0 + a * sc
         anchor = "end" if a == full else "start"
         b.append(text(xx if a else x0, y + 66, lab, 10.5, INK3, anchor=anchor, mono=True))
-    # zoom of first 64 KB
+    # zoom of first 64 KiB
     y2 = 150
-    b.append(text(x0, y2 - 12, "FIRST 64 KB" if lang == "en" else "前 64 KB 放大", 11, INK3, mono=True, ls=1.5))
+    b.append(text(x0, y2 - 12, "FIRST 64 KiB" if lang == "en" else "前 64 KiB 放大", 11, INK3, mono=True, ls=1.5))
     sc2 = (x1 - x0) / 0x10000
     for en, zh, s0, e0, used in FMAP[:4]:
         xs, w = x0 + s0 * sc2, (e0 - s0) * sc2
@@ -443,7 +440,7 @@ def flashmap(lang):
         if used:
             b.append(f'<rect x="{xs + 1:.1f}" y="{y2}" width="{used * sc2 - 2:.1f}" height="54" rx="6" fill="{INK2}" opacity="0.55"/>')
         b.append(text(xs + 8, y2 + 24, en if lang == "en" else zh, 12, INK, 700))
-        b.append(text(xs + 8, y2 + 43, f"{(e0 - s0) // 1024} KB", 11, INK2, mono=True))
+        b.append(text(xs + 8, y2 + 43, f"{(e0 - s0) // 1024} KiB", 11, INK2, mono=True))
         b.append(text(xs + 2, y2 + 72, f"0x{s0:X}", 10.5, INK3, mono=True))
     note = ("Bootloader uses 0x5220 B (21,024 B), 36% of its region is free." if lang == "en"
             else "Bootloader 实占 0x5220 字节（21,024 字节），所在区域剩余 36%。")
@@ -466,7 +463,7 @@ DRAM_PARTS = [
     ({"en": "IRAM code (.text)", "zh": "IRAM 代码（.text）"}, 96852),
     ({"en": ".bss (incl. 28 KiB LVGL pool)", "zh": ".bss（含 28 KiB LVGL 内存池）"}, 44200),
     ({"en": ".data", "zh": ".data"}, 10524),
-    ({"en": "Free for heap, stacks, buffers", "zh": "留给堆、栈和缓冲区"}, 169720),
+    ({"en": "Unallocated at link time", "zh": "链接后未分配空间"}, 169720),
 ]
 
 
@@ -560,13 +557,13 @@ def scrum(lang):
 CHG = {
     "en": dict(title="How a decision becomes firmware: D-33 and D-34 on 2026-10-18",
                lanes=[("D-33 page rail", [(645, "Docs 01–05", "eef9c65"), (647, "Simulator", "30ba3c7"),
-                                         (699, "Review: no arrows", "cec92d8"), (709, "Firmware + 28 KB", "be8671d"),
+                                         (699, "Review: no arrows", "cec92d8"), (709, "Firmware + 28 KiB", "be8671d"),
                                          (710, "25 screens", "4cb5a26"), (725, "Review: one color", "ea4815a")]),
                       ("D-34 link state", [(668, "Docs 01–05", "21280e6"), (682, "Flow + firmware + sim", "ba53b8d"),
                                            (684, "25 screens", "04d27a7")])]),
     "zh": dict(title="一条决策怎样变成固件：2026-10-18 的 D-33 和 D-34",
                lanes=[("D-33 页面导轨", [(645, "文档 01–05", "eef9c65"), (647, "模拟器", "30ba3c7"),
-                                        (699, "评审：去掉箭头", "cec92d8"), (709, "固件 + 28 KB", "be8671d"),
+                                        (699, "评审：去掉箭头", "cec92d8"), (709, "固件 + 28 KiB", "be8671d"),
                                         (710, "25 张界面图", "4cb5a26"), (725, "评审：同一种颜色", "ea4815a")]),
                       ("D-34 链路状态", [(668, "文档 01–05", "21280e6"), (682, "流程图 + 固件 + 模拟器", "ba53b8d"),
                                         (684, "25 张界面图", "04d27a7")])]),
@@ -597,7 +594,6 @@ def change_timeline(lang):
             right = x > W - 170
             tx, anc = (x - 4, "end") if right else (x + 4, "start")
             b.append(text(tx, y0 + dy, name, 11.5, INK if not review else GREEN, 600, anc))
-            b.append(text(tx, y0 + dy + 14, h, 10, INK3, anchor=anc, mono=True))
     return svg(W, 310, "".join(b), L["title"])
 
 
@@ -654,5 +650,5 @@ if __name__ == "__main__":
         img_total = sum(v for _, v in FLASH_PARTS)
         (PART / f"flash-parts-{lang}.html").write_text(
             hbars(sorted(FLASH_PARTS, key=lambda p: -p[1]), lang, img_total, "Flash" ) + "\n")
-        (PART / f"dram-parts-{lang}.html").write_text(hbars(DRAM_PARTS, lang, 321296, "DRAM", free_last=True) + "\n")
+        (PART / f"dram-parts-{lang}.html").write_text(hbars(DRAM_PARTS, lang, 321296, "Internal RAM" if lang == "en" else "内部 RAM", free_last=True) + "\n")
     print("figures: done")

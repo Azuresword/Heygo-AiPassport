@@ -3,7 +3,7 @@
 <html lang="en" >
     <head>
         <meta charset="UTF-8">
-        <title>总览 · Heygo AI Passport — Project Summary</title>
+        <title>技术概览 · Heygo AI Passport — Technical Report</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="HonKit 6.2.2">
@@ -51,7 +51,7 @@
     <link rel="next" href="product.zh_CN.html" />
     
     
-    <link rel="prev" href="sources.html" />
+    <link rel="prev" href="followups.html" />
     
 
     </head>
@@ -87,7 +87,7 @@
                 <a href="./">
             
                     
-                    Overview
+                    Technical overview
             
                 </a>
             
@@ -243,20 +243,7 @@
                 <a href="followups.html">
             
                     
-                    Follow-up items
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="1.14" data-path="sources.html">
-            
-                <a href="sources.html">
-            
-                    
-                    Sources
+                    Limits and next steps
             
                 </a>
             
@@ -276,7 +263,7 @@
                 <a href="README.zh_CN.html">
             
                     
-                    总览
+                    技术概览
             
                 </a>
             
@@ -341,7 +328,7 @@
                 <a href="build-flash.zh_CN.html">
             
                     
-                    制作方法
+                    构建与烧录
             
                 </a>
             
@@ -367,7 +354,7 @@
                 <a href="scrum.zh_CN.html">
             
                     
-                    用 Scrum 落地
+                    开发流程
             
                 </a>
             
@@ -432,20 +419,7 @@
                 <a href="followups.zh_CN.html">
             
                     
-                    后续事项
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="2.14" data-path="sources.zh_CN.html">
-            
-                <a href="sources.zh_CN.html">
-            
-                    
-                    数据来源
+                    限制与后续工作
             
                 </a>
             
@@ -483,7 +457,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href="." >总览</a>
+        <a href="." >技术概览</a>
     </h1>
 </div>
 
@@ -501,96 +475,77 @@
                                 <p class="lang"><strong>简体中文</strong> · <a href="index.html">English</a></p>
 
 <div class="hero">
-<p class="eyebrow">Heygo · AI Passport · 项目总结</p>
-<h1 id="休息时，抬手就能问教练">休息时，抬手就能问教练</h1>
-<p class="lead">AI Passport 是滑雪用的手持小设备。用户不掏手机、不摘手套，就能看本趟数据、听 AI 教练的建议。项目的 18 个 Sprint 全部完成。</p>
+<p class="eyebrow">Heygo · AI Passport · 技术报告</p>
+<h1 id="滑雪数据与语音教练终端">滑雪数据与语音教练终端</h1>
+<p class="lead">AI Passport 基于 ESP32-C3，通过 BLE 连接手机，提供滑行数据、单趟报告、弯型浏览和教练语音交互。设备负责按键、显示、录音和播放。手机负责数据分析、语音处理及 AI 服务接入。</p>
 <img src="../assets/sim/preview.png" alt="交互模拟器：设备屏幕、手机端模拟、状态流转图"></img>
 </div>
 
+<p>报告基线：2026-10-18，版本 <code>284ab00</code>，覆盖 Sprint 0–17。以下指标对应这一阶段。</p>
 <div class="tiles">
-<div class="tile accent"><div class="k">Sprint 完成</div><div class="v">18<small>/18</small></div></div>
-<div class="tile"><div class="k">增量</div><div class="v">4<small>/4</small></div></div>
-<div class="tile"><div class="k">决策</div><div class="v">34</div></div>
+<div class="tile accent"><div class="k">Sprint 完成记录</div><div class="v">18<small>/18</small></div></div>
+<div class="tile"><div class="k">功能增量</div><div class="v">4<small>/4</small></div></div>
+<div class="tile"><div class="k">决策条目</div><div class="v">34</div></div>
 <div class="tile"><div class="k">需求条目</div><div class="v">25</div></div>
-<div class="tile"><div class="k">界面图</div><div class="v">25</div></div>
+<div class="tile"><div class="k">界面样例</div><div class="v">25</div></div>
 <div class="tile"><div class="k">模拟器自测</div><div class="v">128<small>/128</small></div></div>
 </div>
 
-<h2 id="做成了什么">做成了什么</h2>
+<h2 id="功能范围">功能范围</h2>
 <div class="cards">
-<div class="card"><span class="tag">增量 1</span><h4 id="教练语音">教练语音</h4><p>长按 OK 进教练页，按住 OK 提问。手机转写、问 AI、合成语音，设备播放回答。</p></div>
-<div class="card"><span class="tag">增量 2</span><h4 id="滑行数据与报告">滑行数据与报告</h4><p>实时显示速度、落差、距离、转弯、时间。每趟结束给出 Heygo IQ（0–200）和一条建议。开始滑行自动跳页。</p></div>
-<div class="card"><span class="tag">增量 3</span><h4 id="弯型">弯型</h4><p>每趟画出线路，一页 8 个弯，逐弯看速度、角度、半径。</p></div>
-<div class="card"><span class="tag">增量 4</span><h4 id="手机弹窗">手机弹窗</h4><p>摔倒提醒、语音播报、问题报告、成就报告。立即弹出，10 秒倒计时，任意键关闭。</p></div>
+<div class="card"><span class="tag">增量 1</span><h4 id="教练语音">教练语音</h4><p>进入教练页后，长按 OK 录音，松开发送。手机完成转写、AI 请求和语音合成，设备播放回答。单次录音最长 20 秒。</p></div>
+<div class="card"><span class="tag">增量 2</span><h4 id="滑行数据与报告">滑行数据与报告</h4><p>显示速度、落差、距离、转弯数和时间。每趟生成 Heygo IQ（0–200）及一条建议。手机检测到开始滑行后，通知设备切换到实时数据页。</p></div>
+<div class="card"><span class="tag">增量 3</span><h4 id="弯型浏览">弯型浏览</h4><p>每页显示 8 个弯，逐弯查看速度、角度和半径。设备缓存 3 组数据，按需向手机请求其他组。</p></div>
+<div class="card"><span class="tag">增量 4</span><h4 id="手机弹窗">手机弹窗</h4><p>支持摔倒提醒、语音播报、问题报告和成就报告。语音结束后倒计时 10 秒，无语音时直接倒计时。任意键关闭弹窗。</p></div>
 </div>
 
-<h2 id="一页看懂">一页看懂</h2>
+<h2 id="技术摘要">技术摘要</h2>
 <table>
 <thead>
 <tr>
-<th>问题</th>
-<th>答案</th>
-<th>详见</th>
+<th>维度</th>
+<th>设计与结果</th>
+<th>章节</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>设备做什么？</td>
-<td>只管按键、麦克风、喇叭、屏幕。分析和语音都在手机上</td>
+<td>硬件与通信</td>
+<td>ESP32-C3、8 MiB Flash、无 PSRAM。BLE 协议 0.2，16 kHz IMA ADPCM</td>
 <td><a href="architecture.zh_CN.html">架构与协议</a></td>
 </tr>
 <tr>
-<td>固件怎么组织？</td>
-<td>7 层，3 个自建任务，10 个状态、83 条转移，由流程图生成</td>
+<td>固件组织</td>
+<td>7 层架构、3 个应用任务。流程图生成 10 个状态和 83 条转移</td>
 <td><a href="firmware.zh_CN.html">固件架构</a></td>
 </tr>
 <tr>
-<td>固件怎么做出来？</td>
-<td>流程图、字体、图片由脚本生成，<code>validate.sh</code> 构建并检查，合并镜像从 0x0 烧录</td>
-<td><a href="build-flash.zh_CN.html">制作方法</a></td>
-</tr>
-<tr>
-<td>内存够不够？</td>
-<td>应用占 factory 分区 23.4%，静态 DRAM 47.2%，LVGL 内存池峰值 76.6%</td>
-<td><a href="memory.zh_CN.html">内存分布</a></td>
-</tr>
-<tr>
-<td>怎么操作？</td>
-<td>四个页面平级循环。短按 UP/DOWN 翻页，长按 OK 问教练</td>
+<td>交互</td>
+<td>四页循环、三键操作。弹窗可打断对话，开始滑行事件延后到当前操作结束</td>
 <td><a href="product.zh_CN.html">产品与页面</a></td>
 </tr>
 <tr>
-<td>长什么样？</td>
-<td>25 张主机渲染的界面图，加两段动画</td>
-<td><a href="screens.zh_CN.html">界面一览</a></td>
+<td>资源占用</td>
+<td>应用占 factory 分区 23.4%。静态内部 RAM 占 47.2%。主机 LVGL 内存池峰值 76.6%</td>
+<td><a href="memory.zh_CN.html">内存分布</a></td>
 </tr>
 <tr>
-<td>怎么组织开发？</td>
-<td>4 小时一个 Sprint，一个目标。完成看证据：构建、主机、设备分开报告</td>
-<td><a href="scrum.zh_CN.html">用 Scrum 落地</a></td>
-</tr>
-<tr>
-<td>做到哪了？</td>
-<td>Sprint 0–17 全部完成</td>
-<td><a href="sprints.zh_CN.html">Sprint 完成情况</a></td>
-</tr>
-<tr>
-<td>花了多久？</td>
-<td>main 上 209 个提交，10-16 18:02 到 10-18 12:05</td>
-<td><a href="history.zh_CN.html">开发历程</a></td>
-</tr>
-<tr>
-<td>质量怎么保证？</td>
-<td>每次提交前跑门禁，主机测试、界面检查、模拟器自测都要通过</td>
+<td>构建与测试</td>
+<td>完整门禁通过，模拟器自测 128/128。设备验收与主机测试分别记录</td>
 <td><a href="quality.zh_CN.html">质量与部署</a></td>
+</tr>
+<tr>
+<td>交付</td>
+<td>4 个功能增量、18 个 Sprint。剩余集成事项与能力限制单独列出</td>
+<td><a href="followups.zh_CN.html">限制与后续工作</a></td>
 </tr>
 </tbody>
 </table>
-<h2 id="链接">链接</h2>
+<h2 id="项目入口">项目入口</h2>
 <ul>
-<li>在线模拟器：<a href="https://azuresword.github.io/Heygo-AiPassport/" target="_blank">https://azuresword.github.io/Heygo-AiPassport/</a>。可以直接按设备的按键试用。</li>
-<li>仓库：<a href="https://github.com/Azuresword/Heygo-AiPassport" target="_blank">https://github.com/Azuresword/Heygo-AiPassport</a></li>
-<li>本书源文件在 <code>summary-book/</code>。先运行 <code>figures.py</code> 生成图，再运行 <code>build.sh</code> 生成 <code>summary/</code>。</li>
+<li><a href="https://azuresword.github.io/Heygo-AiPassport/" target="_blank">在线模拟器</a></li>
+<li><a href="screens.zh_CN.html">界面一览</a></li>
+<li><a href="https://github.com/Azuresword/Heygo-AiPassport" target="_blank">项目仓库</a></li>
 </ul>
 
                                 
@@ -619,7 +574,7 @@
 
             
                 
-                <a href="sources.html" class="navigation navigation-prev " aria-label="Previous page: Sources">
+                <a href="followups.html" class="navigation navigation-prev " aria-label="Previous page: Limits and next steps">
                     <i class="fa fa-angle-left"></i>
                 </a>
                 
@@ -635,7 +590,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"总览","level":"2.1","depth":1,"next":{"title":"产品与页面","level":"2.2","depth":1,"path":"product.zh_CN.md","ref":"product.zh_CN.md","articles":[]},"previous":{"title":"Sources","level":"1.14","depth":1,"path":"sources.md","ref":"sources.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"README.zh_CN.md","mtime":"2026-10-18T04:30:05.724Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T04:33:29.883Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"技术概览","level":"2.1","depth":1,"next":{"title":"产品与页面","level":"2.2","depth":1,"path":"product.zh_CN.md","ref":"product.zh_CN.md","articles":[]},"previous":{"title":"Limits and next steps","level":"1.13","depth":1,"path":"followups.md","ref":"followups.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Technical Report","language":"en","gitbook":"*"},"file":{"path":"README.zh_CN.md","mtime":"2026-10-18T09:09:26.380Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T09:09:29.593Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>

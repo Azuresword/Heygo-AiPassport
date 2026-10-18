@@ -8,56 +8,54 @@
 
 <figure>
 <img src="images/fw-build-en.svg" alt="Firmware build steps">
-<figcaption>Figure 11. From source files to firmware that you can flash. Sources: <code>tools/validate.sh</code> and <code>main/CMakeLists.txt</code>.</figcaption>
+<figcaption>Figure 11. Generation, validation, and firmware packaging.</figcaption>
 </figure>
 
-Scripts make four kinds of content in the firmware. Nobody writes these files manually.
+The `284ab00` snapshot uses four types of generated output:
 
 | Output | Input | Script | Files |
 |---|---|---|---|
 | State machine and screens | `flows/coach.flow.json` | `tools/flow/flowc.py` | Four `.c/.h` pairs in `main/generated/` |
 | Simulator | The same flow graph | `tools/flow/flow_sim.py` | `assets/sim/coach-flow.html` |
-| Fonts | Noto Sans SC and Staatliches (OFL 1.1), with character lists | `assets/tools/gen_lv_font.py` | `assets/fonts/heygo_*.c` |
-| Sprites | Drawing definitions in the scripts | `gen_sprite.py`, `gen_popup_icons.py` | `assets/sprites/*.c` |
+| Fonts | Noto Sans SC and Staatliches, OFL 1.1, with character lists | `assets/tools/gen_lv_font.py` | `assets/fonts/heygo_*.c` |
+| Sprites | Drawing definitions | `gen_sprite.py`, `gen_popup_icons.py` | `assets/sprites/*.c` |
 
-The state machine and the simulator come from the same graph. Thus, the behavior in the simulator is the behavior of the device. `flowc.py --check` and `flow_sim.py --check` fail when a generated file is old.
+The state machine and simulator share the same graph. This keeps their declared transitions aligned. Simulator tests do not establish equivalent BLE timing, audio behavior, scheduling, or hardware rendering. `flowc.py --check` and `flow_sim.py --check` reject stale generated files.
 
 ### Fonts
 
 | Font | Glyphs | Use |
 |---|---|---|
-| `heygo_sc_16` | 3,871 | Body text. It includes GB2312 level 1 (3,755 characters), because it shows transcripts and answers from the phone. |
-| `heygo_sc_28` | 202 | Large state words. Only the screen vocabulary. |
-| `heygo_display_20/34/48` | 95 each | The Staatliches brand face, for numbers and English labels. |
+| `heygo_sc_16` | 3,872 | Body text, transcripts, and answers. Includes 3,755 GB2312 level 1 characters, ASCII, punctuation, and application vocabulary. |
+| `heygo_sc_28` | 203 | Large state labels, ASCII, and application vocabulary. |
+| `heygo_display_20/34/48` | 96 each | Staatliches for numbers and English labels. Includes 95 printable ASCII characters and the degree sign. |
 
-Sources: `assets/fonts/*.chars.txt` and the file header of `assets/tools/gen_lv_font.py`.
+Counts include the space character. The Chinese fonts support a fixed glyph set, not unrestricted Unicode text.
 
 ## Build
 
 1. Install ESP-IDF 5.5.3.
-2. Activate the environment: `. $IDF_PATH/export.sh`.
-3. In `Firmware/`, run the gate: `./tools/validate.sh`.
+2. Activate the environment with `. "$IDF_PATH/export.sh"`.
+3. Open the `Firmware/` directory.
+4. Run `./tools/validate.sh`.
 
-The gate builds in a temporary directory, so the work tree stays clean. The build steps (`tools/validate.sh:145-175`):
+The gate runs repository checks, host tests, generated-file checks, and glyph checks. It then builds firmware in a temporary directory with a separate `sdkconfig`. Next, it merges the image, checks image offsets and partitions, renders screens, and archives debug files.
 
-```bash
-SDKCONFIG_DEFAULTS=sdkconfig.defaults idf.py -B <temp dir> build
-idf.py -B <temp dir> merge-bin -o FoloToy-AI-Passport-full.bin
-python3 tools/verify_firmware.py <temp dir>        # partitions and image offsets
-python3 tools/host_render/render.py ...             # screen images
-python3 tools/archive_firmware.py create ...        # debug archive
-```
+Use `./tools/validate.sh --static` for checks without a firmware build. Use `./tools/validate.sh --firmware` for the firmware build and image checks.
 
-Outputs:
-
-| File | Content | Use |
+| Output | Content | Location |
 |---|---|---|
-| `build/FoloToy-AI-Passport-full.bin` | Bootloader, partition table, and application in one file | Flash at `0x0` for a new device or a full refresh. |
-| `build/FoloToy-AI-Passport.bin` | Application only | It has no bootloader and no partition table. Do not upload it alone. |
+| Merged image | Bootloader, partition table, and application | `build/FoloToy-AI-Passport-full.bin` |
+| Debug archive | Images, ELF, map, manifest, and flash arguments | `build/firmware/<full-image-sha256>/` |
+| Application image | Application without bootloader or partition table | `build/firmware/<full-image-sha256>/FoloToy-AI-Passport.bin` |
 
-## Build results for this book
+The temporary build directory exists only during the gate. A separate `idf.py build` retains the build directory for `idf.py -p <port> flash`.
 
-On 2026-10-18, we ran the full gate at `main` commit `284ab00`. The exit code was 0.
+<a id="build-results-for-this-book"></a>
+
+## Build snapshot
+
+The full gate completed on 2026-10-18 at commit `284ab00`, with exit code 0. These results describe that snapshot and do not establish hardware acceptance.
 
 <div class="tiles">
 <div class="tile accent"><div class="k">Gate</div><div class="v" style="font-size:24px">PASS</div></div>
@@ -68,23 +66,22 @@ On 2026-10-18, we ran the full gate at `main` commit `284ab00`. The exit code wa
 
 | Item | Result |
 |---|---|
-| Host tests | All PASS: protocol, ADPCM, playback rules, keys, link core, and screen parts |
+| Host tests | PASS: protocol, ADPCM, playback rules, keys, link core, and screen components |
 | Simulator | `--check` PASS, self-test 128/128 |
 | Glyphs | PASS, 72 vocabulary strings and 47 flow texts |
-| Layout | Application 1,948,640 of 8,323,072 bytes, in `factory` at `0x10000` |
-| Merged image | 2,014,176 bytes, flash at `0x0` |
+| Application layout | 1,948,640 bytes in the 8,323,072-byte `factory` partition at `0x10000` |
+| Merged image | 2,014,176 bytes, flash address `0x0` |
 
-Compiler settings: `-Og` (debug optimization), with assertions. The flash uses DIO mode at 80 MHz (generated `sdkconfig`).
+Compiler settings use `-Og` debug optimization and assertions. Flash settings use DIO mode at 80 MHz.
 
 ## Flashing
 
-Source: `Firmware/docs/development/engineering/firmware-layout.md`, section "Flashing and stored data".
-
-| Case | Method | Caution |
+| Case | Method | Data effect |
 |---|---|---|
-| New device or full refresh | Write `…-full.bin` at `0x0`. | The merged file fills the gaps between images. It can reset the NVS and PHY data. |
-| Daily development | Segmented flash: `idf.py -p <port> flash` | It keeps the NVS, if the partition layout is compatible. |
-| Erase the full chip | `idf.py erase-flash` | It erases all user data. Do not use it as a routine step. |
+| New device or full refresh | Write `FoloToy-AI-Passport-full.bin` at `0x0`. | The merged file fills gaps between images. It can overwrite NVS and PHY initialization data. |
+| Daily development | Run `idf.py -p <port> flash` from a retained build. | Segmented flashing preserves NVS when the partition layout remains compatible. |
+| Full-chip erase | Run `idf.py erase-flash`. | Erases all user data. Use only for an intentional full erase. |
 
-- Logs and flashing use the built-in USB Serial/JTAG of the ESP32-C3. GPIO18 and GPIO19 are for USB (`Firmware/docs/README.md`).
-- You do not need a backup of the old firmware before you flash. The new firmware keeps no rollback copy.
+The application-only image requires a compatible bootloader and partition table. It is unsuitable for initial provisioning by itself.
+
+Logs and flashing use the ESP32-C3 USB Serial/JTAG interface on GPIO18 and GPIO19. Firmware backup is not a prerequisite for flashing. The single factory partition provides no firmware rollback slot.
