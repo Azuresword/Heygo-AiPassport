@@ -328,8 +328,11 @@ The rail starts at `y=64`. So it stays below the corner mask and the status bar,
 The text, the boxes, and the key hints of every page stay at `x≤230`. Only the decorative ridge line of the Coach page and the Report page goes under the rail, at `y=146..174`.
 
 The simulator `assets/sim/coach-flow.html` shows the rail. Its self-test checks the stops, the targets, and the wrap on three pages.
-The firmware part is the next step. Only one screen exists at a time, so the rail must live on the top layer of LVGL. Then the thumb can move while the task deletes the old screen and builds the new screen.
-The rail adds at most 5 objects: 4 stops and the thumb. It has no arrows. Measure the pool use before the merge. The gate on `5658911` shows a pool peak of 18,760 of 21,656 bytes.
+`main/ui/page_rail.c` draws the rail in the firmware. Only one screen exists at a time, so the rail lives on the top layer of LVGL. Then the thumb can move while the task deletes the old screen and builds the new screen.
+The rail is one LVGL object. Its draw callback draws the 4 stops and the thumb, so it needs no object for each part. The host renderer measures 312 bytes for it.
+The device has no shadow buffer for a glow. A 1 px lime edge at 40% opacity around the thumb takes its place.
+With the 24 KiB pool, the live data page hung when it drew the speed digits. The biggest free block was 1,936 bytes. So the pool is now 28 KiB. The host renderer then shows a peak of 19,728 of 25,752 bytes (76%), and at least 6,032 bytes in the biggest free block.
+At each page change, the device logs the LVGL pool use, the biggest free block, and the free system heap. The device memory test reads these lines.
 
 ### Popup page layout
 
@@ -449,12 +452,12 @@ The device has no PSRAM. Streaming makes a full recording unnecessary.
 | Allocation | Design | Evidence or limit |
 |---|---|---|
 | LVGL draw buffer | One 40-line RGB565 buffer | Current source uses 19,200 bytes. |
-| LVGL pool | 24 KiB | Current `sdkconfig.defaults` value. |
+| LVGL pool | 28 KiB | Current `sdkconfig.defaults` value. D-33 raised it from 24 KiB. The free heap on the device is not measured yet. |
 | BLE packet queues | 3,440 bytes | Doc 07, section 10. |
 | The last LIVE_STATS and RUN_REPORT | 128 bytes | Doc 07, section 10. The struct sizes measured on the host. |
 | The last TURN_SHAPE, 3 cached groups, and the Turns page | About 4.0 KB | Doc 07, section 10. The symbol table of the firmware build. |
 | The current popup and the popup page texts | About 0.7 KB | D-31. Estimated from the struct sizes: three copies of the popup and one set of page texts. Not measured. |
-| Page rail | At most 5 LVGL objects in the pool | D-33. Not measured. The pool peak on `5658911` is 18,760 of 21,656 bytes. |
+| Page rail | One LVGL object, 312 bytes in the pool | D-33. Measured by the host renderer. |
 | Rider sprite | 25.6 KB in Flash, not in RAM | `assets/sprites`, made by `assets/tools/gen_sprite.py`. |
 | 48-pixel digit font | In Flash, not in RAM | Measure the size in Sprint 3. |
 | ADPCM codec state | A few bytes in each direction | D-09. |
