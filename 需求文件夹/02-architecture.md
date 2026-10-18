@@ -2,7 +2,7 @@
 
 # HeygoAI × AI Passport: architecture
 
-Version: 0.10. Date: 2026-10-17. Status: Draft for engineering review.
+Version: 0.11. Date: 2026-10-18. Status: Draft for engineering review.
 
 This document proposes a design for Increments 1 to 4 in [product requirements](01-product-requirements.md).
 It does not describe a working integration.
@@ -79,6 +79,7 @@ The device has no Ski mode and no Rest mode. Four pages sit at one level and for
 
 The device cannot check whether the user stopped moving. So an OK hold on another page only opens the Coach page, and never starts capture.
 Capture needs one more OK hold on the Coach page.
+A rail on the right edge shows the current page and the targets of the short UP and DOWN presses (D-33). The page rail layout section gives its design.
 
 ```mermaid
 stateDiagram-v2
@@ -289,6 +290,28 @@ It rounds the corners of the line twice (Chaikin), so 33 points become 132 point
 The key hints sit left to right in the order of the keys from top to bottom: UP, OK, DOWN.
 The rider is a sprite sheet of 16 frames, one frame for each 22.5 degrees. The device picks a frame. It does not rotate an image.
 
+### Page rail layout (D-33)
+
+The rail sits on the right edge of the four pages. The popup page hides it.
+
+| Part | Position | Look |
+|---|---|---|
+| Rail | `x=231..238, y=64..251` | No background |
+| 4 stops | `x=234..235`, 2 × 44 px, `y=64 + 48 × i`, 4 px gap | Dark gray `#3A3A3A`. Order: live data, report, turns, coach |
+| Target stops | The stops of the short UP and DOWN targets | Light gray `#94A3B8` |
+| `▲`, `▼` | 6 × 4 px triangles, in the 4 px gap above the UP target and below the DOWN target | Light gray `#94A3B8` |
+| Thumb | `x=232..237`, 6 × 44 px, corner radius 3 | Accent lime `#B1FE2B`, with a 6 px glow |
+
+The rail reads the targets from the flow graph `flows/coach.flow.json`. It does not keep a second copy of the page order. So a change of the loop also changes the targets.
+The thumb slides to the new stop in 180 ms, with an ease-out curve.
+Two page changes wrap: UP from live data to coach, and DOWN from coach to live data. In a wrap, the thumb uses 90 ms to slide out past one end. Then it jumps to the other end and uses 90 ms to slide in.
+The rail starts at `y=64`. So it stays below the corner mask and the status bar, and above the key hints.
+Every page keeps its content at `x≤230`, so the rail covers no content.
+
+The simulator `assets/sim/coach-flow.html` shows the rail. Its self-test checks the stops, the targets, and the wrap on three pages.
+The firmware part is the next step. Only one screen exists at a time, so the rail must live on the top layer of LVGL. Then the thumb can move while the task deletes the old screen and builds the new screen.
+The rail adds at most 7 objects. Measure the pool use before the merge. The gate on `5658911` shows a pool peak of 18,760 of 21,656 bytes.
+
 ### Popup page layout
 
 | Widget | Position | Font | Content |
@@ -412,6 +435,7 @@ The device has no PSRAM. Streaming makes a full recording unnecessary.
 | The last LIVE_STATS and RUN_REPORT | 128 bytes | Doc 07, section 10. The struct sizes measured on the host. |
 | The last TURN_SHAPE, 3 cached groups, and the Turns page | About 4.0 KB | Doc 07, section 10. The symbol table of the firmware build. |
 | The current popup and the popup page texts | About 0.7 KB | D-31. Estimated from the struct sizes: three copies of the popup and one set of page texts. Not measured. |
+| Page rail | At most 7 LVGL objects in the pool | D-33. Not measured. The pool peak on `5658911` is 18,760 of 21,656 bytes. |
 | Rider sprite | 25.6 KB in Flash, not in RAM | `assets/sprites`, made by `assets/tools/gen_sprite.py`. |
 | 48-pixel digit font | In Flash, not in RAM | Measure the size in Sprint 3. |
 | ADPCM codec state | A few bytes in each direction | D-09. |
