@@ -23,7 +23,7 @@ The firmware in `../Firmware` compiles the fonts from this folder.
 | `tools/gen_sprite.py` | Makes the rider sprite. |
 | `brand/logo_*.png`, `brand/logo_parts.json` | The six white parts of the Heygo logo, and their places, from the Figma file "Logo" (D-35). `tools/fetch_figma_logo.py` exports them. A build does not need Figma. |
 | `sprites/heygo_logo.c`, `sprites/heygo_logo.h` | The boot logo in six A8 parts, 200 x 79 px together, 12,288 bytes. `tools/gen_boot_logo.py` makes them from `brand/`. |
-| `audio/heygo_boot_sound.c`, `audio/heygo_boot_sound.h`, `audio/boot_sound.wav` | The boot sound (D-36): 2.0 s of 16 kHz, 16-bit, mono PCM, 64,000 bytes. `tools/gen_boot_sound.py` makes it from code. The WAV file is for listening and for the simulator. |
+| `audio/heygo_boot_sound.c`, `audio/heygo_boot_sound.h`, `audio/boot_sound*.wav` | The boot sound (D-36): 2.0 s of 16 kHz, 16-bit, mono PCM, 64,000 bytes. `tools/gen_boot_sound.py` makes three designs from code. `boot_sound_a.wav` to `boot_sound_c.wav` are for the simulator. `boot_sound.wav` and the C file hold the picked design. |
 | `mockups/27-boot-*.png` to `mockups/29-boot-*.png`, `mockups/boot-anim.gif` | The boot screen at 0.3 s, 1.0 s, and 1.7 s, and its animation. The host renderer draws them. |
 | `mockups/` | Screen images from the host screen check. `compare-A-B.png` shows the two design options. Version B is in use. |
 | `sim/coach-flow.html` | Interactive simulator of the Coach flow. |
