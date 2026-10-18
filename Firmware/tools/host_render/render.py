@@ -152,7 +152,7 @@ def frames(s):
         ("08-link-lost", None, {"status_text": rest_down, "link_state": "0",
                                 "body_text": s["msg.link_lost"], "icon_state": "7"}),
         # Ski data (Increment 2). A key that starts with @ sets a label, as the Coach task does.
-        ("10-ski-live", "ski", {"@sub": "第 4 趟 · " + s["msg.skiing"], "@big": "38", "@drop": "312 m",
+        ("10-ski-live", "ski", {"status_text": rest_up, "link_state": "1", "@sub": "第 4 趟 · " + s["msg.skiing"], "@big": "38", "@drop": "312 m",
                                 "@dist": "1.9 km", "@turns": "24", "@time": "02:31"}),
         ("11-ski-stale", None, {"@sub": "第 12 趟 · " + s["msg.stale"], "@big": "--", "@drop": "1240 m",
                                 "@dist": "12.4 km", "@turns": "136", "@time": "1:02"}),
@@ -276,6 +276,10 @@ def layout_problems(name, boxes):
     return probs
 
 
+# A full run takes a few seconds on a laptop.
+RENDER_TIMEOUT_S = 120
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sdkconfig", type=Path, default=FW / "sdkconfig")
@@ -317,8 +321,14 @@ def main():
     cmds = cmds + ["drop", "mem cycle1"] + cmds + ["drop", "mem cycle2"]
     anim_cmds, anim_names = anim_commands()
     cmds += anim_cmds + ["drop"]
-    r = subprocess.run([str(exe), str(raw_dir)], input="\n".join(cmds) + "\n",
-                       capture_output=True, text=True)
+    # LVGL retries a failed draw allocation without end. So a full pool hangs the renderer,
+    # and the device. A time limit turns that hang into a failure.
+    try:
+        r = subprocess.run([str(exe), str(raw_dir)], input="\n".join(cmds) + "\n",
+                           capture_output=True, text=True, timeout=RENDER_TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        sys.exit(f"ERROR: render did not end in {RENDER_TIMEOUT_S} s. Look for a full LVGL pool: "
+                 "run the frames one by one with the 'mem' command.")
     if r.returncode:
         sys.exit(f"ERROR: render exited {r.returncode}\n{r.stdout}\n{r.stderr}")
 
