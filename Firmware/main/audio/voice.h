@@ -42,6 +42,11 @@ bool voice_play_cut(void);
 // Milliseconds since the playback last made progress. The Coach task uses it as a watchdog.
 uint32_t voice_play_idle_ms(void);
 
+// D-36: play a short local sound from Flash, such as the boot sound. 16 kHz, 16-bit,
+// mono PCM. The sound plays only when the codec is idle. A capture or an answer that
+// starts during the sound stops it first, within one 20 ms block.
+void voice_play_cue(const int16_t *pcm, size_t samples);
+
 #ifdef __cplusplus
 }
 #endif
