@@ -28,14 +28,15 @@
   await tap("UP");   ok(st === "READY", "2 UP: live data -> coach (loop)");
   await tap("UP");   ok(st === "TURNS", "2 UP: coach -> turns");
   await tap("UP");   ok(st === "REPORT", "2 UP: turns -> report");
-  // D-33: the page rail shows the page and the targets of short UP and DOWN, from the flow graph.
-  const rail = () => { const r = document.getElementById("rail"); return [r.classList.contains("off") ? "off" : "on", r.dataset.page, r.dataset.up, r.dataset.down].join(","); };
-  ok(rail() === "on,1,0,2", "2 rail on the Report page: page 2, UP to live data, DOWN to turns");
+  // D-33: the page rail shows the current page. All stops have one color, and the rail has no arrows.
+  const rail = () => { const r = document.getElementById("rail"); return [r.classList.contains("off") ? "off" : "on", r.dataset.page].join(","); };
+  const stopColors = () => new Set([...document.querySelectorAll("#rail .stop")].map(e => getComputedStyle(e).backgroundColor)).size;
+  ok(rail() === "on,1", "2 rail on the Report page: the thumb on stop 2");
   await tap("UP");
-  ok(rail() === "on,0,3,1", "2 rail on the live data page: UP goes around the loop to the coach");
+  ok(rail() === "on,0", "2 rail on the live data page: the thumb on stop 1");
   await tap("UP");
-  ok(rail() === "on,3,2,0" && document.querySelectorAll("#rail .stop.target").length === 2, "2 rail on the Coach page: DOWN goes around to live data");
-  ok(!document.querySelector("#rail .arrow"), "2 the rail has no arrows. The light stops mark the targets");
+  ok(rail() === "on,3" && stopColors() === 1, "2 rail on the Coach page: the thumb on stop 4, and all stops have one color");
+  ok(!document.querySelector("#rail .arrow"), "2 the rail has no arrows");
   await sleep(300);
   ok(parseInt(document.querySelector("#rail .thumb").style.top) === 3 * 48, "2 the thumb slides around the loop to the last stop");
   await tap("DOWN"); await tap("DOWN");
