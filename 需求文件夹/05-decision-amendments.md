@@ -1,10 +1,10 @@
 [简体中文](05-decision-amendments.zh_CN.md) · **English**
 
-# Decision amendments: D-08 to D-33
+# Decision amendments: D-08 to D-34
 
-Version: 0.12. Date: 2026-10-18. Status: D-08 to D-15 and D-17 to D-32 accepted by the user. The phone application team accepted D-16. It must accept D-29, the three turn messages of D-30, the two popup messages of D-31, and the run start message of D-32. The user asked for D-33 and must review its look.
+Version: 0.13. Date: 2026-10-18. Status: D-08 to D-15 and D-17 to D-32 accepted by the user. The phone application team accepted D-16. It must accept D-29, the three turn messages of D-30, the two popup messages of D-31, and the run start message of D-32. The user asked for D-33 and D-34, and must review the look of D-33.
 
-This document gives the reasons behind D-08 to D-33.
+This document gives the reasons behind D-08 to D-34.
 [Validation and decisions](04-validation-and-decisions.md) holds the short log.
 Requirement numbers stay stable. This document deletes no requirement.
 
@@ -484,7 +484,35 @@ The user made three choices on 2026-10-17:
 
 **Status.** The user asked for the rail on 2026-10-18. The simulator shows it, and its self-test passes. The user must review the look in the simulator. Firmware work has not started. Device tests are NOT RUN.
 
-## 28. Related documents
+## 28. D-34: the link state on every page
+
+**Decision.** All five screens show the link state in the same status bar. REQ-25 belongs to Increment 2.
+
+- The status bar has four parts: the page dot, the page name, the link dot, and the link text.
+- The link texts are "已连接" with a lime dot, "未连接" with a red dot, and "无语音" with a red dot.
+- The link dot and the link text are at the same position on each screen.
+- A binding in the flow graph can drive the same widget on more screens. Its `screens` list names them.
+- The device updates the status bar of the page that is on. A link change never changes the page.
+
+**Reason.**
+
+- Before D-34, only the Coach page showed the link state. On the live data page, a link loss showed only as old data, after 5 seconds.
+- The skier reads the live data page most of the time. That page needs the link state most.
+- A fixed position lets the eye find the state without a search after a page change.
+- "语音不可用" is 80 px wide, and the status text has 60 px. "无语音" is 48 px wide, so it fits on one line.
+- The `screens` list keeps the old rule for every other binding. The popup page also has widgets called `body`, `hint`, and `icon`. A binding on all screens by default would write the Coach texts into the popup.
+
+**Cost.**
+
+- Each screen gets two more widgets and up to three more observers. The live data page then filled the LVGL pool when it drew the speed digits, and the host renderer hung.
+- To make space, the live data page, the Report page, and the Turns page lost their battery label. No code writes the battery text yet, so the label was always empty.
+- The measured pool peak goes from 18,760 to 19,432 bytes, of 21,656 bytes (89%). The battery text needs pool memory when the team adds it again.
+- The four screens of the loop show two lime dots when the link works: the page dot and the link dot. The link text next to the second dot tells them apart.
+- On the popup page, the link text is 48 px wide and ends at `x=160`. The badge starts at `x=172`.
+
+**Status.** The user asked for the link state on every page on 2026-10-18. The code is in the repository. Device tests are NOT RUN.
+
+## 29. Related documents
 
 - [Product requirements](01-product-requirements.md).
 - [System architecture](02-architecture.md).
