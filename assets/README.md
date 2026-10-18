@@ -9,7 +9,7 @@ The firmware in `../Firmware` compiles the fonts from this folder.
 
 | Path | Content |
 | --- | --- |
-| `ui/strings.json` | The 71 strings that the device screen shows, in Chinese and English. The `popup.*` strings and `hint.popup` belong to the popup page (D-31). |
+| `ui/strings.json` | The 74 strings that the device screen shows, in Chinese and English. The `popup.*` strings and `hint.popup` belong to the popup page (D-31). The `boot.*` strings belong to the boot screen (D-35). |
 | `fonts/heygo_sc_16.c` | 16 px font for status, hints, and phone text. 3,869 glyphs. |
 | `fonts/heygo_sc_28.c` | 28 px bold font for state words and titles. 185 glyphs. |
 | `fonts/heygo_display_20.c`, `fonts/heygo_display_34.c`, `fonts/heygo_display_48.c` | Staatliches headline font, 20 px, 34 px, and 48 px. ASCII only. The 48 px font shows the speed. |
@@ -21,6 +21,9 @@ The firmware in `../Firmware` compiles the fonts from this folder.
 | `sprites/heygo_board_sprite.c`, `sprites/heygo_sprites.h` | The rider sprite of the Turns page: 16 frames of 20 x 20 px, ARGB8888. `heygo_board_sprite.png` is a preview. |
 | `sprites/heygo_popup_icons.c`, `sprites/heygo_popup_icons.h` | The popup badges (D-31): 4 kinds of 4 frames, 56 x 56 px, ARGB8888. `tools/gen_popup_icons.py` makes them. `heygo_popup_icons.png` is a preview. The simulator uses `heygo_popup_icons_sheet.png`. |
 | `tools/gen_sprite.py` | Makes the rider sprite. |
+| `brand/logo_*.png`, `brand/logo_parts.json` | The six white parts of the Heygo logo, and their places, from the Figma file "Logo" (D-35). `tools/fetch_figma_logo.py` exports them. A build does not need Figma. |
+| `sprites/heygo_logo.c`, `sprites/heygo_logo.h` | The boot logo in six A8 parts, 200 x 79 px together, 12,288 bytes. `tools/gen_boot_logo.py` makes them from `brand/`. |
+| `mockups/27-boot-*.png` to `mockups/29-boot-*.png`, `mockups/boot-anim.gif` | The boot screen at 0.3 s, 1.0 s, and 1.7 s, and its animation. The host renderer draws them. |
 | `mockups/` | Screen images from the host screen check. `compare-A-B.png` shows the two design options. Version B is in use. |
 | `sim/coach-flow.html` | Interactive simulator of the Coach flow. |
 | `sim/turns-demo.gif` | An animation of the Turns page. `Firmware/tools/host_render/turns_gif.py` makes it with the device drawing code. |
