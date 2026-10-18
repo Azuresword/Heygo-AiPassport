@@ -214,7 +214,7 @@ Any key skips the boot screen. That key starts no page action, also when the use
 The flow runs during the boot screen. A popup or a run start that comes then shows when the boot screen ends.
 The power key cuts the power in hardware. The firmware cannot read it, so the device has no shutdown animation. The simulator shows a shutdown design for later hardware.
 
-D-36 adds a boot sound of 2 s on the same time line. A carve sound goes with the snowboard. Five soft plucks on a rising scale go with the letters. A bell chord goes with the tagline.
+D-36 adds a boot sound of 2 s on the same time line. The sound is clean and synthetic, with a fast build-up and a precise hit. It has three original designs. The user chooses one in the simulator, and the firmware plays that one. The first version used plucks and a bell, and the user rejected it.
 The sound stops at once when a capture, an answer, or popup audio starts. A key that skips the boot screen does not stop the sound.
 
 ### Audio rules
