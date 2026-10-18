@@ -28,6 +28,8 @@ On `main`, the firmware gate `./tools/validate.sh` gives exit code 0.
 The link opens `assets/sim/coach-flow.html` through GitHub Pages. You can press the buttons of the device there.
 If that link does not open, use this mirror: [htmlpreview](https://htmlpreview.github.io/?https://github.com/Azuresword/Heygo-AiPassport/blob/main/assets/sim/coach-flow.html). It runs the same page from the `main` branch.
 
+Project summary (status, decisions, history, and risks): [https://azuresword.github.io/Heygo-AiPassport/summary/](https://azuresword.github.io/Heygo-AiPassport/summary/).
+
 [![Interactive simulator](assets/sim/preview.png)](https://azuresword.github.io/Heygo-AiPassport/)
 
 `assets/sim/coach-flow.html` is a single web page. You can also download it and open it on a computer.

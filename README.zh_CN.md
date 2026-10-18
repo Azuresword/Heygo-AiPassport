@@ -28,6 +28,8 @@
 这个链接通过 GitHub Pages 打开 `assets/sim/coach-flow.html`，可以在网页上直接按设备的按键。
 如果打不开，用这个备用入口：[htmlpreview](https://htmlpreview.github.io/?https://github.com/Azuresword/Heygo-AiPassport/blob/main/assets/sim/coach-flow.html)。它运行的是 `main` 分支上的同一个页面。
 
+项目总结（现状、决策、历程、风险）：[https://azuresword.github.io/Heygo-AiPassport/summary/README.zh_CN.html](https://azuresword.github.io/Heygo-AiPassport/summary/README.zh_CN.html)。
+
 [![交互模拟器](assets/sim/preview.png)](https://azuresword.github.io/Heygo-AiPassport/)
 
 `assets/sim/coach-flow.html` 是一个单文件网页，也可以下载后在电脑上打开。
