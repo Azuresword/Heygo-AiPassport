@@ -108,10 +108,10 @@ static void drop_screen(void)
     lv_screen_load(s_blank);
     switch (s_kind) {
     case COACH: coach_teardown(&s_coach); break;
-    case SKI: coach_screen_ski_destroy(&s_ski); break;
-    case REPORT: coach_screen_report_destroy(&s_report); break;
-    case TURNS: coach_screen_turns_destroy(&s_turns); break;
-    case POPUP: coach_screen_popup_destroy(&s_popup); break;
+    case SKI: coach_teardown_ski(&s_ski); break;
+    case REPORT: coach_teardown_report(&s_report); break;
+    case TURNS: coach_teardown_turns(&s_turns); break;
+    case POPUP: coach_teardown_popup(&s_popup); break;
     case NONE: break;
     }
     s_kind = NONE;
@@ -127,18 +127,22 @@ static void load_screen(const char *name)
         s_kind = COACH;
     } else if (strcmp(name, "ski") == 0) {
         coach_screen_ski_build(&s_ski);
+        coach_bindings_attach_ski(&s_ski);
         lv_screen_load(s_ski.screen);
         s_kind = SKI;
     } else if (strcmp(name, "report") == 0) {
         coach_screen_report_build(&s_report);
+        coach_bindings_attach_report(&s_report);
         lv_screen_load(s_report.screen);
         s_kind = REPORT;
     } else if (strcmp(name, "turns") == 0) {
         coach_screen_turns_build(&s_turns);
+        coach_bindings_attach_turns(&s_turns);
         lv_screen_load(s_turns.screen);
         s_kind = TURNS;
     } else if (strcmp(name, "popup") == 0) {
         coach_screen_popup_build(&s_popup);
+        coach_bindings_attach_popup(&s_popup);
         lv_screen_load(s_popup.screen);
         s_kind = POPUP;
     } else {
@@ -284,7 +288,7 @@ static void snap(const char *name)
         print_box("hint", s_coach.hint);
         break;
     case SKI:
-        print_box("mode", s_ski.mode); print_box("battery", s_ski.battery);
+        print_box("mode", s_ski.mode);
         print_box("dest", s_ski.dest);
         print_box("sub", s_ski.sub); print_box("big", s_ski.big);
         print_box("unit", s_ski.unit);
@@ -296,7 +300,7 @@ static void snap(const char *name)
         print_box("hint", s_ski.hint);
         break;
     case REPORT:
-        print_box("mode", s_report.mode); print_box("battery", s_report.battery);
+        print_box("mode", s_report.mode);
         print_box("dest", s_report.dest); print_box("title", s_report.title);
         print_box("iq", s_report.iq); print_box("iq_name", s_report.iq_name);
         print_box("age", s_report.age);
@@ -305,7 +309,7 @@ static void snap(const char *name)
         break;
     case TURNS:
         // The lines, the rider, the bar, and msg sit inside shape_panel, so the layout check skips them.
-        print_box("mode", s_turns.mode); print_box("battery", s_turns.battery);
+        print_box("mode", s_turns.mode);
         print_box("dest", s_turns.dest); print_box("title", s_turns.title);
         print_box("source", s_turns.source); print_box("shape_panel", s_turns.shape_panel);
         print_box("side", s_turns.side); print_box("counter", s_turns.counter);
