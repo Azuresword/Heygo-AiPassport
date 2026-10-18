@@ -308,6 +308,20 @@
   ok(st === "LIVE", "28 after the popup, the device opens the live data page, not the Turns page");
   skiEnd(); await sleep(2200);
 
+  // D-34: every page shows the link state in its status bar.
+  const PAGES = ["coach", "ski", "report", "turns", "popup"];
+  const bar = () => PAGES.map(p => shown(p + ".status") + "/" + widgetEls[p + ".link_dot"].style.background).join(",");
+  const same = (txt, col) => PAGES.every(p => shown(p + ".status") === txt && widgetEls[p + ".link_dot"].style.background === col);
+  const up = widgetEls["coach.link_dot"].style.background;
+  ok(same("已连接", up), "29 the five pages show 已连接 with the same dot: " + bar());
+  setLink(false); await sleep(50);
+  const down = widgetEls["coach.link_dot"].style.background;
+  ok(down !== up && same("未连接", down), "29 at a link loss, the five pages show 未连接 with the red dot");
+  ok(PAGES.every(p => widgetEls[p + ".status"].style.color === widgetEls["coach.status"].style.color), "29 the status text has the same color on each page");
+  ok(document.querySelector(".scr.on").dataset.id === "ski" && shown("ski.status") === "未连接", "29 the live data page shows the loss without a page change");
+  setLink(true); await sleep(400);
+  ok(same("已连接", up), "29 at a reconnect, the five pages show 已连接 again");
+
   const pre = document.createElement("pre");
   pre.id = "selftest";
   pre.textContent = out.join("\n") + `\nRESULT ${fails ? "FAIL" : "PASS"} ${out.length - fails}/${out.length}`;
