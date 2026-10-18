@@ -33,5 +33,5 @@ Source: `Firmware/docs/heygo-changes.md`, known issues.
 |---|---|
 | Team talk | The protocol defines 0x50 to 0x55. It is P1. |
 | P1 and P2 requirements | REQ-04, 09, and 13 (P1). REQ-10, 11, 12, 18, and 19 (P2). |
-| Document update | Make the status text of Sprints 5 to 15 in document `08` agree with "all complete". Confirm the status of Sprint 17 (D-34). |
+| Document update | Make the status text of Sprints 5 to 15 in document `08` agree with "all complete". |
 | CI | Move the workflows to `.github/workflows/` at the repository root. |

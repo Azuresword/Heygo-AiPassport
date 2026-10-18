@@ -33,5 +33,5 @@
 |---|---|
 | 队伍对讲 | 协议已定义 0x50–0x55，属于 P1 |
 | P1、P2 需求 | REQ-04、09、13（P1），REQ-10、11、12、18、19（P2） |
-| 文档同步 | `08-sprint-roadmap` 里 Sprint 5–15 的状态写法与"全部完成"对齐；确认 Sprint 17（D-34）的状态 |
+| 文档同步 | `08-sprint-roadmap` 里 Sprint 5–15 的状态写法与"全部完成"对齐 |
 | CI | 把 workflow 移到仓库根目录的 `.github/workflows/` |

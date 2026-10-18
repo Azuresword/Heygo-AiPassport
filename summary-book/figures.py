@@ -259,7 +259,7 @@ SPRINTS = [
     (16, "2", "Page rail (D-33)", "页面导轨（D-33）"),
     (17, "2", "Link state on every page (D-34)", "每页显示链路状态（D-34）"),
 ]
-PENDING = {17}  # Added after the owner confirmed Sprints 0 to 16. Status from document 04.
+PENDING = set()  # The owner confirmed Sprint 17 on 2026-10-18, after Sprints 0 to 16.
 
 
 def sprint_board(lang):
@@ -491,6 +491,150 @@ def hbars(parts, lang, total, label, free_last=False):
     return '<div class="chart">' + "".join(b) + "</div>"
 
 
+# ---------------------------------------------------------------- scrum framework
+SCRUM = {
+    "en": dict(title="The Scrum flow of this project",
+               goal=("PRODUCT GOAL", "Live data on the run.", "Voice coach in a rest."),
+               backlog=("PRODUCT BACKLOG", "25 stories · US-xx", "Points for risk, not hours"),
+               sprint="SPRINT · 4 h · ONE GOAL",
+               events=[("Plan", "15 min"), ("Develop", "200 min"), ("Review", "15 min"), ("Retro", "10 min")],
+               inc=("INCREMENT", "validate.sh exit 0", "Build · host · device"),
+               change=["Feedback", "Decision D-xx", "Docs 01–05", "Backlog order"],
+               changelab="CHANGE LOOP · 34 decisions", cut="Cut line: drop a task, never extend the sprint"),
+    "zh": dict(title="本项目的 Scrum 流程",
+               goal=("产品目标", "滑行时看实时数据。", "休息时问语音教练。"),
+               backlog=("产品待办列表", "25 个故事 · US-xx", "故事点比风险，不是小时"),
+               sprint="Sprint · 4 小时 · 一个目标",
+               events=[("计划", "15 分钟"), ("开发", "200 分钟"), ("评审", "15 分钟"), ("回顾", "10 分钟")],
+               inc=("增量", "validate.sh 退出码 0", "证据：构建 · 主机 · 设备"),
+               change=["反馈", "决策 D-xx", "文档 01–05", "重排待办"],
+               changelab="变更回路 · 34 条决策", cut="砍线：去掉任务，绝不延长 Sprint"),
+}
+
+
+def scrum(lang):
+    L = SCRUM[lang]
+    W = 964
+    b = []
+    def card(x, y, w, h, t3, accent=False):
+        b.append(box(x, y, w, h, fill=PANEL2 if accent else BG, stroke="#4b6a12" if accent else LINE, rx=12))
+        b.append(text(x + 16, y + 26, t3[0], 11, GREEN if accent else INK3, 700, mono=True, ls=1.5))
+        b.append(text(x + 16, y + 50, t3[1], 13, INK, 600))
+        b.append(text(x + 16, y + 70, t3[2], 12, INK2))
+    card(24, 40, 170, 92, L["goal"])
+    b.append(f'<line x1="198" y1="86" x2="222" y2="86" stroke="{GREEN}" stroke-width="2" marker-end="url(#ah)"/>')
+    card(226, 40, 186, 92, L["backlog"])
+    b.append(f'<line x1="416" y1="86" x2="440" y2="86" stroke="{GREEN}" stroke-width="2" marker-end="url(#ah)"/>')
+    # sprint box
+    b.append(box(444, 24, 300, 124, fill=PANEL2, stroke=GREEN, rx=14))
+    b.append(text(462, 48, L["sprint"], 11, GREEN, 700, mono=True, ls=1.5))
+    ws = [40, 120, 40, 40]
+    x = 462
+    for (n, t), w in zip(L["events"], ws):
+        w2 = w * 264 / 240
+        b.append(box(x, 62, w2 - 4, 62, fill=BG if n not in ("Develop", "开发") else "#1a230d",
+                     stroke=LINE if n not in ("Develop", "开发") else "#4b6a12", rx=8))
+        b.append(text(x + (w2 - 4) / 2, 90, n, 12, INK, 700, "middle"))
+        b.append(text(x + (w2 - 4) / 2, 108, t, 10, INK3, anchor="middle"))
+        x += w2
+    b.append(f'<line x1="748" y1="86" x2="772" y2="86" stroke="{GREEN}" stroke-width="2" marker-end="url(#ah)"/>')
+    card(776, 40, 164, 92, L["inc"], accent=True)
+    # cut line note
+    b.append(text(594, 168, L["cut"], 11.5, INK3, anchor="middle"))
+    # change loop
+    y = 214
+    b.append(text(940, y - 14, L["changelab"], 11, INK3, 700, "end", mono=True, ls=1.5))
+    xs = [24, 254, 484, 714]
+    for i, (xx, n) in enumerate(zip(xs, L["change"])):
+        b.append(box(xx, y, 206, 44, fill=BG, stroke=LINE, rx=10))
+        b.append(text(xx + 103, y + 28, n, 13, INK, 600, "middle"))
+        if i < 3:
+            b.append(f'<line x1="{xx + 210}" y1="{y + 22}" x2="{xx + 248}" y2="{y + 22}" stroke="{INK2}" stroke-width="1.5" marker-end="url(#ag)"/>')
+    # loop arrows: increment -> feedback (down-left), backlog order -> backlog (up)
+    b.append(f'<path d="M858,134 V176 H127 V{y - 4}" fill="none" stroke="{INK2}" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#ag)"/>')
+    b.append(f'<path d="M817,{y + 46} V{y + 66} H242 V136" fill="none" stroke="{INK2}" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#ag)"/>')
+    return svg(W, y + 80, "".join(b), L["title"])
+
+
+# ---------------------------------------------------------------- change timeline (D-33, D-34)
+CHG = {
+    "en": dict(title="How a decision becomes firmware: D-33 and D-34 on 2026-10-18",
+               lanes=[("D-33 page rail", [(645, "Docs 01–05", "eef9c65"), (647, "Simulator", "30ba3c7"),
+                                         (699, "Review: no arrows", "cec92d8"), (709, "Firmware + 28 KB", "be8671d"),
+                                         (710, "25 screens", "4cb5a26"), (725, "Review: one color", "ea4815a")]),
+                      ("D-34 link state", [(668, "Docs 01–05", "21280e6"), (682, "Flow + firmware + sim", "ba53b8d"),
+                                           (684, "25 screens", "04d27a7")])]),
+    "zh": dict(title="一条决策怎样变成固件：2026-10-18 的 D-33 和 D-34",
+               lanes=[("D-33 页面导轨", [(645, "文档 01–05", "eef9c65"), (647, "模拟器", "30ba3c7"),
+                                        (699, "评审：去掉箭头", "cec92d8"), (709, "固件 + 28 KB", "be8671d"),
+                                        (710, "25 张界面图", "4cb5a26"), (725, "评审：同一种颜色", "ea4815a")]),
+                      ("D-34 链路状态", [(668, "文档 01–05", "21280e6"), (682, "流程图 + 固件 + 模拟器", "ba53b8d"),
+                                        (684, "25 张界面图", "04d27a7")])]),
+}
+
+
+def change_timeline(lang):
+    L = CHG[lang]
+    W, l, r = 964, 150, 30
+    t0, t1 = 640, 730  # minutes after midnight: 10:40 to 12:10
+    sc = (W - l - r) / (t1 - t0)
+    b = []
+    for m in range(t0, t1 + 1, 10):
+        x = l + (m - t0) * sc
+        b.append(f'<line x1="{x:.1f}" y1="34" x2="{x:.1f}" y2="300" stroke="{LINE}" stroke-width="1"/>')
+        b.append(text(x, 26, f"{m // 60}:{m % 60:02d}", 10.5, INK3, anchor="middle", mono=True))
+    for li, (lab, evs) in enumerate(L["lanes"]):
+        y0 = 70 + li * 130
+        b.append(text(24, y0 + 4, lab, 12.5, INK, 700))
+        b.append(f'<line x1="{l + (evs[0][0] - t0) * sc:.1f}" y1="{y0}" x2="{l + (evs[-1][0] - t0) * sc:.1f}" y2="{y0}" stroke="{GREEN}" stroke-width="2"/>')
+        for k, (m, name, h) in enumerate(evs):
+            x = l + (m - t0) * sc
+            review = name.startswith(("Review", "评审"))
+            b.append(f'<g><title>{m // 60}:{m % 60:02d} · {esc(name)} · {h}</title>'
+                     f'<circle cx="{x:.1f}" cy="{y0}" r="6" fill="{BG if review else GREEN}" stroke="{GREEN}" stroke-width="2"/></g>')
+            dy = 24 + (k % 3) * 30
+            b.append(f'<line x1="{x:.1f}" y1="{y0 + 7}" x2="{x:.1f}" y2="{y0 + dy - 12}" stroke="{INK3}" stroke-width="1"/>')
+            right = x > W - 170
+            tx, anc = (x - 4, "end") if right else (x + 4, "start")
+            b.append(text(tx, y0 + dy, name, 11.5, INK if not review else GREEN, 600, anc))
+            b.append(text(tx, y0 + dy + 14, h, 10, INK3, anchor=anc, mono=True))
+    return svg(W, 310, "".join(b), L["title"])
+
+
+# ---------------------------------------------------------------- simulator self-test growth (inline)
+SELFTEST = [  # (label_en, label_zh, checks, source)
+    ("Sprint 4", "Sprint 4", 53), ("Sprint 11", "Sprint 11", 88), ("Sprint 13", "Sprint 13", 104),
+    ("Sprint 15", "Sprint 15", 117), ("Sprint 16 sim", "Sprint 16 模拟器", 122), ("Sprints 16–17", "Sprint 16–17", 128),
+]
+
+
+def selftest_bars(lang):
+    W, H, l, r, t, bt = 960, 260, 46, 16, 30, 48
+    pw, ph = W - l - r, H - t - bt
+    vmax = 140
+    bw = pw / len(SELFTEST)
+    unit = "checks" if lang == "en" else "项自测"
+    b = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" role="img" '
+         f'aria-label="{"Simulator self-test checks by sprint" if lang == "en" else "各 Sprint 的模拟器自测项数"}" font-family="{SANS}">']
+    for v in (0, 35, 70, 105, 140):
+        y = t + ph - ph * v / vmax
+        b.append(f'<line x1="{l}" y1="{y:.1f}" x2="{W - r}" y2="{y:.1f}" stroke="{LINE}" stroke-width="1"/>')
+        b.append(text(l - 10, y + 4, str(v), 11, INK3, anchor="end", mono=True))
+    for i, (en, zh, v) in enumerate(SELFTEST):
+        x = l + i * bw + bw * 0.25
+        w = bw * 0.5
+        y = t + ph - ph * v / vmax
+        name = en if lang == "en" else zh
+        b.append(f'<g><title>{esc(name)}: {v} {unit}</title><rect x="{l + i * bw:.1f}" y="{t}" width="{bw:.1f}" height="{ph}" fill="transparent"/>'
+                 f'<path d="M{x:.1f},{t + ph} V{y + 4:.1f} Q{x:.1f},{y:.1f} {x + 4:.1f},{y:.1f} H{x + w - 4:.1f} '
+                 f'Q{x + w:.1f},{y:.1f} {x + w:.1f},{y + 4:.1f} V{t + ph} Z" fill="{GREEN}"/></g>')
+        b.append(text(x + w / 2, y - 8, str(v), 13, INK, 700, "middle", mono=True))
+        b.append(text(x + w / 2, t + ph + 21, name, 12.5, INK2, anchor="middle"))
+    b.append(f'<line x1="{l}" y1="{t + ph}" x2="{W - r}" y2="{t + ph}" stroke="{INK3}" stroke-width="1"/>')
+    b.append("</svg>")
+    return '<div class="chart">' + "".join(b) + "</div>"
+
+
 if __name__ == "__main__":
     PART = ROOT / "_partials"
     PART.mkdir(exist_ok=True)
@@ -504,6 +648,9 @@ if __name__ == "__main__":
         (IMG / f"fw-tasks-{lang}.svg").write_text(tasks(lang))
         (IMG / f"fw-build-{lang}.svg").write_text(build(lang))
         (IMG / f"flash-map-{lang}.svg").write_text(flashmap(lang))
+        (IMG / f"scrum-{lang}.svg").write_text(scrum(lang))
+        (PART / f"selftest-{lang}.html").write_text(selftest_bars(lang) + "\n")
+        (IMG / f"change-{lang}.svg").write_text(change_timeline(lang))
         img_total = sum(v for _, v in FLASH_PARTS)
         (PART / f"flash-parts-{lang}.html").write_text(
             hbars(sorted(FLASH_PARTS, key=lambda p: -p[1]), lang, img_total, "Flash" ) + "\n")

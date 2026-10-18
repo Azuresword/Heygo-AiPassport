@@ -14,7 +14,7 @@
 <div class="tile"><div class="k">主机测试</div><div class="v">33</div></div>
 </div>
 
-来源：`Firmware/flows/coach.flow.json`（状态和转移）；`wc -l`（行数，含 BSP）；`Firmware/tests/`。
+来源：`Firmware/flows/coach.flow.json`（状态和转移），`wc -l`（行数，含 BSP），`Firmware/tests/`。
 
 ## 分层
 
@@ -30,7 +30,7 @@
 
 | 模块 | 路径 | 行数 | 职责 |
 |---|---|---|---|
-| 应用 | `main/main.c`、`coach_app.c`、`coach_input.c` | 927 | 启动；在一个任务里跑状态机；把按键转成事件 |
+| 应用 | `main/main.c`、`coach_app.c`、`coach_input.c` | 927 | 启动。在一个任务里跑状态机。把按键转成事件 |
 | 生成代码 | `main/generated/` | 1,486 | 转移表、界面构建、数据绑定、界面效果。不要手改 |
 | 界面 | `main/ui/` | 746 | 实时数据、弯型、弹窗、页面导轨（D-33）等界面组件 |
 | 链路与协议 | `main/link/`、`main/protocol/` | 1,824 | 07 号协议的包、握手和会话规则、NimBLE GATT |

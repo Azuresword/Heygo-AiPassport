@@ -30,7 +30,7 @@
 | `heygo_sc_28` | 202 | 大号状态词，只含界面词汇 |
 | `heygo_display_20/34/48` | 各 95 | 品牌字体 Staatliches，数字和英文标签 |
 
-来源：`assets/fonts/*.chars.txt`；`assets/tools/gen_lv_font.py` 文件头。
+来源：`assets/fonts/*.chars.txt`，`assets/tools/gen_lv_font.py` 文件头。
 
 ## 构建
 

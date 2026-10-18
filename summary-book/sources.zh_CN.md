@@ -23,7 +23,7 @@
 
 | 说法 | 依据 |
 |---|---|
-| CI 可能不会自动运行 | GitHub 只读根目录的 `.github/workflows/`；没看 Actions 页面 |
+| CI 可能不会自动运行 | GitHub 只读根目录的 `.github/workflows/`。没看 Actions 页面 |
 | “41 小时” | 首尾提交时间相减 |
 
 ## 范围

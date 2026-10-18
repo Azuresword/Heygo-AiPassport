@@ -21,7 +21,7 @@
 | 音频 | ES8311，I2S 全双工 |
 | 电量计 | CW2017 |
 | 软件 | ESP-IDF 5.5.3，LVGL 9.5.0，NimBLE |
-| 音频编码 | IMA ADPCM 16 kHz，20 ms 一块；裸 PCM 做回退（D-09） |
+| 音频编码 | IMA ADPCM 16 kHz，20 ms 一块。裸 PCM 做回退（D-09） |
 | 安全 | 不加密、不配对（D-12） |
 
 ## 一次提问的消息流
@@ -46,7 +46,7 @@
 | 教练 | AGENT_START 0x20 · AGENT_END 0x21 · AGENT_CANCEL 0x22 | D→P | 一次提问的开始、结束、取消 |
 | | AGENT_STATE 0x23 | P→D | 思考中、失败等状态 |
 | 音频 | AUDIO_UP 0x30 | D→P | 录音块 |
-| | AUDIO_DOWN 0x31 · PLAY_START 0x32 · PLAY_END 0x33 | P→D | 播放；通道 0 教练、2 弹窗 |
+| | AUDIO_DOWN 0x31 · PLAY_START 0x32 · PLAY_END 0x33 | P→D | 播放。通道 0 教练、2 弹窗 |
 | 滑行 | LIVE_STATS 0x60 · RUN_REPORT 0x61 · RUN_START 0x68 | P→D | 实时数据、报告、开始滑行 |
 | | SHOW_PAGE 0x62 | P→D | 让设备显示报告页 |
 | 弯型 | TURN_SHAPE 0x63 · TURN_GROUP 0x64 | P→D | 弯型摘要和分组 |

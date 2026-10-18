@@ -5,11 +5,10 @@
 # Sprints
 
 <div class="tiles">
-<div class="tile accent"><div class="k">Confirmed done</div><div class="v">17<small>/18</small></div></div>
-<div class="tile accent"><div class="k">Sprints 0–16</div><div class="v">100<small>%</small></div></div>
-<div class="tile"><div class="k">Code done, to confirm</div><div class="v">1</div></div>
+<div class="tile accent"><div class="k">Sprints done</div><div class="v">18<small>/18</small></div></div>
+<div class="tile accent"><div class="k">Completion</div><div class="v">100<small>%</small></div></div>
 <div class="tile"><div class="k">Host sprints</div><div class="v">7</div></div>
-<div class="tile"><div class="k">Board and device sprints</div><div class="v">10</div></div>
+<div class="tile"><div class="k">Board and device sprints</div><div class="v">11</div></div>
 </div>
 
 {% include "./_partials/sprints-en.html" %}
@@ -28,11 +27,11 @@ Sources: `需求文件夹/08-sprint-roadmap.md`, section 2. For Sprints 16 and 1
 ## Source of the status
 
 <div class="callout">
-<b>The project owner confirmed on 2026-10-18 that Sprints 0 to 16 are complete.</b>
+<b>The project owner confirmed on 2026-10-18 that Sprints 0 to 17 are complete.</b>
 The team did the board flashing, the phone app integration, and the usability test on physical devices. The computer that made this book is a cloud computer. It cannot connect to a device. Thus, this book can examine only the host results in the repository. See <a href="quality.html">Quality and deployment</a>. The status column of Sprints 5 to 15 in <code>08-sprint-roadmap</code> still shows the old text. We recommend an update.
 </div>
 
-<div class="callout"><b>Sprint 17 came after the confirmation.</b>
-D-34 (link state on every page) arrived on 10-18 at 11:08, after the confirmation above. Document 04 says "Code complete. Device tests not run." This book shows it as "Code done · to confirm".</div>
+<div class="callout"><b>Sprint 17 came later, and it is also complete.</b>
+D-34 (link state on every page) arrived on 10-18 at 11:08. The project owner then confirmed that Sprint 17 is complete.</div>
 
-In Sprints 0 to 16, the host sprints are 0 to 4, 11, and 13. The other 10 sprints need a board, the real phone app, or human testers.
+The host sprints are 0 to 4, 11, and 13. The other 11 sprints need a board, the real phone app, or human testers.

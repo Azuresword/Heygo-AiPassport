@@ -162,3 +162,9 @@ details.table-view summary { cursor: pointer; font-family: var(--mono); font-siz
 .sprint.pending .bar { background: repeating-linear-gradient(90deg, #6f7782 0 6px, transparent 6px 10px); }
 .sprint.pending .s { color: var(--ink-2); }
 .sprint.pending .s::before { content: "◐ "; }
+
+/* Sprint time box bar */
+.timebox { display: flex; gap: 4px; height: 46px; font-family: var(--mono); font-size: 12px; }
+.timebox div { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--ink); }
+.timebox .dev { background: #1a230d; border-color: #4b6a12; color: var(--green); }
+.timebox .f15 { flex: 15; } .timebox .f200 { flex: 200; } .timebox .f10 { flex: 10; }

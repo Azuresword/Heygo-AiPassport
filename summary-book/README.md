@@ -3,12 +3,12 @@
 <div class="hero">
 <p class="eyebrow">Heygo · AI Passport · Project summary</p>
 <h1>Ask the coach during a rest</h1>
-<p class="lead">AI Passport is a small handheld device for skiers. The user sees the data of the last run and hears the AI coach. The user does not take out the phone or remove the gloves. Sprints 0 to 16 are complete. The code of Sprint 17 is also complete.</p>
+<p class="lead">AI Passport is a small handheld device for skiers. The user sees the data of the last run and hears the AI coach. The user does not take out the phone or remove the gloves. All 18 sprints of the project are complete.</p>
 <img src="../assets/sim/preview.png" alt="Simulator: device screen, phone controls, and state graph">
 </div>
 
 <div class="tiles">
-<div class="tile accent"><div class="k">Sprints done</div><div class="v">17<small>/18</small></div></div>
+<div class="tile accent"><div class="k">Sprints done</div><div class="v">18<small>/18</small></div></div>
 <div class="tile"><div class="k">Increments</div><div class="v">4<small>/4</small></div></div>
 <div class="tile"><div class="k">Decisions</div><div class="v">34</div></div>
 <div class="tile"><div class="k">Requirements</div><div class="v">25</div></div>
@@ -35,7 +35,8 @@
 | Is the memory sufficient? | The app uses 23.4% of the factory partition. Static DRAM is 47.2%. The LVGL pool peak is 76.6%. | [Memory map](memory.md) |
 | How does the user operate it? | Four pages at the same level make a loop. A short press of UP or DOWN changes the page. A long press of OK opens the coach. | [Product and pages](product.md) |
 | What does it look like? | 25 screens that LVGL renders on the host, and two animations. | [Screen gallery](screens.md) |
-| What is the status? | Sprints 0 to 16 are complete. The code of Sprint 17 (D-34) is complete. It waits for confirmation. | [Sprints](sprints.md) |
+| How did the team work? | One goal in each 4-hour sprint. Evidence shows if the team completed the work. Build, host, and device results are separate. | [Delivery with Scrum](scrum.md) |
+| What is the status? | Sprints 0 to 17 are complete. | [Sprints](sprints.md) |
 | How long did it take? | 209 commits on main, from 10-16 18:02 to 10-18 12:05. | [Project history](history.md) |
 | How does the team control quality? | A gate runs before each commit. Host tests, screen checks, and the simulator self-test must pass. | [Quality and deployment](quality.md) |
 

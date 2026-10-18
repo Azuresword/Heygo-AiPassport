@@ -17,8 +17,8 @@
 |---|---|
 | 主机测试 | `Firmware/tests/` 下 33 个 `test_*`，例如链路核心、弯型页、弹窗页、ADPCM 编解码 |
 | 字形检查 | 屏幕上的每个字在字体里都有 |
-| `host_render` | 界面重叠、内存池泄漏、UTF-8 截断；同时产出 `assets/mockups/` 的界面图 |
-| `flow_sim` | 模拟器和状态机一致；在无界面 Chrome 里跑自测 |
+| `host_render` | 界面重叠、内存池泄漏、UTF-8 截断。同时产出 `assets/mockups/` 的界面图 |
+| `flow_sim` | 模拟器和状态机一致。在无界面 Chrome 里跑自测 |
 
 ## 本书写作时复核的结果
 

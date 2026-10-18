@@ -57,7 +57,7 @@ Source: `需求文件夹/04-validation-and-decisions.md`, decision table, at `ma
 | ID | Content | Status |
 |---|---|---|
 | D-33 | Page rail on the right side. It has four stops in the order of the short DOWN press. A lime thumb shows the current page. All stops have one color. The rail does not mark the UP and DOWN targets, and it has no arrows. The thumb slides in 180 ms. The popup page hides the rail. The rail changes no key. | The simulator and the firmware show the rail. The LVGL pool is now 28 KiB. The project owner confirmed Sprint 16 as complete. Related items: REQ-24 and TC-24. |
-| D-34 | All five screens use one status bar for the link state: a page dot, the page name, a link dot, and the link text. One binding in the flow graph can drive the same widget on more screens. | Document text: code complete, device tests not run. Related items: REQ-25, US-25, and Sprint 17. |
+| D-34 | All five screens use one status bar for the link state: a page dot, the page name, a link dot, and the link text. One binding in the flow graph can drive the same widget on more screens. | Code complete. The project owner confirmed Sprint 17 as complete. Related items: REQ-25 and US-25. |
 
 ## Proposed, not confirmed
 
