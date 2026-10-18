@@ -2,7 +2,7 @@
 
 # HeygoAI × AI Passport: architecture
 
-Version: 0.11. Date: 2026-10-18. Status: Draft for engineering review.
+Version: 0.12. Date: 2026-10-18. Status: Draft for engineering review.
 
 This document proposes a design for Increments 1 to 4 in [product requirements](01-product-requirements.md).
 It does not describe a working integration.
@@ -209,6 +209,25 @@ The cancel command comes with the short UP or DOWN press. Playback stops within 
 
 Button callbacks queue an event and return at once. A task handles the link and the audio.
 
+### Status bar (D-34)
+
+All five screens use the same status bar: the four pages of the loop and the popup page.
+
+| Widget | Position | Content |
+|---|---|---|
+| `mode_dot` | `x=14, y=19`, 7 × 7 | The page dot. Lime. On the popup page, the color of the kind |
+| `mode` | `x=26, y=10`, width 66 | The page name, at most 4 Chinese characters (64 px) |
+| `link_dot` | `x=96, y=19`, 7 × 7 | Lime when the link works. Red with no link or no voice |
+| `status` | `x=108, y=10`, width 60 | "已连接" in gray, "未连接" in red, or "无语音" in red. Each text is 3 characters (48 px) |
+| `battery` | `x=176..226, y=11`, right-aligned | The battery text. Not on the popup page, because the badge is there |
+
+The flow graph binds `status_text` and `link_state` to `status` and `link_dot` on each of the five screens.
+A binding in `flows/coach.flow.json` has a `screens` list for this. Without the list, a binding drives screen 0 only, as before.
+`flowc.py` makes one attach function and one teardown function for each screen with bindings, for example `coach_bindings_attach_ski()` and `coach_teardown_ski()`.
+`show_screen()` in `main/coach_app.c` attaches the bindings after it builds a screen. It detaches them before it deletes the screen.
+So a link change writes the subjects once, and the screen that is on shows it at once. A new screen gets the current values when it attaches.
+The device holds only one set of observers at a time, because only one screen exists at a time.
+
 ### Coach page layout
 
 Coordinates use screen pixels from the top-left corner.
@@ -216,7 +235,7 @@ The screen has a corner mask with a 30-pixel radius. Key text stays out of the m
 
 | Area | Range | Content |
 |---|---|---|
-| Status bar | `x=32..207, y=0..35` | Page name, link state, battery |
+| Status bar | `x=14..226, y=0..35` | Page name, link state, battery. The status bar section gives the parts. |
 | Destination | `x=12..227, y=36..67` | The words "AI coach" |
 | State | `x=12..227, y=68..187` | Ready, listening, thinking, answering, or failed, with an icon |
 | Text | `x=12..227, y=188..283` | A short transcript, a short answer, or a retry message |
