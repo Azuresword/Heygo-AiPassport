@@ -436,15 +436,16 @@ A reconnect cancels the open exchange.
 
 ### Boot sound (D-36)
 
-`assets/tools/gen_boot_sound.py` makes the boot sound from code, with a fixed random seed. It writes `assets/audio/heygo_boot_sound.c`: 2.0 s of 16 kHz, 16-bit, mono PCM, 64,000 bytes in Flash. It also writes `boot_sound.wav` for listening and for the simulator.
+`assets/tools/gen_boot_sound.py` makes three designs from code, with a fixed random seed. They aim at a clean, synthetic "tech and sport" feel, and copy no product sound. The user rejected the first version (plucks and a bell) on 2026-10-18.
+The script writes `boot_sound_a.wav`, `boot_sound_b.wav`, and `boot_sound_c.wav` for the simulator. It writes the picked design (`--pick`, now A) to `assets/audio/heygo_boot_sound.c`: 2.0 s of 16 kHz, 16-bit, mono PCM, 64,000 bytes in Flash.
 
-| Time | Sound | Animation |
-|---|---|---|
-| 0 to 0.45 s | Band-pass noise that sweeps from 900 Hz to 3,200 Hz | The snowboard carves in |
-| 0.18 to 0.58 s | Five plucks: E5, F#5, G#5, B5, C#6 | "g", "o", "H", "e", "y" |
-| 1.0 to 2.0 s | A bell chord in E, and a shimmer at 2,637 Hz from 1.15 s | The tagline and the lime line |
+| Design | 0 to 0.42 s, the board | 0.42 to 0.9 s, the letters | 1.0 to 2.0 s, the tagline |
+|---|---|---|---|
+| A "Dash" | A saw riser from 220 Hz to 1,760 Hz through a filter that opens | An impact (1,400 Hz falls to 380 Hz), then two FM blips: B5, F#6 | A wide FM chord E5, B5, E6, E7, and a short air burst |
+| B "Carve" | Two narrow noise carves that sweep up | An impact, then three metallic FM ticks: A6, C#7, E7 | A saw chord in E with a filter that opens and closes |
+| C "Pulse" | A soft rising tone | Three pure tones that glide into E5, B5, E6 | A held E6 with vibrato, and a shimmer at E7 |
 
-The sound has no energy below 250 Hz, because the small speaker rattles at low tones. Its peak is -6 dBFS, and its RMS is -22.8 dBFS. The last 150 ms fade out, so the end makes no click.
+Each design has no energy below 300 Hz, because the small speaker rattles at low tones. Each peak is -4 dBFS. The RMS is -18.6 dBFS (A), -20.9 dBFS (B), and -17.3 dBFS (C). The last 120 ms fade out, so the end makes no click.
 `voice_play_cue()` plays it in a fourth voice mode, `MODE_CUE`. The voice task writes 20 ms blocks and checks the stop flag after each block.
 The sound plays only when the codec is idle. A capture, an answer, or popup audio stops it first, within one block. A capture that starts during the sound therefore starts at most about 20 ms late.
 `coach_app_start()` starts the sound right after `voice_start()`. The boot screen is already on the screen then.
