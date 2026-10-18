@@ -86,22 +86,22 @@ class ValidatorTest(unittest.TestCase):
 
     def test_binding_on_more_screens_emits_one_attach_each(self):
         g = copy.deepcopy(GOOD)
-        b = next(x for x in g["bindings"] if x["subject"] == "battery_text")
+        b = next(x for x in g["bindings"] if x["subject"] == "hint_text")
         b["screens"] = ["coach", "ski"]
         h, c = flowc.emit_bindings(g, "x.json")
         self.assertIn("void coach_bindings_attach(const coach_screen_coach_t *screen);", h)
         self.assertIn("void coach_bindings_attach_ski(const coach_screen_ski_t *screen);", h)
         self.assertIn("void coach_teardown_ski(coach_screen_ski_t *screen);", h)
         ski = c.split("void coach_bindings_attach_ski(")[1].split("\n}")[0]
-        self.assertIn("&s_subject_battery_text", ski)
-        self.assertIn("s_bound[s_n_bound++] = screen->battery;", ski)
+        self.assertIn("&s_subject_hint_text", ski)
+        self.assertIn("s_bound[s_n_bound++] = screen->hint;", ski)
         self.assertNotIn("s_subject_body_text", ski)   # the other bindings stay on the Coach page
         teardown = c.split("void coach_teardown_ski(")[1].split("\n}")[0]
         self.assertLess(teardown.index("coach_bindings_detach();"), teardown.index("coach_screen_ski_destroy"))
 
     def test_rule5_counts_the_observers_of_each_screen(self):
         g = copy.deepcopy(GOOD)
-        b = next(x for x in g["bindings"] if x["subject"] == "battery_text")
+        b = next(x for x in g["bindings"] if x["subject"] == "hint_text")
         b["screens"] = ["coach"]
         base = check(copy.deepcopy(g))["pool_estimate"]
         b["screens"] = ["coach", "ski"]           # the live data page is the largest screen
