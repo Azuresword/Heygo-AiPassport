@@ -106,6 +106,19 @@
   .rail .thumb { position: absolute; left: 1px; width: 6px; height: 44px; border-radius: 3px; background: #B1FE2B;
                  box-shadow: 0 0 6px rgba(177, 254, 43, .55); transition: top 180ms cubic-bezier(.2, .8, .2, 1); }
   .rail .thumb.jump { transition: none; }
+  /* D-35: the boot screen, and the design of a shutdown screen. The same time line as main/ui/boot_screen.c. */
+  .boot { position: absolute; inset: 0; background: #000; z-index: 8; overflow: hidden; }
+  .boot.off { display: none; }
+  .boot .part, .boot .tag { position: absolute; opacity: 0; will-change: transform, opacity;
+                            transition: transform var(--ms) cubic-bezier(.2, .8, .2, 1) var(--d), opacity var(--ms) cubic-bezier(.2, .8, .2, 1) var(--d); }
+  .boot.go .part, .boot.go .tag { opacity: 1; transform: none !important; }
+  .boot .tag { left: 0; right: 0; top: 214px; text-align: center; color: var(--ink); font: 20px/1 "Staatliches", Impact, "Arial Narrow", sans-serif; }
+  .boot .tag b { color: var(--accent); font-weight: normal; }
+  .boot .line { position: absolute; top: 242px; left: 50%; height: 3px; width: 0; border-radius: 1.5px; background: var(--accent);
+                transform: translateX(-50%); transition: width 400ms cubic-bezier(.2, .8, .2, 1) 1150ms; }
+  .boot.go .line { width: var(--lw); }
+  .boot.bye .line { width: 0; transition: width 250ms ease-in 0ms; }
+  .lcd.dark { filter: brightness(0); transition: filter 300ms; }
   /* D-31: the entry animation of the popup page. The same times as main/ui/popup_anim.c. */
   .popup-icon { background-repeat: no-repeat; background-size: 224px 224px; }
   @keyframes pdrop { 0% { transform: translateY(-80px); } 36% { transform: translateY(0); } 54% { transform: translateY(-18px); }
@@ -316,6 +329,8 @@
       <p class="note">自动模式会在 AGENT_END 后按所选场景回应。关闭后可手动发送手机事件。</p>
       <div class="row" style="margin-top:12px" id="popupBtns"></div>
       <p class="note">App 弹窗（D-31）：任何状态收到 POPUP 都立即打断，录音、等回答、播放都会取消。有语音时先播完，再倒计时 10 秒；没有语音直接倒计时。任何键都只关闭弹窗，回到弹窗前的页面（教练页的各状态回到就绪）。新弹窗替换旧弹窗。</p>
+      <div class="row" style="margin-top:12px" id="bootBtns"></div>
+      <p class="note">开机（D-35）：每次上电先播约 2 秒开机动画：滑雪板划入，"go" 升起，"Hey" 从左滑入，再出现标语 MAKE EVERY RUN COUNT。按任意键立即跳过，这次按键不触发页面动作。关机：电源键由硬件直接断电，固件读不到，所以设备上没有关机动画。"关机动画（设计稿）"只在这里演示，等硬件能检测电源键时再接入。</p>
       <div class="row" style="margin-top:12px" id="skiBtns"></div>
       <p class="note">开始滑行（D-32）：手机先发 RUN_START。报告页、弯型页、教练就绪时立即跳到实时数据页；和教练对话中，等对话结束再跳；弹窗中，弹窗关闭后回实时数据页。滑行数据：开始后手机每秒发一个 LIVE_STATS。暂停 5 秒后速度显示"--"。结束一趟后 2 秒发 RUN_REPORT 和 TURN_SHAPE。设备按组（8 弯一组）发 TURN_REQUEST，手机用 TURN_GROUP 回复，设备缓存前中后 3 组。弯型页：短按 OK 下一弯，长按 UP 上一弯，长按 DOWN 下一页（8 弯）；短按 UP/DOWN 换页面。打开时第一页每 40 ms 画一个点。"弯数"填数字可模拟弯很多的一趟。第 3 趟的弯型是示意。数据只改屏幕文字，不改状态。</p>
     </div>
@@ -1194,9 +1209,105 @@ function buildSki() {
   box.appendChild(cnt);
 }
 
+// ---------------------------------------------------------------- boot (D-35)
+// The same parts, places, and times as main/ui/boot_screen.c. The device starts on this screen.
+const BOOT_MS = 2000, LOGO_Y = 108;
+const BOOT_ENTRY = { h: [-16, 0, 420, 320], e: [-16, 0, 500, 320], y: [-16, 0, 580, 320],
+                     g: [0, 12, 180, 320], o: [0, 12, 260, 320], board: [-60, 40, 0, 420] };
+// The shutdown design: the reverse order. [dx, dy, delay, ms] to the end place.
+const BYE_EXIT = { h: [-16, 0, 300, 300], e: [-16, 0, 220, 300], y: [-16, 0, 140, 300],
+                   g: [0, 12, 380, 300], o: [0, 12, 440, 300], board: [60, -40, 520, 420] };
+let booting = false, bootKey = null, bootTimer = 0, byeing = false;
+function buildBoot() {
+  const L = DATA.logo, b = document.createElement("div");
+  b.className = "boot off"; b.id = "boot";
+  const x0 = (240 - L.width) / 2;
+  for (const name of ["h", "e", "y", "g", "o", "board"]) {
+    const p = L.parts[name], im = document.createElement("img");
+    im.className = "part"; im.dataset.part = name; im.src = p.src; im.alt = "";
+    Object.assign(im.style, { left: x0 + p.x + "px", top: LOGO_Y + p.y + "px", width: p.w + "px", height: p.h + "px" });
+    b.appendChild(im);
+  }
+  const t = document.createElement("div");
+  t.className = "tag"; t.innerHTML = `${S["boot.tagline"]} <b>${S["boot.tagline_accent"]}</b>`;
+  b.appendChild(t);
+  const line = document.createElement("div"); line.className = "line"; b.appendChild(line);
+  $("lcd").appendChild(b);
+}
+function setEntry(b, table) {
+  for (const im of b.querySelectorAll(".part")) {
+    const [dx, dy, d, ms] = table[im.dataset.part];
+    im.style.setProperty("--d", d + "ms"); im.style.setProperty("--ms", ms + "ms");
+    im.style.transform = `translate(${dx}px, ${dy}px)`;
+  }
+  const t = b.querySelector(".tag");
+  t.style.setProperty("--d", "1000ms"); t.style.setProperty("--ms", "300ms"); t.style.transform = "translateY(8px)";
+}
+// The width of the tagline text, for the line under it. The device uses the same width.
+function measureTag(b) {
+  const t = b.querySelector(".tag"), r = document.createRange();
+  r.selectNodeContents(t);
+  return Math.round(r.getBoundingClientRect().width / (t.getBoundingClientRect().width / t.offsetWidth || 1));
+}
+function bootStart() {
+  const b = $("boot"); if (!b) return;
+  clearTimeout(bootTimer);
+  byeing = false; $("lcd").classList.remove("dark");
+  b.className = "boot"; setEntry(b, BOOT_ENTRY);
+  const tw = b.querySelector(".tag").firstChild ? measureTag(b) : 180;
+  b.querySelector(".line").style.setProperty("--lw", tw + "px");
+  void b.offsetWidth;
+  b.classList.add("go");
+  booting = true;
+  bootTimer = setTimeout(bootEnd, BOOT_MS);
+  addLog("fsmLog", "开机动画（D-35）：2 秒后进入第一页，按任意键跳过");
+}
+function bootEnd() {
+  if (!booting) return;
+  booting = false; clearTimeout(bootTimer);
+  $("boot").className = "boot off";
+  addLog("fsmLog", `开机动画结束：<b>${sname(st)}</b>`);
+  paint();
+}
+// The shutdown design. It plays here only: the power key cuts the power, and the firmware cannot read it.
+function byeDemo() {
+  if (booting || byeing) return;
+  const b = $("boot"); byeing = true;
+  b.className = "boot go"; setEntry(b, BOOT_ENTRY);
+  for (const im of b.querySelectorAll(".part")) { im.style.transition = "none"; im.style.transform = "none"; }
+  void b.offsetWidth;
+  for (const im of b.querySelectorAll(".part")) {
+    const [dx, dy, d, ms] = BYE_EXIT[im.dataset.part];
+    im.style.transition = `transform ${ms}ms cubic-bezier(.6, 0, .8, .2) ${d}ms, opacity ${ms}ms ease-in ${d}ms`;
+    im.style.transform = `translate(${dx}px, ${dy}px)`; im.style.opacity = "0";
+  }
+  const t = b.querySelector(".tag");
+  t.style.transition = "opacity 250ms ease-in 0ms, transform 250ms ease-in 0ms"; t.style.opacity = "0"; t.style.transform = "translateY(8px)";
+  b.classList.add("bye");
+  addLog("fsmLog", "关机动画（设计稿）：设备上没有这段动画，电源键直接断电");
+  later(1100, () => $("lcd").classList.add("dark"));
+  later(2200, () => {
+    for (const im of b.querySelectorAll(".part")) { im.style.transition = ""; im.style.opacity = ""; }
+    t.style.transition = ""; t.style.opacity = "";
+    bootStart();
+  });
+}
+function buildBootBtns() {
+  const box = $("bootBtns"); box.innerHTML = "";
+  for (const [label, title, fn] of [["重播开机动画", "上电或唤醒时的开机动画", () => bootStart()],
+                                    ["关机动画（设计稿）", "只在模拟器演示：电源键直接断电，固件读不到", byeDemo]]) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "ctl"; b.textContent = label; b.title = title; b.onclick = fn;
+    box.appendChild(b);
+  }
+}
+
 // ---------------------------------------------------------------- buttons
 let pressed = null;
 function press(key, el) {
+  // D-35: a key on the boot screen only skips it. The events of that key stop until it is released.
+  if (byeing) return;
+  if (booting) { bootEnd(); bootKey = key; el.classList.add("down"); return; }
   if (pressed) { toast("三个键共用一个 ADC，一次只能按一个键"); return; }
   pressed = { key, el, t: performance.now(), hold: false };
   el.classList.add("down");
@@ -1206,6 +1317,7 @@ function press(key, el) {
   }, HOLD_MS);
 }
 function release(key) {
+  if (bootKey === key) { bootKey = null; document.querySelector(`.key[data-key="${key}"]`).classList.remove("down"); return; }
   if (!pressed || pressed.key !== key) return;
   const p = pressed; pressed = null;
   clearTimeout(p.id);
@@ -1383,11 +1495,13 @@ function reset() {
   $("fsmLog").innerHTML = ""; $("bleLog").innerHTML = ""; $("issues").innerHTML = "";
   for (const s of DATA.static_issues) { const li = document.createElement("li"); li.textContent = s; $("issues").appendChild(li); }
   buildScreens();
+  buildBoot();
   addLog("fsmLog", `开机：<b>${sname(st)}</b>`);
   setLink(true);
   render();
+  bootStart();
 }
-buildPhone(); buildPopup(); buildSki(); buildGraph(); buildMatrix();
+buildPhone(); buildPopup(); buildBootBtns(); buildSki(); buildGraph(); buildMatrix();
 $("reset").onclick = reset;
 reset();
 requestAnimationFrame(tick);
