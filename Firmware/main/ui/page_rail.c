@@ -11,7 +11,7 @@
 #define RAIL_H     (PAGE_RAIL_STEP * (PAGE_RAIL_PAGES - 1) + PAGE_RAIL_STOP)
 
 static lv_obj_t *s_rail;
-static int s_page = -1, s_up = -1, s_down = -1;
+static int s_page = -1;
 static int32_t s_thumb_y;       // The top of the thumb, from the top of the rail.
 static int32_t s_wrap_to;       // During a wrap: the stop after the jump. Else -1.
 
@@ -31,9 +31,7 @@ static void on_draw(lv_event_t *e) {
     lv_area_t base;
     lv_obj_get_coords(lv_event_get_target_obj(e), &base);
     for (int i = 0; i < PAGE_RAIL_PAGES; i++) {
-        const bool target = i == s_up || i == s_down;
-        rect(layer, &base, STOP_X, i * PAGE_RAIL_STEP, STOP_W, PAGE_RAIL_STOP,
-             target ? ui_color_muted() : lv_color_hex(0x3A3A3A), LV_OPA_COVER, 1);
+        rect(layer, &base, STOP_X, i * PAGE_RAIL_STEP, STOP_W, PAGE_RAIL_STOP, lv_color_hex(0x3A3A3A), LV_OPA_COVER, 1);
     }
     rect(layer, &base, THUMB_X - HALO, s_thumb_y - HALO, THUMB_W + 2 * HALO, PAGE_RAIL_STOP + 2 * HALO,
          ui_color_accent(), LV_OPA_40, 4);
@@ -75,7 +73,7 @@ void page_rail_create(lv_obj_t *parent) {
     lv_obj_remove_flag(s_rail, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_flag(s_rail, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_event_cb(s_rail, on_draw, LV_EVENT_DRAW_MAIN, NULL);
-    s_page = s_up = s_down = s_wrap_to = -1;
+    s_page = s_wrap_to = -1;
 }
 
 int page_rail_index(coach_screen_id_t screen) {
@@ -88,13 +86,6 @@ int page_rail_index(coach_screen_id_t screen) {
     }
 }
 
-// The rail index of the page that this short press opens. -1: the press changes no page.
-static int target(coach_state_t state, coach_event_t event) {
-    coach_flow_t probe = { .state = state };
-    const coach_step_t step = coach_flow_step(&probe, event);
-    return step.handled ? page_rail_index(coach_state_screen(step.to)) : -1;
-}
-
 void page_rail_follow(coach_state_t state, bool anim) {
     if (!s_rail) return;
     const int page = page_rail_index(coach_state_screen(state));
@@ -103,27 +94,21 @@ void page_rail_follow(coach_state_t state, bool anim) {
         s_page = -1;                // After the popup, the thumb appears in place.
         return;
     }
-    const int up = target(state, COACH_EVENT_UP_SHORT), down = target(state, COACH_EVENT_DOWN_SHORT);
-    const bool moved = page != s_page;
-    if (!moved && up == s_up && down == s_down) return;
-    s_up = up;
-    s_down = down;
     lv_obj_remove_flag(s_rail, LV_OBJ_FLAG_HIDDEN);
-    if (moved) {
-        lv_anim_delete(s_rail, set_thumb);
-        s_wrap_to = -1;
-        const int last = PAGE_RAIL_PAGES - 1;
-        const bool wrap_down = s_page == last && page == 0, wrap_up = s_page == 0 && page == last;
-        if (!anim || s_page < 0) {
-            s_thumb_y = page * PAGE_RAIL_STEP;
-        } else if (wrap_down || wrap_up) {
-            // Across the end of the loop: slide out past one end, and come in from the other end.
-            s_wrap_to = page;
-            slide(s_thumb_y, wrap_down ? RAIL_H + HALO : -PAGE_RAIL_STEP, PAGE_RAIL_MS / 2, wrap_in);
-        } else {
-            slide(s_thumb_y, page * PAGE_RAIL_STEP, PAGE_RAIL_MS, NULL);
-        }
-        s_page = page;
+    if (page == s_page) return;
+    lv_anim_delete(s_rail, set_thumb);
+    s_wrap_to = -1;
+    const int last = PAGE_RAIL_PAGES - 1;
+    const bool wrap_down = s_page == last && page == 0, wrap_up = s_page == 0 && page == last;
+    if (!anim || s_page < 0) {
+        s_thumb_y = page * PAGE_RAIL_STEP;
+    } else if (wrap_down || wrap_up) {
+        // Across the end of the loop: slide out past one end, and come in from the other end.
+        s_wrap_to = page;
+        slide(s_thumb_y, wrap_down ? RAIL_H + HALO : -PAGE_RAIL_STEP, PAGE_RAIL_MS / 2, wrap_in);
+    } else {
+        slide(s_thumb_y, page * PAGE_RAIL_STEP, PAGE_RAIL_MS, NULL);
     }
+    s_page = page;
     lv_obj_invalidate(s_rail);
 }
