@@ -303,7 +303,7 @@ Each Sprint lasts four hours. The [Four-hour Sprint roadmap](08-sprint-roadmap.m
 | 13 | Increment 4: the popup page and the two popup messages. Host only. | Code on the branch `feat/app-popups`. Host tests pass. Device tests NOT RUN. |
 | 14 | Accept Increment 4 on the board with `phone_sim --popups`. | Not started. Needs the board. |
 | 15 | The run start (D-32): the phone starts a run, and the device opens the live data page. | Code on the branch `feat/run-start`. Host tests pass. Device test of TC-23 NOT RUN. |
-| 16 | The page rail (D-33): first the simulator, then the firmware. | Simulator done. Its self-test passes. Firmware not started. Device test of TC-24 NOT RUN. |
+| 16 | The page rail (D-33): first the simulator, then the firmware. | Simulator and firmware done. The LVGL pool is 28 KiB for the rail. Host tests pass. Device test of TC-24 NOT RUN. |
 | 17 | The link state on every page (D-34): flow graph, generator, firmware, and simulator. | Code done. Host tests and the simulator self-test pass. Device test of TC-25 NOT RUN. |
 
 ## 9. Definition of Done
