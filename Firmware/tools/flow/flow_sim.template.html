@@ -330,7 +330,7 @@
       <div class="row" style="margin-top:12px" id="popupBtns"></div>
       <p class="note">App 弹窗（D-31）：任何状态收到 POPUP 都立即打断，录音、等回答、播放都会取消。有语音时先播完，再倒计时 10 秒；没有语音直接倒计时。任何键都只关闭弹窗，回到弹窗前的页面（教练页的各状态回到就绪）。新弹窗替换旧弹窗。</p>
       <div class="row" style="margin-top:12px" id="bootBtns"></div>
-      <p class="note">开机（D-35）：每次上电先播约 2 秒开机动画：滑雪板划入，"go" 升起，"Hey" 从左滑入，再出现标语 MAKE EVERY RUN COUNT。按任意键立即跳过，这次按键不触发页面动作。关机：电源键由硬件直接断电，固件读不到，所以设备上没有关机动画。"关机动画（设计稿）"只在这里演示，等硬件能检测电源键时再接入。</p>
+      <p class="note">开机（D-35、D-36）：每次上电先播约 2 秒开机动画和开机音效（划板声、5 个字母拨音、钟声和弦）：滑雪板划入，"go" 升起，"Hey" 从左滑入，再出现标语 MAKE EVERY RUN COUNT。按任意键立即跳过，这次按键不触发页面动作。关机：电源键由硬件直接断电，固件读不到，所以设备上没有关机动画。"关机动画（设计稿）"只在这里演示，等硬件能检测电源键时再接入。</p>
       <div class="row" style="margin-top:12px" id="skiBtns"></div>
       <p class="note">开始滑行（D-32）：手机先发 RUN_START。报告页、弯型页、教练就绪时立即跳到实时数据页；和教练对话中，等对话结束再跳；弹窗中，弹窗关闭后回实时数据页。滑行数据：开始后手机每秒发一个 LIVE_STATS。暂停 5 秒后速度显示"--"。结束一趟后 2 秒发 RUN_REPORT 和 TURN_SHAPE。设备按组（8 弯一组）发 TURN_REQUEST，手机用 TURN_GROUP 回复，设备缓存前中后 3 组。弯型页：短按 OK 下一弯，长按 UP 上一弯，长按 DOWN 下一页（8 弯）；短按 UP/DOWN 换页面。打开时第一页每 40 ms 画一个点。"弯数"填数字可模拟弯很多的一趟。第 3 趟的弯型是示意。数据只改屏幕文字，不改状态。</p>
     </div>
@@ -1233,6 +1233,12 @@ function buildBoot() {
   b.appendChild(t);
   const line = document.createElement("div"); line.className = "line"; b.appendChild(line);
   $("lcd").appendChild(b);
+  // D-36: the boot sound. A browser plays it only after a click on the page.
+  if (!$("bootAudio")) {
+    const a = document.createElement("audio");
+    a.id = "bootAudio"; a.src = DATA.boot_sound; a.preload = "auto";
+    document.body.appendChild(a);
+  }
 }
 function setEntry(b, table) {
   for (const im of b.querySelectorAll(".part")) {
@@ -1260,6 +1266,8 @@ function bootStart() {
   b.classList.add("go");
   booting = true;
   bootTimer = setTimeout(bootEnd, BOOT_MS);
+  const snd = $("bootAudio");
+  if (snd) { snd.currentTime = 0; snd.play().catch(() => {}); }
   addLog("fsmLog", "开机动画（D-35）：2 秒后进入第一页，按任意键跳过");
 }
 function bootEnd() {
