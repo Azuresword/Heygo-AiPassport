@@ -319,7 +319,6 @@ The rail sits on the right edge of the four pages. The popup page hides it.
 | Rail | `x=231..238, y=64..251` | No background |
 | 4 stops | `x=234..235`, 2 × 44 px, `y=64 + 48 × i`, 4 px gap | Dark gray `#3A3A3A`. Order: live data, report, turns, coach |
 | Target stops | The stops of the short UP and DOWN targets | Light gray `#94A3B8` |
-| `▲`, `▼` | 6 × 4 px triangles, in the 4 px gap above the UP target and below the DOWN target | Light gray `#94A3B8` |
 | Thumb | `x=232..237`, 6 × 44 px, corner radius 3 | Accent lime `#B1FE2B`, with a 6 px glow |
 
 The rail reads the targets from the flow graph `flows/coach.flow.json`. It does not keep a second copy of the page order. So a change of the loop also changes the targets.
@@ -330,7 +329,7 @@ The text, the boxes, and the key hints of every page stay at `x≤230`. Only the
 
 The simulator `assets/sim/coach-flow.html` shows the rail. Its self-test checks the stops, the targets, and the wrap on three pages.
 The firmware part is the next step. Only one screen exists at a time, so the rail must live on the top layer of LVGL. Then the thumb can move while the task deletes the old screen and builds the new screen.
-The rail adds at most 7 objects. Measure the pool use before the merge. The gate on `5658911` shows a pool peak of 18,760 of 21,656 bytes.
+The rail adds at most 5 objects: 4 stops and the thumb. It has no arrows. Measure the pool use before the merge. The gate on `5658911` shows a pool peak of 18,760 of 21,656 bytes.
 
 ### Popup page layout
 
@@ -455,7 +454,7 @@ The device has no PSRAM. Streaming makes a full recording unnecessary.
 | The last LIVE_STATS and RUN_REPORT | 128 bytes | Doc 07, section 10. The struct sizes measured on the host. |
 | The last TURN_SHAPE, 3 cached groups, and the Turns page | About 4.0 KB | Doc 07, section 10. The symbol table of the firmware build. |
 | The current popup and the popup page texts | About 0.7 KB | D-31. Estimated from the struct sizes: three copies of the popup and one set of page texts. Not measured. |
-| Page rail | At most 7 LVGL objects in the pool | D-33. Not measured. The pool peak on `5658911` is 18,760 of 21,656 bytes. |
+| Page rail | At most 5 LVGL objects in the pool | D-33. Not measured. The pool peak on `5658911` is 18,760 of 21,656 bytes. |
 | Rider sprite | 25.6 KB in Flash, not in RAM | `assets/sprites`, made by `assets/tools/gen_sprite.py`. |
 | 48-pixel digit font | In Flash, not in RAM | Measure the size in Sprint 3. |
 | ADPCM codec state | A few bytes in each direction | D-09. |
