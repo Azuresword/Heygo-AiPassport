@@ -480,9 +480,10 @@ The user made three choices on 2026-10-17:
 **Cost.**
 
 - The rail uses 8 px of width at the right edge. The text, the boxes, and the key hints already stay at `x≤230`. Only the decorative ridge line goes under the rail.
-- The firmware must put the rail on the top layer of LVGL, because only one screen exists at a time. The rail adds at most 5 LVGL objects. The pool use is not measured.
+- The firmware puts the rail on the top layer of LVGL, because only one screen exists at a time. The rail is one LVGL object of 312 bytes.
+- With the rail, the 24 KiB pool hung the live data page when it drew the speed digits. The pool is now 28 KiB. That uses 4 KiB more of the system RAM. The free heap on the device is not measured yet.
 
-**Status.** The user asked for the rail on 2026-10-18. The simulator shows it, and its self-test passes. The user must review the look in the simulator. Firmware work has not started. Device tests are NOT RUN.
+**Status.** The user asked for the rail on 2026-10-18. The simulator shows it, and its self-test passes. The user must review the look in the simulator. The firmware shows it too. Device tests are NOT RUN.
 
 ## 28. D-34: the link state on every page
 
