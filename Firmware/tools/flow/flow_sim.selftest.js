@@ -22,6 +22,7 @@
   const bootOn = () => !document.getElementById("boot").classList.contains("off");
   ok(bootOn() && booting && document.querySelectorAll("#boot .part").length === 6, "0 the boot screen shows the six logo parts at power-on");
   ok(document.querySelector("#boot .tag").textContent === "MAKE EVERY RUN COUNT", "0 the boot screen shows the tagline");
+  ok(document.getElementById("bootAudio").src.startsWith("data:audio/wav"), "0 the boot sound is the WAV of the device (D-36)");
   await sleep(2100);
   ok(!bootOn() && st === "LIVE", "0 the boot screen ends after 2 s on the live data page");
   bootStart(); await sleep(300);
