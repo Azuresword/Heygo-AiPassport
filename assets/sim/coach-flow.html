@@ -107,9 +107,6 @@
   .rail .thumb { position: absolute; left: 1px; width: 6px; height: 44px; border-radius: 3px; background: #B1FE2B;
                  box-shadow: 0 0 6px rgba(177, 254, 43, .55); transition: top 180ms cubic-bezier(.2, .8, .2, 1); }
   .rail .thumb.jump { transition: none; }
-  .rail .arrow { position: absolute; left: 1px; width: 0; height: 0; border-left: 3px solid transparent; border-right: 3px solid transparent; }
-  .rail .arrow.up { border-bottom: 4px solid #94A3B8; }
-  .rail .arrow.down { border-top: 4px solid #94A3B8; }
   /* D-31: the entry animation of the popup page. The same times as main/ui/popup_anim.c. */
   .popup-icon { background-repeat: no-repeat; background-size: 224px 224px; }
   @keyframes pdrop { 0% { transform: translateY(-80px); } 36% { transform: translateY(0); } 54% { transform: translateY(-18px); }
@@ -510,7 +507,7 @@ function buildRail() {
   const r = document.createElement("div");
   r.className = "rail off"; r.id = "rail";
   r.innerHTML = RAIL_PAGES.map((p, i) => `<div class="stop" data-i="${i}" style="top:${i * RAIL_STEP}px"></div>`).join("") +
-    '<div class="arrow up"></div><div class="arrow down"></div><div class="thumb"></div>';
+    '<div class="thumb"></div>';
   $("lcd").appendChild(r);
   railIdx = -1;
 }
@@ -526,9 +523,6 @@ function paintRail() {
   if (idx < 0) { railIdx = -1; return; }
   const up = railTarget("UP_SHORT"), down = railTarget("DOWN_SHORT");
   for (const e of r.querySelectorAll(".stop")) e.classList.toggle("target", +e.dataset.i === up || +e.dataset.i === down);
-  const au = r.querySelector(".arrow.up"), ad = r.querySelector(".arrow.down");
-  au.style.display = up < 0 ? "none" : ""; ad.style.display = down < 0 ? "none" : "";
-  au.style.top = (up * RAIL_STEP - 6) + "px"; ad.style.top = (down * RAIL_STEP + 46) + "px";
   r.dataset.page = idx; r.dataset.up = up; r.dataset.down = down;
   const th = r.querySelector(".thumb");
   if (railIdx < 0) { th.classList.add("jump"); th.style.top = idx * RAIL_STEP + "px"; void th.offsetTop; th.classList.remove("jump"); }
