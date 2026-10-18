@@ -462,20 +462,18 @@ The user made three choices on 2026-10-17:
 
 - The rail has four stops from top to bottom: live data, report, turns, and coach. This is the order of the short DOWN press.
 - The stop of the current page is a lime thumb with a small glow.
-- The stops that a short UP press and a short DOWN press open are light gray.
-- The rail has no arrows. On 2026-10-18 the user deleted the ▲ and ▼ marks, because they did not help.
+- All four stops have one color, dark gray.
+- The rail does not mark the targets of the short UP and DOWN presses. On 2026-10-18 the user deleted the ▲ and ▼ marks and the light gray target stops. The product does not need them.
 - The thumb uses 180 ms to slide to the new stop.
 - Two page changes wrap: UP from live data to coach, and DOWN from coach to live data. In a wrap, the thumb slides out at one end and in at the other end.
-- The rail reads the targets from the flow graph. It keeps no second copy of the page order.
 - The popup page hides the rail. The rail changes no key.
 
 **Reason.**
 
 - Four pages form a loop, and the screen shows one page at a time. The user cannot see how many pages there are, or which page comes next.
 - Before D-33, the user had to press a key to find out where it goes. With gloves on the slope, each extra press costs time.
-- The light gray stops answer the question "where does this key go" before the press. The thumb movement shows the result of the press after it.
+- The order of the stops is the order of the short DOWN press. The thumb movement shows the result of each press.
 - The wrap movement shows that the last page and the first page touch. A rail without it looks like a list with two ends.
-- The targets come from the flow graph, so the rail and the keys cannot disagree. A change of the loop changes the rail also.
 
 **Cost.**
 
