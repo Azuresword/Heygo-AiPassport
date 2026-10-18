@@ -5,7 +5,7 @@
 
   "strings_file": "../../assets/ui/strings.json",
 
-  "lvgl_pool_bytes": 24576,
+  "lvgl_pool_bytes": 28672,
 
   "lvgl_pool_ceiling_bytes": 20480,
 
