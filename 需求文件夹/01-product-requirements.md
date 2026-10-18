@@ -2,7 +2,7 @@
 
 # HeygoAI and AI Passport: product requirements
 
-Version: 0.10. Date: 2026-10-18. Status: Draft for review.
+Version: 0.11. Date: 2026-10-18. Status: Draft for review.
 The Product Owner role has no assigned person.
 This document defines a concept. It does not describe a working integration.
 
@@ -54,7 +54,7 @@ D-17, D-18, and D-22 set these priorities. [Decision amendments](05-decision-ame
 | Priority | Increment | Requirements |
 | --- | --- | --- |
 | P0 | Increment 1: the Coach voice chain | REQ-01, REQ-06, REQ-07, REQ-08, REQ-15, REQ-17, REQ-20 |
-| P1 | Increment 2: live data and reports | REQ-02, REQ-03, REQ-21, REQ-23, REQ-24 |
+| P1 | Increment 2: live data and reports | REQ-02, REQ-03, REQ-21, REQ-23, REQ-24, REQ-25 |
 | P1 | Increment 3: the turn shape (D-30) | REQ-05 |
 | P1 | Increment 4: phone popups (D-31) | REQ-22 |
 | P1 | After Increment 2 | REQ-04, REQ-09, REQ-13 |
@@ -117,6 +117,7 @@ Each row has test stage Prototype. Owners are roles with no assigned person.
 | REQ-21 | During a run, show live data on the live data page: speed, vertical drop, distance, turn count, and run time. The phone sends one packet each second. | Firmware and design. | TC-21: the screen updates within 300 ms of the packet at the 95th percentile. At least 4 of 5 users read the speed correctly within 2 seconds. | REQ-02. |
 | REQ-23 | When the phone starts a run, open the live data page at once. Show the run number and "--" for each value until the first packet. During a talk with the coach, open the page after the talk ends. During a popup, open the page after the popup closes. | Phone and firmware. | TC-23: in 20 runs with phone_sim, the screen changes to the live data page within 300 ms of RUN_START at the 95th percentile. A run start during a talk or a popup opens the live data page after the talk or the popup ends, each time. | REQ-21. RUN_START as doc 07 defines (D-32). |
 | REQ-24 | Show where the user is in the page loop. A rail on the right edge has one stop for each page. The current page shows as a lime thumb. The pages that a short UP press and a short DOWN press open show as light stops, with ▲ and ▼. The thumb slides to the new page (D-33). | Firmware and design. | TC-24: in 40 short UP and DOWN presses on the four pages, the thumb is on the new page within 200 ms each time. The marked stops always match the pages that the next presses open. Before a press, at least 4 of 5 users say which page a short DOWN press opens. | The page loop of D-29 and D-30. |
+| REQ-25 | Show the link state in the status bar of every page: the four pages of the loop and the popup page. A lime dot with "已连接" means that the link to the phone works. A red dot with "未连接" means no link. A red dot with "无语音" means that the link works, but voice does not. Each page shows the change at once, with no page change (D-34). | Firmware and design. | TC-25: use phone_sim for 20 link losses and 20 reconnects on the five pages. Each time, the status bar shows the new state within 1 second of the link event in the device log. Each page shows the same text and color. | REQ-20. |
 | REQ-03 | After each run, show the report of that run. It holds the distance, the turn count, the Heygo IQ, the core problem, and a tip of at most 20 characters. | Firmware and design. | TC-03: in 30 short DOWN presses on the Coach page, the Report page shows within 500 ms each time. Every value matches the phone log. | REQ-02. |
 | REQ-05 | After each run, show the shape of that run in groups of 8 turns, and replay one turn. The user moves from turn to turn with the keys. The page shows the action of each key. Each turn shows its side, speed, edge angle, and radius. A schematic shape shows "示意". | Firmware and design. | TC-05: in 20 runs with phone_sim and up to 255 turns, each key press shows its turn within 500 milliseconds. Each turn value matches the phone log. A schematic shape shows "示意" each time. | REQ-03. TURN_SHAPE, TURN_GROUP, and TURN_REQUEST as doc 07 defines. |
 | REQ-22 | Show a popup from the phone at once, on every page and in every state. Four kinds: fall alert, voice message, problem report, and achievement. Play the popup audio, then count down 10 seconds. Any key closes the popup. Then go back to the page before the popup. | Phone and firmware. | TC-22: in 40 popups with phone_sim, each popup shows within 500 ms on every page and in every Coach state. Each popup closes after its audio and 10 seconds, or at a key press. The device then shows the page before the popup each time. | POPUP and POPUP_END as doc 07 defines. The phone owns the escalation of a fall alert. |
@@ -183,6 +184,18 @@ A rail on the right edge shows the page loop. It has four stops from top to bott
 - During capture, the wait, or the playback, the rail shows the same targets. A short UP or DOWN press there cancels the question first.
 - The popup page hides the rail, because the popup is not in the loop.
 - The rail does not change the keys. It only shows their result.
+
+### Link state on every page (D-34)
+
+Before D-34, only the Coach page showed the link state. On the other pages, the user did not see a link loss until data stopped.
+
+- Each page has the same status bar. On the left: a small dot and the page name. After it: the link dot and the link text.
+- The link dot and the link text are at the same position on every page. So they do not move on a page change.
+- "已连接" (connected): a lime dot and gray text.
+- "未连接" (not connected): a red dot and red text.
+- "无语音" (no voice): a red dot and red text. The link works, but the phone does not answer voice. Before D-34, this state showed "语音不可用". That text is 80 px wide and did not fit in the status bar.
+- At a link loss, every page changes its status bar at once. The page itself does not change.
+- The popup page also shows the link state. A popup from the phone can stay on the screen after a link loss.
 
 ### Audio rules
 
