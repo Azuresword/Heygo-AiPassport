@@ -22,14 +22,16 @@
 
 ## 本书写作时复核的结果
 
-2026-10-18 在 `main` 提交 `d99a7d9` 上运行：
+2026-10-18 在提交 `df81cc8` 上运行完整门禁 `./tools/validate.sh`，退出码 0。`Firmware/` 与 `c865ba8` 相同。
 
 <div class="tiles">
-<div class="tile accent"><div class="k">flow_sim --check</div><div class="v" style="font-size:24px">PASS</div></div>
+<div class="tile accent"><div class="k">完整门禁</div><div class="v" style="font-size:24px">PASS</div></div>
 <div class="tile accent"><div class="k">模拟器自测</div><div class="v">122<small>/122</small></div></div>
+<div class="tile"><div class="k">字形</div><div class="v">71<small>+43</small></div></div>
+<div class="tile"><div class="k">合并镜像</div><div class="v">1.92<small>MiB</small></div></div>
 </div>
 
-只跑了这两项。完整门禁需要 ESP-IDF 5.5.3 环境，这台云机器上没有装。
+逐项结果见 [制作方法](build-flash.zh_CN.md)。
 
 ## 设备侧验证
 

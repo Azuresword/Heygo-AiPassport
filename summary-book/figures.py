@@ -272,6 +272,220 @@ def sprint_board(lang):
 
 
 
+# ---------------------------------------------------------------- firmware layers
+LAYERS = {
+    "en": dict(title="Firmware layers", host="Plain C · host tests", rows=[
+        ("APP", "Coach app", ["coach_app.c · state machine task", "coach_input.c · keys → events", "generated/ · flow, screens, UI"]),
+        ("UI", "Screens", ["ui/ski_view · stats_fmt", "ui/turn_view · turn_page", "ui/popup_view · popup_anim"]),
+        ("LINK", "BLE link and protocol", ["protocol/ble_proto · packets", "link/link_core · session rules", "link/ble_link · NimBLE, TX queues"]),
+        ("AUDIO", "Voice", ["audio/voice · capture and playback", "audio/ima_adpcm · 164 B blocks", "audio/play_gate · envelope"]),
+        ("BSP", "Board support", ["display · LVGL port · SPI 80 MHz", "button · ADC on GPIO0", "audio ES8311 · battery CW2017 · I2C"]),
+        ("LIBS", "Libraries", ["LVGL 9.5.0 · esp_lvgl_port 2.9.0", "NimBLE (peripheral only)", "esp_codec_dev 1.6.2 · button 4.2.0"]),
+        ("IDF", "ESP-IDF 5.5.3", ["ESP32-C3 · RISC-V 160 MHz", "FreeRTOS · 1000 Hz tick", "8 MB flash · DIO 80 MHz"]),
+    ], pure=[(0, 1), (2, 0), (2, 1), (3, 1), (3, 2)]),
+    "zh": dict(title="固件分层", host="纯 C · 有主机测试", rows=[
+        ("APP", "Coach 应用", ["coach_app.c · 状态机任务", "coach_input.c · 按键 → 事件", "generated/ · 流程、界面、绑定"]),
+        ("UI", "界面", ["ui/ski_view · stats_fmt", "ui/turn_view · turn_page", "ui/popup_view · popup_anim"]),
+        ("LINK", "蓝牙链路与协议", ["protocol/ble_proto · 包编解码", "link/link_core · 会话规则", "link/ble_link · NimBLE、发送队列"]),
+        ("AUDIO", "语音", ["audio/voice · 录音和播放", "audio/ima_adpcm · 164 字节一块", "audio/play_gate · envelope"]),
+        ("BSP", "板级支持", ["显示 · LVGL 适配 · SPI 80 MHz", "按键 · GPIO0 ADC", "音频 ES8311 · 电量 CW2017 · I2C"]),
+        ("LIBS", "第三方库", ["LVGL 9.5.0 · esp_lvgl_port 2.9.0", "NimBLE（只做外设）", "esp_codec_dev 1.6.2 · button 4.2.0"]),
+        ("IDF", "ESP-IDF 5.5.3", ["ESP32-C3 · RISC-V 160 MHz", "FreeRTOS · 1000 Hz 节拍", "8 MB Flash · DIO 80 MHz"]),
+    ], pure=[(0, 1), (2, 0), (2, 1), (3, 1), (3, 2)]),
+}
+
+
+def layers(lang):
+    L = LAYERS[lang]
+    W, x0, lw, gap, rh = 964, 24, 168, 10, 52
+    cw = (W - x0 * 2 - lw - 12 - gap * 2) / 3
+    b = []
+    for i, (tag, name, cells) in enumerate(L["rows"]):
+        y = 24 + i * (rh + 8)
+        own = i < 5
+        b.append(box(x0, y, lw, rh, fill=PANEL2 if own else BG, stroke="#4b6a12" if own else LINE, rx=10))
+        b.append(text(x0 + 14, y + 20, tag, 10.5, GREEN if own else INK3, 700, mono=True, ls=1.5))
+        b.append(text(x0 + 14, y + 39, name, 12.5, INK if own else INK2, 600))
+        for j, c in enumerate(cells):
+            x = x0 + lw + 12 + j * (cw + gap)
+            pure = (i, j) in L["pure"]
+            b.append(box(x, y, cw, rh, fill=BG, stroke=GREEN if pure else LINE, rx=10))
+            b.append(text(x + 12, y + 31, c, 11, INK if own else INK2, mono=(i < 4)))
+    y = 24 + 7 * (rh + 8) + 6
+    b.append(box(x0 + lw + 12, y, 16, 12, fill=BG, stroke=GREEN, rx=3))
+    b.append(text(x0 + lw + 36, y + 11, L["host"], 12, INK2))
+    return svg(W, y + 30, "".join(b), L["title"])
+
+
+# ---------------------------------------------------------------- tasks and queues
+TASKS = {
+    "en": dict(title="Tasks, priorities, stacks, and queues",
+               prio="priority", stack="stack", note="Higher number = higher priority. Stacks in bytes.",
+               tasks=[("voice", 7, 4096, "Encodes the mic, feeds the speaker"), ("ble_tx", 6, 3072, "Sends control first, then audio"),
+                      ("coach", 5, 4096, "State machine, one event at a time"), ("LVGL", 4, 7168, "esp_lvgl_port, 5 ms tick"),
+                      ("NimBLE host", None, 4096, "GATT, connection, RX callbacks")],
+               queues=[("coach queue", "16 messages", "keys · timers · link events"), ("control TX", "8 packets", "never dropped"),
+                       ("audio TX", "8 packets", "drop the oldest"), ("audio down", "8 × 164 B", "drop the oldest")]),
+    "zh": dict(title="任务、优先级、栈和队列",
+               prio="优先级", stack="栈", note="数字越大优先级越高。栈的单位是字节。",
+               tasks=[("voice", 7, 4096, "录音编码、喂给喇叭"), ("ble_tx", 6, 3072, "先发控制包，再发音频"),
+                      ("coach", 5, 4096, "状态机，一次处理一个事件"), ("LVGL", 4, 7168, "esp_lvgl_port，5 ms 节拍"),
+                      ("NimBLE host", None, 4096, "GATT、连接、接收回调")],
+               queues=[("coach 队列", "16 条消息", "按键 · 计时器 · 链路事件"), ("控制发送", "8 个包", "不丢"),
+                       ("音频发送", "8 个包", "满了丢最旧的"), ("音频下行", "8 × 164 字节", "满了丢最旧的")]),
+}
+
+
+def tasks(lang):
+    L = TASKS[lang]
+    W = 964
+    b = []
+    b.append(text(24, 40, "TASKS" if lang == "en" else "任务", 11, INK3, mono=True, ls=1.5))
+    for i, (n, pr, st, d) in enumerate(L["tasks"]):
+        y = 54 + i * 58
+        b.append(box(24, y, 520, 48, fill=PANEL2 if pr else BG, rx=10))
+        b.append(text(42, y + 30, n, 15, GREEN if pr else INK2, 700, mono=True))
+        b.append(text(170, y + 30, d, 12.5, INK2))
+        b.append(text(452, y + 20, L["prio"], 10, INK3, anchor="end"))
+        b.append(text(452, y + 37, str(pr) if pr else "IDF", 15, INK, 700, "end", mono=True))
+        b.append(text(526, y + 20, L["stack"], 10, INK3, anchor="end"))
+        b.append(text(526, y + 37, f"{st:,}", 15, INK, 700, "end", mono=True))
+    b.append(text(576, 40, "QUEUES" if lang == "en" else "队列", 11, INK3, mono=True, ls=1.5))
+    for i, (n, sz, rule) in enumerate(L["queues"]):
+        y = 54 + i * 72
+        b.append(box(576, y, 364, 60, fill=BG, stroke=LINE, rx=10))
+        b.append(text(594, y + 25, n, 14, INK, 700))
+        b.append(text(922, y + 25, sz, 13, GREEN, 700, "end", mono=True))
+        b.append(text(594, y + 46, rule, 12, INK3))
+    b.append(text(24, 362, L["note"], 11.5, INK3))
+    return svg(W, 380, "".join(b), L["title"])
+
+
+# ---------------------------------------------------------------- build pipeline
+BUILD = {
+    "en": dict(title="Firmware build", cols=[
+        ("SOURCES", ["flows/coach.flow.json", "assets/ui/strings.json", "TTF fonts + char lists", "Sprite scripts", "C sources · sdkconfig.defaults"]),
+        ("GENERATORS", ["flowc.py → main/generated/", "flow_sim.py → simulator", "gen_lv_font.py → fonts", "gen_sprite.py → rider", "gen_popup_icons.py → badges"]),
+        ("BUILD", ["idf.py build", "FoloToy-AI-Passport.bin", "idf.py merge-bin", "…-full.bin · flash at 0x0"]),
+        ("CHECKS", ["host tests · glyphs", "host_render screens", "flow_sim --check · self-test", "verify_firmware.py layout"]),
+    ]),
+    "zh": dict(title="固件是怎么做出来的", cols=[
+        ("源文件", ["flows/coach.flow.json", "assets/ui/strings.json", "TTF 字体 + 字表", "精灵图脚本", "C 源码 · sdkconfig.defaults"]),
+        ("生成器", ["flowc.py → main/generated/", "flow_sim.py → simulator", "gen_lv_font.py → fonts", "gen_sprite.py → rider", "gen_popup_icons.py → badges"]),
+        ("构建", ["idf.py build", "FoloToy-AI-Passport.bin", "idf.py merge-bin", "…-full.bin · 从 0x0 烧录"]),
+        ("检查", ["主机测试 · 字形", "host_render 界面", "flow_sim --check · 自测", "verify_firmware.py 布局"]),
+    ]),
+}
+
+
+def build(lang):
+    L = BUILD[lang]
+    W, cw, gap = 964, 214, 18
+    b = []
+    for i, (h, items) in enumerate(L["cols"]):
+        x = 24 + i * (cw + gap)
+        last = i == 3
+        b.append(text(x, 40, h, 11, GREEN if i in (1, 2) else INK3, 700, mono=True, ls=1.5))
+        for j, it in enumerate(items):
+            y = 54 + j * 46
+            b.append(box(x, y, cw, 36, fill=BG if not (i == 2 and j == 3) else "#1a230d",
+                         stroke=GREEN if (i == 2 and j == 3) else LINE, rx=8))
+            b.append(text(x + 12, y + 23, it, 11, INK, mono=True))
+        if not last:
+            b.append(f'<line x1="{x + cw + 2}" y1="150" x2="{x + cw + gap - 2}" y2="150" stroke="{GREEN}" stroke-width="2" marker-end="url(#ah)"/>')
+    return svg(W, 296, "".join(b), L["title"])
+
+
+# ---------------------------------------------------------------- flash map
+FMAP = [  # (label_en, label_zh, start, end, used)
+    ("Bootloader", "Bootloader", 0x0, 0x8000, 0x5220),
+    ("Table", "分区表", 0x8000, 0x9000, None),
+    ("nvs", "nvs", 0x9000, 0xF000, None),
+    ("phy", "phy", 0xF000, 0x10000, None),
+    ("factory app", "factory 应用", 0x10000, 0x800000, 1945536),
+]
+
+
+def flashmap(lang):
+    W = 964
+    x0, x1 = 24, W - 24
+    full = 0x800000
+    b = []
+    t = "Flash map, 8 MB" if lang == "en" else "Flash 分布，8 MB"
+    b.append(text(x0, 36, "FULL 8 MB" if lang == "en" else "整片 8 MB", 11, INK3, mono=True, ls=1.5))
+    y = 48
+    sc = (x1 - x0) / full
+    # factory partition
+    fx = x0 + 0x10000 * sc
+    b.append(box(x0, y, x1 - x0, 46, fill=BG, stroke=LINE, rx=8))
+    b.append(f'<rect x="{x0}" y="{y}" width="{0x10000 * sc:.1f}" height="46" rx="4" fill="{INK3}"/>')
+    uw = 1945536 * sc
+    b.append(f'<g><title>app 1,945,536 B / factory 8,323,072 B</title><rect x="{fx:.1f}" y="{y}" width="{uw:.1f}" height="46" rx="4" fill="{GREEN}"/></g>')
+    b.append(text(fx + 12, y + 28, "app 1.86 MiB" if lang == "en" else "应用 1.86 MiB", 13, "#0e1013", 700))
+    b.append(text(fx + uw + 14, y + 28, ("free in factory: 6.08 MiB (76.6%)" if lang == "en" else "factory 剩余 6.08 MiB（76.6%）"), 12.5, INK2))
+    for a, lab in ((0, "0x0"), (0x800000, "0x800000")):
+        xx = x0 + a * sc
+        anchor = "end" if a == full else "start"
+        b.append(text(xx if a else x0, y + 66, lab, 10.5, INK3, anchor=anchor, mono=True))
+    # zoom of first 64 KB
+    y2 = 150
+    b.append(text(x0, y2 - 12, "FIRST 64 KB" if lang == "en" else "前 64 KB 放大", 11, INK3, mono=True, ls=1.5))
+    sc2 = (x1 - x0) / 0x10000
+    for en, zh, s0, e0, used in FMAP[:4]:
+        xs, w = x0 + s0 * sc2, (e0 - s0) * sc2
+        b.append(f'<g><title>{esc(en)} 0x{s0:X}–0x{e0:X} ({e0 - s0:,} B)</title>'
+                 f'<rect x="{xs + 1:.1f}" y="{y2}" width="{w - 2:.1f}" height="54" rx="6" fill="{PANEL2}" stroke="{LINE}"/></g>')
+        if used:
+            b.append(f'<rect x="{xs + 1:.1f}" y="{y2}" width="{used * sc2 - 2:.1f}" height="54" rx="6" fill="{INK2}" opacity="0.55"/>')
+        b.append(text(xs + 8, y2 + 24, en if lang == "en" else zh, 12, INK, 700))
+        b.append(text(xs + 8, y2 + 43, f"{(e0 - s0) // 1024} KB", 11, INK2, mono=True))
+        b.append(text(xs + 2, y2 + 72, f"0x{s0:X}", 10.5, INK3, mono=True))
+    note = ("Bootloader uses 0x5220 B (21,024 B), 36% of its region is free." if lang == "en"
+            else "Bootloader 实占 0x5220 字节（21,024 字节），所在区域剩余 36%。")
+    b.append(text(x0, y2 + 100, note, 12, INK3))
+    return svg(W, y2 + 118, "".join(b), t)
+
+
+# ---------------------------------------------------------------- horizontal bar charts (inline, tooltips)
+FLASH_PARTS = [  # bytes, from idf.py size-files and size-components on d99a7d9
+    ({"en": "Chinese font 16 px", "zh": "中文字体 16 px"}, 516932),
+    ({"en": "LVGL", "zh": "LVGL"}, 331660),
+    ({"en": "BLE controller + NimBLE", "zh": "蓝牙控制器 + NimBLE"}, 168668),
+    ({"en": "Popup badges (4 × 4 frames)", "zh": "弹窗徽章（4 种 × 4 帧）"}, 201152),
+    ({"en": "Other fonts and rider sprite", "zh": "其他字体和滑雪小人"}, 127789),
+    ({"en": "Heygo app code", "zh": "Heygo 应用代码"}, 52855),
+    ({"en": "Other ESP-IDF parts", "zh": "ESP-IDF 其他部分"}, 438960),
+]
+
+DRAM_PARTS = [
+    ({"en": "IRAM code (.text)", "zh": "IRAM 代码（.text）"}, 96852),
+    ({"en": ".bss (incl. 24 KiB LVGL pool)", "zh": ".bss（含 24 KiB LVGL 内存池）"}, 40088),
+    ({"en": ".data", "zh": ".data"}, 10516),
+    ({"en": "Free for heap, stacks, buffers", "zh": "留给堆、栈和缓冲区"}, 173840),
+]
+
+
+def hbars(parts, lang, total, label, free_last=False):
+    W, l, r, rh = 960, 250, 190, 34
+    H = 20 + rh * len(parts) + 10
+    pw = W - l - r
+    vmax = max(v for _, v in parts)
+    b = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" role="img" aria-label="{esc(label)}" font-family="{SANS}">']
+    for i, (name, v) in enumerate(parts):
+        y = 14 + i * rh
+        w = pw * v / vmax
+        is_free = free_last and i == len(parts) - 1
+        col = INK3 if is_free else GREEN
+        pct = 100 * v / total
+        tip = f"{name[lang]}: {v:,} B ({pct:.1f}%)"
+        b.append(f'<g><title>{esc(tip)}</title><rect x="0" y="{y - 4}" width="{W}" height="{rh}" fill="transparent"/>'
+                 f'<rect x="{l}" y="{y}" width="{max(w, 3):.1f}" height="{rh - 12}" rx="4" fill="{col}"/></g>')
+        b.append(text(l - 12, y + 16, name[lang], 12.5, INK2, anchor="end"))
+        b.append(text(l + w + 10, y + 16, f"{v / 1024:,.1f} KiB · {pct:.1f}%", 12, INK, 600, mono=True))
+    b.append("</svg>")
+    return '<div class="chart">' + "".join(b) + "</div>"
+
+
 if __name__ == "__main__":
     PART = ROOT / "_partials"
     PART.mkdir(exist_ok=True)
@@ -281,4 +495,12 @@ if __name__ == "__main__":
         (IMG / f"gate-{lang}.svg").write_text(gate(lang))
         (PART / f"commits-{lang}.html").write_text(f'<div class="chart">{commits(lang)}</div>\n')
         (PART / f"sprints-{lang}.html").write_text(sprint_board(lang) + "\n")
+        (IMG / f"fw-layers-{lang}.svg").write_text(layers(lang))
+        (IMG / f"fw-tasks-{lang}.svg").write_text(tasks(lang))
+        (IMG / f"fw-build-{lang}.svg").write_text(build(lang))
+        (IMG / f"flash-map-{lang}.svg").write_text(flashmap(lang))
+        img_total = sum(v for _, v in FLASH_PARTS)
+        (PART / f"flash-parts-{lang}.html").write_text(
+            hbars(sorted(FLASH_PARTS, key=lambda p: -p[1]), lang, img_total, "Flash" ) + "\n")
+        (PART / f"dram-parts-{lang}.html").write_text(hbars(DRAM_PARTS, lang, 321296, "DRAM", free_last=True) + "\n")
     print("figures: done")

@@ -13,7 +13,9 @@
 | 硬件 | `Firmware/docs/README.zh_CN.md:138-155` |
 | 门禁和已知限制 | `Firmware/docs/heygo-changes.zh_CN.md` |
 | 提交数、时间、作者 | `git rev-list`、`git log` |
-| 模拟器自测 122/122 | 2026-10-18 在 `d99a7d9` 上运行 `flow_sim.py --run-selftest` |
+| 模拟器自测 122/122 | 2026-10-18 在 `d99a7d9` 上单独运行，在 `df81cc8` 的完整门禁里再次运行 |
+| 完整门禁、镜像大小、内存各段 | 2026-10-18 在 `df81cc8` 上运行 `./tools/validate.sh`、`idf.py size`、`size-components`、`size-files` |
+| 任务、队列、栈 | `main/coach_app.c`、`main/audio/voice.c`、`main/link/ble_link.c`、esp_lvgl_port、生成的 `sdkconfig` |
 | 界面图和动画 | `assets/mockups/`、`assets/sim/` |
 | 架构图、时序图、门禁图、提交图 | `summary-book/figures.py` 根据上面的来源绘制 |
 

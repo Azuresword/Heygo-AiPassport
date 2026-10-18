@@ -30,6 +30,9 @@
 | Question | Answer | More |
 |---|---|---|
 | What does the device do? | It controls only the keys, microphone, speaker, and screen. The phone does all analysis and voice work. | [Architecture and protocol](architecture.md) |
+| How is the firmware organized? | 7 layers, 3 own tasks, 10 states, and 83 transitions from a flow graph. | [Firmware architecture](firmware.md) |
+| How is the firmware made? | Scripts make the flow code, fonts, and images. `validate.sh` builds and checks. You flash the merged image at 0x0. | [Firmware build](build-flash.md) |
+| Is the memory sufficient? | The app uses 23.4% of the factory partition. Static DRAM is 45.9%. The LVGL pool peak is 86.6%. | [Memory map](memory.md) |
 | How does the user operate it? | Four pages at the same level make a loop. A short press of UP or DOWN changes the page. A long press of OK opens the coach. | [Product and pages](product.md) |
 | What does it look like? | 25 screens that LVGL renders on the host, and two animations. | [Screen gallery](screens.md) |
 | What is the status? | Sprints 0 to 16 are complete. | [Sprints](sprints.md) |
