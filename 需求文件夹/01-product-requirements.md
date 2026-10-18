@@ -166,11 +166,10 @@ The device offers no transcript editor. Three buttons cannot edit text.
 
 ### Page change and cancel
 
-A short UP or DOWN press changes the page. The three pages form a loop.
+A short UP or DOWN press changes the page. The four pages form a loop (D-30).
 During capture, the wait, or the playback, a short UP or DOWN press cancels the question first, and then changes the page (D-29).
 Playback stops within 200 ms of that command. Capture stops within 100 ms of that command.
-An UP hold and a DOWN hold have no action.
-Actions inside a page will use a short OK press. No page uses it yet.
+Only the Turns page uses a short OK press, an UP hold, and a DOWN hold. They move from turn to turn. On the other pages, these inputs have no action.
 A hold never also triggers a short press.
 
 ### Page rail (D-33)
