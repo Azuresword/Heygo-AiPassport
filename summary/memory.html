@@ -191,7 +191,7 @@
                 <a href="decisions.html">
             
                     
-                    Decisions D-01 to D-33
+                    Decisions D-01 to D-34
             
                 </a>
             
@@ -367,7 +367,7 @@
                 <a href="decisions.zh_CN.html">
             
                     
-                    决策 D-01 至 D-33
+                    决策 D-01 至 D-34
             
                 </a>
             
@@ -477,11 +477,11 @@
 <p class="eyebrow">Memory</p>
 
 <h1 id="memory-map">Memory map</h1>
-<p>The numbers on this page come from a build on 2026-10-18 at commit <code>df81cc8</code>. <code>Firmware/</code> is the same as at <code>c865ba8</code>. The tools were <code>idf.py size</code>, <code>idf.py size-components</code>, and <code>idf.py size-files</code>. The LVGL pool numbers come from host measurements (<code>Firmware/docs/heygo-changes.md</code>).</p>
+<p>The numbers on this page come from a build on 2026-10-18 at commit <code>5100fd2</code>. <code>Firmware/</code> is the same as at <code>19dafd9</code>. The tools were <code>idf.py size</code>, <code>idf.py size-components</code>, and <code>idf.py size-files</code>. The LVGL pool numbers come from host measurements (<code>Firmware/docs/heygo-changes.md</code>).</p>
 <div class="tiles">
 <div class="tile accent"><div class="k">App / factory</div><div class="v">23.4<small>%</small></div></div>
-<div class="tile accent"><div class="k">Static DRAM</div><div class="v">45.9<small>%</small></div></div>
-<div class="tile"><div class="k">LVGL pool peak</div><div class="v">86.6<small>%</small></div></div>
+<div class="tile accent"><div class="k">Static DRAM</div><div class="v">47.2<small>%</small></div></div>
+<div class="tile"><div class="k">LVGL pool peak</div><div class="v">76.6<small>%</small></div></div>
 <div class="tile"><div class="k">PSRAM</div><div class="v">0</div></div>
 </div>
 
@@ -533,10 +533,10 @@
 </tr>
 </tbody>
 </table>
-<p>The application image is 1,945,536 bytes. The <code>factory</code> partition has 6,377,536 bytes (76.6%) free.</p>
+<p>The application image is 1,948,816 bytes. The <code>factory</code> partition has 6,374,256 bytes (76.6%) free.</p>
 <h2 id="flash-the-content-of-the-application-image">Flash: the content of the application image</h2>
-<p>Read-only data is 1,015,120 bytes. Code is 822,896 bytes. The total is 1,838,016 bytes. By source:</p>
-<div class="chart"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 960 268" role="img" aria-label="Flash" font-family="-apple-system, 'PingFang SC', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif"><g><title>Chinese font 16 px: 516,932 B (28.1%)</title><rect x="0" y="10" width="960" height="34" fill="transparent"></rect><rect x="250" y="14" width="520.0" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="30" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Chinese font 16 px</text><text x="780.0" y="30" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">504.8 KiB · 28.1%</text><g><title>Other ESP-IDF parts: 438,960 B (23.9%)</title><rect x="0" y="44" width="960" height="34" fill="transparent"></rect><rect x="250" y="48" width="441.6" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="64" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Other ESP-IDF parts</text><text x="701.5652348858264" y="64" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">428.7 KiB · 23.9%</text><g><title>LVGL: 331,660 B (18.0%)</title><rect x="0" y="78" width="960" height="34" fill="transparent"></rect><rect x="250" y="82" width="333.6" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="98" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">LVGL</text><text x="593.6284076048687" y="98" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">323.9 KiB · 18.0%</text><g><title>Popup badges (4 × 4 frames): 201,152 B (10.9%)</title><rect x="0" y="112" width="960" height="34" fill="transparent"></rect><rect x="250" y="116" width="202.3" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="132" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Popup badges (4 × 4 frames)</text><text x="462.34584045870633" y="132" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">196.4 KiB · 10.9%</text><g><title>BLE controller + NimBLE: 168,668 B (9.2%)</title><rect x="0" y="146" width="960" height="34" fill="transparent"></rect><rect x="250" y="150" width="169.7" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="166" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">BLE controller + NimBLE</text><text x="429.6690473795393" y="166" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">164.7 KiB · 9.2%</text><g><title>Other fonts and rider sprite: 127,789 B (7.0%)</title><rect x="0" y="180" width="960" height="34" fill="transparent"></rect><rect x="250" y="184" width="128.5" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="200" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Other fonts and rider sprite</text><text x="388.5474298360326" y="200" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">124.8 KiB · 7.0%</text><g><title>Heygo app code: 52,855 B (2.9%)</title><rect x="0" y="214" width="960" height="34" fill="transparent"></rect><rect x="250" y="218" width="53.2" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="234" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Heygo app code</text><text x="313.1686953022835" y="234" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">51.6 KiB · 2.9%</text></svg></div>
+<p>Read-only data is 1,015,232 bytes. Code is 826,046 bytes. The total is 1,841,278 bytes. By source:</p>
+<div class="chart"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 960 268" role="img" aria-label="Flash" font-family="-apple-system, 'PingFang SC', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif"><g><title>Chinese font 16 px: 516,932 B (28.1%)</title><rect x="0" y="10" width="960" height="34" fill="transparent"></rect><rect x="250" y="14" width="520.0" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="30" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Chinese font 16 px</text><text x="780.0" y="30" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">504.8 KiB · 28.1%</text><g><title>Other ESP-IDF parts: 439,142 B (23.8%)</title><rect x="0" y="44" width="960" height="34" fill="transparent"></rect><rect x="250" y="48" width="441.7" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="64" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Other ESP-IDF parts</text><text x="701.7483150588472" y="64" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">428.8 KiB · 23.8%</text><g><title>LVGL: 332,036 B (18.0%)</title><rect x="0" y="78" width="960" height="34" fill="transparent"></rect><rect x="250" y="82" width="334.0" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="98" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">LVGL</text><text x="594.0066391711096" y="98" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">324.3 KiB · 18.0%</text><g><title>Popup badges (4 × 4 frames): 201,152 B (10.9%)</title><rect x="0" y="112" width="960" height="34" fill="transparent"></rect><rect x="250" y="116" width="202.3" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="132" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Popup badges (4 × 4 frames)</text><text x="462.34584045870633" y="132" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">196.4 KiB · 10.9%</text><g><title>BLE controller + NimBLE: 168,668 B (9.2%)</title><rect x="0" y="146" width="960" height="34" fill="transparent"></rect><rect x="250" y="150" width="169.7" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="166" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">BLE controller + NimBLE</text><text x="429.6690473795393" y="166" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">164.7 KiB · 9.2%</text><g><title>Other fonts and rider sprite: 127,789 B (6.9%)</title><rect x="0" y="180" width="960" height="34" fill="transparent"></rect><rect x="250" y="184" width="128.5" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="200" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Other fonts and rider sprite</text><text x="388.5474298360326" y="200" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">124.8 KiB · 6.9%</text><g><title>Heygo app code: 55,559 B (3.0%)</title><rect x="0" y="214" width="960" height="34" fill="transparent"></rect><rect x="250" y="218" width="55.9" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="234" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Heygo app code</text><text x="315.8887435871643" y="234" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">54.3 KiB · 3.0%</text></svg></div>
 
 
 <p><strong>Table view</strong></p>
@@ -556,12 +556,12 @@
 </tr>
 <tr>
 <td>Other ESP-IDF parts</td>
-<td>438,960</td>
+<td>439,142</td>
 <td>The total minus the other rows</td>
 </tr>
 <tr>
 <td>LVGL</td>
-<td>331,660</td>
+<td>332,036</td>
 <td>Code and read-only data of <code>liblvgl__lvgl.a</code></td>
 </tr>
 <tr>
@@ -581,17 +581,17 @@
 </tr>
 <tr>
 <td>Heygo app code</td>
-<td>52,855</td>
+<td>55,559</td>
 <td><code>libmain.a</code> without fonts and images</td>
 </tr>
 </tbody>
 </table>
 <div class="callout"><b>Result: fonts and images use almost half of the flash content.</b>
-Fonts and sprites use 845,873 bytes, 46% of the flash content. The 16 px Chinese font is the largest. It must show any answer from the phone, so it has GB2312 level 1. The Heygo app code is only approximately 52 KB.</div>
+Fonts and sprites use 845,873 bytes, 45.9% of the flash content. The 16 px Chinese font is the largest. It must show any answer from the phone, so it has GB2312 level 1. The Heygo app code is only approximately 54 KB.</div>
 
 <h2 id="ram-the-320-kb-layout">RAM: the 320 KB layout</h2>
 <p>The ESP32-C3 has 321,296 bytes of internal RAM for this use. It has no PSRAM. The chart shows the static allocation:</p>
-<div class="chart"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 960 166" role="img" aria-label="DRAM" font-family="-apple-system, 'PingFang SC', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif"><g><title>IRAM code (.text): 96,852 B (30.1%)</title><rect x="0" y="10" width="960" height="34" fill="transparent"></rect><rect x="250" y="14" width="289.7" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="30" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">IRAM code (.text)</text><text x="549.7091578462955" y="30" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">94.6 KiB · 30.1%</text><g><title>.bss (incl. 24 KiB LVGL pool): 40,088 B (12.5%)</title><rect x="0" y="44" width="960" height="34" fill="transparent"></rect><rect x="250" y="48" width="119.9" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="64" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">.bss (incl. 24 KiB LVGL pool)</text><text x="379.91348366313855" y="64" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">39.1 KiB · 12.5%</text><g><title>.data: 10,516 B (3.3%)</title><rect x="0" y="78" width="960" height="34" fill="transparent"></rect><rect x="250" y="82" width="31.5" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="98" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">.data</text><text x="291.45605154164747" y="98" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">10.3 KiB · 3.3%</text><g><title>Free for heap, stacks, buffers: 173,840 B (54.1%)</title><rect x="0" y="112" width="960" height="34" fill="transparent"></rect><rect x="250" y="116" width="520.0" height="22" rx="4" fill="#6f7782"></rect></g><text x="238" y="132" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Free for heap, stacks, buffers</text><text x="780.0" y="132" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">169.8 KiB · 54.1%</text></svg></div>
+<div class="chart"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 960 166" role="img" aria-label="DRAM" font-family="-apple-system, 'PingFang SC', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif"><g><title>IRAM code (.text): 96,852 B (30.1%)</title><rect x="0" y="10" width="960" height="34" fill="transparent"></rect><rect x="250" y="14" width="296.8" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="30" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">IRAM code (.text)</text><text x="556.7559159045913" y="30" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">94.6 KiB · 30.1%</text><g><title>.bss (incl. 28 KiB LVGL pool): 44,200 B (13.8%)</title><rect x="0" y="44" width="960" height="34" fill="transparent"></rect><rect x="250" y="48" width="135.4" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="64" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">.bss (incl. 28 KiB LVGL pool)</text><text x="395.42943339304236" y="64" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">43.2 KiB · 13.8%</text><g><title>.data: 10,532 B (3.3%)</title><rect x="0" y="78" width="960" height="34" fill="transparent"></rect><rect x="250" y="82" width="32.3" height="22" rx="4" fill="#b1fe2b"></rect></g><text x="238" y="98" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">.data</text><text x="292.27019892523805" y="98" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">10.3 KiB · 3.3%</text><g><title>Free for heap, stacks, buffers: 169,712 B (52.8%)</title><rect x="0" y="112" width="960" height="34" fill="transparent"></rect><rect x="250" y="116" width="520.0" height="22" rx="4" fill="#6f7782"></rect></g><text x="238" y="132" font-size="12.5" fill="#a9b0b8" font-weight="400" text-anchor="end">Free for heap, stacks, buffers</text><text x="780.0" y="132" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="'SF Mono', Menlo, Consolas, monospace">165.7 KiB · 52.8%</text></svg></div>
 
 
 <p><strong>Table view</strong></p>
@@ -611,17 +611,17 @@ Fonts and sprites use 845,873 bytes, 46% of the flash content. The 16 px Chinese
 </tr>
 <tr>
 <td><code>.bss</code></td>
-<td>40,088</td>
-<td>LVGL 25,084 (with the 24 KiB pool) and the app 9,140</td>
+<td>44,200</td>
+<td>LVGL 29,180 (with the 28 KiB pool) and the app 9,156</td>
 </tr>
 <tr>
 <td><code>.data</code></td>
-<td>10,516</td>
+<td>10,532</td>
 <td>Global variables with initial values</td>
 </tr>
 <tr>
 <td>Free at runtime</td>
-<td>173,840</td>
+<td>169,712</td>
 <td>Heap for task stacks, the BLE stack, the LVGL draw buffer, and queues</td>
 </tr>
 </tbody>
@@ -669,40 +669,49 @@ Fonts and sprites use 845,873 bytes, 46% of the flash content. The 16 px Chinese
 </tbody>
 </table>
 <p>The BLE controller and stack also allocate heap memory at runtime. A device measurement is necessary for that part. This page does not show it.</p>
-<h2 id="lvgl-pool-24-kib">LVGL pool: 24 KiB</h2>
-<p><code>CONFIG_LV_MEM_SIZE_KILOBYTES=24</code>. After the management overhead, 21,656 bytes are available.</p>
+<h2 id="lvgl-pool-28-kib">LVGL pool: 28 KiB</h2>
+<p><code>CONFIG_LV_MEM_SIZE_KILOBYTES=28</code> (<code>sdkconfig.defaults</code>). After the management overhead, 25,752 bytes are available.</p>
+<div class="callout"><b>Why the pool changed from 24 KiB to 28 KiB.</b>
+With the page rail (D-33), the 24 KiB pool stopped the live data page when it drew the speed digits. The largest free block was then only 1,936 bytes. The pool is now 28 KiB, and it uses 4 KiB more system RAM (<code>需求文件夹/02-architecture.md:334</code> and <code>05-decision-amendments.md</code>). The build agrees: the LVGL <code>.bss</code> changed from 25,084 to 29,180 bytes, exactly 4,096 bytes more.</div>
+
 <table>
 <thead>
 <tr>
-<th>Screen</th>
-<th>Use</th>
+<th>Item</th>
+<th>Value</th>
 <th>Source</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>First build of the Coach screen</td>
-<td>+6,768</td>
-<td><code>heygo-changes.md</code>, section 5</td>
+<td>Available pool</td>
+<td>25,752 bytes</td>
+<td><code>02-architecture.md:334</code></td>
 </tr>
 <tr>
-<td>Turns page</td>
-<td>16,824</td>
-<td>Section 11</td>
+<td>Peak of a full run</td>
+<td><strong>19,728 / 25,752 (76.6%)</strong></td>
+<td>Same, host render</td>
 </tr>
 <tr>
-<td>Popup page (longest text)</td>
-<td>13,288</td>
-<td>Section 12</td>
+<td>Largest free block</td>
+<td>At least 6,032 bytes</td>
+<td>Same</td>
 </tr>
 <tr>
-<td><strong>Peak of a full run</strong></td>
-<td><strong>18,760 / 21,656 (86.6%)</strong></td>
-<td>Section 12, commit <code>5658911</code></td>
+<td>Rail cost</td>
+<td>1 LVGL object on each page</td>
+<td><code>main/ui/page_rail.h</code></td>
+</tr>
+<tr>
+<td>Peak at 24 KiB (before the rail)</td>
+<td>18,760 / 21,656 (86.6%)</td>
+<td><code>heygo-changes.md</code>, section 12, commit <code>5658911</code></td>
 </tr>
 </tbody>
 </table>
 <p>These numbers come from a 64-bit host. A host pointer has 8 bytes. An ESP32-C3 pointer has 4 bytes. Thus, the device uses less pool memory. The pool is small, so the firmware keeps only one screen at a time.</p>
+<p>At each page change, the device logs the pool use, the largest free block, and the free system heap. The device memory test reads these lines (<code>02-architecture.md:335</code>).</p>
 
                                 
                                 </section>
@@ -746,7 +755,7 @@ Fonts and sprites use 845,873 bytes, 46% of the flash content. The 16 px Chinese
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Memory map","level":"1.7","depth":1,"next":{"title":"Sprints","level":"1.8","depth":1,"path":"sprints.md","ref":"sprints.md","articles":[]},"previous":{"title":"Firmware build","level":"1.6","depth":1,"path":"build-flash.md","ref":"build-flash.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"memory.md","mtime":"2026-10-18T04:03:42.461Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T04:04:41.810Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Memory map","level":"1.7","depth":1,"next":{"title":"Sprints","level":"1.8","depth":1,"path":"sprints.md","ref":"sprints.md","articles":[]},"previous":{"title":"Firmware build","level":"1.6","depth":1,"path":"build-flash.md","ref":"build-flash.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"memory.md","mtime":"2026-10-18T04:10:57.816Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T04:12:35.469Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>

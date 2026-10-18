@@ -22,12 +22,12 @@
 
 ## 本书写作时复核的结果
 
-2026-10-18 在提交 `df81cc8` 上运行完整门禁 `./tools/validate.sh`，退出码 0。`Firmware/` 与 `c865ba8` 相同。
+2026-10-18 在提交 `5100fd2` 上运行完整门禁 `./tools/validate.sh`，退出码 0。`Firmware/` 与 `19dafd9` 相同。
 
 <div class="tiles">
 <div class="tile accent"><div class="k">完整门禁</div><div class="v" style="font-size:24px">PASS</div></div>
-<div class="tile accent"><div class="k">模拟器自测</div><div class="v">122<small>/122</small></div></div>
-<div class="tile"><div class="k">字形</div><div class="v">71<small>+43</small></div></div>
+<div class="tile accent"><div class="k">模拟器自测</div><div class="v">128<small>/128</small></div></div>
+<div class="tile"><div class="k">字形</div><div class="v">72<small>+47</small></div></div>
 <div class="tile"><div class="k">合并镜像</div><div class="v">1.92<small>MiB</small></div></div>
 </div>
 

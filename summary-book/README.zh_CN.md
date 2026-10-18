@@ -3,17 +3,17 @@
 <div class="hero">
 <p class="eyebrow">Heygo · AI Passport · 项目总结</p>
 <h1>休息时，抬手就能问教练</h1>
-<p class="lead">AI Passport 是滑雪用的手持小设备。用户不掏手机、不摘手套，就能看本趟数据、听 AI 教练的建议。项目的 17 个 Sprint 全部完成。</p>
+<p class="lead">AI Passport 是滑雪用的手持小设备。用户不掏手机、不摘手套，就能看本趟数据、听 AI 教练的建议。Sprint 0–16 全部完成，Sprint 17 的代码也已完成。</p>
 <img src="../assets/sim/preview.png" alt="交互模拟器：设备屏幕、手机端模拟、状态流转图">
 </div>
 
 <div class="tiles">
-<div class="tile accent"><div class="k">Sprint</div><div class="v">17<small>/17</small></div></div>
+<div class="tile accent"><div class="k">Sprint 完成</div><div class="v">17<small>/18</small></div></div>
 <div class="tile"><div class="k">增量</div><div class="v">4<small>/4</small></div></div>
-<div class="tile"><div class="k">决策</div><div class="v">33</div></div>
-<div class="tile"><div class="k">需求条目</div><div class="v">24</div></div>
+<div class="tile"><div class="k">决策</div><div class="v">34</div></div>
+<div class="tile"><div class="k">需求条目</div><div class="v">25</div></div>
 <div class="tile"><div class="k">界面图</div><div class="v">25</div></div>
-<div class="tile"><div class="k">模拟器自测</div><div class="v">122<small>/122</small></div></div>
+<div class="tile"><div class="k">模拟器自测</div><div class="v">128<small>/128</small></div></div>
 </div>
 
 ## 做成了什么
@@ -32,11 +32,11 @@
 | 设备做什么？ | 只管按键、麦克风、喇叭、屏幕。分析和语音都在手机上 | [架构与协议](architecture.zh_CN.md) |
 | 固件怎么组织？ | 7 层，3 个自建任务，10 个状态、83 条转移，由流程图生成 | [固件架构](firmware.zh_CN.md) |
 | 固件怎么做出来？ | 流程图、字体、图片由脚本生成，`validate.sh` 构建并检查，合并镜像从 0x0 烧录 | [制作方法](build-flash.zh_CN.md) |
-| 内存够不够？ | 应用占 factory 分区 23.4%，静态 DRAM 45.9%，LVGL 内存池峰值 86.6% | [内存分布](memory.zh_CN.md) |
+| 内存够不够？ | 应用占 factory 分区 23.4%，静态 DRAM 47.2%，LVGL 内存池峰值 76.6% | [内存分布](memory.zh_CN.md) |
 | 怎么操作？ | 四个页面平级循环。短按 UP/DOWN 翻页，长按 OK 问教练 | [产品与页面](product.zh_CN.md) |
 | 长什么样？ | 25 张主机渲染的界面图，加两段动画 | [界面一览](screens.zh_CN.md) |
-| 做到哪了？ | Sprint 0–16 全部完成 | [Sprint 完成情况](sprints.zh_CN.md) |
-| 花了多久？ | main 上 55 个提交，10-16 18:02 到 10-18 10:48 | [开发历程](history.zh_CN.md) |
+| 做到哪了？ | Sprint 0–16 完成。Sprint 17（D-34）代码已完成，待确认 | [Sprint 完成情况](sprints.zh_CN.md) |
+| 花了多久？ | main 上 172 个提交，10-16 18:02 到 10-18 11:51 | [开发历程](history.zh_CN.md) |
 | 质量怎么保证？ | 每次提交前跑门禁，主机测试、界面检查、模拟器自测都要通过 | [质量与部署](quality.zh_CN.md) |
 
 ## 链接

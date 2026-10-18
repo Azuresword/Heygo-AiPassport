@@ -57,7 +57,7 @@ Outputs:
 
 ## Build results for this book
 
-On 2026-10-18, we ran the full gate at commit `df81cc8`. `Firmware/` is the same as at `c865ba8`. The exit code was 0.
+On 2026-10-18, we ran the full gate at commit `5100fd2`. `Firmware/` is the same as at `19dafd9`. The exit code was 0.
 
 <div class="tiles">
 <div class="tile accent"><div class="k">Gate</div><div class="v" style="font-size:24px">PASS</div></div>
@@ -69,10 +69,10 @@ On 2026-10-18, we ran the full gate at commit `df81cc8`. `Firmware/` is the same
 | Item | Result |
 |---|---|
 | Host tests | All PASS: protocol, ADPCM, playback rules, keys, link core, and screen parts |
-| Simulator | `--check` PASS, self-test 122/122 |
-| Glyphs | PASS, 71 vocabulary strings and 43 flow texts |
-| Layout | Application 1,945,536 of 8,323,072 bytes, in `factory` at `0x10000` |
-| Merged image | 2,011,072 bytes, flash at `0x0` |
+| Simulator | `--check` PASS, self-test 128/128 |
+| Glyphs | PASS, 72 vocabulary strings and 47 flow texts |
+| Layout | Application 1,948,816 of 8,323,072 bytes, in `factory` at `0x10000` |
+| Merged image | 2,014,352 bytes, flash at `0x0` |
 
 Compiler settings: `-Og` (debug optimization), with assertions. The flash uses DIO mode at 80 MHz (generated `sdkconfig`).
 

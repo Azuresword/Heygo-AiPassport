@@ -2,18 +2,19 @@
 
 <p class="eyebrow">Decisions</p>
 
-# Decisions D-01 to D-33
+# Decisions D-01 to D-34
 
 Source: `需求文件夹/04-validation-and-decisions.md`, decision table, at `main` commit `c865ba8`. The status below is the text of that document.
 
 <div class="tiles">
-<div class="tile accent"><div class="k">Confirmed</div><div class="v">22</div></div>
+<div class="tile accent"><div class="k">Confirmed</div><div class="v">21</div></div>
+<div class="tile accent"><div class="k">New from the user</div><div class="v">2</div></div>
 <div class="tile"><div class="k">Replaced</div><div class="v">6</div></div>
 <div class="tile"><div class="k">Proposed</div><div class="v">4</div></div>
 <div class="tile"><div class="k">Required</div><div class="v">1</div></div>
 </div>
 
-"Confirmed" includes 7 decisions with the phone app team, 11 decisions by the user, 3 decisions that wait for the phone app team, and D-33.
+"Confirmed" includes 7 decisions with the phone app team, 11 decisions by the user, and 3 decisions that wait for the phone app team. "New from the user" is D-33 and D-34, from 10-18.
 
 ## Confirmed on 2026-10-17, with the phone app team
 
@@ -51,11 +52,12 @@ Source: `需求文件夹/04-validation-and-decisions.md`, decision table, at `ma
 | D-31 | Phone popups: POPUP 0x66 and POPUP_END 0x67, with a 10 s countdown. |
 | D-32 | RUN_START 0x68 opens the live data page at run start. |
 
-## Page rail (2026-10-18)
+## New from the user (2026-10-18)
 
 | ID | Content | Status |
 |---|---|---|
-| D-33 | Page rail on the right side. It has four cells. A fluorescent green slider shows the current page. ▲ and ▼ show the UP and DOWN targets. The slider moves in 180 ms. The rail does not change a key. | Complete in Sprint 16, as the project owner confirmed. The document row still shows "firmware not started". Related items: REQ-24 and TC-24. |
+| D-33 | Page rail on the right side. It has four stops in the order of the short DOWN press. A lime thumb shows the current page. The UP and DOWN targets are light gray stops, with no arrows. The thumb slides in 180 ms. The popup page hides the rail. The rail changes no key. | The simulator and the firmware show the rail. The LVGL pool is now 28 KiB. The project owner confirmed Sprint 16 as complete. Related items: REQ-24 and TC-24. |
+| D-34 | All five screens use one status bar for the link state: a page dot, the page name, a link dot, and the link text. One binding in the flow graph can drive the same widget on more screens. | Document text: code complete, device tests not run. Related items: REQ-25, US-25, and Sprint 17. |
 
 ## Proposed, not confirmed
 
@@ -88,7 +90,7 @@ Source: `需求文件夹/01-product-requirements.md`, section 4.
 | Priority | Increment | Items |
 |---|---|---|
 | P0 | 1 Coach voice | REQ-01, 06, 07, 08, 15, 17, 20 |
-| P1 | 2 Live data and report | REQ-02, 03, 21, 23, 24 |
+| P1 | 2 Live data and report | REQ-02, 03, 21, 23, 24, 25 |
 | P1 | 3 Turns | REQ-05 |
 | P1 | 4 Phone popups | REQ-22 |
 | P1 | After increment 2 | REQ-04, 09, 13 |

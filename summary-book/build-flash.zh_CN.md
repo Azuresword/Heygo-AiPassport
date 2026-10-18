@@ -57,7 +57,7 @@ python3 tools/archive_firmware.py create ...        # 归档调试文件
 
 ## 本书写作时的构建结果
 
-2026-10-18 在提交 `df81cc8` 上（`Firmware/` 与 `c865ba8` 相同）运行完整门禁，退出码 0：
+2026-10-18 在提交 `5100fd2` 上（`Firmware/` 与 `19dafd9` 相同）运行完整门禁，退出码 0：
 
 <div class="tiles">
 <div class="tile accent"><div class="k">门禁</div><div class="v" style="font-size:24px">PASS</div></div>
@@ -69,10 +69,10 @@ python3 tools/archive_firmware.py create ...        # 归档调试文件
 | 检查 | 结果 |
 |---|---|
 | 主机测试 | 全部 PASS，含协议、ADPCM、播放规则、按键、链路核心、界面组件 |
-| 模拟器 | `--check` PASS，自测 122/122 |
-| 字形 | PASS，71 条界面词汇，43 条流程文字 |
-| 布局 | 应用 1,945,536 / 8,323,072 字节，在 `factory` 的 `0x10000` |
-| 合并镜像 | 2,011,072 字节，从 `0x0` 烧录 |
+| 模拟器 | `--check` PASS，自测 128/128 |
+| 字形 | PASS，72 条界面词汇，47 条流程文字 |
+| 布局 | 应用 1,948,816 / 8,323,072 字节，在 `factory` 的 `0x10000` |
+| 合并镜像 | 2,014,352 字节，从 `0x0` 烧录 |
 
 编译选项：`-Og`（调试优化），断言开启。Flash 用 DIO 模式、80 MHz（生成的 `sdkconfig`）。
 

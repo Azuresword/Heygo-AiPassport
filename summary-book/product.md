@@ -55,7 +55,9 @@ On the Turns page, OK selects the next turn. A long press of UP selects the prev
 <div class="cards">
 <div class="card"><span class="tag">D-31 · POPUP 0x66</span><h4>Popup</h4><p>A popup stops any state. The device plays the voice and then counts down 10 s. Any key closes the popup. The device then shows the previous page. A new popup replaces an old popup.</p></div>
 <div class="card"><span class="tag">D-32 · RUN_START 0x68</span><h4>Run start</h4><p>The phone finds a run start. The device opens the live data page. During a talk or a popup, the device waits until it ends. A run start cancels nothing.</p></div>
-<div class="card"><span class="tag">D-33</span><h4>Page rail</h4><p>A rail on the right side shows the position in the loop. A fluorescent green slider shows the current page. ▲ and ▼ show the UP and DOWN targets.</p></div>
+<div class="card"><span class="tag">D-33</span><h4>Page rail</h4><p>A rail on the right side shows the position in the loop. A lime thumb shows the current page. Light gray stops show the UP and DOWN targets, with no arrows. The thumb slides to the new stop in 180 ms.</p></div>
+<div class="card"><span class="tag">D-34</span><h4>Link state on every page</h4><p>All five screens use one status bar.
+It has a page dot, the page name, a link dot, and the link text. The link text is "connected", "not connected", or "no voice".</p></div>
 </div>
 
 <figure>
@@ -69,4 +71,4 @@ On the Turns page, OK selects the next turn. A long press of UP selects the prev
 <figcaption>Figure 3. Phone popups. Each popup kind has its own color and animated badge.</figcaption>
 </figure>
 
-Source: `需求文件夹/04-validation-and-decisions.md`, rows D-29 to D-33.
+Source: `需求文件夹/04-validation-and-decisions.md`, rows D-29 to D-34.

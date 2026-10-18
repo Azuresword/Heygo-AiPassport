@@ -10,7 +10,7 @@
 <div class="tile accent"><div class="k">状态</div><div class="v">10</div></div>
 <div class="tile accent"><div class="k">转移</div><div class="v">83</div></div>
 <div class="tile"><div class="k">自建任务</div><div class="v">3</div></div>
-<div class="tile"><div class="k">C 代码</div><div class="v">8.3<small>k 行</small></div></div>
+<div class="tile"><div class="k">C 代码</div><div class="v">8.6<small>k 行</small></div></div>
 <div class="tile"><div class="k">主机测试</div><div class="v">33</div></div>
 </div>
 
@@ -30,9 +30,9 @@
 
 | 模块 | 路径 | 行数 | 职责 |
 |---|---|---|---|
-| 应用 | `main/main.c`、`coach_app.c`、`coach_input.c` | 900 | 启动；在一个任务里跑状态机；把按键转成事件 |
-| 生成代码 | `main/generated/` | 1,363 | 转移表、界面构建、数据绑定、界面效果。不要手改 |
-| 界面 | `main/ui/` | 617 | 实时数据、弯型、弹窗等界面组件 |
+| 应用 | `main/main.c`、`coach_app.c`、`coach_input.c` | 927 | 启动；在一个任务里跑状态机；把按键转成事件 |
+| 生成代码 | `main/generated/` | 1,486 | 转移表、界面构建、数据绑定、界面效果。不要手改 |
+| 界面 | `main/ui/` | 746 | 实时数据、弯型、弹窗、页面导轨（D-33）等界面组件 |
 | 链路与协议 | `main/link/`、`main/protocol/` | 1,824 | 07 号协议的包、握手和会话规则、NimBLE GATT |
 | 语音 | `main/audio/` | 450 | 录音编码、播放启动规则、音量包络、ADPCM |
 | BSP | `components/bsp/src/` | 1,646 | 屏幕、LVGL 适配、按键 ADC、ES8311、电量计、I2C |
@@ -82,6 +82,8 @@
 - `WAIT_ANSWER` 状态 10 秒后产生 `AGENT_TIMEOUT`。
 
 同一时间只存在一个界面。切换时先载入空白界面，删掉旧界面，再建新界面，因为几个界面同时存在会超出 LVGL 内存池。
+
+页面导轨是例外：它是 LVGL 顶层上的一个对象，自己画出四个格子和滑块，换界面时不删除。所以导轨在每个页面上只占内存池里的一个对象（`main/ui/page_rail.h`、`coach_app.c:749`）。
 
 ## 音频通路
 

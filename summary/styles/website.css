@@ -157,3 +157,8 @@ details.table-view summary { cursor: pointer; font-family: var(--mono); font-siz
 .card h4 { margin: 0 0 6px; color: #fff; font-size: 15px; }
 .card p { margin: 0; color: var(--ink-2); font-size: 14px; }
 .card .tag { font-family: var(--mono); font-size: 11px; color: var(--green); letter-spacing: .1em; text-transform: uppercase; }
+
+.sprint.pending { border-style: dashed; border-color: #4a525c; }
+.sprint.pending .bar { background: repeating-linear-gradient(90deg, #6f7782 0 6px, transparent 6px 10px); }
+.sprint.pending .s { color: var(--ink-2); }
+.sprint.pending .s::before { content: "◐ "; }

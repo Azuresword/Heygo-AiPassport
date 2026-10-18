@@ -191,7 +191,7 @@
                 <a href="decisions.html">
             
                     
-                    Decisions D-01 to D-33
+                    Decisions D-01 to D-34
             
                 </a>
             
@@ -367,7 +367,7 @@
                 <a href="decisions.zh_CN.html">
             
                     
-                    决策 D-01 至 D-33
+                    决策 D-01 至 D-34
             
                 </a>
             
@@ -482,7 +482,7 @@
 <div class="tile accent"><div class="k">States</div><div class="v">10</div></div>
 <div class="tile accent"><div class="k">Transitions</div><div class="v">83</div></div>
 <div class="tile"><div class="k">Own tasks</div><div class="v">3</div></div>
-<div class="tile"><div class="k">C code</div><div class="v">8.3<small>k lines</small></div></div>
+<div class="tile"><div class="k">C code</div><div class="v">8.6<small>k lines</small></div></div>
 <div class="tile"><div class="k">Host tests</div><div class="v">33</div></div>
 </div>
 
@@ -511,20 +511,20 @@
 <tr>
 <td>Application</td>
 <td><code>main/main.c</code>, <code>coach_app.c</code>, <code>coach_input.c</code></td>
-<td>900</td>
+<td>927</td>
 <td>Startup. Runs the state machine in one task. Changes keys into events.</td>
 </tr>
 <tr>
 <td>Generated code</td>
 <td><code>main/generated/</code></td>
-<td>1,363</td>
+<td>1,486</td>
 <td>Transition table, screen builders, data bindings, and screen effects. Do not edit.</td>
 </tr>
 <tr>
 <td>Screens</td>
 <td><code>main/ui/</code></td>
-<td>617</td>
-<td>Live data, Turns, popup, and other screen parts.</td>
+<td>746</td>
+<td>Live data, Turns, popup, page rail (D-33), and other screen parts.</td>
 </tr>
 <tr>
 <td>Link and protocol</td>
@@ -610,6 +610,7 @@
 <li>After 10 s in <code>WAIT_ANSWER</code>, the timer sends <code>AGENT_TIMEOUT</code>.</li>
 </ul>
 <p>Only one screen exists at a time. To change the screen, the task loads an empty screen, deletes the old screen, and then builds the new screen. Several screens at the same time do not fit in the LVGL pool.</p>
+<p>The page rail is an exception. It is one object on the LVGL top layer that draws the four stops and the thumb. A screen change does not delete it. Thus, the rail uses only one object of the pool on each page (<code>main/ui/page_rail.h</code>, <code>coach_app.c:749</code>).</p>
 <h2 id="audio-path">Audio path</h2>
 <div class="cards">
 <div class="card"><span class="tag">Up · recording</span><h4 id="microphone-to-phone">Microphone to phone</h4><p>ES8311 samples at 16 kHz, 16 bit. The voice task encodes one 164-byte ADPCM block each 20 ms. The block goes to the audio TX queue (8 packets, drop the oldest). ble_tx then sends it as a NimBLE notification.</p></div>
@@ -660,7 +661,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Firmware architecture","level":"1.5","depth":1,"next":{"title":"Firmware build","level":"1.6","depth":1,"path":"build-flash.md","ref":"build-flash.md","articles":[]},"previous":{"title":"Architecture and protocol","level":"1.4","depth":1,"path":"architecture.md","ref":"architecture.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"firmware.md","mtime":"2026-10-18T04:03:56.721Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T04:04:41.810Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Firmware architecture","level":"1.5","depth":1,"next":{"title":"Firmware build","level":"1.6","depth":1,"path":"build-flash.md","ref":"build-flash.md","articles":[]},"previous":{"title":"Architecture and protocol","level":"1.4","depth":1,"path":"architecture.md","ref":"architecture.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"firmware.md","mtime":"2026-10-18T04:09:16.807Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T04:12:35.469Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>

@@ -171,10 +171,10 @@ def seq(lang):
 GATE = {
     "en": dict(title="Firmware gate: tools/validate.sh",
                steps=[("Baseline", "upstream checks"), ("Host tests", "33 test_* files"), ("Glyphs", "every string has a glyph"),
-                      ("host_render", "overlap · leaks · UTF-8"), ("flow_sim", "--check · 122/122 self-test"), ("Build", "Firmware build: PASS")]),
+                      ("host_render", "overlap · leaks · UTF-8"), ("flow_sim", "--check · 128/128 self-test"), ("Build", "Firmware build: PASS")]),
     "zh": dict(title="固件门禁：tools/validate.sh",
                steps=[("基线检查", "上游自带"), ("主机测试", "33 个 test_*"), ("字形检查", "文字都有字形"),
-                      ("host_render", "重叠 · 泄漏 · UTF-8"), ("flow_sim", "--check · 自测 122/122"), ("构建", "Firmware build: PASS")]),
+                      ("host_render", "重叠 · 泄漏 · UTF-8"), ("flow_sim", "--check · 自测 128/128"), ("构建", "Firmware build: PASS")]),
 }
 
 
@@ -196,24 +196,25 @@ def gate(lang):
 
 # ---------------------------------------------------------------- commit chart (inline, with tooltips)
 PHASES = [
-    ("1", {"en": "Requirements", "zh": "需求"}, {"en": "10-16 evening", "zh": "10-16 晚"}, 6),
-    ("2", {"en": "Voice path", "zh": "语音链路"}, {"en": "10-17 morning", "zh": "10-17 上午"}, 10),
-    ("3", {"en": "Run data", "zh": "滑行数据"}, {"en": "10-17 midday", "zh": "10-17 中午"}, 9),
-    ("4", {"en": "Page loop, turns", "zh": "四页、弯型"}, {"en": "10-17 evening", "zh": "10-17 傍晚"}, 4),
-    ("5", {"en": "Popups, run start", "zh": "弹窗、开始滑行"}, {"en": "10-17 night", "zh": "10-17 晚上"}, 8),
-    ("6", {"en": "Page rail", "zh": "页面导轨"}, {"en": "10-18 morning", "zh": "10-18 上午"}, 18),
+    ("1", {"en": "Requirements", "zh": "需求"}, {"en": "10-16 eve", "zh": "10-16 晚"}, 6),
+    ("2", {"en": "Voice path", "zh": "语音链路"}, {"en": "10-17 AM", "zh": "10-17 上午"}, 10),
+    ("3", {"en": "Run data", "zh": "滑行数据"}, {"en": "10-17 noon", "zh": "10-17 中午"}, 9),
+    ("4", {"en": "Loop, turns", "zh": "四页、弯型"}, {"en": "10-17 eve", "zh": "10-17 傍晚"}, 4),
+    ("5", {"en": "Popups, start", "zh": "弹窗、开始滑行"}, {"en": "10-17 night", "zh": "10-17 晚上"}, 8),
+    ("6", {"en": "Rail docs", "zh": "导轨文档"}, {"en": "10-18 10:45", "zh": "10-18 10:45"}, 18),
+    ("7", {"en": "Rail code, D-34", "zh": "导轨固件、D-34"}, {"en": "10:55–11:51", "zh": "10:55–11:51"}, 112),
 ]
 
 
 def commits(lang):
     W, H, l, r, t, bt = 960, 330, 46, 16, 30, 64
     pw, ph = W - l - r, H - t - bt
-    vmax = 20
+    vmax = 120
     bw = pw / len(PHASES)
     unit = "commits" if lang == "en" else "个提交"
     b = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" role="img" '
          f'aria-label="{"Commits on main by phase" if lang == "en" else "各阶段 main 上的提交数"}" font-family="{SANS}">']
-    for v in (0, 5, 10, 15, 20):
+    for v in (0, 30, 60, 90, 120):
         y = t + ph - ph * v / vmax
         b.append(f'<line x1="{l}" y1="{y:.1f}" x2="{W - r}" y2="{y:.1f}" stroke="{LINE}" stroke-width="1"/>')
         b.append(text(l - 10, y + 4, str(v), 11, INK3, anchor="end", mono=True))
@@ -256,17 +257,21 @@ SPRINTS = [
     (14, "4", "Popups on the board", "弹窗设备测试"),
     (15, "2", "Run start opens live data (D-32)", "开始滑行跳页（D-32）"),
     (16, "2", "Page rail (D-33)", "页面导轨（D-33）"),
+    (17, "2", "Link state on every page (D-34)", "每页显示链路状态（D-34）"),
 ]
+PENDING = {17}  # Added after the owner confirmed Sprints 0 to 16. Status from document 04.
 
 
 def sprint_board(lang):
     done = "Done · 100%" if lang == "en" else "完成 · 100%"
     inc = "Inc" if lang == "en" else "增量"
     cells = []
+    pend = "Code done · to confirm" if lang == "en" else "代码已完成 · 待确认"
     for n, i, en, zh in SPRINTS:
         t = en if lang == "en" else zh
-        cells.append(f'<div class="sprint"><span class="inc">{inc} {i}</span><div class="n">SPRINT {n:02d}</div>'
-                     f'<div class="t">{esc(t)}</div><div class="bar"></div><div class="s">{done}</div></div>')
+        p = n in PENDING
+        cells.append(f'<div class="sprint{" pending" if p else ""}"><span class="inc">{inc} {i}</span><div class="n">SPRINT {n:02d}</div>'
+                     f'<div class="t">{esc(t)}</div><div class="bar"></div><div class="s">{pend if p else done}</div></div>')
     return '<div class="sprints">' + "".join(cells) + "</div>"
 
 
@@ -276,7 +281,7 @@ def sprint_board(lang):
 LAYERS = {
     "en": dict(title="Firmware layers", host="Plain C · host tests", rows=[
         ("APP", "Coach app", ["coach_app.c · state machine task", "coach_input.c · keys → events", "generated/ · flow, screens, UI"]),
-        ("UI", "Screens", ["ui/ski_view · stats_fmt", "ui/turn_view · turn_page", "ui/popup_view · popup_anim"]),
+        ("UI", "Screens", ["ui/ski_view · stats_fmt", "ui/turn_view · turn_page", "ui/popup_view · page_rail"]),
         ("LINK", "BLE link and protocol", ["protocol/ble_proto · packets", "link/link_core · session rules", "link/ble_link · NimBLE, TX queues"]),
         ("AUDIO", "Voice", ["audio/voice · capture and playback", "audio/ima_adpcm · 164 B blocks", "audio/play_gate · envelope"]),
         ("BSP", "Board support", ["display · LVGL port · SPI 80 MHz", "button · ADC on GPIO0", "audio ES8311 · battery CW2017 · I2C"]),
@@ -285,7 +290,7 @@ LAYERS = {
     ], pure=[(0, 1), (2, 0), (2, 1), (3, 1), (3, 2)]),
     "zh": dict(title="固件分层", host="纯 C · 有主机测试", rows=[
         ("APP", "Coach 应用", ["coach_app.c · 状态机任务", "coach_input.c · 按键 → 事件", "generated/ · 流程、界面、绑定"]),
-        ("UI", "界面", ["ui/ski_view · stats_fmt", "ui/turn_view · turn_page", "ui/popup_view · popup_anim"]),
+        ("UI", "界面", ["ui/ski_view · stats_fmt", "ui/turn_view · turn_page", "ui/popup_view · page_rail"]),
         ("LINK", "蓝牙链路与协议", ["protocol/ble_proto · 包编解码", "link/link_core · 会话规则", "link/ble_link · NimBLE、发送队列"]),
         ("AUDIO", "语音", ["audio/voice · 录音和播放", "audio/ima_adpcm · 164 字节一块", "audio/play_gate · envelope"]),
         ("BSP", "板级支持", ["显示 · LVGL 适配 · SPI 80 MHz", "按键 · GPIO0 ADC", "音频 ES8311 · 电量 CW2017 · I2C"]),
@@ -419,8 +424,8 @@ def flashmap(lang):
     fx = x0 + 0x10000 * sc
     b.append(box(x0, y, x1 - x0, 46, fill=BG, stroke=LINE, rx=8))
     b.append(f'<rect x="{x0}" y="{y}" width="{0x10000 * sc:.1f}" height="46" rx="4" fill="{INK3}"/>')
-    uw = 1945536 * sc
-    b.append(f'<g><title>app 1,945,536 B / factory 8,323,072 B</title><rect x="{fx:.1f}" y="{y}" width="{uw:.1f}" height="46" rx="4" fill="{GREEN}"/></g>')
+    uw = 1948816 * sc
+    b.append(f'<g><title>app 1,948,816 B / factory 8,323,072 B</title><rect x="{fx:.1f}" y="{y}" width="{uw:.1f}" height="46" rx="4" fill="{GREEN}"/></g>')
     b.append(text(fx + 12, y + 28, "app 1.86 MiB" if lang == "en" else "应用 1.86 MiB", 13, "#0e1013", 700))
     b.append(text(fx + uw + 14, y + 28, ("free in factory: 6.08 MiB (76.6%)" if lang == "en" else "factory 剩余 6.08 MiB（76.6%）"), 12.5, INK2))
     for a, lab in ((0, "0x0"), (0x800000, "0x800000")):
@@ -447,21 +452,21 @@ def flashmap(lang):
 
 
 # ---------------------------------------------------------------- horizontal bar charts (inline, tooltips)
-FLASH_PARTS = [  # bytes, from idf.py size-files and size-components on d99a7d9
+FLASH_PARTS = [  # bytes, from idf.py size-files and size-components on 5100fd2 (firmware of 19dafd9)
     ({"en": "Chinese font 16 px", "zh": "中文字体 16 px"}, 516932),
-    ({"en": "LVGL", "zh": "LVGL"}, 331660),
+    ({"en": "LVGL", "zh": "LVGL"}, 332036),
     ({"en": "BLE controller + NimBLE", "zh": "蓝牙控制器 + NimBLE"}, 168668),
     ({"en": "Popup badges (4 × 4 frames)", "zh": "弹窗徽章（4 种 × 4 帧）"}, 201152),
     ({"en": "Other fonts and rider sprite", "zh": "其他字体和滑雪小人"}, 127789),
-    ({"en": "Heygo app code", "zh": "Heygo 应用代码"}, 52855),
-    ({"en": "Other ESP-IDF parts", "zh": "ESP-IDF 其他部分"}, 438960),
+    ({"en": "Heygo app code", "zh": "Heygo 应用代码"}, 55559),
+    ({"en": "Other ESP-IDF parts", "zh": "ESP-IDF 其他部分"}, 439142),
 ]
 
 DRAM_PARTS = [
     ({"en": "IRAM code (.text)", "zh": "IRAM 代码（.text）"}, 96852),
-    ({"en": ".bss (incl. 24 KiB LVGL pool)", "zh": ".bss（含 24 KiB LVGL 内存池）"}, 40088),
-    ({"en": ".data", "zh": ".data"}, 10516),
-    ({"en": "Free for heap, stacks, buffers", "zh": "留给堆、栈和缓冲区"}, 173840),
+    ({"en": ".bss (incl. 28 KiB LVGL pool)", "zh": ".bss（含 28 KiB LVGL 内存池）"}, 44200),
+    ({"en": ".data", "zh": ".data"}, 10532),
+    ({"en": "Free for heap, stacks, buffers", "zh": "留给堆、栈和缓冲区"}, 169712),
 ]
 
 

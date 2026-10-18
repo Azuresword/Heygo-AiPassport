@@ -10,7 +10,7 @@ The firmware runs on the ESP32-C3. It uses ESP-IDF 5.5.3 and FreeRTOS. The code 
 <div class="tile accent"><div class="k">States</div><div class="v">10</div></div>
 <div class="tile accent"><div class="k">Transitions</div><div class="v">83</div></div>
 <div class="tile"><div class="k">Own tasks</div><div class="v">3</div></div>
-<div class="tile"><div class="k">C code</div><div class="v">8.3<small>k lines</small></div></div>
+<div class="tile"><div class="k">C code</div><div class="v">8.6<small>k lines</small></div></div>
 <div class="tile"><div class="k">Host tests</div><div class="v">33</div></div>
 </div>
 
@@ -30,9 +30,9 @@ The design has two rules:
 
 | Module | Path | Lines | Task |
 |---|---|---|---|
-| Application | `main/main.c`, `coach_app.c`, `coach_input.c` | 900 | Startup. Runs the state machine in one task. Changes keys into events. |
-| Generated code | `main/generated/` | 1,363 | Transition table, screen builders, data bindings, and screen effects. Do not edit. |
-| Screens | `main/ui/` | 617 | Live data, Turns, popup, and other screen parts. |
+| Application | `main/main.c`, `coach_app.c`, `coach_input.c` | 927 | Startup. Runs the state machine in one task. Changes keys into events. |
+| Generated code | `main/generated/` | 1,486 | Transition table, screen builders, data bindings, and screen effects. Do not edit. |
+| Screens | `main/ui/` | 746 | Live data, Turns, popup, page rail (D-33), and other screen parts. |
 | Link and protocol | `main/link/`, `main/protocol/` | 1,824 | Packets of document 07, handshake and session rules, and NimBLE GATT. |
 | Voice | `main/audio/` | 450 | Recording codec, playback start rule, volume envelope, and ADPCM. |
 | BSP | `components/bsp/src/` | 1,646 | Screen, LVGL port, key ADC, ES8311, fuel gauge, and I2C. |
@@ -82,6 +82,8 @@ Two timers (`docs/heygo-changes.md`, section 6):
 - After 10 s in `WAIT_ANSWER`, the timer sends `AGENT_TIMEOUT`.
 
 Only one screen exists at a time. To change the screen, the task loads an empty screen, deletes the old screen, and then builds the new screen. Several screens at the same time do not fit in the LVGL pool.
+
+The page rail is an exception. It is one object on the LVGL top layer that draws the four stops and the thumb. A screen change does not delete it. Thus, the rail uses only one object of the pool on each page (`main/ui/page_rail.h`, `coach_app.c:749`).
 
 ## Audio path
 
