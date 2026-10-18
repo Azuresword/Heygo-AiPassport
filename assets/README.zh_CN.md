@@ -9,7 +9,7 @@
 
 | 路径 | 内容 |
 | --- | --- |
-| `ui/strings.json` | 设备屏幕显示的 71 条文字，有中文和英文。`popup.*` 和 `hint.popup` 属于弹窗页（D-31）。 |
+| `ui/strings.json` | 设备屏幕显示的 74 条文字，有中文和英文。`popup.*` 和 `hint.popup` 属于弹窗页（D-31）。`boot.*` 属于开机屏（D-35）。 |
 | `fonts/heygo_sc_16.c` | 16 px 字体，用于状态、提示和手机发来的文字。3,869 个字形。 |
 | `fonts/heygo_sc_28.c` | 28 px 粗体，用于状态词和标题。185 个字形。 |
 | `fonts/heygo_display_20.c`、`fonts/heygo_display_34.c`、`fonts/heygo_display_48.c` | Staatliches 展示字体，20 px、34 px 和 48 px。只含 ASCII。48 px 用于显示速度。 |
@@ -21,6 +21,9 @@
 | `sprites/heygo_board_sprite.c`、`sprites/heygo_sprites.h` | 弯型页的小精灵图：16 帧，每帧 20 × 20 px，ARGB8888。`heygo_board_sprite.png` 是预览图。 |
 | `sprites/heygo_popup_icons.c`、`sprites/heygo_popup_icons.h` | 弹窗徽章（D-31）：4 种类型各 4 帧，56 × 56 px，ARGB8888，由 `tools/gen_popup_icons.py` 生成。`heygo_popup_icons.png` 是预览图，模拟器使用 `heygo_popup_icons_sheet.png`。 |
 | `tools/gen_sprite.py` | 生成小精灵图。 |
+| `brand/logo_*.png`、`brand/logo_parts.json` | Heygo LOGO 的 6 个白色部件及其位置，来自 Figma 文件"Logo"（D-35）。由 `tools/fetch_figma_logo.py` 导出。构建不需要 Figma。 |
+| `sprites/heygo_logo.c`、`sprites/heygo_logo.h` | 开机 LOGO，6 个 A8 部件，合起来 200 × 79 px，共 12,288 字节。由 `tools/gen_boot_logo.py` 从 `brand/` 生成。 |
+| `mockups/27-boot-*.png` 至 `mockups/29-boot-*.png`、`mockups/boot-anim.gif` | 开机屏在 0.3 秒、1.0 秒和 1.7 秒时的画面，以及完整动画。由主机渲染器绘制。 |
 | `mockups/` | 主机界面检查生成的屏幕图片。`compare-A-B.png` 是两个设计方案的对比，目前采用 B 版。 |
 | `sim/coach-flow.html` | Coach 流程的交互模拟器。 |
 | `sim/turns-demo.gif` | 弯型页动画。由 `Firmware/tools/host_render/turns_gif.py` 用设备的绘制代码生成。 |
