@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 
+#define HEYGO_BOOT_SOUND_DESIGN  "A"
 #define HEYGO_BOOT_SOUND_RATE    16000
 #define HEYGO_BOOT_SOUND_SAMPLES 32000
 
