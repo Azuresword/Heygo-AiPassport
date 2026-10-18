@@ -437,7 +437,7 @@ A reconnect cancels the open exchange.
 ### Boot sound (D-36)
 
 `assets/tools/gen_boot_sound.py` makes three designs from code, with a fixed random seed. They aim at a clean, synthetic "tech and sport" feel, and copy no product sound. The user rejected the first version (plucks and a bell) on 2026-10-18.
-The script writes `boot_sound_a.wav`, `boot_sound_b.wav`, and `boot_sound_c.wav` for the simulator. It writes the picked design (`--pick`, now A) to `assets/audio/heygo_boot_sound.c`: 2.0 s of 16 kHz, 16-bit, mono PCM, 64,000 bytes in Flash.
+The script writes `boot_sound_a.wav`, `boot_sound_b.wav`, and `boot_sound_c.wav` for the simulator. The user chose design A on 2026-10-18. The script writes the picked design (`--pick A`) to `assets/audio/heygo_boot_sound.c`: 2.0 s of 16 kHz, 16-bit, mono PCM, 64,000 bytes in Flash.
 
 | Design | 0 to 0.42 s, the board | 0.42 to 0.9 s, the letters | 1.0 to 2.0 s, the tagline |
 |---|---|---|---|
