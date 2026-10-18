@@ -16,6 +16,7 @@ typedef struct {
     lv_obj_t *ridge_back;
     lv_obj_t *link_dot;
     lv_obj_t *icon;
+    lv_obj_t *mode_dot;
     lv_obj_t *mode;
     lv_obj_t *status;
     lv_obj_t *battery;
@@ -35,7 +36,8 @@ typedef struct {
     lv_obj_t *body_panel;
     lv_obj_t *mode_dot;
     lv_obj_t *mode;
-    lv_obj_t *battery;
+    lv_obj_t *link_dot;
+    lv_obj_t *status;
     lv_obj_t *dest;
     lv_obj_t *sub;
     lv_obj_t *big;
@@ -63,7 +65,8 @@ typedef struct {
     lv_obj_t *ridge_back;
     lv_obj_t *mode_dot;
     lv_obj_t *mode;
-    lv_obj_t *battery;
+    lv_obj_t *link_dot;
+    lv_obj_t *status;
     lv_obj_t *dest;
     lv_obj_t *title;
     lv_obj_t *iq;
@@ -89,7 +92,8 @@ typedef struct {
     lv_obj_t *rider;
     lv_obj_t *mode_dot;
     lv_obj_t *mode;
-    lv_obj_t *battery;
+    lv_obj_t *link_dot;
+    lv_obj_t *status;
     lv_obj_t *dest;
     lv_obj_t *title;
     lv_obj_t *source;
@@ -111,6 +115,8 @@ typedef struct {
     lv_obj_t *hint_panel;
     lv_obj_t *mode_dot;
     lv_obj_t *mode;
+    lv_obj_t *link_dot;
+    lv_obj_t *status;
     lv_obj_t *dest;
     lv_obj_t *icon;
     lv_obj_t *title;
