@@ -1,0 +1,778 @@
+
+<!DOCTYPE HTML>
+<html lang="en" >
+    <head>
+        <meta charset="UTF-8">
+        <title>Firmware build · Heygo AI Passport — Project Summary</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="HonKit 6.2.2">
+        
+        
+        
+    
+    <link rel="stylesheet" href="gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="gitbook/@honkit/honkit-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/@honkit/honkit-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+        <link rel="stylesheet" href="styles/website.css">
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="memory.html" />
+    
+    
+    <link rel="prev" href="firmware.html" />
+    
+
+    </head>
+    <body>
+        
+<div class="book honkit-cloak">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        <li class="header">English</li>
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    Overview
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="product.html">
+            
+                <a href="product.html">
+            
+                    
+                    Product and pages
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="screens.html">
+            
+                <a href="screens.html">
+            
+                    
+                    Screen gallery
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="architecture.html">
+            
+                <a href="architecture.html">
+            
+                    
+                    Architecture and protocol
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" data-path="firmware.html">
+            
+                <a href="firmware.html">
+            
+                    
+                    Firmware architecture
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="1.6" data-path="build-flash.html">
+            
+                <a href="build-flash.html">
+            
+                    
+                    Firmware build
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" data-path="memory.html">
+            
+                <a href="memory.html">
+            
+                    
+                    Memory map
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.8" data-path="sprints.html">
+            
+                <a href="sprints.html">
+            
+                    
+                    Sprints
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.9" data-path="decisions.html">
+            
+                <a href="decisions.html">
+            
+                    
+                    Decisions D-01 to D-33
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.10" data-path="history.html">
+            
+                <a href="history.html">
+            
+                    
+                    Project history
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.11" data-path="quality.html">
+            
+                <a href="quality.html">
+            
+                    
+                    Quality and deployment
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.12" data-path="followups.html">
+            
+                <a href="followups.html">
+            
+                    
+                    Follow-up items
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.13" data-path="sources.html">
+            
+                <a href="sources.html">
+            
+                    
+                    Sources
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+        
+        <li class="header">简体中文</li>
+        
+        
+    
+        <li class="chapter " data-level="2.1" data-path="README.zh_CN.html">
+            
+                <a href="README.zh_CN.html">
+            
+                    
+                    总览
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.2" data-path="product.zh_CN.html">
+            
+                <a href="product.zh_CN.html">
+            
+                    
+                    产品与页面
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.3" data-path="screens.zh_CN.html">
+            
+                <a href="screens.zh_CN.html">
+            
+                    
+                    界面一览
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.4" data-path="architecture.zh_CN.html">
+            
+                <a href="architecture.zh_CN.html">
+            
+                    
+                    架构与协议
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.5" data-path="firmware.zh_CN.html">
+            
+                <a href="firmware.zh_CN.html">
+            
+                    
+                    固件架构
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.6" data-path="build-flash.zh_CN.html">
+            
+                <a href="build-flash.zh_CN.html">
+            
+                    
+                    制作方法
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.7" data-path="memory.zh_CN.html">
+            
+                <a href="memory.zh_CN.html">
+            
+                    
+                    内存分布
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.8" data-path="sprints.zh_CN.html">
+            
+                <a href="sprints.zh_CN.html">
+            
+                    
+                    Sprint 完成情况
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.9" data-path="decisions.zh_CN.html">
+            
+                <a href="decisions.zh_CN.html">
+            
+                    
+                    决策 D-01 至 D-33
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.10" data-path="history.zh_CN.html">
+            
+                <a href="history.zh_CN.html">
+            
+                    
+                    开发历程
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.11" data-path="quality.zh_CN.html">
+            
+                <a href="quality.zh_CN.html">
+            
+                    
+                    质量与部署
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.12" data-path="followups.zh_CN.html">
+            
+                <a href="followups.zh_CN.html">
+            
+                    
+                    后续事项
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.13" data-path="sources.zh_CN.html">
+            
+                <a href="sources.zh_CN.html">
+            
+                    
+                    数据来源
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://github.com/honkit/honkit" target="blank" class="gitbook-link">
+            Published with HonKit
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href="." >Firmware build</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <p class="lang"><strong>English</strong> · <a href="build-flash.zh_CN.html">简体中文</a></p>
+
+<p class="eyebrow">Build</p>
+
+<h1 id="firmware-build">Firmware build</h1>
+<h2 id="from-source-files-to-firmware">From source files to firmware</h2>
+<figure>
+<img src="images/fw-build-en.svg" alt="Firmware build steps"></img>
+<figcaption>Figure 11. From source files to firmware that you can flash. Sources: <code>tools/validate.sh</code> and <code>main/CMakeLists.txt</code>.</figcaption>
+</figure>
+
+<p>Scripts make four kinds of content in the firmware. Nobody writes these files manually.</p>
+<table>
+<thead>
+<tr>
+<th>Output</th>
+<th>Input</th>
+<th>Script</th>
+<th>Files</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>State machine and screens</td>
+<td><code>flows/coach.flow.json</code></td>
+<td><code>tools/flow/flowc.py</code></td>
+<td>Four <code>.c/.h</code> pairs in <code>main/generated/</code></td>
+</tr>
+<tr>
+<td>Simulator</td>
+<td>The same flow graph</td>
+<td><code>tools/flow/flow_sim.py</code></td>
+<td><code>assets/sim/coach-flow.html</code></td>
+</tr>
+<tr>
+<td>Fonts</td>
+<td>Noto Sans SC and Staatliches (OFL 1.1), with character lists</td>
+<td><code>assets/tools/gen_lv_font.py</code></td>
+<td><code>assets/fonts/heygo_*.c</code></td>
+</tr>
+<tr>
+<td>Sprites</td>
+<td>Drawing definitions in the scripts</td>
+<td><code>gen_sprite.py</code>, <code>gen_popup_icons.py</code></td>
+<td><code>assets/sprites/*.c</code></td>
+</tr>
+</tbody>
+</table>
+<p>The state machine and the simulator come from the same graph. Thus, the behavior in the simulator is the behavior of the device. <code>flowc.py --check</code> and <code>flow_sim.py --check</code> fail when a generated file is old.</p>
+<h3 id="fonts">Fonts</h3>
+<table>
+<thead>
+<tr>
+<th>Font</th>
+<th>Glyphs</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>heygo_sc_16</code></td>
+<td>3,871</td>
+<td>Body text. It includes GB2312 level 1 (3,755 characters), because it shows transcripts and answers from the phone.</td>
+</tr>
+<tr>
+<td><code>heygo_sc_28</code></td>
+<td>202</td>
+<td>Large state words. Only the screen vocabulary.</td>
+</tr>
+<tr>
+<td><code>heygo_display_20/34/48</code></td>
+<td>95 each</td>
+<td>The Staatliches brand face, for numbers and English labels.</td>
+</tr>
+</tbody>
+</table>
+<p>Sources: <code>assets/fonts/*.chars.txt</code> and the file header of <code>assets/tools/gen_lv_font.py</code>.</p>
+<h2 id="build">Build</h2>
+<ol>
+<li>Install ESP-IDF 5.5.3.</li>
+<li>Activate the environment: <code>. $IDF_PATH/export.sh</code>.</li>
+<li>In <code>Firmware/</code>, run the gate: <code>./tools/validate.sh</code>.</li>
+</ol>
+<p>The gate builds in a temporary directory, so the work tree stays clean. The build steps (<code>tools/validate.sh:145-175</code>):</p>
+<pre><code class="lang-bash">SDKCONFIG_DEFAULTS=sdkconfig.defaults idf.py -B &lt;temp <span class="hljs-built_in">dir</span>&gt; build
+idf.py -B &lt;temp <span class="hljs-built_in">dir</span>&gt; merge-bin -o FoloToy-AI-Passport-full.bin
+python3 tools/verify_firmware.py &lt;temp <span class="hljs-built_in">dir</span>&gt;        <span class="hljs-comment"># partitions and image offsets</span>
+python3 tools/host_render/render.py ...             <span class="hljs-comment"># screen images</span>
+python3 tools/archive_firmware.py create ...        <span class="hljs-comment"># debug archive</span>
+</code></pre>
+<p>Outputs:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Content</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>build/FoloToy-AI-Passport-full.bin</code></td>
+<td>Bootloader, partition table, and application in one file</td>
+<td>Flash at <code>0x0</code> for a new device or a full refresh.</td>
+</tr>
+<tr>
+<td><code>build/FoloToy-AI-Passport.bin</code></td>
+<td>Application only</td>
+<td>It has no bootloader and no partition table. Do not upload it alone.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="build-results-for-this-book">Build results for this book</h2>
+<p>On 2026-10-18, we ran the full gate at commit <code>df81cc8</code>. <code>Firmware/</code> is the same as at <code>c865ba8</code>. The exit code was 0.</p>
+<div class="tiles">
+<div class="tile accent"><div class="k">Gate</div><div class="v" style="font-size:24px">PASS</div></div>
+<div class="tile"><div class="k">App image</div><div class="v">1.86<small>MiB</small></div></div>
+<div class="tile"><div class="k">Merged image</div><div class="v">1.92<small>MiB</small></div></div>
+<div class="tile"><div class="k">Build steps</div><div class="v">1,995</div></div>
+</div>
+
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Host tests</td>
+<td>All PASS: protocol, ADPCM, playback rules, keys, link core, and screen parts</td>
+</tr>
+<tr>
+<td>Simulator</td>
+<td><code>--check</code> PASS, self-test 122/122</td>
+</tr>
+<tr>
+<td>Glyphs</td>
+<td>PASS, 71 vocabulary strings and 43 flow texts</td>
+</tr>
+<tr>
+<td>Layout</td>
+<td>Application 1,945,536 of 8,323,072 bytes, in <code>factory</code> at <code>0x10000</code></td>
+</tr>
+<tr>
+<td>Merged image</td>
+<td>2,011,072 bytes, flash at <code>0x0</code></td>
+</tr>
+</tbody>
+</table>
+<p>Compiler settings: <code>-Og</code> (debug optimization), with assertions. The flash uses DIO mode at 80 MHz (generated <code>sdkconfig</code>).</p>
+<h2 id="flashing">Flashing</h2>
+<p>Source: <code>Firmware/docs/development/engineering/firmware-layout.md</code>, section "Flashing and stored data".</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Method</th>
+<th>Caution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>New device or full refresh</td>
+<td>Write <code>…-full.bin</code> at <code>0x0</code>.</td>
+<td>The merged file fills the gaps between images. It can reset the NVS and PHY data.</td>
+</tr>
+<tr>
+<td>Daily development</td>
+<td>Segmented flash: <code>idf.py -p &lt;port&gt; flash</code></td>
+<td>It keeps the NVS, if the partition layout is compatible.</td>
+</tr>
+<tr>
+<td>Erase the full chip</td>
+<td><code>idf.py erase-flash</code></td>
+<td>It erases all user data. Do not use it as a routine step.</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Logs and flashing use the built-in USB Serial/JTAG of the ESP32-C3. GPIO18 and GPIO19 are for USB (<code>Firmware/docs/README.md</code>).</li>
+<li>You do not need a backup of the old firmware before you flash. The new firmware keeps no rollback copy.</li>
+</ul>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+                
+                <a href="firmware.html" class="navigation navigation-prev " aria-label="Previous page: Firmware architecture">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+                <a href="memory.html" class="navigation navigation-next " aria-label="Next page: Memory map">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"Firmware build","level":"1.6","depth":1,"next":{"title":"Memory map","level":"1.7","depth":1,"path":"memory.md","ref":"memory.md","articles":[]},"previous":{"title":"Firmware architecture","level":"1.5","depth":1,"path":"firmware.md","ref":"firmware.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"build-flash.md","mtime":"2026-10-18T04:04:01.827Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T04:04:41.810Z"},"basePath":".","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <noscript>
+        <style>
+            .honkit-cloak {
+                display: block !important;
+            }
+        </style>
+    </noscript>
+    <script>
+        // Restore sidebar state as critical path for prevent layout shift
+        function __init__getSidebarState(defaultValue){
+            var baseKey = "";
+            var key = baseKey + ":sidebar";
+            try {
+                var value = localStorage[key];
+                if (value === undefined) {
+                    return defaultValue;
+                }
+                var parsed = JSON.parse(value);
+                return parsed == null ? defaultValue : parsed;
+            } catch (e) {
+                return defaultValue;
+            }
+        }
+        function __init__restoreLastSidebarState() {
+            var isMobile = window.matchMedia("(max-width: 600px)").matches;
+            if (isMobile) {
+                // Init last state if not mobile
+                return;
+            }
+            var sidebarState = __init__getSidebarState(true);
+            var book = document.querySelector(".book");
+            // Show sidebar if it enabled
+            if (sidebarState && book) {
+                book.classList.add("without-animation", "with-summary");
+            }
+        }
+
+        try {
+            __init__restoreLastSidebarState();
+        } finally {
+            var book = document.querySelector(".book");
+            book.classList.remove("honkit-cloak");
+        }
+    </script>
+    <script src="gitbook/gitbook.js"></script>
+    <script src="gitbook/theme.js"></script>
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="gitbook/@honkit/honkit-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+

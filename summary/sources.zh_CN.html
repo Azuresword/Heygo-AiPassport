@@ -132,7 +132,46 @@
             
         </li>
     
-        <li class="chapter " data-level="1.5" data-path="sprints.html">
+        <li class="chapter " data-level="1.5" data-path="firmware.html">
+            
+                <a href="firmware.html">
+            
+                    
+                    Firmware architecture
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" data-path="build-flash.html">
+            
+                <a href="build-flash.html">
+            
+                    
+                    Firmware build
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" data-path="memory.html">
+            
+                <a href="memory.html">
+            
+                    
+                    Memory map
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.8" data-path="sprints.html">
             
                 <a href="sprints.html">
             
@@ -145,7 +184,7 @@
             
         </li>
     
-        <li class="chapter " data-level="1.6" data-path="decisions.html">
+        <li class="chapter " data-level="1.9" data-path="decisions.html">
             
                 <a href="decisions.html">
             
@@ -158,7 +197,7 @@
             
         </li>
     
-        <li class="chapter " data-level="1.7" data-path="history.html">
+        <li class="chapter " data-level="1.10" data-path="history.html">
             
                 <a href="history.html">
             
@@ -171,7 +210,7 @@
             
         </li>
     
-        <li class="chapter " data-level="1.8" data-path="quality.html">
+        <li class="chapter " data-level="1.11" data-path="quality.html">
             
                 <a href="quality.html">
             
@@ -184,7 +223,7 @@
             
         </li>
     
-        <li class="chapter " data-level="1.9" data-path="followups.html">
+        <li class="chapter " data-level="1.12" data-path="followups.html">
             
                 <a href="followups.html">
             
@@ -197,7 +236,7 @@
             
         </li>
     
-        <li class="chapter " data-level="1.10" data-path="sources.html">
+        <li class="chapter " data-level="1.13" data-path="sources.html">
             
                 <a href="sources.html">
             
@@ -269,7 +308,46 @@
             
         </li>
     
-        <li class="chapter " data-level="2.5" data-path="sprints.zh_CN.html">
+        <li class="chapter " data-level="2.5" data-path="firmware.zh_CN.html">
+            
+                <a href="firmware.zh_CN.html">
+            
+                    
+                    固件架构
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.6" data-path="build-flash.zh_CN.html">
+            
+                <a href="build-flash.zh_CN.html">
+            
+                    
+                    制作方法
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.7" data-path="memory.zh_CN.html">
+            
+                <a href="memory.zh_CN.html">
+            
+                    
+                    内存分布
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.8" data-path="sprints.zh_CN.html">
             
                 <a href="sprints.zh_CN.html">
             
@@ -282,7 +360,7 @@
             
         </li>
     
-        <li class="chapter " data-level="2.6" data-path="decisions.zh_CN.html">
+        <li class="chapter " data-level="2.9" data-path="decisions.zh_CN.html">
             
                 <a href="decisions.zh_CN.html">
             
@@ -295,7 +373,7 @@
             
         </li>
     
-        <li class="chapter " data-level="2.7" data-path="history.zh_CN.html">
+        <li class="chapter " data-level="2.10" data-path="history.zh_CN.html">
             
                 <a href="history.zh_CN.html">
             
@@ -308,7 +386,7 @@
             
         </li>
     
-        <li class="chapter " data-level="2.8" data-path="quality.zh_CN.html">
+        <li class="chapter " data-level="2.11" data-path="quality.zh_CN.html">
             
                 <a href="quality.zh_CN.html">
             
@@ -321,7 +399,7 @@
             
         </li>
     
-        <li class="chapter " data-level="2.9" data-path="followups.zh_CN.html">
+        <li class="chapter " data-level="2.12" data-path="followups.zh_CN.html">
             
                 <a href="followups.zh_CN.html">
             
@@ -334,7 +412,7 @@
             
         </li>
     
-        <li class="chapter active" data-level="2.10" data-path="sources.zh_CN.html">
+        <li class="chapter active" data-level="2.13" data-path="sources.zh_CN.html">
             
                 <a href="sources.zh_CN.html">
             
@@ -428,7 +506,15 @@
 </tr>
 <tr>
 <td>模拟器自测 122/122</td>
-<td>2026-10-18 在 <code>d99a7d9</code> 上运行 <code>flow_sim.py --run-selftest</code></td>
+<td>2026-10-18 在 <code>d99a7d9</code> 上单独运行，在 <code>df81cc8</code> 的完整门禁里再次运行</td>
+</tr>
+<tr>
+<td>完整门禁、镜像大小、内存各段</td>
+<td>2026-10-18 在 <code>df81cc8</code> 上运行 <code>./tools/validate.sh</code>、<code>idf.py size</code>、<code>size-components</code>、<code>size-files</code></td>
+</tr>
+<tr>
+<td>任务、队列、栈</td>
+<td><code>main/coach_app.c</code>、<code>main/audio/voice.c</code>、<code>main/link/ble_link.c</code>、esp_lvgl_port、生成的 <code>sdkconfig</code></td>
 </tr>
 <tr>
 <td>界面图和动画</td>
@@ -500,7 +586,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"数据来源","level":"2.10","depth":1,"previous":{"title":"后续事项","level":"2.9","depth":1,"path":"followups.zh_CN.md","ref":"followups.zh_CN.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"sources.zh_CN.md","mtime":"2026-10-18T03:19:57.058Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T03:23:46.041Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"数据来源","level":"2.13","depth":1,"previous":{"title":"后续事项","level":"2.12","depth":1,"path":"followups.zh_CN.md","ref":"followups.zh_CN.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"sources.zh_CN.md","mtime":"2026-10-18T04:03:42.481Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T04:04:41.810Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>

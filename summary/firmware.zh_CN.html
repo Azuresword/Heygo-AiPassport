@@ -1,0 +1,739 @@
+
+<!DOCTYPE HTML>
+<html lang="en" >
+    <head>
+        <meta charset="UTF-8">
+        <title>固件架构 · Heygo AI Passport — Project Summary</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="HonKit 6.2.2">
+        
+        
+        
+    
+    <link rel="stylesheet" href="gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="gitbook/@honkit/honkit-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/@honkit/honkit-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+        <link rel="stylesheet" href="styles/website.css">
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="build-flash.zh_CN.html" />
+    
+    
+    <link rel="prev" href="architecture.zh_CN.html" />
+    
+
+    </head>
+    <body>
+        
+<div class="book honkit-cloak">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        <li class="header">English</li>
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    Overview
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="product.html">
+            
+                <a href="product.html">
+            
+                    
+                    Product and pages
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="screens.html">
+            
+                <a href="screens.html">
+            
+                    
+                    Screen gallery
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="architecture.html">
+            
+                <a href="architecture.html">
+            
+                    
+                    Architecture and protocol
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" data-path="firmware.html">
+            
+                <a href="firmware.html">
+            
+                    
+                    Firmware architecture
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" data-path="build-flash.html">
+            
+                <a href="build-flash.html">
+            
+                    
+                    Firmware build
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" data-path="memory.html">
+            
+                <a href="memory.html">
+            
+                    
+                    Memory map
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.8" data-path="sprints.html">
+            
+                <a href="sprints.html">
+            
+                    
+                    Sprints
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.9" data-path="decisions.html">
+            
+                <a href="decisions.html">
+            
+                    
+                    Decisions D-01 to D-33
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.10" data-path="history.html">
+            
+                <a href="history.html">
+            
+                    
+                    Project history
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.11" data-path="quality.html">
+            
+                <a href="quality.html">
+            
+                    
+                    Quality and deployment
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.12" data-path="followups.html">
+            
+                <a href="followups.html">
+            
+                    
+                    Follow-up items
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.13" data-path="sources.html">
+            
+                <a href="sources.html">
+            
+                    
+                    Sources
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+        
+        <li class="header">简体中文</li>
+        
+        
+    
+        <li class="chapter " data-level="2.1" data-path="README.zh_CN.html">
+            
+                <a href="README.zh_CN.html">
+            
+                    
+                    总览
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.2" data-path="product.zh_CN.html">
+            
+                <a href="product.zh_CN.html">
+            
+                    
+                    产品与页面
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.3" data-path="screens.zh_CN.html">
+            
+                <a href="screens.zh_CN.html">
+            
+                    
+                    界面一览
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.4" data-path="architecture.zh_CN.html">
+            
+                <a href="architecture.zh_CN.html">
+            
+                    
+                    架构与协议
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="2.5" data-path="firmware.zh_CN.html">
+            
+                <a href="firmware.zh_CN.html">
+            
+                    
+                    固件架构
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.6" data-path="build-flash.zh_CN.html">
+            
+                <a href="build-flash.zh_CN.html">
+            
+                    
+                    制作方法
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.7" data-path="memory.zh_CN.html">
+            
+                <a href="memory.zh_CN.html">
+            
+                    
+                    内存分布
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.8" data-path="sprints.zh_CN.html">
+            
+                <a href="sprints.zh_CN.html">
+            
+                    
+                    Sprint 完成情况
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.9" data-path="decisions.zh_CN.html">
+            
+                <a href="decisions.zh_CN.html">
+            
+                    
+                    决策 D-01 至 D-33
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.10" data-path="history.zh_CN.html">
+            
+                <a href="history.zh_CN.html">
+            
+                    
+                    开发历程
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.11" data-path="quality.zh_CN.html">
+            
+                <a href="quality.zh_CN.html">
+            
+                    
+                    质量与部署
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.12" data-path="followups.zh_CN.html">
+            
+                <a href="followups.zh_CN.html">
+            
+                    
+                    后续事项
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.13" data-path="sources.zh_CN.html">
+            
+                <a href="sources.zh_CN.html">
+            
+                    
+                    数据来源
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://github.com/honkit/honkit" target="blank" class="gitbook-link">
+            Published with HonKit
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href="." >固件架构</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <p class="lang"><strong>简体中文</strong> · <a href="firmware.html">English</a></p>
+
+<p class="eyebrow">Firmware</p>
+
+<h1 id="固件架构">固件架构</h1>
+<p>固件跑在 ESP32-C3 上，基于 ESP-IDF 5.5.3 和 FreeRTOS。代码在 <code>Firmware/</code> 下：应用在 <code>main/</code>，板级支持在 <code>components/bsp/</code>。</p>
+<div class="tiles">
+<div class="tile accent"><div class="k">状态</div><div class="v">10</div></div>
+<div class="tile accent"><div class="k">转移</div><div class="v">83</div></div>
+<div class="tile"><div class="k">自建任务</div><div class="v">3</div></div>
+<div class="tile"><div class="k">C 代码</div><div class="v">8.3<small>k 行</small></div></div>
+<div class="tile"><div class="k">主机测试</div><div class="v">33</div></div>
+</div>
+
+<p>来源：<code>Firmware/flows/coach.flow.json</code>（状态和转移）；<code>wc -l</code>（行数，含 BSP）；<code>Firmware/tests/</code>。</p>
+<h2 id="分层">分层</h2>
+<figure>
+<img src="images/fw-layers-zh.svg" alt="固件分层图"></img>
+<figcaption>图 9　固件分层。绿框的模块是纯 C，不依赖 LVGL 和 ESP-IDF，在主机上测试。</figcaption>
+</figure>
+
+<p>设计原则有两条：</p>
+<ol>
+<li><strong>逻辑和硬件分开。</strong> 状态机、按键映射、协议编解码、会话规则、ADPCM 都写成纯 C，在电脑上就能测。</li>
+<li><strong>画布在构建时编译成 C。</strong> 状态机画在 <code>coach.flow.json</code> 里，<code>flowc.py</code> 把它翻译成 C 转移表。设备上没有图解释器，运行时开销为零（<code>tools/flow/flowc.py</code> 文件头）。</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>路径</th>
+<th>行数</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>应用</td>
+<td><code>main/main.c</code>、<code>coach_app.c</code>、<code>coach_input.c</code></td>
+<td>900</td>
+<td>启动；在一个任务里跑状态机；把按键转成事件</td>
+</tr>
+<tr>
+<td>生成代码</td>
+<td><code>main/generated/</code></td>
+<td>1,363</td>
+<td>转移表、界面构建、数据绑定、界面效果。不要手改</td>
+</tr>
+<tr>
+<td>界面</td>
+<td><code>main/ui/</code></td>
+<td>617</td>
+<td>实时数据、弯型、弹窗等界面组件</td>
+</tr>
+<tr>
+<td>链路与协议</td>
+<td><code>main/link/</code>、<code>main/protocol/</code></td>
+<td>1,824</td>
+<td>07 号协议的包、握手和会话规则、NimBLE GATT</td>
+</tr>
+<tr>
+<td>语音</td>
+<td><code>main/audio/</code></td>
+<td>450</td>
+<td>录音编码、播放启动规则、音量包络、ADPCM</td>
+</tr>
+<tr>
+<td>BSP</td>
+<td><code>components/bsp/src/</code></td>
+<td>1,646</td>
+<td>屏幕、LVGL 适配、按键 ADC、ES8311、电量计、I2C</td>
+</tr>
+<tr>
+<td>BSP 参考</td>
+<td><code>main/demo_*.c</code> 等</td>
+<td>1,521</td>
+<td>上游演示程序。保留作参考，链接时被去掉</td>
+</tr>
+</tbody>
+</table>
+<h2 id="启动顺序">启动顺序</h2>
+<p>来源：<code>main/main.c</code></p>
+<div class="timeline">
+<div class="ev"><div class="when">01</div><div class="what">查看唤醒原因</div><div class="how">如果是按键唤醒，先屏蔽按键，等那颗键松手（最多 10 秒），避免唤醒键被当成一次操作。</div></div>
+<div class="ev"><div class="when">02</div><div class="what">I2C、屏幕、LVGL</div><div class="how">初始化失败时打印 SPI 引脚号后退出。背光开到 100%。</div></div>
+<div class="ev"><div class="when">03</div><div class="what">音频和电量计</div><div class="how">ES8311 和 CW2017。失败不阻止启动，只记录状态。</div></div>
+<div class="ev"><div class="when">04</div><div class="what">启动 Coach 应用</div><div class="how">建队列，起 coach、voice、ble_tx 三个任务，开始蓝牙广播。</div></div>
+<div class="ev"><div class="when">05</div><div class="what">最后才打开按键</div><div class="how">按键事件只在应用就绪后才送进队列。</div></div>
+</div>
+
+<h2 id="任务和队列">任务和队列</h2>
+<figure>
+<img src="images/fw-tasks-zh.svg" alt="任务和队列"></img>
+<figcaption>图 10　任务优先级、栈大小和队列。来源：<code>main/audio/voice.c:20-23</code>、<code>main/link/ble_link.c:27-32</code>、<code>main/coach_app.c:50-52</code>、esp_lvgl_port 默认配置、<code>sdkconfig</code>。</figcaption>
+</figure>
+
+<p>优先级这样排的原因：</p>
+<ul>
+<li><strong>voice 最高（7）。</strong> 音频每 20 ms 一块，晚了就会断音（<code>voice.c:23</code> 注释）。</li>
+<li><strong>ble_tx 其次（6）。</strong> 先发控制包，再发音频包。</li>
+<li><strong>coach 是 5。</strong> 按键、计时器、链路事件都进同一个队列，所以状态机一次只处理一个事件，没有并发问题。</li>
+<li><strong>LVGL 是 4。</strong> 画屏可以让路给音频和蓝牙。</li>
+</ul>
+<p>每个队列大小固定，溢出规则写死。链路慢的时候不扩大队列（<code>需求文件夹/02-architecture.zh_CN.md</code> 第 5 节）。</p>
+<h2 id="状态机">状态机</h2>
+<p>10 个状态，83 条转移，全部由 <code>flowc.py</code> 从 <code>coach.flow.json</code> 生成到 <code>main/generated/coach_flow.c</code>。</p>
+<table>
+<thead>
+<tr>
+<th>组</th>
+<th>状态</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>页面</td>
+<td><code>LIVE</code>、<code>REPORT</code>、<code>TURNS</code></td>
+<td>实时数据、报告、弯型。短按 UP/DOWN 循环</td>
+</tr>
+<tr>
+<td>教练</td>
+<td><code>READY</code>、<code>CAPTURE</code>、<code>WAIT_ANSWER</code>、<code>PLAYBACK</code></td>
+<td>就绪、录音、等回答、播放</td>
+</tr>
+<tr>
+<td>弹窗</td>
+<td><code>POPUP_WAIT</code>、<code>POPUP_PLAY</code>、<code>POPUP_HOLD</code></td>
+<td>等语音、播语音、10 秒倒计时</td>
+</tr>
+</tbody>
+</table>
+<p>两个计时器（<code>docs/heygo-changes.zh_CN.md</code> 第 6 节）：</p>
+<ul>
+<li><code>CAPTURE</code> 状态 20 秒后产生 <code>CAPTURE_LIMIT</code>，录音最长 20 秒。</li>
+<li><code>WAIT_ANSWER</code> 状态 10 秒后产生 <code>AGENT_TIMEOUT</code>。</li>
+</ul>
+<p>同一时间只存在一个界面。切换时先载入空白界面，删掉旧界面，再建新界面，因为几个界面同时存在会超出 LVGL 内存池。</p>
+<h2 id="音频通路">音频通路</h2>
+<div class="cards">
+<div class="card"><span class="tag">上行 · 录音</span><h4 id="麦克风-→-手机">麦克风 → 手机</h4><p>ES8311 以 16 kHz、16 bit 采样 → voice 任务每 20 ms 编码成一块 164 字节的 ADPCM → 音频发送队列（8 包，满了丢最旧的）→ ble_tx → NimBLE 通知。</p></div>
+<div class="card"><span class="tag">下行 · 播放</span><h4 id="手机-→-喇叭">手机 → 喇叭</h4><p>NimBLE 收包 → link_core 检查 xid，只收当前流 → 下行队列（8 块）→ play_gate 判断何时起播 → 解码 → I2S → ES8311 → 喇叭。</p></div>
+</div>
+
+<p>一个 20 秒的问题如果存成裸 PCM，需要 640,000 字节。设备没有 PSRAM，所以录音边录边发，不存整段（<code>02-architecture.zh_CN.md</code> 第 5 节）。</p>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+                
+                <a href="architecture.zh_CN.html" class="navigation navigation-prev " aria-label="Previous page: 架构与协议">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+                <a href="build-flash.zh_CN.html" class="navigation navigation-next " aria-label="Next page: 制作方法">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"固件架构","level":"2.5","depth":1,"next":{"title":"制作方法","level":"2.6","depth":1,"path":"build-flash.zh_CN.md","ref":"build-flash.zh_CN.md","articles":[]},"previous":{"title":"架构与协议","level":"2.4","depth":1,"path":"architecture.zh_CN.md","ref":"architecture.zh_CN.md","articles":[]},"dir":"ltr"},"config":{"plugins":["-sharing"],"styles":{"website":"styles/website.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Heygo AI Passport — Project Summary","language":"en","gitbook":"*"},"file":{"path":"firmware.zh_CN.md","mtime":"2026-10-18T04:01:40.537Z","type":"markdown"},"gitbook":{"version":"6.2.2","time":"2026-10-18T04:04:41.810Z"},"basePath":".","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <noscript>
+        <style>
+            .honkit-cloak {
+                display: block !important;
+            }
+        </style>
+    </noscript>
+    <script>
+        // Restore sidebar state as critical path for prevent layout shift
+        function __init__getSidebarState(defaultValue){
+            var baseKey = "";
+            var key = baseKey + ":sidebar";
+            try {
+                var value = localStorage[key];
+                if (value === undefined) {
+                    return defaultValue;
+                }
+                var parsed = JSON.parse(value);
+                return parsed == null ? defaultValue : parsed;
+            } catch (e) {
+                return defaultValue;
+            }
+        }
+        function __init__restoreLastSidebarState() {
+            var isMobile = window.matchMedia("(max-width: 600px)").matches;
+            if (isMobile) {
+                // Init last state if not mobile
+                return;
+            }
+            var sidebarState = __init__getSidebarState(true);
+            var book = document.querySelector(".book");
+            // Show sidebar if it enabled
+            if (sidebarState && book) {
+                book.classList.add("without-animation", "with-summary");
+            }
+        }
+
+        try {
+            __init__restoreLastSidebarState();
+        } finally {
+            var book = document.querySelector(".book");
+            book.classList.remove("honkit-cloak");
+        }
+    </script>
+    <script src="gitbook/gitbook.js"></script>
+    <script src="gitbook/theme.js"></script>
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="gitbook/@honkit/honkit-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+
