@@ -35,6 +35,7 @@
   ok(rail() === "on,0,3,1", "2 rail on the live data page: UP goes around the loop to the coach");
   await tap("UP");
   ok(rail() === "on,3,2,0" && document.querySelectorAll("#rail .stop.target").length === 2, "2 rail on the Coach page: DOWN goes around to live data");
+  ok(!document.querySelector("#rail .arrow"), "2 the rail has no arrows. The light stops mark the targets");
   await sleep(300);
   ok(parseInt(document.querySelector("#rail .thumb").style.top) === 3 * 48, "2 the thumb slides around the loop to the last stop");
   await tap("DOWN"); await tap("DOWN");
