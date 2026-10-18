@@ -101,8 +101,9 @@ class ValidatorTest(unittest.TestCase):
 
     def test_rule5_counts_the_observers_of_each_screen(self):
         g = copy.deepcopy(GOOD)
-        base = check(copy.deepcopy(g))["pool_estimate"]
         b = next(x for x in g["bindings"] if x["subject"] == "battery_text")
+        b["screens"] = ["coach"]
+        base = check(copy.deepcopy(g))["pool_estimate"]
         b["screens"] = ["coach", "ski"]           # the live data page is the largest screen
         self.assertEqual(check(g)["pool_estimate"] - base, flowc.OBSERVER_POOL_COST)
 
