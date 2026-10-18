@@ -32,6 +32,7 @@
 #include "coach_input.h"
 #include "coach_screens.h"
 #include "coach_ui.h"
+#include "heygo_boot_sound.h"
 #include "page_rail.h"
 #include "popup_anim.h"
 #include "popup_view.h"
@@ -799,6 +800,8 @@ esp_err_t coach_app_start(void) {
     const voice_cb_t vcb = { .up_block = voice_up_block, .play_done = voice_play_done };
     esp_err_t ve = voice_start(&vcb);
     if (ve != ESP_OK) ESP_LOGE(TAG, "voice start failed: %s", esp_err_to_name(ve));
+    // D-36: the boot sound plays with the boot animation. Its time line matches boot_screen.c.
+    else voice_play_cue(heygo_boot_sound, HEYGO_BOOT_SOUND_SAMPLES);
     const ble_link_app_t app = {
         .voice_changed = link_voice_changed, .agent_state = link_agent_state,
         .play_start = link_play_start, .audio_down = link_audio_down, .play_end = link_play_end,
