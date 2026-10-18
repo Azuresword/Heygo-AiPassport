@@ -437,7 +437,7 @@ sequenceDiagram
 ### 开机音效（D-36）
 
 `assets/tools/gen_boot_sound.py` 用代码合成三个方案，随机种子固定。目标是干净、合成感强的"科技加运动"感觉，不复制任何产品的音效。第一版（拨音加钟声）用户于 2026-10-18 认为不好听，已经弃用。
-脚本生成 `boot_sound_a.wav`、`boot_sound_b.wav`、`boot_sound_c.wav` 供模拟器试听，并把选中的方案（`--pick`，目前为 A）写入 `assets/audio/heygo_boot_sound.c`：2.0 秒 16 kHz、16 位、单声道 PCM，占 Flash 64,000 字节。
+脚本生成 `boot_sound_a.wav`、`boot_sound_b.wav`、`boot_sound_c.wav` 供模拟器试听，并把选中的方案（`--pick`，用户于 2026-10-18 选定 A）写入 `assets/audio/heygo_boot_sound.c`：2.0 秒 16 kHz、16 位、单声道 PCM，占 Flash 64,000 字节。
 
 | 方案 | 0 至 0.42 秒，滑雪板 | 0.42 至 0.9 秒，字母 | 1.0 至 2.0 秒，标语 |
 |---|---|---|---|
