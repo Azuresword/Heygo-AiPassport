@@ -99,6 +99,17 @@
   }
   .scr { position: absolute; inset: 0; display: none; }
   .scr.on { display: block; }
+  /* D-33: the page rail on the right edge. The current page, and the targets of short UP and DOWN. */
+  .rail { position: absolute; left: 231px; top: 64px; width: 8px; height: 188px; z-index: 6; pointer-events: none; }
+  .rail.off { display: none; }
+  .rail .stop { position: absolute; left: 3px; width: 2px; height: 44px; border-radius: 1px; background: #3A3A3A; }
+  .rail .stop.target { background: #94A3B8; }
+  .rail .thumb { position: absolute; left: 1px; width: 6px; height: 44px; border-radius: 3px; background: #B1FE2B;
+                 box-shadow: 0 0 6px rgba(177, 254, 43, .55); transition: top 180ms cubic-bezier(.2, .8, .2, 1); }
+  .rail .thumb.jump { transition: none; }
+  .rail .arrow { position: absolute; left: 1px; width: 0; height: 0; border-left: 3px solid transparent; border-right: 3px solid transparent; }
+  .rail .arrow.up { border-bottom: 4px solid #94A3B8; }
+  .rail .arrow.down { border-top: 4px solid #94A3B8; }
   /* D-31: the entry animation of the popup page. The same times as main/ui/popup_anim.c. */
   .popup-icon { background-repeat: no-repeat; background-size: 224px 224px; }
   @keyframes pdrop { 0% { transform: translateY(-80px); } 36% { transform: translateY(0); } 54% { transform: translateY(-18px); }
@@ -490,6 +501,49 @@ function buildScreens() {
     }
     lcd.appendChild(d);
   }
+  buildRail();
+}
+// D-33: the page rail. The four pages of the loop, top to bottom. The popup page has no rail.
+const RAIL_PAGES = ["ski", "report", "turns", "coach"], RAIL_STEP = 48, RAIL_MS = 180;
+let railIdx = -1;
+function buildRail() {
+  const r = document.createElement("div");
+  r.className = "rail off"; r.id = "rail";
+  r.innerHTML = RAIL_PAGES.map((p, i) => `<div class="stop" data-i="${i}" style="top:${i * RAIL_STEP}px"></div>`).join("") +
+    '<div class="arrow up"></div><div class="arrow down"></div><div class="thumb"></div>';
+  $("lcd").appendChild(r);
+  railIdx = -1;
+}
+// The page that a short press opens now, from the flow graph. -1: the press changes no page.
+function railTarget(ev) {
+  const t = (table[st] || {})[ev];
+  return t ? RAIL_PAGES.indexOf(screenOf[t.to]) : -1;
+}
+function paintRail() {
+  const r = $("rail"); if (!r) return;
+  const idx = RAIL_PAGES.indexOf(screenOf[st]);
+  r.classList.toggle("off", idx < 0);
+  if (idx < 0) { railIdx = -1; return; }
+  const up = railTarget("UP_SHORT"), down = railTarget("DOWN_SHORT");
+  for (const e of r.querySelectorAll(".stop")) e.classList.toggle("target", +e.dataset.i === up || +e.dataset.i === down);
+  const au = r.querySelector(".arrow.up"), ad = r.querySelector(".arrow.down");
+  au.style.display = up < 0 ? "none" : ""; ad.style.display = down < 0 ? "none" : "";
+  au.style.top = (up * RAIL_STEP - 6) + "px"; ad.style.top = (down * RAIL_STEP + 46) + "px";
+  r.dataset.page = idx; r.dataset.up = up; r.dataset.down = down;
+  const th = r.querySelector(".thumb");
+  if (railIdx < 0) { th.classList.add("jump"); th.style.top = idx * RAIL_STEP + "px"; void th.offsetTop; th.classList.remove("jump"); }
+  else if (idx !== railIdx) {
+    // A step across the end of the loop: slide out past one end, and come in from the other end.
+    const last = RAIL_PAGES.length - 1, wrapDown = railIdx === last && idx === 0, wrapUp = railIdx === 0 && idx === last;
+    if (wrapDown || wrapUp) {
+      th.style.top = (wrapDown ? RAIL_PAGES.length * RAIL_STEP : -RAIL_STEP) + "px";
+      setTimeout(() => {
+        th.classList.add("jump"); th.style.top = (wrapDown ? -RAIL_STEP : RAIL_PAGES.length * RAIL_STEP) + "px";
+        void th.offsetTop; th.classList.remove("jump"); th.style.top = RAIL_PAGES.indexOf(screenOf[st]) * RAIL_STEP + "px";
+      }, RAIL_MS / 2);
+    } else th.style.top = idx * RAIL_STEP + "px";
+  }
+  railIdx = idx;
 }
 function paint() {
   // Bindings apply to screens[0] only, as in the generated C code.
@@ -509,6 +563,7 @@ function paint() {
   }
   paintData();
   for (const d of document.querySelectorAll(".scr")) d.classList.toggle("on", d.dataset.id === screenOf[st]);
+  paintRail();
 }
 
 // ---------------------------------------------------------------- logs
