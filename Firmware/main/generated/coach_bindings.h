@@ -13,10 +13,18 @@ extern "C" {
 void coach_bindings_init(void);
 // Each attach binds the widgets of one screen. Only one screen has bindings at a time.
 void coach_bindings_attach(const coach_screen_coach_t *screen);
+void coach_bindings_attach_ski(const coach_screen_ski_t *screen);
+void coach_bindings_attach_report(const coach_screen_report_t *screen);
+void coach_bindings_attach_turns(const coach_screen_turns_t *screen);
+void coach_bindings_attach_popup(const coach_screen_popup_t *screen);
 // Unbind while the widgets are still alive. Call before destroying the screen.
 void coach_bindings_detach(void);
 // Rule 7: detach then destroy, in that order. Prefer this over calling both.
 void coach_teardown(coach_screen_coach_t *screen);
+void coach_teardown_ski(coach_screen_ski_t *screen);
+void coach_teardown_report(coach_screen_report_t *screen);
+void coach_teardown_turns(coach_screen_turns_t *screen);
+void coach_teardown_popup(coach_screen_popup_t *screen);
 
 // Lock hooks. Each setter takes the LVGL lock through these hooks, so a caller
 // on any task can use it. The firmware passes the BSP lock, which allows
