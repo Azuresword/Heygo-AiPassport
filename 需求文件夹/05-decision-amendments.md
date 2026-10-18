@@ -548,7 +548,7 @@ The user made three choices on 2026-10-18:
 **Decision.** A boot sound of 2.0 s plays with the boot animation of D-35. REQ-27 belongs to Increment 2.
 
 - The sound follows the animation. A build-up goes with the snowboard, a precise hit and short tones with the letters, and a bright end with the tagline.
-- `gen_boot_sound.py` makes three original designs: A "Dash", B "Carve", and C "Pulse". The firmware plays the picked one, now A. The user picks in the simulator.
+- `gen_boot_sound.py` makes three original designs: A "Dash", B "Carve", and C "Pulse". The user heard them in the simulator and chose A on 2026-10-18. The firmware plays A.
 - The first version used plucks and a bell. On 2026-10-18 the user rejected it and asked for a tech and sport feel, as in action-camera products. The designs copy no product sound.
 - The device keeps the sound as 16 kHz, 16-bit, mono PCM in Flash.
 - A fourth voice mode plays it in 20 ms blocks. A capture, an answer, or popup audio stops it first.
@@ -568,7 +568,7 @@ The user made three choices on 2026-10-18:
 - A capture that starts during the sound starts up to about 20 ms late.
 - The team has not heard the sound on the device speaker. TC-27 checks the level, the rattle, and the click.
 
-**Status.** The user asked for the boot sound on 2026-10-18. The code is in the repository. Device tests are NOT RUN.
+**Status.** The user asked for the boot sound on 2026-10-18 and chose design A. The code is in the repository. Device tests are NOT RUN.
 
 ## 31. Related documents
 
