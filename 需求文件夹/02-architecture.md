@@ -217,14 +217,15 @@ All five screens use the same status bar: the four pages of the loop and the pop
 |---|---|---|
 | `mode_dot` | `x=14, y=19`, 7 × 7 | The page dot. Lime. On the popup page, the color of the kind |
 | `mode` | `x=26, y=10`, width 66 | The page name, at most 4 Chinese characters (64 px) |
-| `link_dot` | `x=96, y=19`, 7 × 7 | Lime when the link works. Red with no link or no voice |
-| `status` | `x=108, y=10`, width 60 | "已连接" in gray, "未连接" in red, or "无语音" in red. Each text is 3 characters (48 px) |
-| `battery` | `x=176..226, y=11`, right-aligned | The battery text. Not on the popup page, because the badge is there |
+| `link_dot` | `x=100, y=19`, 7 × 7 | Lime when the link works. Red with no link or no voice |
+| `status` | `x=112, y=10`, width 60 | "已连接" in gray, "未连接" in red, or "无语音" in red. Each text is 3 characters (48 px) |
+| `battery` | `x=176..226, y=11`, right-aligned | The battery text. Only on the Coach page. No code writes it yet |
 
 The flow graph binds `status_text` and `link_state` to `status` and `link_dot` on each of the five screens.
 A binding in `flows/coach.flow.json` has a `screens` list for this. Without the list, a binding drives screen 0 only, as before.
 `flowc.py` makes one attach function and one teardown function for each screen with bindings, for example `coach_bindings_attach_ski()` and `coach_teardown_ski()`.
 `show_screen()` in `main/coach_app.c` attaches the bindings after it builds a screen. It detaches them before it deletes the screen.
+The live data page, the Report page, and the Turns page lost their empty battery label. Without that, the live data page filled the LVGL pool when it drew the speed digits, and LVGL then hung.
 So a link change writes the subjects once, and the screen that is on shows it at once. A new screen gets the current values when it attaches.
 The device holds only one set of observers at a time, because only one screen exists at a time.
 
