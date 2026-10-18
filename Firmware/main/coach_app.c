@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "ble_link.h"
+#include "boot_screen.h"
 #include "bsp_display.h"
 #include "coach_bindings.h"
 #include "coach_flow.h"
@@ -60,7 +61,7 @@ static const char *TAG = "coach";
 #define DATA_TICK_US     (1000LL * 1000)         // The out-of-date mark and the report age.
 #define TURN_POINT_MS    40                      // The Turns page draws one point each 40 ms.
 
-typedef enum { MSG_KEY, MSG_EVENT, MSG_LINK, MSG_AGENT_STATE, MSG_DATA } msg_kind_t;
+typedef enum { MSG_KEY, MSG_EVENT, MSG_LINK, MSG_AGENT_STATE, MSG_DATA, MSG_BOOT_DONE } msg_kind_t;
 
 typedef struct {
     msg_kind_t kind;
@@ -86,6 +87,9 @@ static esp_timer_handle_t s_play_watch;
 static esp_timer_handle_t s_data_tick;
 static esp_timer_handle_t s_popup_wait_timer;   // 5 s for the popup audio to start.
 static esp_timer_handle_t s_popup_hold_timer;   // The 10-second countdown.
+static esp_timer_handle_t s_boot_timer;         // D-35: the end of the boot screen.
+static bool s_booting;                          // The boot screen is on. Screen changes wait.
+static int s_boot_key = -1;                     // The key that ended the boot screen. Its events stop until release.
 static ski_view_t s_ski_view;          // The texts on the Ski page now.
 static report_view_t s_report_view;    // The texts on the Report page now.
 static turn_view_t s_turn_view;        // The shape and the texts on the Turns page now.
@@ -162,6 +166,12 @@ static void post_popup_timer(coach_event_t event) {
     post_msg(&m);
 }
 static void on_popup_wait(void *arg) { (void)arg; post_popup_timer(COACH_EVENT_POPUP_NO_AUDIO); }
+static void on_boot_done(void *arg) {
+    (void)arg;
+    const msg_t m = { .kind = MSG_BOOT_DONE };
+    (void)xQueueSend(s_queue, &m, 0);
+}
+
 static void on_popup_hold(void *arg) { (void)arg; post_popup_timer(COACH_EVENT_POPUP_TIMEOUT); }
 
 static bool is_popup(coach_state_t st) {
@@ -352,7 +362,7 @@ static void log_memory(const char *page) {
 // Every screen binds the link state in its status bar (D-34).
 // The caller holds the LVGL lock.
 static void show_screen(coach_screen_id_t id) {
-    if (id == s_shown) return;
+    if (id == s_shown || s_booting) return;    // D-35: boot_end() shows the screen of the state then.
     ESP_LOGI("screen", "show %s screen", screen_name(id));
     lv_screen_load(s_blank);
     switch (s_shown) {
@@ -564,7 +574,7 @@ static void handle(coach_event_t event) {
     if (step.state_changed) send_context(step.to);
 
     const coach_screen_id_t screen = coach_state_screen(step.to);
-    if (step.state_changed && lvgl_lock()) {
+    if (step.state_changed && !s_booting && lvgl_lock()) {
         page_rail_follow(step.to, true);    // D-33: the rail moves with the page change.
         lvgl_unlock();
     }
@@ -610,6 +620,21 @@ static void on_agent_state_msg(uint8_t state, uint8_t failure) {
     }
 }
 
+// D-35: leave the boot screen and show the page of the current state. The flow ran
+// during the boot screen, so a popup or a run start that came then shows now.
+static void boot_end(void) {
+    if (!s_booting) return;
+    esp_timer_stop(s_boot_timer);
+    if (!lvgl_lock()) return;               // Try again with the next key or message.
+    s_booting = false;
+    lv_screen_load(s_blank);
+    boot_screen_delete();
+    show_screen(coach_state_screen(s_flow.state));
+    page_rail_follow(s_flow.state, false);
+    lvgl_unlock();
+    ESP_LOGI(TAG, "boot screen ends in %s", coach_state_name(s_flow.state));
+}
+
 static void coach_task(void *arg) {
     (void)arg;
     msg_t m;
@@ -638,7 +663,18 @@ static void coach_task(void *arg) {
                 lvgl_unlock();
             }
             break;
+        case MSG_BOOT_DONE: boot_end(); break;
         case MSG_KEY: {
+            // D-35: a key on the boot screen only skips it. The events of that key stop until it is released.
+            if (s_booting && m.ev != BSP_BTN_RELEASE) {
+                boot_end();
+                s_boot_key = m.btn;
+                break;
+            }
+            if ((int)m.btn == s_boot_key) {
+                if (m.ev == BSP_BTN_RELEASE) s_boot_key = -1;
+                break;
+            }
             coach_event_t event;
             if (coach_input_map(&s_input, (coach_key_t)m.btn, (coach_key_ev_t)m.ev, &event)) handle(event);
             break;
@@ -731,12 +767,14 @@ esp_err_t coach_app_start(void) {
     const esp_timer_create_args_t data = { .callback = on_data_tick, .name = "coach_data" };
     const esp_timer_create_args_t pwait = { .callback = on_popup_wait, .name = "popup_wait" };
     const esp_timer_create_args_t phold = { .callback = on_popup_hold, .name = "popup_hold" };
+    const esp_timer_create_args_t boot = { .callback = on_boot_done, .name = "boot" };
     esp_err_t e = esp_timer_create(&cap, &s_capture_timer);
     if (e == ESP_OK) e = esp_timer_create(&ans, &s_answer_timer);
     if (e == ESP_OK) e = esp_timer_create(&watch, &s_play_watch);
     if (e == ESP_OK) e = esp_timer_create(&data, &s_data_tick);
     if (e == ESP_OK) e = esp_timer_create(&pwait, &s_popup_wait_timer);
     if (e == ESP_OK) e = esp_timer_create(&phold, &s_popup_hold_timer);
+    if (e == ESP_OK) e = esp_timer_create(&boot, &s_boot_timer);
     if (e != ESP_OK) return e;
 
     coach_bindings_init();
@@ -746,13 +784,16 @@ esp_err_t coach_app_start(void) {
     s_blank = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(s_blank, ui_color_bg(), 0);
     // D-33: the rail lives on the top layer, so a screen change does not delete it.
+    // It stays hidden until the boot screen ends.
     page_rail_create(lv_layer_top());
-    show_screen(coach_state_screen(s_flow.state));
-    page_rail_follow(s_flow.state, false);
+    // D-35: the boot screen comes first. boot_end() shows the first page.
+    s_booting = true;
+    lv_screen_load(boot_screen_create());
     lvgl_unlock();
 
     s_queue = xQueueCreate(QUEUE_DEPTH, sizeof(msg_t));
     if (!s_queue) return ESP_ERR_NO_MEM;
+    esp_timer_start_once(s_boot_timer, BOOT_SCREEN_MS * 1000LL);
 
     // Voice and link failures leave the screens and keys working. The guard then blocks questions.
     const voice_cb_t vcb = { .up_block = voice_up_block, .play_done = voice_play_done };
