@@ -89,7 +89,7 @@ def build(sdkconfig):
         [f"-I{ASSETS / 'fonts'}", f"-I{ASSETS / 'sprites'}"]
     app_src = [HERE / "render.c", FW / "main/ui/ui_theme.c",
                FW / "main/ui/ui_state_icon.c", FW / "main/ui/turn_view.c", FW / "main/ui/turn_page.c",
-               FW / "main/ui/popup_view.c", FW / "main/ui/popup_anim.c", ASSETS / "sprites/heygo_popup_icons.c",
+               FW / "main/ui/popup_view.c", FW / "main/ui/popup_anim.c", FW / "main/ui/page_rail.c", FW / "main/generated/coach_flow.c", ASSETS / "sprites/heygo_popup_icons.c",
                FW / "main/link/link_core.c", FW / "main/protocol/ble_proto.c",
                FW / "main/generated/coach_screens.c", FW / "main/generated/coach_bindings.c",
                ASSETS / "fonts/heygo_sc_16.c", ASSETS / "fonts/heygo_sc_28.c",
@@ -366,6 +366,7 @@ def main():
     total = int(mem["after_display"]["total"])
     print(f"LVGL pool: total {total} B")
     print(f"  after display        {base} B")
+    print(f"  page rail created    {int(mem['after_rail']['used'])} B  (rail cost {int(mem['after_rail']['used']) - base} B)")
     print(f"  coach screen built   {built} B  (screen cost {built - base} B)")
     print(f"  flowc estimate       {flow_report['pool_estimate']} B for all screens")
     for name, _, _ in script:
