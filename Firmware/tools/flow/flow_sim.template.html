@@ -330,7 +330,7 @@
       <div class="row" style="margin-top:12px" id="popupBtns"></div>
       <p class="note">App 弹窗（D-31）：任何状态收到 POPUP 都立即打断，录音、等回答、播放都会取消。有语音时先播完，再倒计时 10 秒；没有语音直接倒计时。任何键都只关闭弹窗，回到弹窗前的页面（教练页的各状态回到就绪）。新弹窗替换旧弹窗。</p>
       <div class="row" style="margin-top:12px" id="bootBtns"></div>
-      <p class="note">开机（D-35、D-36）：每次上电先播约 2 秒开机动画和开机音效（划板声、5 个字母拨音、钟声和弦）：滑雪板划入，"go" 升起，"Hey" 从左滑入，再出现标语 MAKE EVERY RUN COUNT。按任意键立即跳过，这次按键不触发页面动作。关机：电源键由硬件直接断电，固件读不到，所以设备上没有关机动画。"关机动画（设计稿）"只在这里演示，等硬件能检测电源键时再接入。</p>
+      <p class="note">开机（D-35、D-36）：每次上电先播约 2 秒开机动画和开机音效。音效有三个方案可选试听：A 起跑（上扬蓄力、落板冲击、两声玻璃音、明亮和弦），B 换刃（两次划雪、三声金属嗒、合成器和弦），C 脉冲（三个滑入的纯音、延音和闪音）。固件里是标"设备"的方案。滑雪板划入，"go" 升起，"Hey" 从左滑入，再出现标语 MAKE EVERY RUN COUNT。按任意键立即跳过，这次按键不触发页面动作。关机：电源键由硬件直接断电，固件读不到，所以设备上没有关机动画。"关机动画（设计稿）"只在这里演示，等硬件能检测电源键时再接入。</p>
       <div class="row" style="margin-top:12px" id="skiBtns"></div>
       <p class="note">开始滑行（D-32）：手机先发 RUN_START。报告页、弯型页、教练就绪时立即跳到实时数据页；和教练对话中，等对话结束再跳；弹窗中，弹窗关闭后回实时数据页。滑行数据：开始后手机每秒发一个 LIVE_STATS。暂停 5 秒后速度显示"--"。结束一趟后 2 秒发 RUN_REPORT 和 TURN_SHAPE。设备按组（8 弯一组）发 TURN_REQUEST，手机用 TURN_GROUP 回复，设备缓存前中后 3 组。弯型页：短按 OK 下一弯，长按 UP 上一弯，长按 DOWN 下一页（8 弯）；短按 UP/DOWN 换页面。打开时第一页每 40 ms 画一个点。"弯数"填数字可模拟弯很多的一趟。第 3 趟的弯型是示意。数据只改屏幕文字，不改状态。</p>
     </div>
@@ -1236,7 +1236,7 @@ function buildBoot() {
   // D-36: the boot sound. A browser plays it only after a click on the page.
   if (!$("bootAudio")) {
     const a = document.createElement("audio");
-    a.id = "bootAudio"; a.src = DATA.boot_sound; a.preload = "auto";
+    a.id = "bootAudio"; a.src = DATA.boot_sounds[DATA.boot_sound_device]; a.preload = "auto";
     document.body.appendChild(a);
   }
 }
@@ -1308,6 +1308,18 @@ function buildBootBtns() {
     b.type = "button"; b.className = "ctl"; b.textContent = label; b.title = title; b.onclick = fn;
     box.appendChild(b);
   }
+  // D-36: three boot sound designs. The firmware has the one marked "设备".
+  const NAMES = { A: "A 起跑", B: "B 换刃", C: "C 脉冲" };
+  const sel = document.createElement("select");
+  sel.id = "bootSound"; sel.title = "开机音效：三个设计方案，固件里是标着\"设备\"的那个";
+  for (const d of Object.keys(DATA.boot_sounds)) {
+    const o = document.createElement("option");
+    o.value = d; o.textContent = "音效 " + NAMES[d] + (d === DATA.boot_sound_device ? "（设备）" : "");
+    sel.appendChild(o);
+  }
+  sel.value = DATA.boot_sound_device;
+  sel.onchange = () => { $("bootAudio").src = DATA.boot_sounds[sel.value]; bootStart(); };
+  box.appendChild(sel);
 }
 
 // ---------------------------------------------------------------- buttons
