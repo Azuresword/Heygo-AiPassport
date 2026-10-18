@@ -33,6 +33,7 @@ idf_component_register(
          "ui/popup_view.c"
          "ui/popup_anim.c"
          "ui/page_rail.c"
+         "ui/boot_screen.c"
          "generated/coach_flow.c"
          "generated/coach_screens.c"
          "generated/coach_bindings.c"
@@ -48,6 +49,7 @@ idf_component_register(
          "${HEYGO_FONTS}/heygo_display_48.c"
          "${HEYGO_SPRITES}/heygo_board_sprite.c"
          "${HEYGO_SPRITES}/heygo_popup_icons.c"
+         "${HEYGO_SPRITES}/heygo_logo.c"
     INCLUDE_DIRS "." "ui" "generated" "audio" "protocol" "link" "${HEYGO_FONTS}" "${HEYGO_SPRITES}"
     REQUIRES bsp bt esp_app_format esp_event esp_hw_support esp_netif esp_timer esp_wifi nvs_flash
 )
