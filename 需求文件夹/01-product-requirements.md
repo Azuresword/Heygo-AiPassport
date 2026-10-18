@@ -193,7 +193,7 @@ Before D-34, only the Coach page showed the link state. On the other pages, the 
 - The link dot and the link text are at the same position on every page. So they do not move on a page change.
 - "已连接" (connected): a lime dot and gray text.
 - "未连接" (not connected): a red dot and red text.
-- "无语音" (no voice): a red dot and red text. The link works, but the phone does not answer voice. Before D-34, this state showed "语音不可用". That text is 80 px wide and did not fit in the status bar.
+- "无语音" (no voice): a red dot and red text. The link works, but voice cannot work. The causes: no HELLO_ACK within 2 s, another protocol version, an MTU below 172, or no packet from the phone for 15 s. Before D-34, this state showed "语音不可用". That text is 80 px wide and did not fit in the status bar.
 - At a link loss, every page changes its status bar at once. The page itself does not change.
 - The popup page also shows the link state. A popup from the phone can stay on the screen after a link loss.
 
