@@ -2,7 +2,7 @@
 
 # Scrum backlog and delivery plan
 
-Version: 0.13. Date: 2026-10-18. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. Increment 2 is in the backlog. The team closed no story.
+Version: 0.14. Date: 2026-10-18. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. Increment 2 is in the backlog. The team closed no story.
 
 Related documents: [Requirements](01-product-requirements.md), [Architecture](02-architecture.md), [Validation and decisions](04-validation-and-decisions.md), [Decision amendments](05-decision-amendments.md), [Sprint 0 plan](06-sprint-0-plan.md), [BLE protocol draft](07-ble-protocol-draft.md), and [Four-hour Sprint roadmap](08-sprint-roadmap.md).
 
@@ -14,7 +14,7 @@ The skier keeps the phone in a pocket and the gloves on.
 Two increments move toward this goal:
 
 - **Increment 1, the Coach voice chain.** P0 stories US-01, US-06, US-07, US-08, US-15, US-17, and US-20.
-- **Increment 2, live data and reports.** P1 stories US-02, US-21, US-23, US-24, US-25, and US-03. D-22 lets the team develop it in parallel with the device acceptance of Increment 1.
+- **Increment 2, live data and reports.** P1 stories US-02, US-21, US-23, US-24, US-25, US-26, and US-03. D-22 lets the team develop it in parallel with the device acceptance of Increment 1.
 
 ## 2. Planning assumptions
 
@@ -56,6 +56,7 @@ The user made every scope decision so far, including D-17.
 | US-23 Run start opens the live data page | REQ-23 | P1, Increment 2 (D-32) | 2–3 | Phone and firmware | Sprint 15 code and acceptance |
 | US-24 Page rail | REQ-24 | P1, Increment 2 (D-33) | 2–3 | Firmware and design | Sprint 16 simulator, firmware, and acceptance |
 | US-25 Link state on every page | REQ-25 | P1, Increment 2 (D-34) | 1–2 | Firmware and design | Sprint 17 code and acceptance |
+| US-26 Boot screen | REQ-26 | P1, Increment 2 (D-35) | 2–3 | Firmware and design | Sprint 18 code and acceptance |
 | US-03 Run report | REQ-03 | P1, Increment 2 | 3–5 | Firmware and design | Sprint 4 code, Sprint 7 acceptance |
 | US-05 Turn shape and replay | REQ-05 | P1, Increment 3 (D-30) | 5–8 | Phone, firmware, and design | Sprint 11 code, Sprint 12 acceptance |
 | US-22 Phone popups | REQ-22 | P1, Increment 4 (D-31) | 5–8 | Phone and firmware | Sprint 13 code, Sprint 14 acceptance |
@@ -234,6 +235,19 @@ As a skier, I want to see the link to the phone on every page. Then I know at on
 - Dependency: US-20.
 - Verification: TC-25.
 
+### US-26: the boot screen
+
+As a skier, I want to see the Heygo logo when the device starts. Then I know that the device works, and the brand feels like one product.
+
+- Acceptance: at each power-on, the boot screen shows the six parts of the final logo from Figma, one by one. Then it shows the tagline "MAKE EVERY RUN COUNT" with "COUNT" in lime (D-35).
+- Acceptance: about 2 s after power-on, the live data page opens.
+- Acceptance: any key skips the boot screen. That key starts no page action until its release.
+- Acceptance: a popup or a run start during the boot screen shows when the boot screen ends.
+- Acceptance: the boot screen uses no LVGL layer, and its pool use stays below the pages.
+- Acceptance: the device has no shutdown animation, because the power key cuts the power in hardware. The simulator shows a shutdown design.
+- Dependency: US-17.
+- Verification: TC-26.
+
 ### US-03: run report
 
 As a skier, I want the problem of each run and one tip after the run. Then I know what to change on the next run.
@@ -304,6 +318,7 @@ Each Sprint lasts four hours. The [Four-hour Sprint roadmap](08-sprint-roadmap.m
 | 15 | The run start (D-32): the phone starts a run, and the device opens the live data page. | Code on the branch `feat/run-start`. Host tests pass. Device test of TC-23 NOT RUN. |
 | 16 | The page rail (D-33): first the simulator, then the firmware. | Simulator and firmware done. The LVGL pool is 28 KiB for the rail. Host tests pass. Device test of TC-24 NOT RUN. |
 | 17 | The link state on every page (D-34): flow graph, generator, firmware, and simulator. | Code done. Host tests and the simulator self-test pass. Device test of TC-25 NOT RUN. |
+| 18 | The boot screen (D-35): the logo from Figma, the boot animation, and the key skip. | Code done. Host tests and the simulator self-test pass. Device test of TC-26 NOT RUN. |
 
 ## 9. Definition of Done
 
