@@ -462,7 +462,8 @@ The user made three choices on 2026-10-17:
 
 - The rail has four stops from top to bottom: live data, report, turns, and coach. This is the order of the short DOWN press.
 - The stop of the current page is a lime thumb with a small glow.
-- The stop that a short UP press opens is light gray, with ▲ above it. The stop that a short DOWN press opens is light gray, with ▼ below it.
+- The stops that a short UP press and a short DOWN press open are light gray.
+- The rail has no arrows. On 2026-10-18 the user deleted the ▲ and ▼ marks, because they did not help.
 - The thumb uses 180 ms to slide to the new stop.
 - Two page changes wrap: UP from live data to coach, and DOWN from coach to live data. In a wrap, the thumb slides out at one end and in at the other end.
 - The rail reads the targets from the flow graph. It keeps no second copy of the page order.
@@ -472,15 +473,14 @@ The user made three choices on 2026-10-17:
 
 - Four pages form a loop, and the screen shows one page at a time. The user cannot see how many pages there are, or which page comes next.
 - Before D-33, the user had to press a key to find out where it goes. With gloves on the slope, each extra press costs time.
-- The ▲ and ▼ marks answer the question "where does this key go" before the press. The thumb movement shows the result of the press after it.
+- The light gray stops answer the question "where does this key go" before the press. The thumb movement shows the result of the press after it.
 - The wrap movement shows that the last page and the first page touch. A rail without it looks like a list with two ends.
 - The targets come from the flow graph, so the rail and the keys cannot disagree. A change of the loop changes the rail also.
 
 **Cost.**
 
 - The rail uses 8 px of width at the right edge. The text, the boxes, and the key hints already stay at `x≤230`. Only the decorative ridge line goes under the rail.
-- The ▲ and ▼ marks sit in 4 px gaps. On the device, check that each mark looks attached to its stop and not to the next stop.
-- The firmware must put the rail on the top layer of LVGL, because only one screen exists at a time. The rail adds at most 7 LVGL objects. The pool use is not measured.
+- The firmware must put the rail on the top layer of LVGL, because only one screen exists at a time. The rail adds at most 5 LVGL objects. The pool use is not measured.
 
 **Status.** The user asked for the rail on 2026-10-18. The simulator shows it, and its self-test passes. The user must review the look in the simulator. Firmware work has not started. Device tests are NOT RUN.
 
