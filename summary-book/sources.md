@@ -1,20 +1,29 @@
-<p align="right"><strong>English</strong> · <a href="sources.zh_CN.html">简体中文</a></p>
+<p class="lang"><strong>English</strong> · <a href="sources.zh_CN.html">简体中文</a></p>
+
+<p class="eyebrow">Sources</p>
 
 # Sources
 
-## Method
+## Origin of the data
 
-1. We read only this repository: source code, `需求文件夹/`, `Firmware/docs/`, and `git log`.
-2. The snapshot is `main` commit `c865ba8` (2026-10-18 10:48).
-3. We counted commits, authors, and times again with git commands.
+| Content | Source |
+|---|---|
+| Sprint status | The project owner confirmed it on 2026-10-18. |
+| Requirements, decisions, protocol, and sprint goals | `需求文件夹/01` to `08`, at `main` commit `c865ba8` |
+| Hardware | `Firmware/docs/README.md`, hardware section |
+| Gate and known limits | `Firmware/docs/heygo-changes.md` |
+| Commits, times, and authors | `git rev-list` and `git log` |
+| Simulator self-test 122/122 | `flow_sim.py --run-selftest` at `d99a7d9` on 2026-10-18 |
+| Screens and animations | `assets/mockups/` and `assets/sim/` |
+| Architecture, sequence, gate, and commit figures | `summary-book/figures.py` draws them from the sources above. |
 
 ## Inferences
 
 | Statement | Basis |
 |---|---|
 | CI possibly does not run. | GitHub reads only `.github/workflows/` at the root. We did not examine the Actions page. |
-| "Approximately 41 hours" | The time between the first and the last commit. |
+| "41 hours" | The time between the first and the last commit. |
 
 ## Scope
 
-This book is about AI Passport only. It does not include other projects.
+This book is about AI Passport only.

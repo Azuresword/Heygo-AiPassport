@@ -1,5 +1,10 @@
 {
   "title": "Heygo AI Passport — Project Summary",
   "language": "en",
-  "plugins": ["-sharing"]
+  "plugins": [
+    "-sharing"
+  ],
+  "styles": {
+    "website": "styles/website.css"
+  }
 }

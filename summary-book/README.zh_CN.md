@@ -1,36 +1,43 @@
-<p align="right"><strong>简体中文</strong> · <a href="index.html">English</a></p>
+<p class="lang"><strong>简体中文</strong> · <a href="index.html">English</a></p>
 
-# Heygo AI Passport 项目总结
+<div class="hero">
+<p class="eyebrow">Heygo · AI Passport · 项目总结</p>
+<h1>休息时，抬手就能问教练</h1>
+<p class="lead">AI Passport 是滑雪用的手持小设备。用户不掏手机、不摘手套，就能看本趟数据、听 AI 教练的建议。项目的 17 个 Sprint 全部完成。</p>
+<img src="../assets/sim/preview.png" alt="交互模拟器：设备屏幕、手机端模拟、状态流转图">
+</div>
 
-> 快照：2026-10-18，`main` 提交 `c865ba8`
-> 每条结论都标了来源：仓库内的文件路径:行号，或 git 提交号。
+<div class="tiles">
+<div class="tile accent"><div class="k">Sprint</div><div class="v">17<small>/17</small></div></div>
+<div class="tile"><div class="k">增量</div><div class="v">4<small>/4</small></div></div>
+<div class="tile"><div class="k">决策</div><div class="v">33</div></div>
+<div class="tile"><div class="k">需求条目</div><div class="v">24</div></div>
+<div class="tile"><div class="k">界面图</div><div class="v">25</div></div>
+<div class="tile"><div class="k">模拟器自测</div><div class="v">122<small>/122</small></div></div>
+</div>
 
-## 一句话
+## 做成了什么
 
-AI-Passport 是滑雪用的手持小设备。用户休息时不掏手机、不摘手套，就能看本趟数据、问 AI 教练。四个增量的代码都已完成，主机测试都通过，**设备测试一次都没跑**。
+<div class="cards">
+<div class="card"><span class="tag">增量 1</span><h4>教练语音</h4><p>长按 OK 进教练页，按住 OK 提问。手机转写、问 AI、合成语音，设备播放回答。</p></div>
+<div class="card"><span class="tag">增量 2</span><h4>滑行数据与报告</h4><p>实时显示速度、落差、距离、转弯、时间。每趟结束给出 Heygo IQ（0–200）和一条建议。开始滑行自动跳页。</p></div>
+<div class="card"><span class="tag">增量 3</span><h4>弯型</h4><p>每趟画出线路，一页 8 个弯，逐弯看速度、角度、半径。</p></div>
+<div class="card"><span class="tag">增量 4</span><h4>手机弹窗</h4><p>摔倒提醒、语音播报、问题报告、成就报告。立即弹出，10 秒倒计时，任意键关闭。</p></div>
+</div>
 
-## 现状
+## 一页看懂
 
-| 增量 | 功能 | 状态 |
+| 问题 | 答案 | 详见 |
 |---|---|---|
-| 1 教练语音 | 长按 OK 进教练页，按住 OK 提问，设备播放回答 | 代码完成，设备测试未运行 |
-| 2 滑行数据与报告 | 速度、落差、距离、转弯、时间；每趟 Heygo IQ（0–200）；开始滑行跳页（D-32） | 代码完成，设备测试未运行 |
-| 3 弯型 | 每趟线路，一页 8 个弯 | 代码完成，设备测试未运行 |
-| 4 手机弹窗（D-31） | 摔倒提醒、语音播报、问题报告、成就报告，10 秒倒计时 | 代码完成，主机测试通过，设备测试未运行 |
-| D-33 页面导轨 | 屏幕右侧显示页面循环位置 | 模拟器已显示，固件未开始 |
-
-来源：`README.zh_CN.md` "设备做什么"一节；`需求文件夹/04-validation-and-decisions.zh_CN.md:154`
-
-## 最该处理的三件事
-
-1. **上开发板。** Sprint 5 是第一个需要开发板的 Sprint，之后的联调都依赖它（`需求文件夹/08-sprint-roadmap.zh_CN.md:51`）。
-2. **App 团队确认 D-20、D-31、D-32。** 三条都写着"等待手机应用团队确认"（`04-validation-and-decisions.zh_CN.md:152-153`）。
-3. **HeygoAI 教练能力（Q-01）。** Sprint 8 依赖它，目前没有答案（`08-sprint-roadmap.zh_CN.md:41`）。
-
-详见 [待办与风险](risks.zh_CN.md)。
+| 设备做什么？ | 只管按键、麦克风、喇叭、屏幕。分析和语音都在手机上 | [架构与协议](architecture.zh_CN.md) |
+| 怎么操作？ | 四个页面平级循环。短按 UP/DOWN 翻页，长按 OK 问教练 | [产品与页面](product.zh_CN.md) |
+| 长什么样？ | 25 张主机渲染的界面图，加两段动画 | [界面一览](screens.zh_CN.md) |
+| 做到哪了？ | Sprint 0–16 全部完成 | [Sprint 完成情况](sprints.zh_CN.md) |
+| 花了多久？ | main 上 55 个提交，10-16 18:02 到 10-18 10:48 | [开发历程](history.zh_CN.md) |
+| 质量怎么保证？ | 每次提交前跑门禁，主机测试、界面检查、模拟器自测都要通过 | [质量与部署](quality.zh_CN.md) |
 
 ## 链接
 
-- 交互模拟器：<https://azuresword.github.io/Heygo-AiPassport/>
+- 在线模拟器：<https://azuresword.github.io/Heygo-AiPassport/>。可以直接按设备的按键试用。
 - 仓库：<https://github.com/Azuresword/Heygo-AiPassport>
-- 本书源文件：`summary-book/`。运行 `summary-book/build.sh` 重新生成 `summary/`。
+- 本书源文件在 `summary-book/`。先运行 `figures.py` 生成图，再运行 `build.sh` 生成 `summary/`。

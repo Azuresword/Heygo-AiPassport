@@ -1,8 +1,19 @@
-<p align="right"><strong>简体中文</strong> · <a href="decisions.html">English</a></p>
+<p class="lang"><strong>简体中文</strong> · <a href="decisions.html">English</a></p>
+
+<p class="eyebrow">Decisions</p>
 
 # 决策 D-01 至 D-33
 
-来源：`需求文件夹/04-validation-and-decisions.zh_CN.md` 决策表。
+来源：`需求文件夹/04-validation-and-decisions.zh_CN.md` 决策表（`main` 提交 `c865ba8`）。下面的状态按文档原文。
+
+<div class="tiles">
+<div class="tile accent"><div class="k">已确认</div><div class="v">22</div></div>
+<div class="tile"><div class="k">已被替代</div><div class="v">6</div></div>
+<div class="tile"><div class="k">提议</div><div class="v">4</div></div>
+<div class="tile"><div class="k">用户要求</div><div class="v">1</div></div>
+</div>
+
+“已确认”包括：与 App 团队一起确认的 7 条、用户确认的 11 条、等 App 团队确认的 3 条，以及 D-33。
 
 ## 已确认（2026-10-17，含 App 团队）
 
@@ -40,11 +51,11 @@
 | D-31 | 手机弹窗 POPUP 0x66 / POPUP_END 0x67，10 秒倒计时 |
 | D-32 | RUN_START 0x68，开始滑行跳到实时数据页 |
 
-## 用户提出（2026-10-18）
+## 页面导轨（2026-10-18）
 
 | 编号 | 内容 | 状态 |
 |---|---|---|
-| D-33 | 屏幕右侧页面导轨：四格，当前页是荧光绿滑块，UP/DOWN 目标标 ▲▼，滑块 180 ms 滑到新格。不改任何按键 | 模拟器已显示，固件未开始（`:154`）。对应 REQ-24、TC-24 |
+| D-33 | 屏幕右侧页面导轨：四格，当前页是荧光绿滑块，UP/DOWN 目标标 ▲▼，滑块 180 ms 滑到新格。不改任何按键 | 在 Sprint 16 完成（项目负责人确认）。文档 `:154` 仍写“固件尚未开始”，待同步。对应 REQ-24、TC-24 |
 
 ## 提议，未确认
 

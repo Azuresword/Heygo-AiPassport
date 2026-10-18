@@ -1,56 +1,44 @@
-<p align="right"><strong>English</strong> · <a href="history.zh_CN.html">简体中文</a></p>
+<p class="lang"><strong>English</strong> · <a href="history.zh_CN.html">简体中文</a></p>
+
+<p class="eyebrow">History</p>
 
 # Project history
 
-## Numbers
+<div class="tiles">
+<div class="tile accent"><div class="k">Commits on main</div><div class="v">55</div></div>
+<div class="tile"><div class="k">Duration</div><div class="v">41<small>h</small></div></div>
+<div class="tile"><div class="k">Phases</div><div class="v">6</div></div>
+<div class="tile"><div class="k">First commit</div><div class="v" style="font-size:20px">10-16 18:02</div></div>
+</div>
 
-| Item | Value | Source |
-|---|---|---|
-| Commits on main | 55 | `git rev-list main --count` at `c865ba8` |
-| Time range | 10-16 18:02 to 10-18 10:48 (+0800) | First commit `f431fe6`, last commit `c865ba8` |
-| Authors | Dylan Li made 52 commits. A local account made 3. | `git log --format=%an` |
-| Tags | None | `git tag` |
+## Commits in each phase
 
-## Six phases
+{% include "./_partials/commits-en.html" %}
 
-### 1. Requirements (10-16, evening)
+**Table view**
 
-`f431fe6` start → `c2dee22` shared scope → `6f5b6af` eight decisions → `970bb8e` BLE draft → `48926ff` smaller P0 → `cfa30fe` protocol values
+| Phase | Time | Commits | Range |
+|---|---|---|---|
+| 1 Requirements | 10-16 evening | 6 | `f431fe6` … `cfa30fe` |
+| 2 Voice path | 10-17 morning | 10 | … `344c8e5` |
+| 3 Run data | 10-17 midday | 9 | … `c996e14` |
+| 4 Page loop, turns | 10-17 evening | 4 | … `49573f9` |
+| 5 Popups, run start | 10-17 night | 8 | … `5658911` |
+| 6 Page rail | 10-18 morning | 18 | … `c865ba8` |
+| Total | | 55 | |
 
-### 2. Sprints 0 and 1: voice path (10-17, morning)
+Source: `git rev-list --count <range>`, with the commit limits in the table.
 
-| Commit | Change |
-|---|---|
-| `a917aaa` | Add the firmware (406 files). The coach state machine runs on the device. |
-| `941f4e7` | Connect voice and BLE. |
-| `11b10cc`, `da3e5fa`, `f0cb302` | Fixes and logs. |
-| `4ff7f13` | Heygo brand screens. |
-| `344c8e5` | Fix audio mute and playback start. |
+## Timeline
 
-### 3. Increment 2: run data (10-17, midday to afternoon)
+<div class="timeline">
+<div class="ev"><div class="when">10-16 · 18:02</div><div class="what">Requirements</div><div class="how">Start <code>f431fe6</code>. Eight decisions <code>6f5b6af</code>. BLE protocol draft <code>970bb8e</code>. Smaller P0 <code>48926ff</code>.</div></div>
+<div class="ev"><div class="when">10-17 · morning</div><div class="what">Sprints 0 and 1: voice path</div><div class="how">Firmware added, 406 files <code>a917aaa</code>. Voice and BLE connected <code>941f4e7</code>. Heygo brand screens <code>4ff7f13</code>. Audio start fix <code>344c8e5</code>.</div></div>
+<div class="ev"><div class="when">10-17 · midday to afternoon</div><div class="what">Increment 2: run data and report</div><div class="how">Sprint 2 data layer <code>d371c1d</code>. Sprints 3 and 4: live data page and report page. D-28 SHOW_PAGE <code>9238eaf</code>.</div></div>
+<div class="ev"><div class="when">10-17 · evening</div><div class="what">Page loop and Turns page</div><div class="how">D-29 four-page loop. D-30 Turns page <code>49573f9</code>.</div></div>
+<div class="ev"><div class="when">10-17 · night</div><div class="what">Popups and run start</div><div class="how">D-31 phone popups <code>93b6498</code>. IQ range 0 to 200 <code>816f043</code>. Animated popup badges <code>2234275</code>. D-32 run start <code>5658911</code>.</div></div>
+<div class="ev"><div class="when">10-18 · morning</div><div class="what">Page rail D-33</div><div class="how">Documents 01 to 05 add REQ-24, US-24, and TC-24, from <code>eef9c65</code>. The simulator shows the rail <code>30ba3c7</code>. Self-test coverage <code>258f6fa</code>. Preview image <code>c865ba8</code>.</div></div>
+<div class="ev"><div class="when">10-18</div><div class="what">All 17 sprints complete</div><div class="how">The project owner confirmed it. The team did the board and device work on physical devices.</div></div>
+</div>
 
-`86bd2fc` plan → `d371c1d` Sprint 2 → `0d0eaac`, `31e511c` Sprints 3 and 4 → `9238eaf` D-28 → `bed4b27`, `bedcf1a`, `c996e14`
-
-### 4. Page loop and Turns page (10-17, early evening)
-
-`13fe56f`, `7d90750`, `c121084` → `49573f9` D-30
-
-### 5. Popups and run start (10-17, night)
-
-| Commit | Change |
-|---|---|
-| `93b6498` | D-31 phone popups. |
-| `816f043` | IQ range 0 to 200. |
-| `421b15c` | Turns page rule from the phone app team. |
-| `2234275` | Animated popup badges. |
-| `5658911` | D-32 run start opens the live data page. |
-
-### 6. Page rail (10-18, morning)
-
-| Commit | Change |
-|---|---|
-| `eef9c65` to `9b46a71` | Documents 01 to 05 add REQ-24, US-24, Sprint 16, TC-24, and D-33. |
-| `30ba3c7`, `258f6fa`, `6e5668f` | The simulator shows the rail. The self-test checks it. |
-| `c865ba8` | New simulator preview image. |
-
-The work from requirements to D-33 took approximately 41 hours.
+Authors: Dylan Li made 52 commits. A local account made 3 commits (`git log --format=%an`). The repository has no tags.

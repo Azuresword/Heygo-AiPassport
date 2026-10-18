@@ -1,8 +1,19 @@
-<p align="right"><strong>English</strong> · <a href="decisions.zh_CN.html">简体中文</a></p>
+<p class="lang"><strong>English</strong> · <a href="decisions.zh_CN.html">简体中文</a></p>
+
+<p class="eyebrow">Decisions</p>
 
 # Decisions D-01 to D-33
 
-Source: `需求文件夹/04-validation-and-decisions.md`, decision table.
+Source: `需求文件夹/04-validation-and-decisions.md`, decision table, at `main` commit `c865ba8`. The status below is the text of that document.
+
+<div class="tiles">
+<div class="tile accent"><div class="k">Confirmed</div><div class="v">22</div></div>
+<div class="tile"><div class="k">Replaced</div><div class="v">6</div></div>
+<div class="tile"><div class="k">Proposed</div><div class="v">4</div></div>
+<div class="tile"><div class="k">Required</div><div class="v">1</div></div>
+</div>
+
+"Confirmed" includes 7 decisions with the phone app team, 11 decisions by the user, 3 decisions that wait for the phone app team, and D-33.
 
 ## Confirmed on 2026-10-17, with the phone app team
 
@@ -40,11 +51,11 @@ Source: `需求文件夹/04-validation-and-decisions.md`, decision table.
 | D-31 | Phone popups: POPUP 0x66 and POPUP_END 0x67, with a 10 s countdown. |
 | D-32 | RUN_START 0x68 opens the live data page at run start. |
 
-## Proposed by the user on 2026-10-18
+## Page rail (2026-10-18)
 
 | ID | Content | Status |
 |---|---|---|
-| D-33 | Page rail on the right side. It has four cells. A fluorescent green slider shows the current page. ▲ and ▼ show the UP and DOWN targets. The slider moves in 180 ms. The rail does not change a key. | The simulator shows it. Firmware work has not started. Related items: REQ-24 and TC-24. |
+| D-33 | Page rail on the right side. It has four cells. A fluorescent green slider shows the current page. ▲ and ▼ show the UP and DOWN targets. The slider moves in 180 ms. The rail does not change a key. | Complete in Sprint 16, as the project owner confirmed. The document row still shows "firmware not started". Related items: REQ-24 and TC-24. |
 
 ## Proposed, not confirmed
 
