@@ -86,7 +86,7 @@ bool coach_ui_apply(coach_action_t action) {
         coach_set_link_state(0);
         return true;
     case COACH_ACTION_UI_LINK_NO_VOICE:
-        coach_set_status_text("语音不可用");
+        coach_set_status_text("无语音");
         coach_set_link_state(0);
         return true;
     case COACH_ACTION_UI_WHY_LINK_DOWN:
