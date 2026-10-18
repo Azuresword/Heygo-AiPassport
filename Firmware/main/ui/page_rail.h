@@ -1,6 +1,6 @@
-// D-33: the page rail on the right edge. It shows the current page, and the pages that a
-// short UP press and a short DOWN press open. One LVGL object on the top layer draws the
-// four stops and the thumb, so the rail costs one object in the pool on every page.
+// D-33: the page rail on the right edge. A lime thumb shows the current page on four stops
+// of one color. One LVGL object on the top layer draws the stops and the thumb, so the rail
+// costs one object in the pool on every page.
 #pragma once
 
 #include <stdbool.h>
@@ -27,8 +27,7 @@ void page_rail_create(lv_obj_t *parent);
 // -1 for a screen that is not in the loop (the popup page).
 int page_rail_index(coach_screen_id_t screen);
 
-// Show the rail for this state. The targets come from the flow graph: the screens of the
-// short UP and short DOWN transitions. anim false puts the thumb in place at once.
+// Show the rail for the screen of this state. anim false puts the thumb in place at once.
 // The caller holds the LVGL lock.
 void page_rail_follow(coach_state_t state, bool anim);
 
