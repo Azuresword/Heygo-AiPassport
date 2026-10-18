@@ -8,6 +8,7 @@
     "page.coach":            { "zh": "AI 教练",          "en": "AI coach",              "size": 16 },
     "status.link_up":        { "zh": "已连接",           "en": "Connected",             "size": 16 },
     "status.link_down":      { "zh": "未连接",           "en": "Not connected",         "size": 16 },
+    "status.voice_off":      { "zh": "无语音",           "en": "No voice",              "size": 16 },
     "status.battery":        { "zh": "电量 {n}%",        "en": "Battery {n}%",          "size": 16 },
     "status.battery_unknown":{ "zh": "电量未知",         "en": "Battery unknown",       "size": 16 },
     "status.separator":      { "zh": " · ",              "en": " · ",                   "size": 16 },
