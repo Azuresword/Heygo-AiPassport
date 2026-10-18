@@ -2,7 +2,7 @@
 
 # Scrum backlog and delivery plan
 
-Version: 0.11. Date: 2026-10-17. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. Increment 2 is in the backlog. The team closed no story.
+Version: 0.12. Date: 2026-10-18. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. Increment 2 is in the backlog. The team closed no story.
 
 Related documents: [Requirements](01-product-requirements.md), [Architecture](02-architecture.md), [Validation and decisions](04-validation-and-decisions.md), [Decision amendments](05-decision-amendments.md), [Sprint 0 plan](06-sprint-0-plan.md), [BLE protocol draft](07-ble-protocol-draft.md), and [Four-hour Sprint roadmap](08-sprint-roadmap.md).
 
@@ -14,7 +14,7 @@ The skier keeps the phone in a pocket and the gloves on.
 Two increments move toward this goal:
 
 - **Increment 1, the Coach voice chain.** P0 stories US-01, US-06, US-07, US-08, US-15, US-17, and US-20.
-- **Increment 2, live data and reports.** P1 stories US-02, US-21, US-23, and US-03. D-22 lets the team develop it in parallel with the device acceptance of Increment 1.
+- **Increment 2, live data and reports.** P1 stories US-02, US-21, US-23, US-24, and US-03. D-22 lets the team develop it in parallel with the device acceptance of Increment 1.
 
 ## 2. Planning assumptions
 
@@ -54,6 +54,7 @@ The user made every scope decision so far, including D-17.
 | US-02 Data sync | REQ-02 | P1, Increment 2 | 3–5 | Phone and firmware | Sprint 2 code, Sprint 7 acceptance |
 | US-21 Live data on the live data page | REQ-21 | P1, Increment 2 | 5–8 | Firmware and design | Sprint 3 code, Sprints 7 and 9 acceptance |
 | US-23 Run start opens the live data page | REQ-23 | P1, Increment 2 (D-32) | 2–3 | Phone and firmware | Sprint 15 code and acceptance |
+| US-24 Page rail | REQ-24 | P1, Increment 2 (D-33) | 2–3 | Firmware and design | Sprint 16 simulator, firmware, and acceptance |
 | US-03 Run report | REQ-03 | P1, Increment 2 | 3–5 | Firmware and design | Sprint 4 code, Sprint 7 acceptance |
 | US-05 Turn shape and replay | REQ-05 | P1, Increment 3 (D-30) | 5–8 | Phone, firmware, and design | Sprint 11 code, Sprint 12 acceptance |
 | US-22 Phone popups | REQ-22 | P1, Increment 4 (D-31) | 5–8 | Phone and firmware | Sprint 13 code, Sprint 14 acceptance |
@@ -207,6 +208,20 @@ As a skier, I want to see the live data page when I start a run. Then I need not
 - Dependency: US-21 and US-22.
 - Verification: TC-23.
 
+### US-24: the page rail
+
+As a skier, I want to see where I am in the pages, and where the next press goes. Then I do not press a key only to find out.
+
+- Acceptance: a rail on the right edge shows the four pages as four stops, in the order of the short DOWN press (D-33).
+- Acceptance: the stop of the current page is a lime thumb. The stops of the short UP and DOWN targets are light gray, with ▲ and ▼.
+- Acceptance: the targets come from the flow graph. From the live data page, ▲ marks the coach stop. From the Coach page, ▼ marks the live data stop.
+- Acceptance: on each page change, the thumb slides to the new stop within 200 milliseconds. On a wrap, it slides out at one end and in at the other end.
+- Acceptance: during capture, the wait, and the playback, the rail stays and shows the same targets.
+- Acceptance: the popup page hides the rail. When the popup closes, the rail shows the saved page.
+- Acceptance: the rail covers no text, box, or key hint.
+- Dependency: US-17 and US-05.
+- Verification: TC-24.
+
 ### US-03: run report
 
 As a skier, I want the problem of each run and one tip after the run. Then I know what to change on the next run.
@@ -275,6 +290,7 @@ Each Sprint lasts four hours. The [Four-hour Sprint roadmap](08-sprint-roadmap.m
 | 13 | Increment 4: the popup page and the two popup messages. Host only. | Code on the branch `feat/app-popups`. Host tests pass. Device tests NOT RUN. |
 | 14 | Accept Increment 4 on the board with `phone_sim --popups`. | Not started. Needs the board. |
 | 15 | The run start (D-32): the phone starts a run, and the device opens the live data page. | Code on the branch `feat/run-start`. Host tests pass. Device test of TC-23 NOT RUN. |
+| 16 | The page rail (D-33): first the simulator, then the firmware. | Simulator done. Its self-test passes. Firmware not started. Device test of TC-24 NOT RUN. |
 
 ## 9. Definition of Done
 
