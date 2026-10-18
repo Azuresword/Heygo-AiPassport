@@ -56,7 +56,9 @@ static char s_prev_battery_text[16];
 static lv_subject_t s_subject_link_state;
 static lv_subject_t s_subject_icon_state;
 
-static coach_screen_coach_t s_screen;
+// The widgets with observers on the screen that is on now.
+static lv_obj_t *s_bound[8];
+static size_t s_n_bound;
 
 static lv_color_t transform_tag_color(int32_t v) {
     switch (v) {
@@ -163,29 +165,32 @@ void coach_bindings_attach(const coach_screen_coach_t *screen) {
     if (!screen) return;
     coach_bindings_init();
     coach_bindings_detach();
-    s_screen = *screen;
-    (void)lv_subject_add_observer_obj(&s_subject_status_text, observer_0, s_screen.status, NULL);
-    (void)lv_subject_add_observer_obj(&s_subject_tag_text, observer_1, s_screen.tag, NULL);
-    (void)lv_subject_add_observer_obj(&s_subject_icon_state, observer_2, s_screen.tag, NULL);
-    (void)lv_subject_add_observer_obj(&s_subject_state_text, observer_3, s_screen.state, NULL);
-    (void)lv_subject_add_observer_obj(&s_subject_body_text, observer_4, s_screen.body, NULL);
-    (void)lv_subject_add_observer_obj(&s_subject_hint_text, observer_5, s_screen.hint, NULL);
-    (void)lv_subject_add_observer_obj(&s_subject_battery_text, observer_6, s_screen.battery, NULL);
-    (void)lv_subject_add_observer_obj(&s_subject_link_state, observer_7, s_screen.status, NULL);
-    (void)lv_subject_add_observer_obj(&s_subject_link_state, observer_8, s_screen.link_dot, NULL);
-    (void)lv_subject_add_observer_obj(&s_subject_icon_state, observer_9, s_screen.icon, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_status_text, observer_0, screen->status, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_tag_text, observer_1, screen->tag, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_icon_state, observer_2, screen->tag, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_state_text, observer_3, screen->state, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_body_text, observer_4, screen->body, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_hint_text, observer_5, screen->hint, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_battery_text, observer_6, screen->battery, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_link_state, observer_7, screen->status, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_link_state, observer_8, screen->link_dot, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_icon_state, observer_9, screen->icon, NULL);
+    s_bound[s_n_bound++] = screen->battery;
+    s_bound[s_n_bound++] = screen->body;
+    s_bound[s_n_bound++] = screen->hint;
+    s_bound[s_n_bound++] = screen->icon;
+    s_bound[s_n_bound++] = screen->link_dot;
+    s_bound[s_n_bound++] = screen->state;
+    s_bound[s_n_bound++] = screen->status;
+    s_bound[s_n_bound++] = screen->tag;
 }
 
 void coach_bindings_detach(void) {
-    if (s_screen.battery) lv_obj_remove_from_subject(s_screen.battery, NULL);
-    if (s_screen.body) lv_obj_remove_from_subject(s_screen.body, NULL);
-    if (s_screen.hint) lv_obj_remove_from_subject(s_screen.hint, NULL);
-    if (s_screen.icon) lv_obj_remove_from_subject(s_screen.icon, NULL);
-    if (s_screen.link_dot) lv_obj_remove_from_subject(s_screen.link_dot, NULL);
-    if (s_screen.state) lv_obj_remove_from_subject(s_screen.state, NULL);
-    if (s_screen.status) lv_obj_remove_from_subject(s_screen.status, NULL);
-    if (s_screen.tag) lv_obj_remove_from_subject(s_screen.tag, NULL);
-    memset(&s_screen, 0, sizeof(s_screen));
+    for (size_t i = 0; i < s_n_bound; i++) {
+        if (s_bound[i]) lv_obj_remove_from_subject(s_bound[i], NULL);
+        s_bound[i] = NULL;
+    }
+    s_n_bound = 0;
 }
 
 void coach_teardown(coach_screen_coach_t *screen) {
