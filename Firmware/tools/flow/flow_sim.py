@@ -81,10 +81,13 @@ def build(flow_path, selftest=False):
     logo = json.loads((brand / "logo_parts.json").read_text(encoding="utf-8"))
     for name, part in logo["parts"].items():
         part["src"] = "data:image/png;base64," + base64.b64encode((brand / f"logo_{name}.png").read_bytes()).decode()
-    # D-36: the boot sound, the same samples as the device (assets/tools/gen_boot_sound.py).
-    sound = "data:audio/wav;base64," + base64.b64encode((REPO / "assets" / "audio" / "boot_sound.wav").read_bytes()).decode()
+    # D-36: the three boot sound designs (assets/tools/gen_boot_sound.py). The firmware has one of them.
+    audio = REPO / "assets" / "audio"
+    sounds = {d: "data:audio/wav;base64," + base64.b64encode((audio / f"boot_sound_{d.lower()}.wav").read_bytes()).decode()
+              for d in "ABC"}
+    picked = re.search(r'HEYGO_BOOT_SOUND_DESIGN\s+"(\w)"', (audio / "heygo_boot_sound.h").read_text()).group(1)
     data = {"flow": flow, "strings": strings, "colors": colors, "hold_ms": HOLD_MS, "popup_icons": icons,
-            "logo": logo, "boot_sound": sound, "static_issues": static_issues(flow)}
+            "logo": logo, "boot_sounds": sounds, "boot_sound_device": picked, "static_issues": static_issues(flow)}
     blob = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     rel = flow_path.resolve().relative_to(FW).as_posix()
     sha = hashlib.sha256(flow_path.read_bytes()).hexdigest()[:12]
