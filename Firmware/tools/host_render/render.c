@@ -34,6 +34,7 @@
 #include "turn_page.h"
 #include "turn_view.h"
 #include "popup_view.h"
+#include "page_rail.h"
 #include "popup_anim.h"
 #include "heygo_popup_icons.h"
 #include "ui_theme.h"
@@ -125,26 +126,31 @@ static void load_screen(const char *name)
         coach_bindings_attach(&s_coach);
         lv_screen_load(s_coach.screen);
         s_kind = COACH;
+        page_rail_follow(COACH_STATE_READY, false);
     } else if (strcmp(name, "ski") == 0) {
         coach_screen_ski_build(&s_ski);
         coach_bindings_attach_ski(&s_ski);
         lv_screen_load(s_ski.screen);
         s_kind = SKI;
+        page_rail_follow(COACH_STATE_LIVE, false);
     } else if (strcmp(name, "report") == 0) {
         coach_screen_report_build(&s_report);
         coach_bindings_attach_report(&s_report);
         lv_screen_load(s_report.screen);
         s_kind = REPORT;
+        page_rail_follow(COACH_STATE_REPORT, false);
     } else if (strcmp(name, "turns") == 0) {
         coach_screen_turns_build(&s_turns);
         coach_bindings_attach_turns(&s_turns);
         lv_screen_load(s_turns.screen);
         s_kind = TURNS;
+        page_rail_follow(COACH_STATE_TURNS, false);
     } else if (strcmp(name, "popup") == 0) {
         coach_screen_popup_build(&s_popup);
         coach_bindings_attach_popup(&s_popup);
         lv_screen_load(s_popup.screen);
         s_kind = POPUP;
+        page_rail_follow(COACH_STATE_POPUP_HOLD, false);
     } else {
         printf("ERR unknown screen %s\n", name);
     }
@@ -344,6 +350,8 @@ int main(int argc, char **argv)
     s_blank = lv_obj_create(NULL);
     coach_bindings_set_lock(count_lock, count_unlock);
     print_mem("after_display");
+    page_rail_create(lv_layer_top());   // D-33: as coach_app_start() does.
+    print_mem("after_rail");
 
     char line[1024];
     while (fgets(line, sizeof line, stdin)) {
