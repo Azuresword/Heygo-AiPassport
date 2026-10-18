@@ -214,10 +214,9 @@ As a skier, I want to see the live data page when I start a run. Then I need not
 As a skier, I want to see where I am in the pages, and where the next press goes. Then I do not press a key only to find out.
 
 - Acceptance: a rail on the right edge shows the four pages as four stops, in the order of the short DOWN press (D-33).
-- Acceptance: the stop of the current page is a lime thumb. The stops of the short UP and DOWN targets are light gray. The rail shows no arrows.
-- Acceptance: the targets come from the flow graph. On the live data page, the coach stop is light gray. On the Coach page, the live data stop is light gray.
+- Acceptance: the stop of the current page is a lime thumb. All stops have one color. The rail shows no arrows.
 - Acceptance: on each page change, the thumb slides to the new stop within 200 milliseconds. On a wrap, it slides out at one end and in at the other end.
-- Acceptance: during capture, the wait, and the playback, the rail stays and shows the same targets.
+- Acceptance: during capture, the wait, and the playback, the rail stays.
 - Acceptance: the popup page hides the rail. When the popup closes, the rail shows the saved page.
 - Acceptance: the rail covers no text, box, or key hint.
 - Dependency: US-17 and US-05.
