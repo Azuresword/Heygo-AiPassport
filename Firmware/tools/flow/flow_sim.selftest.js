@@ -28,6 +28,17 @@
   await tap("UP");   ok(st === "READY", "2 UP: live data -> coach (loop)");
   await tap("UP");   ok(st === "TURNS", "2 UP: coach -> turns");
   await tap("UP");   ok(st === "REPORT", "2 UP: turns -> report");
+  // D-33: the page rail shows the page and the targets of short UP and DOWN, from the flow graph.
+  const rail = () => { const r = document.getElementById("rail"); return [r.classList.contains("off") ? "off" : "on", r.dataset.page, r.dataset.up, r.dataset.down].join(","); };
+  ok(rail() === "on,1,0,2", "2 rail on the Report page: page 2, UP to live data, DOWN to turns");
+  await tap("UP");
+  ok(rail() === "on,0,3,1", "2 rail on the live data page: UP goes around the loop to the coach");
+  await tap("UP");
+  ok(rail() === "on,3,2,0" && document.querySelectorAll("#rail .stop.target").length === 2, "2 rail on the Coach page: DOWN goes around to live data");
+  await sleep(300);
+  ok(parseInt(document.querySelector("#rail .thumb").style.top) === 3 * 48, "2 the thumb slides around the loop to the last stop");
+  await tap("DOWN"); await tap("DOWN");
+  ok(st === "REPORT", "2 back on the Report page");
   await tap("OK");   ok(st === "REPORT", "2 a short OK changes no page");
   await hold("UP");  ok(st === "REPORT", "2 an UP hold does nothing");
 
