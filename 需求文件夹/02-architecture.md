@@ -306,7 +306,7 @@ The rail reads the targets from the flow graph `flows/coach.flow.json`. It does 
 The thumb slides to the new stop in 180 ms, with an ease-out curve.
 Two page changes wrap: UP from live data to coach, and DOWN from coach to live data. In a wrap, the thumb uses 90 ms to slide out past one end. Then it jumps to the other end and uses 90 ms to slide in.
 The rail starts at `y=64`. So it stays below the corner mask and the status bar, and above the key hints.
-Every page keeps its content at `x≤230`, so the rail covers no content.
+The text, the boxes, and the key hints of every page stay at `x≤230`. Only the decorative ridge line of the Coach page and the Report page goes under the rail, at `y=146..174`.
 
 The simulator `assets/sim/coach-flow.html` shows the rail. Its self-test checks the stops, the targets, and the wrap on three pages.
 The firmware part is the next step. Only one screen exists at a time, so the rail must live on the top layer of LVGL. Then the thumb can move while the task deletes the old screen and builds the new screen.
