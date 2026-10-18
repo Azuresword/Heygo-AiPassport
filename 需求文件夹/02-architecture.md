@@ -2,7 +2,7 @@
 
 # HeygoAI × AI Passport: architecture
 
-Version: 0.13. Date: 2026-10-18. Status: Draft for engineering review.
+Version: 0.14. Date: 2026-10-18. Status: Draft for engineering review.
 
 This document proposes a design for Increments 1 to 4 in [product requirements](01-product-requirements.md).
 It does not describe a working integration.
@@ -434,6 +434,21 @@ The phone runs speech recognition and speech synthesis.
 A cancel ends the exchange. The device drops every later block of that exchange.
 A reconnect cancels the open exchange.
 
+### Boot sound (D-36)
+
+`assets/tools/gen_boot_sound.py` makes the boot sound from code, with a fixed random seed. It writes `assets/audio/heygo_boot_sound.c`: 2.0 s of 16 kHz, 16-bit, mono PCM, 64,000 bytes in Flash. It also writes `boot_sound.wav` for listening and for the simulator.
+
+| Time | Sound | Animation |
+|---|---|---|
+| 0 to 0.45 s | Band-pass noise that sweeps from 900 Hz to 3,200 Hz | The snowboard carves in |
+| 0.18 to 0.58 s | Five plucks: E5, F#5, G#5, B5, C#6 | "g", "o", "H", "e", "y" |
+| 1.0 to 2.0 s | A bell chord in E, and a shimmer at 2,637 Hz from 1.15 s | The tagline and the lime line |
+
+The sound has no energy below 250 Hz, because the small speaker rattles at low tones. Its peak is -6 dBFS, and its RMS is -22.8 dBFS. The last 150 ms fade out, so the end makes no click.
+`voice_play_cue()` plays it in a fourth voice mode, `MODE_CUE`. The voice task writes 20 ms blocks and checks the stop flag after each block.
+The sound plays only when the codec is idle. A capture, an answer, or popup audio stops it first, within one block. A capture that starts during the sound therefore starts at most about 20 ms late.
+`coach_app_start()` starts the sound right after `voice_start()`. The boot screen is already on the screen then.
+
 ### Popup audio (D-31)
 
 The popup audio uses the same downlink path as the answer, on channel 2 (BP_CHANNEL_POPUP).
@@ -482,6 +497,7 @@ The device has no PSRAM. Streaming makes a full recording unnecessary.
 | The current popup and the popup page texts | About 0.7 KB | D-31. Estimated from the struct sizes: three copies of the popup and one set of page texts. Not measured. |
 | Page rail | One LVGL object, 312 bytes in the pool | D-33. Measured by the host renderer. |
 | Boot logo | 12,288 bytes of A8 in Flash, not in RAM | D-35. `assets/sprites/heygo_logo.c`. The boot screen peaks at 14,032 bytes of pool, measured by the host renderer. |
+| Boot sound | 64,000 bytes of PCM in Flash, not in RAM | D-36. `assets/audio/heygo_boot_sound.c`. The voice task writes it from Flash and copies nothing. |
 | Rider sprite | 25.6 KB in Flash, not in RAM | `assets/sprites`, made by `assets/tools/gen_sprite.py`. |
 | 48-pixel digit font | In Flash, not in RAM | Measure the size in Sprint 3. |
 | ADPCM codec state | A few bytes in each direction | D-09. |
