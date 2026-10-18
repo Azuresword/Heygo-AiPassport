@@ -32,6 +32,7 @@ idf_component_register(
          "ui/turn_page.c"
          "ui/popup_view.c"
          "ui/popup_anim.c"
+         "ui/page_rail.c"
          "generated/coach_flow.c"
          "generated/coach_screens.c"
          "generated/coach_bindings.c"
