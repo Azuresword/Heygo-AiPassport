@@ -2,7 +2,7 @@
 
 # HeygoAI and AI Passport: product requirements
 
-Version: 0.12. Date: 2026-10-18. Status: Draft for review.
+Version: 0.13. Date: 2026-10-18. Status: Draft for review.
 The Product Owner role has no assigned person.
 This document defines a concept. It does not describe a working integration.
 
@@ -54,7 +54,7 @@ D-17, D-18, and D-22 set these priorities. [Decision amendments](05-decision-ame
 | Priority | Increment | Requirements |
 | --- | --- | --- |
 | P0 | Increment 1: the Coach voice chain | REQ-01, REQ-06, REQ-07, REQ-08, REQ-15, REQ-17, REQ-20 |
-| P1 | Increment 2: live data and reports | REQ-02, REQ-03, REQ-21, REQ-23, REQ-24, REQ-25, REQ-26 |
+| P1 | Increment 2: live data and reports | REQ-02, REQ-03, REQ-21, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27 |
 | P1 | Increment 3: the turn shape (D-30) | REQ-05 |
 | P1 | Increment 4: phone popups (D-31) | REQ-22 |
 | P1 | After Increment 2 | REQ-04, REQ-09, REQ-13 |
@@ -119,6 +119,7 @@ Each row has test stage Prototype. Owners are roles with no assigned person.
 | REQ-24 | Show where the user is in the page loop. A rail on the right edge has one stop for each page. The current page shows as a lime thumb. All stops have one color. The thumb slides to the new page (D-33). | Firmware and design. | TC-24: in 40 short UP and DOWN presses on the four pages, the thumb is on the new page within 200 ms each time. The thumb always marks the page on the screen. Before a press, at least 4 of 5 users say which page a short DOWN press opens. | The page loop of D-29 and D-30. |
 | REQ-25 | Show the link state in the status bar of every page: the four pages of the loop and the popup page. A lime dot with "已连接" means that the link to the phone works. A red dot with "未连接" means no link. A red dot with "无语音" means that the link works, but voice does not. Each page shows the change at once, with no page change (D-34). | Firmware and design. | TC-25: use phone_sim for 20 link losses and 20 reconnects on the five pages. Each time, the status bar shows the new state within 1 second of the link event in the device log. Each page shows the same text and color. | REQ-20. |
 | REQ-26 | Show the Heygo logo at each power-on, before the first page. The parts of the logo come in one by one, and then the tagline "MAKE EVERY RUN COUNT". After about 2 seconds, the live data page opens. Any key skips the boot screen and starts no other action (D-35). | Firmware and design. | TC-26: in 20 power-ons, the live data page opens 2.0 to 2.3 s after the boot screen starts. In 20 more power-ons, a key on the boot screen opens the live data page within 200 ms, and starts no other action. | The final logo in the Figma file "Logo". |
+| REQ-27 | Play a boot sound with the boot animation, on the same time line (D-36). The sound must not delay or block a capture or an answer. | Firmware and design. | TC-27: in 10 power-ons, the boot sound starts with the boot animation and plays for 2.0 s. The end makes no click. A capture that starts during the sound starts within 40 ms. | REQ-26. |
 | REQ-03 | After each run, show the report of that run. It holds the distance, the turn count, the Heygo IQ, the core problem, and a tip of at most 20 characters. | Firmware and design. | TC-03: in 30 short DOWN presses on the Coach page, the Report page shows within 500 ms each time. Every value matches the phone log. | REQ-02. |
 | REQ-05 | After each run, show the shape of that run in groups of 8 turns, and replay one turn. The user moves from turn to turn with the keys. The page shows the action of each key. Each turn shows its side, speed, edge angle, and radius. A schematic shape shows "示意". | Firmware and design. | TC-05: in 20 runs with phone_sim and up to 255 turns, each key press shows its turn within 500 milliseconds. Each turn value matches the phone log. A schematic shape shows "示意" each time. | REQ-03. TURN_SHAPE, TURN_GROUP, and TURN_REQUEST as doc 07 defines. |
 | REQ-22 | Show a popup from the phone at once, on every page and in every state. Four kinds: fall alert, voice message, problem report, and achievement. Play the popup audio, then count down 10 seconds. Any key closes the popup. Then go back to the page before the popup. | Phone and firmware. | TC-22: in 40 popups with phone_sim, each popup shows within 500 ms on every page and in every Coach state. Each popup closes after its audio and 10 seconds, or at a key press. The device then shows the page before the popup each time. | POPUP and POPUP_END as doc 07 defines. The phone owns the escalation of a fall alert. |
@@ -212,6 +213,9 @@ At each power-on, the device shows the Heygo logo before the first page. The log
 Any key skips the boot screen. That key starts no page action, also when the user holds it.
 The flow runs during the boot screen. A popup or a run start that comes then shows when the boot screen ends.
 The power key cuts the power in hardware. The firmware cannot read it, so the device has no shutdown animation. The simulator shows a shutdown design for later hardware.
+
+D-36 adds a boot sound of 2 s on the same time line. A carve sound goes with the snowboard. Five soft plucks on a rising scale go with the letters. A bell chord goes with the tagline.
+The sound stops at once when a capture, an answer, or popup audio starts. A key that skips the boot screen does not stop the sound.
 
 ### Audio rules
 
