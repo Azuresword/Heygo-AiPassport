@@ -71,6 +71,41 @@ class ValidatorTest(unittest.TestCase):
         g["transforms"][0]["from"] = "string"
         self.assertRejects(g, "rule 4")
 
+    def test_rule4_binding_screen_without_the_widget(self):
+        g = copy.deepcopy(GOOD)
+        b = next(x for x in g["bindings"] if x["subject"] == "state_text")
+        b["screens"] = ["coach", "ski"]           # the live data page has no "state" widget
+        self.assertRejects(g, "names no widget ski.state")
+
+    def test_rule4_binding_screens_need_one_widget_type(self):
+        g = copy.deepcopy(GOOD)
+        b = next(x for x in g["bindings"] if x["target"].endswith("icon.value"))
+        b["screens"] = ["coach", "popup"]         # a state icon on one page, an image on the other
+        b["target"] = "icon.value"
+        self.assertRejects(g, "not the same widget type")
+
+    def test_binding_on_more_screens_emits_one_attach_each(self):
+        g = copy.deepcopy(GOOD)
+        b = next(x for x in g["bindings"] if x["subject"] == "battery_text")
+        b["screens"] = ["coach", "ski"]
+        h, c = flowc.emit_bindings(g, "x.json")
+        self.assertIn("void coach_bindings_attach(const coach_screen_coach_t *screen);", h)
+        self.assertIn("void coach_bindings_attach_ski(const coach_screen_ski_t *screen);", h)
+        self.assertIn("void coach_teardown_ski(coach_screen_ski_t *screen);", h)
+        ski = c.split("void coach_bindings_attach_ski(")[1].split("\n}")[0]
+        self.assertIn("&s_subject_battery_text", ski)
+        self.assertIn("s_bound[s_n_bound++] = screen->battery;", ski)
+        self.assertNotIn("s_subject_body_text", ski)   # the other bindings stay on the Coach page
+        teardown = c.split("void coach_teardown_ski(")[1].split("\n}")[0]
+        self.assertLess(teardown.index("coach_bindings_detach();"), teardown.index("coach_screen_ski_destroy"))
+
+    def test_rule5_counts_the_observers_of_each_screen(self):
+        g = copy.deepcopy(GOOD)
+        base = check(copy.deepcopy(g))["pool_estimate"]
+        b = next(x for x in g["bindings"] if x["subject"] == "battery_text")
+        b["screens"] = ["coach", "ski"]           # the live data page is the largest screen
+        self.assertEqual(check(g)["pool_estimate"] - base, flowc.OBSERVER_POOL_COST)
+
     def test_rule5_pool_ceiling_exceeded(self):
         g = copy.deepcopy(GOOD)
         widgets = g["screens"][0]["widgets"]
