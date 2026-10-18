@@ -334,7 +334,8 @@ static void refresh_data(bool force) {
 // Only one screen exists at a time. All three together do not fit the 24 KB LVGL pool.
 // Load the blank screen, delete the old screen, then build the new one. The peak stays
 // at one screen. tools/host_render measures the same sequence.
-// The subjects keep their values, so a new Coach screen shows the current texts.
+// The subjects keep their values, so a new screen shows the current texts.
+// Every screen binds the link state in its status bar (D-34).
 // The caller holds the LVGL lock.
 static void show_screen(coach_screen_id_t id) {
     if (id == s_shown) return;
@@ -342,10 +343,10 @@ static void show_screen(coach_screen_id_t id) {
     lv_screen_load(s_blank);
     switch (s_shown) {
     case COACH_SCREEN_COACH: coach_teardown(&s_coach); break;
-    case COACH_SCREEN_SKI: coach_screen_ski_destroy(&s_ski); break;
-    case COACH_SCREEN_REPORT: coach_screen_report_destroy(&s_report); break;
-    case COACH_SCREEN_TURNS: coach_screen_turns_destroy(&s_turns); break;
-    case COACH_SCREEN_POPUP: coach_screen_popup_destroy(&s_popup_scr); break;
+    case COACH_SCREEN_SKI: coach_teardown_ski(&s_ski); break;
+    case COACH_SCREEN_REPORT: coach_teardown_report(&s_report); break;
+    case COACH_SCREEN_TURNS: coach_teardown_turns(&s_turns); break;
+    case COACH_SCREEN_POPUP: coach_teardown_popup(&s_popup_scr); break;
     default: break;
     }
     switch (id) {
@@ -356,20 +357,24 @@ static void show_screen(coach_screen_id_t id) {
         break;
     case COACH_SCREEN_SKI:
         coach_screen_ski_build(&s_ski);
+        coach_bindings_attach_ski(&s_ski);
         lv_screen_load(s_ski.screen);
         break;
     case COACH_SCREEN_REPORT:
         coach_screen_report_build(&s_report);
+        coach_bindings_attach_report(&s_report);
         lv_screen_load(s_report.screen);
         break;
     case COACH_SCREEN_TURNS:
         coach_screen_turns_build(&s_turns);
+        coach_bindings_attach_turns(&s_turns);
         lv_screen_load(s_turns.screen);
         memset(&s_turn_view, 0, sizeof s_turn_view);
         turn_group_show(0);
         break;
     case COACH_SCREEN_POPUP:
         coach_screen_popup_build(&s_popup_scr);
+        coach_bindings_attach_popup(&s_popup_scr);
         lv_screen_load(s_popup_scr.screen);
         break;
     default:
