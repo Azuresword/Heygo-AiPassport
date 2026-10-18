@@ -2,7 +2,7 @@
 
 # HeygoAI and AI Passport: product requirements
 
-Version: 0.9. Date: 2026-10-17. Status: Draft for review.
+Version: 0.10. Date: 2026-10-18. Status: Draft for review.
 The Product Owner role has no assigned person.
 This document defines a concept. It does not describe a working integration.
 
@@ -54,7 +54,7 @@ D-17, D-18, and D-22 set these priorities. [Decision amendments](05-decision-ame
 | Priority | Increment | Requirements |
 | --- | --- | --- |
 | P0 | Increment 1: the Coach voice chain | REQ-01, REQ-06, REQ-07, REQ-08, REQ-15, REQ-17, REQ-20 |
-| P1 | Increment 2: live data and reports | REQ-02, REQ-03, REQ-21, REQ-23 |
+| P1 | Increment 2: live data and reports | REQ-02, REQ-03, REQ-21, REQ-23, REQ-24 |
 | P1 | Increment 3: the turn shape (D-30) | REQ-05 |
 | P1 | Increment 4: phone popups (D-31) | REQ-22 |
 | P1 | After Increment 2 | REQ-04, REQ-09, REQ-13 |
@@ -116,6 +116,7 @@ Each row has test stage Prototype. Owners are roles with no assigned person.
 | REQ-02 | Show the latest ski data packet from the phone. A missing field shows "--" and never 0. Mark data that is out of date. | Phone and firmware. | TC-02: in 300 data packets, the device shows the latest packet each time. Each missing field shows "--". | The phone application sends LIVE_STATS as doc 07 defines. |
 | REQ-21 | During a run, show live data on the live data page: speed, vertical drop, distance, turn count, and run time. The phone sends one packet each second. | Firmware and design. | TC-21: the screen updates within 300 ms of the packet at the 95th percentile. At least 4 of 5 users read the speed correctly within 2 seconds. | REQ-02. |
 | REQ-23 | When the phone starts a run, open the live data page at once. Show the run number and "--" for each value until the first packet. During a talk with the coach, open the page after the talk ends. During a popup, open the page after the popup closes. | Phone and firmware. | TC-23: in 20 runs with phone_sim, the screen changes to the live data page within 300 ms of RUN_START at the 95th percentile. A run start during a talk or a popup opens the live data page after the talk or the popup ends, each time. | REQ-21. RUN_START as doc 07 defines (D-32). |
+| REQ-24 | Show where the user is in the page loop. A rail on the right edge has one stop for each page. The current page shows as a lime thumb. The pages that a short UP press and a short DOWN press open show as light stops, with ▲ and ▼. The thumb slides to the new page (D-33). | Firmware and design. | TC-24: in 40 short UP and DOWN presses on the four pages, the thumb is on the new page within 200 ms each time. The marked stops always match the pages that the next presses open. Before a press, at least 4 of 5 users say which page a short DOWN press opens. | The page loop of D-29 and D-30. |
 | REQ-03 | After each run, show the report of that run. It holds the distance, the turn count, the Heygo IQ, the core problem, and a tip of at most 20 characters. | Firmware and design. | TC-03: in 30 short DOWN presses on the Coach page, the Report page shows within 500 ms each time. Every value matches the phone log. | REQ-02. |
 | REQ-05 | After each run, show the shape of that run in groups of 8 turns, and replay one turn. The user moves from turn to turn with the keys. The page shows the action of each key. Each turn shows its side, speed, edge angle, and radius. A schematic shape shows "示意". | Firmware and design. | TC-05: in 20 runs with phone_sim and up to 255 turns, each key press shows its turn within 500 milliseconds. Each turn value matches the phone log. A schematic shape shows "示意" each time. | REQ-03. TURN_SHAPE, TURN_GROUP, and TURN_REQUEST as doc 07 defines. |
 | REQ-22 | Show a popup from the phone at once, on every page and in every state. Four kinds: fall alert, voice message, problem report, and achievement. Play the popup audio, then count down 10 seconds. Any key closes the popup. Then go back to the page before the popup. | Phone and firmware. | TC-22: in 40 popups with phone_sim, each popup shows within 500 ms on every page and in every Coach state. Each popup closes after its audio and 10 seconds, or at a key press. The device then shows the page before the popup each time. | POPUP and POPUP_END as doc 07 defines. The phone owns the escalation of a fall alert. |
@@ -171,6 +172,18 @@ Playback stops within 200 ms of that command. Capture stops within 100 ms of tha
 An UP hold and a DOWN hold have no action.
 Actions inside a page will use a short OK press. No page uses it yet.
 A hold never also triggers a short press.
+
+### Page rail (D-33)
+
+A rail on the right edge shows the page loop. It has four stops from top to bottom: live data, report, turns, and coach. This is the order of the short DOWN press.
+
+- The stop of the current page is a lime thumb with a small glow.
+- The stop that a short UP press opens is light gray, with ▲ above it. The stop that a short DOWN press opens is light gray, with ▼ below it. The other stops are dark gray.
+- On a page change, the thumb slides to the new stop in 180 ms. The movement starts quickly and stops smoothly.
+- From the live data page, UP opens the Coach page. From the Coach page, DOWN opens the live data page. In these two changes, the thumb moves out at one end of the rail and comes in at the other end. So the rail also shows that the pages form a loop.
+- During capture, the wait, or the playback, the rail shows the same targets. A short UP or DOWN press there cancels the question first.
+- The popup page hides the rail, because the popup is not in the loop.
+- The rail does not change the keys. It only shows their result.
 
 ### Audio rules
 
