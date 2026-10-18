@@ -31,6 +31,7 @@
 #include "coach_input.h"
 #include "coach_screens.h"
 #include "coach_ui.h"
+#include "page_rail.h"
 #include "popup_anim.h"
 #include "popup_view.h"
 #include "ski_view.h"
@@ -38,6 +39,7 @@
 #include "turn_view.h"
 #include "ui_theme.h"
 #include "voice.h"
+#include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -331,7 +333,19 @@ static void refresh_data(bool force) {
     }
 }
 
-// Only one screen exists at a time. All three together do not fit the 24 KB LVGL pool.
+// D-33: one line for each page change, for the device memory test. The LVGL pool and the
+// system heap are separate. A pool with a small biggest free block can hang a draw.
+static void log_memory(const char *page) {
+    lv_mem_monitor_t m;
+    lv_mem_monitor(&m);
+    ESP_LOGI("mem", "%s: lvgl used %u of %u B, biggest free %u B, peak %u B, heap free %u B, min %u B",
+             page, (unsigned)(m.total_size - m.free_size), (unsigned)m.total_size,
+             (unsigned)m.free_biggest_size, (unsigned)m.max_used,
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_8BIT),
+             (unsigned)heap_caps_get_minimum_free_size(MALLOC_CAP_8BIT));
+}
+
+// Only one screen exists at a time. All of them together do not fit the LVGL pool.
 // Load the blank screen, delete the old screen, then build the new one. The peak stays
 // at one screen. tools/host_render measures the same sequence.
 // The subjects keep their values, so a new screen shows the current texts.
@@ -382,6 +396,7 @@ static void show_screen(coach_screen_id_t id) {
     }
     s_shown = id;
     refresh_data(true);
+    log_memory(screen_name(id));
 }
 
 static void run_action(coach_action_t a) {
@@ -549,6 +564,10 @@ static void handle(coach_event_t event) {
     if (step.state_changed) send_context(step.to);
 
     const coach_screen_id_t screen = coach_state_screen(step.to);
+    if (step.state_changed && lvgl_lock()) {
+        page_rail_follow(step.to, true);    // D-33: the rail moves with the page change.
+        lvgl_unlock();
+    }
     if (screen != s_shown && lvgl_lock()) {
         show_screen(screen);
         lvgl_unlock();
@@ -726,7 +745,10 @@ esp_err_t coach_app_start(void) {
     if (!lvgl_lock()) return ESP_ERR_TIMEOUT;
     s_blank = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(s_blank, ui_color_bg(), 0);
+    // D-33: the rail lives on the top layer, so a screen change does not delete it.
+    page_rail_create(lv_layer_top());
     show_screen(coach_state_screen(s_flow.state));
+    page_rail_follow(s_flow.state, false);
     lvgl_unlock();
 
     s_queue = xQueueCreate(QUEUE_DEPTH, sizeof(msg_t));
