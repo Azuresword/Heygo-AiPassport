@@ -89,7 +89,7 @@ def build(sdkconfig):
         [f"-I{ASSETS / 'fonts'}", f"-I{ASSETS / 'sprites'}"]
     app_src = [HERE / "render.c", FW / "main/ui/ui_theme.c",
                FW / "main/ui/ui_state_icon.c", FW / "main/ui/turn_view.c", FW / "main/ui/turn_page.c",
-               FW / "main/ui/popup_view.c", FW / "main/ui/popup_anim.c", FW / "main/ui/page_rail.c", FW / "main/generated/coach_flow.c", ASSETS / "sprites/heygo_popup_icons.c",
+               FW / "main/ui/popup_view.c", FW / "main/ui/popup_anim.c", FW / "main/ui/page_rail.c", FW / "main/ui/boot_screen.c", ASSETS / "sprites/heygo_logo.c", FW / "main/generated/coach_flow.c", ASSETS / "sprites/heygo_popup_icons.c",
                FW / "main/link/link_core.c", FW / "main/protocol/ble_proto.c",
                FW / "main/generated/coach_screens.c", FW / "main/generated/coach_bindings.c",
                ASSETS / "fonts/heygo_sc_16.c", ASSETS / "fonts/heygo_sc_28.c",
@@ -177,6 +177,10 @@ def frames(s):
         ("24-popup-issue", None, {"!popup": "3 2 7400 第 2 弯重心偏后|入弯时上身后坐，雪板容易甩尾。下一趟把重心放到前脚。"}),
         ("25-popup-badge", None, {"!popup": "4 2 10000 今天完成 10 趟|换刃比上午更稳，继续保持。"}),
         ("26-popup-max", None, {"!popup": "3 2 1000 第十二弯上身转动过早重心|" + "让雪板先转，上身保持朝向山下。" * 2 + "入弯前先看出口方向。"}),
+        # The boot screen (D-35). The !step value moves the fake clock in ms.
+        ("27-boot-board", "boot", {"!step": "300"}),
+        ("28-boot-logo", None, {"!step": "700"}),
+        ("29-boot-tagline", None, {"!step": "700"}),
     ]
 
 
@@ -185,7 +189,7 @@ def check_glyphs(script):
     missing = set()
     for _, _, sets in script:
         for k, v in sets.items():
-            if isinstance(v, str) and k not in ("link_state", "icon_state", "!shape"):
+            if isinstance(v, str) and k not in ("link_state", "icon_state", "!shape", "!step"):
                 missing |= {c for c in v if c not in have}
     return sorted(missing)
 
@@ -217,12 +221,27 @@ def anim_commands():
     return cmds, names
 
 
-def write_gif(raw_dir, names, out):
+# The boot animation (D-35), for assets/mockups/boot-anim.gif: 2 s in steps of 40 ms.
+def boot_commands():
+    cmds, names = ["screen boot", "snap boot-000"], ["boot-000"]
+    for i in range(1, BOOT_MS // ANIM_STEP_MS + 1):
+        name = f"boot-{i:03d}"
+        cmds += [f"step {ANIM_STEP_MS}", f"snap {name}"]
+        names.append(name)
+    return cmds, names
+
+
+BOOT_MS = 2000      # BOOT_SCREEN_MS in main/ui/boot_screen.h.
+
+
+def write_gif(raw_dir, names, out, file="popup-anim.gif", first_ms=800, last_ms=None):
     frames = [to_png(raw_dir / f"{n}.rgb565") for n in names]
-    durations = [800] + [ANIM_STEP_MS] * (len(frames) - 1)
-    frames[0].save(out / "popup-anim.gif", save_all=True, append_images=frames[1:], duration=durations,
+    durations = [first_ms] + [ANIM_STEP_MS] * (len(frames) - 1)
+    if last_ms:
+        durations[-1] = last_ms
+    frames[0].save(out / file, save_all=True, append_images=frames[1:], duration=durations,
                    loop=0, optimize=True)
-    print(f"Wrote popup-anim.gif ({len(frames)} frames) to {out}")
+    print(f"Wrote {file} ({len(frames)} frames) to {out}")
 
 
 def to_png(raw_path):
@@ -308,7 +327,8 @@ def main():
         if screen == "coach":
             cmds.append("mem coach_built")
         cmds += [f"label {k[1:]} {v}" if k.startswith("@") else f"panel {v}" if k == "!panel"
-                 else f"shape {v}" if k == "!shape" else f"popup {v}" if k == "!popup" else f"set {k} {v}"
+                 else f"shape {v}" if k == "!shape" else f"popup {v}" if k == "!popup"
+                 else f"step {v}" if k == "!step" else f"set {k} {v}"
                  for k, v in sets.items()]
         cmds.append(f"snap {name}")
     # The body subject holds BODY_SIZE - 1 bytes. One ASCII byte in front of
@@ -321,6 +341,8 @@ def main():
     cmds = cmds + ["drop", "mem cycle1"] + cmds + ["drop", "mem cycle2"]
     anim_cmds, anim_names = anim_commands()
     cmds += anim_cmds + ["drop"]
+    boot_cmds, boot_names = boot_commands()
+    cmds += boot_cmds + ["drop"]
     # LVGL retries a failed draw allocation without end. So a full pool hangs the renderer,
     # and the device. A time limit turns that hang into a failure.
     try:
@@ -359,6 +381,7 @@ def main():
     else:
         write_pngs(script, raw_dir, out)
         write_gif(raw_dir, anim_names, out)
+        write_gif(raw_dir, boot_names, out, "boot-anim.gif", first_ms=ANIM_STEP_MS, last_ms=1200)
 
     base = int(mem["after_display"]["used"])
     built = int(mem["coach_built"]["used"])
