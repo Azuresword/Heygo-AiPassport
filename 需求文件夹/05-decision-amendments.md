@@ -1,10 +1,10 @@
 [简体中文](05-decision-amendments.zh_CN.md) · **English**
 
-# Decision amendments: D-08 to D-34
+# Decision amendments: D-08 to D-35
 
-Version: 0.13. Date: 2026-10-18. Status: D-08 to D-15 and D-17 to D-32 accepted by the user. The phone application team accepted D-16. It must accept D-29, the three turn messages of D-30, the two popup messages of D-31, and the run start message of D-32. The user asked for D-33 and D-34, and must review the look of D-33.
+Version: 0.14. Date: 2026-10-18. Status: D-08 to D-15 and D-17 to D-32 accepted by the user. The phone application team accepted D-16. It must accept D-29, the three turn messages of D-30, the two popup messages of D-31, and the run start message of D-32. The user asked for D-33, D-34, and D-35, and must review the look of D-33.
 
-This document gives the reasons behind D-08 to D-34.
+This document gives the reasons behind D-08 to D-35.
 [Validation and decisions](04-validation-and-decisions.md) holds the short log.
 Requirement numbers stay stable. This document deletes no requirement.
 
@@ -511,7 +511,39 @@ The user made three choices on 2026-10-17:
 
 **Status.** The user asked for the link state on every page on 2026-10-18. The code is in the repository. Device tests are NOT RUN.
 
-## 29. Related documents
+## 29. D-35: a boot screen with the Heygo logo
+
+**Decision.** Each power-on shows a boot screen before the first page. REQ-26 belongs to Increment 2.
+
+- The logo is the final white logo of the Figma file "Logo", page "Logo定稿". It has six parts: "H", "e", "y", "g", "o", and the snowboard.
+- The snowboard carves in first. Then "go" rises, and "Hey" slides in from the left. Then the tagline "MAKE EVERY RUN COUNT" rises, and a lime line grows under it.
+- After about 2 s, the live data page opens.
+- Any key skips the boot screen. That key starts no page action until its release.
+- The device has no shutdown screen. The simulator shows a shutdown design only.
+
+The user made three choices on 2026-10-18:
+
+1. **About 2 s, any key skips.** A skier with gloves does not wait for the logo.
+2. **The final logo file.** The user named the Figma file "Logo" as the source, not the brand book.
+3. **No shutdown screen on the device.** The power key cuts the power in hardware. The hardware guide gives it no GPIO, so the firmware cannot read it.
+
+**Reason.**
+
+- The boot screen shows at once that the device works. Before D-35, the screen showed the live data page with "--" values while the link was not up.
+- The tagline comes from the brand book ("Make Every Run Count"). The lime "COUNT" uses the same accent as the device pages.
+- The parts move with offsets and opacity only. So LVGL needs no layer, and the 28 KiB pool is enough. The guide warns that a full-screen layer can fill the pool.
+- A key skip that starts no action prevents an unwanted page change or an unwanted capture at power-on.
+
+**Cost.**
+
+- The six A8 parts use 12,288 bytes of Flash.
+- The boot screen uses up to 14,032 bytes of pool. This is less than the pages, so the pool peak does not change.
+- The first page opens 2 s later than before D-35, if the user presses no key.
+- A change of the logo in Figma needs `assets/tools/fetch_figma_logo.py` and a Figma token. The build itself does not need Figma.
+
+**Status.** The user asked for the boot screen on 2026-10-18. The code is in the repository. Device tests are NOT RUN.
+
+## 30. Related documents
 
 - [Product requirements](01-product-requirements.md).
 - [System architecture](02-architecture.md).
