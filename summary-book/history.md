@@ -5,7 +5,7 @@
 # Project history
 
 <div class="tiles">
-<div class="tile accent"><div class="k">Commits on main</div><div class="v">172</div></div>
+<div class="tile accent"><div class="k">Commits on main</div><div class="v">209</div></div>
 <div class="tile"><div class="k">Duration</div><div class="v">42<small>h</small></div></div>
 <div class="tile"><div class="k">Phases</div><div class="v">7</div></div>
 <div class="tile"><div class="k">First commit</div><div class="v" style="font-size:20px">10-16 18:02</div></div>
@@ -25,9 +25,9 @@
 | 4 Page loop, turns | 10-17 evening | 4 | … `49573f9` |
 | 5 Popups, run start | 10-17 night | 8 | … `5658911` |
 | 6 Page rail docs | 10-18 10:45 | 18 | … `c865ba8` |
-| 7 Rail firmware, D-34 | 10-18 10:55–11:51 | 112 | … `19dafd9`, without the 5 commits of this book |
+| 7 Rail firmware, D-34 | 10-18 10:55–12:05 | 149 | … `284ab00`, without the 5 commits of this book |
 | This book | 10-18 11:00–11:23 | 5 | `0865929` and others |
-| Total | | 172 | Up to `19dafd9` |
+| Total | | 209 | Up to `284ab00` |
 
 Source: `git rev-list --count <range>`, with the commit limits in the table.
 
@@ -40,8 +40,8 @@ Source: `git rev-list --count <range>`, with the commit limits in the table.
 <div class="ev"><div class="when">10-17 · evening</div><div class="what">Page loop and Turns page</div><div class="how">D-29 four-page loop. D-30 Turns page <code>49573f9</code>.</div></div>
 <div class="ev"><div class="when">10-17 · night</div><div class="what">Popups and run start</div><div class="how">D-31 phone popups <code>93b6498</code>. IQ range 0 to 200 <code>816f043</code>. Animated popup badges <code>2234275</code>. D-32 run start <code>5658911</code>.</div></div>
 <div class="ev"><div class="when">10-18 · morning</div><div class="what">Page rail D-33</div><div class="how">Documents 01 to 05 add REQ-24, US-24, and TC-24, from <code>eef9c65</code>. The simulator shows the rail <code>30ba3c7</code>. Self-test coverage <code>258f6fa</code>. Preview image <code>c865ba8</code>.</div></div>
-<div class="ev"><div class="when">10-18 · 10:55–11:51</div><div class="what">Rail firmware and D-34</div><div class="how">One flowc binding drives more screens <code>373a314</code>. D-34 link state on every page, from <code>21280e6</code>. Rail arrows deleted <code>9efc313</code>. Rail firmware <code>be8671d</code>. LVGL pool raised to 28 KB <code>2446683</code>. 25 screens redrawn, last <code>19dafd9</code>.</div></div>
+<div class="ev"><div class="when">10-18 · 10:55–12:05</div><div class="what">Rail firmware and D-34</div><div class="how">One flowc binding drives more screens <code>373a314</code>. D-34 link state on every page, from <code>21280e6</code>. Rail arrows deleted <code>9efc313</code>. Rail firmware <code>be8671d</code>. LVGL pool raised to 28 KB <code>2446683</code>. All rail stops in one color <code>ea4815a</code>. 25 screens redrawn, last <code>284ab00</code>.</div></div>
 <div class="ev"><div class="when">10-18</div><div class="what">Sprints 0 to 16 complete</div><div class="how">The project owner confirmed it. The team did the board and device work on physical devices. Sprint 17 (D-34) came later. The document says "code complete".</div></div>
 </div>
 
-Authors: up to `19dafd9`, Dylan Li made all commits except 3 from a local account (`git log --format=%an`). The repository has no tags.
+Authors: up to `284ab00`, Dylan Li made all commits except 3 from a local account (`git log --format=%an`). The repository has no tags.

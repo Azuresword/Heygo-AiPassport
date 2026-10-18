@@ -4,7 +4,7 @@
 
 # Memory map
 
-The numbers on this page come from a build on 2026-10-18 at commit `5100fd2`. `Firmware/` is the same as at `19dafd9`. The tools were `idf.py size`, `idf.py size-components`, and `idf.py size-files`. The LVGL pool numbers come from host measurements (`Firmware/docs/heygo-changes.md`).
+The numbers on this page come from a build on 2026-10-18 at `main` commit `284ab00`. The tools were `idf.py size`, `idf.py size-components`, and `idf.py size-files`. The LVGL pool numbers come from host measurements (`Firmware/docs/heygo-changes.md`).
 
 <div class="tiles">
 <div class="tile accent"><div class="k">App / factory</div><div class="v">23.4<small>%</small></div></div>
@@ -28,11 +28,11 @@ The numbers on this page come from a build on 2026-10-18 at commit `5100fd2`. `F
 | `phy_init` | `0xF000` | 4 KB | Radio calibration data |
 | `factory` | `0x10000` | 8,323,072 bytes | The only application partition. It uses all remaining flash. There are no OTA partitions. |
 
-The application image is 1,948,816 bytes. The `factory` partition has 6,374,256 bytes (76.6%) free.
+The application image is 1,948,640 bytes. The `factory` partition has 6,374,432 bytes (76.6%) free.
 
 ## Flash: the content of the application image
 
-Read-only data is 1,015,232 bytes. Code is 826,046 bytes. The total is 1,841,278 bytes. By source:
+Read-only data is 1,015,232 bytes. Code is 825,880 bytes. The total is 1,841,112 bytes. By source:
 
 {% include "./_partials/flash-parts-en.html" %}
 
@@ -46,7 +46,7 @@ Read-only data is 1,015,232 bytes. Code is 826,046 bytes. The total is 1,841,278
 | Popup badges | 201,152 | `heygo_popup_icons.c.obj`, 4 kinds × 4 frames, 56×56 ARGB8888 |
 | BLE controller and NimBLE | 168,668 | `libbtdm_app.a` and `libbt.a` |
 | Other fonts and rider sprite | 127,789 | `heygo_sc_28`, `heygo_display_20/34/48`, and `heygo_board_sprite` |
-| Heygo app code | 55,559 | `libmain.a` without fonts and images |
+| Heygo app code | 55,393 | `libmain.a` without fonts and images |
 
 <div class="callout"><b>Result: fonts and images use almost half of the flash content.</b>
 Fonts and sprites use 845,873 bytes, 45.9% of the flash content. The 16 px Chinese font is the largest. It must show any answer from the phone, so it has GB2312 level 1. The Heygo app code is only approximately 54 KB.</div>
@@ -63,8 +63,8 @@ The ESP32-C3 has 321,296 bytes of internal RAM for this use. It has no PSRAM. Th
 |---|---|---|
 | IRAM code | 96,852 | Code that must run from RAM, for example interrupts, flash operations, and FreeRTOS |
 | `.bss` | 44,200 | LVGL 29,180 (with the 28 KiB pool) and the app 9,156 |
-| `.data` | 10,532 | Global variables with initial values |
-| Free at runtime | 169,712 | Heap for task stacks, the BLE stack, the LVGL draw buffer, and queues |
+| `.data` | 10,524 | Global variables with initial values |
+| Free at runtime | 169,720 | Heap for task stacks, the BLE stack, the LVGL draw buffer, and queues |
 
 ### Heap use at runtime
 

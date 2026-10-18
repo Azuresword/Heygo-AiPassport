@@ -22,7 +22,7 @@
 
 ## 本书写作时复核的结果
 
-2026-10-18 在提交 `5100fd2` 上运行完整门禁 `./tools/validate.sh`，退出码 0。`Firmware/` 与 `19dafd9` 相同。
+2026-10-18 在 `main` 提交 `284ab00` 上运行完整门禁 `./tools/validate.sh`，退出码 0。
 
 <div class="tiles">
 <div class="tile accent"><div class="k">完整门禁</div><div class="v" style="font-size:24px">PASS</div></div>

@@ -22,7 +22,7 @@ At the end of each sprint, `./tools/validate.sh` must exit with code 0 (`需求�
 
 ## Results that we examined for this book
 
-On 2026-10-18, we ran the full gate `./tools/validate.sh` at commit `5100fd2`. The exit code was 0. `Firmware/` is the same as at `19dafd9`.
+On 2026-10-18, we ran the full gate `./tools/validate.sh` at `main` commit `284ab00`. The exit code was 0.
 
 <div class="tiles">
 <div class="tile accent"><div class="k">Full gate</div><div class="v" style="font-size:24px">PASS</div></div>

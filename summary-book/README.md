@@ -36,7 +36,7 @@
 | How does the user operate it? | Four pages at the same level make a loop. A short press of UP or DOWN changes the page. A long press of OK opens the coach. | [Product and pages](product.md) |
 | What does it look like? | 25 screens that LVGL renders on the host, and two animations. | [Screen gallery](screens.md) |
 | What is the status? | Sprints 0 to 16 are complete. The code of Sprint 17 (D-34) is complete. It waits for confirmation. | [Sprints](sprints.md) |
-| How long did it take? | 172 commits on main, from 10-16 18:02 to 10-18 11:51. | [Project history](history.md) |
+| How long did it take? | 209 commits on main, from 10-16 18:02 to 10-18 12:05. | [Project history](history.md) |
 | How does the team control quality? | A gate runs before each commit. Host tests, screen checks, and the simulator self-test must pass. | [Quality and deployment](quality.md) |
 
 ## Links

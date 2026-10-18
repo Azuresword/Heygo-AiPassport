@@ -202,19 +202,19 @@ PHASES = [
     ("4", {"en": "Loop, turns", "zh": "四页、弯型"}, {"en": "10-17 eve", "zh": "10-17 傍晚"}, 4),
     ("5", {"en": "Popups, start", "zh": "弹窗、开始滑行"}, {"en": "10-17 night", "zh": "10-17 晚上"}, 8),
     ("6", {"en": "Rail docs", "zh": "导轨文档"}, {"en": "10-18 10:45", "zh": "10-18 10:45"}, 18),
-    ("7", {"en": "Rail code, D-34", "zh": "导轨固件、D-34"}, {"en": "10:55–11:51", "zh": "10:55–11:51"}, 112),
+    ("7", {"en": "Rail code, D-34", "zh": "导轨固件、D-34"}, {"en": "10:55–12:05", "zh": "10:55–12:05"}, 149),
 ]
 
 
 def commits(lang):
     W, H, l, r, t, bt = 960, 330, 46, 16, 30, 64
     pw, ph = W - l - r, H - t - bt
-    vmax = 120
+    vmax = 150
     bw = pw / len(PHASES)
     unit = "commits" if lang == "en" else "个提交"
     b = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" role="img" '
          f'aria-label="{"Commits on main by phase" if lang == "en" else "各阶段 main 上的提交数"}" font-family="{SANS}">']
-    for v in (0, 30, 60, 90, 120):
+    for v in (0, 50, 100, 150):
         y = t + ph - ph * v / vmax
         b.append(f'<line x1="{l}" y1="{y:.1f}" x2="{W - r}" y2="{y:.1f}" stroke="{LINE}" stroke-width="1"/>')
         b.append(text(l - 10, y + 4, str(v), 11, INK3, anchor="end", mono=True))
@@ -424,8 +424,8 @@ def flashmap(lang):
     fx = x0 + 0x10000 * sc
     b.append(box(x0, y, x1 - x0, 46, fill=BG, stroke=LINE, rx=8))
     b.append(f'<rect x="{x0}" y="{y}" width="{0x10000 * sc:.1f}" height="46" rx="4" fill="{INK3}"/>')
-    uw = 1948816 * sc
-    b.append(f'<g><title>app 1,948,816 B / factory 8,323,072 B</title><rect x="{fx:.1f}" y="{y}" width="{uw:.1f}" height="46" rx="4" fill="{GREEN}"/></g>')
+    uw = 1948640 * sc
+    b.append(f'<g><title>app 1,948,640 B / factory 8,323,072 B</title><rect x="{fx:.1f}" y="{y}" width="{uw:.1f}" height="46" rx="4" fill="{GREEN}"/></g>')
     b.append(text(fx + 12, y + 28, "app 1.86 MiB" if lang == "en" else "应用 1.86 MiB", 13, "#0e1013", 700))
     b.append(text(fx + uw + 14, y + 28, ("free in factory: 6.08 MiB (76.6%)" if lang == "en" else "factory 剩余 6.08 MiB（76.6%）"), 12.5, INK2))
     for a, lab in ((0, "0x0"), (0x800000, "0x800000")):
@@ -452,21 +452,21 @@ def flashmap(lang):
 
 
 # ---------------------------------------------------------------- horizontal bar charts (inline, tooltips)
-FLASH_PARTS = [  # bytes, from idf.py size-files and size-components on 5100fd2 (firmware of 19dafd9)
+FLASH_PARTS = [  # bytes, from idf.py size-files and size-components on 284ab00
     ({"en": "Chinese font 16 px", "zh": "中文字体 16 px"}, 516932),
     ({"en": "LVGL", "zh": "LVGL"}, 332036),
     ({"en": "BLE controller + NimBLE", "zh": "蓝牙控制器 + NimBLE"}, 168668),
     ({"en": "Popup badges (4 × 4 frames)", "zh": "弹窗徽章（4 种 × 4 帧）"}, 201152),
     ({"en": "Other fonts and rider sprite", "zh": "其他字体和滑雪小人"}, 127789),
-    ({"en": "Heygo app code", "zh": "Heygo 应用代码"}, 55559),
+    ({"en": "Heygo app code", "zh": "Heygo 应用代码"}, 55393),
     ({"en": "Other ESP-IDF parts", "zh": "ESP-IDF 其他部分"}, 439142),
 ]
 
 DRAM_PARTS = [
     ({"en": "IRAM code (.text)", "zh": "IRAM 代码（.text）"}, 96852),
     ({"en": ".bss (incl. 28 KiB LVGL pool)", "zh": ".bss（含 28 KiB LVGL 内存池）"}, 44200),
-    ({"en": ".data", "zh": ".data"}, 10532),
-    ({"en": "Free for heap, stacks, buffers", "zh": "留给堆、栈和缓冲区"}, 169712),
+    ({"en": ".data", "zh": ".data"}, 10524),
+    ({"en": "Free for heap, stacks, buffers", "zh": "留给堆、栈和缓冲区"}, 169720),
 ]
 
 

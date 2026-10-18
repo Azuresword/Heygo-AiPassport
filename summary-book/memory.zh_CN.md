@@ -4,7 +4,7 @@
 
 # 内存分布
 
-本页数字来自 2026-10-18 在提交 `5100fd2` 上（`Firmware/` 与 `19dafd9` 相同）的构建：`idf.py size`、`idf.py size-components`、`idf.py size-files`。LVGL 内存池的数字来自主机实测（`Firmware/docs/heygo-changes.zh_CN.md`）。
+本页数字来自 2026-10-18 在 `main` 提交 `284ab00` 上的构建：`idf.py size`、`idf.py size-components`、`idf.py size-files`。LVGL 内存池的数字来自主机实测（`Firmware/docs/heygo-changes.zh_CN.md`）。
 
 <div class="tiles">
 <div class="tile accent"><div class="k">应用 / factory 分区</div><div class="v">23.4<small>%</small></div></div>
@@ -28,11 +28,11 @@
 | `phy_init` | `0xF000` | 4 KB | 射频校准数据 |
 | `factory` | `0x10000` | 8,323,072 字节 | 唯一的应用分区，占满剩余 Flash。没有 OTA 分区 |
 
-应用镜像 1,948,816 字节，`factory` 还剩 6,374,256 字节（76.6%）。
+应用镜像 1,948,640 字节，`factory` 还剩 6,374,432 字节（76.6%）。
 
 ## Flash：应用镜像里装了什么
 
-只读数据 1,015,232 字节，代码 826,046 字节，合计 1,841,278 字节。按来源分：
+只读数据 1,015,232 字节，代码 825,880 字节，合计 1,841,112 字节。按来源分：
 
 {% include "./_partials/flash-parts-zh.html" %}
 
@@ -46,7 +46,7 @@
 | 弹窗徽章 | 201,152 | `heygo_popup_icons.c.obj`，4 种 × 4 帧，56×56 ARGB8888 |
 | 蓝牙控制器 + NimBLE | 168,668 | `libbtdm_app.a` + `libbt.a` |
 | 其他字体和滑雪小人 | 127,789 | `heygo_sc_28`、`heygo_display_20/34/48`、`heygo_board_sprite` |
-| Heygo 应用代码 | 55,559 | `libmain.a` 去掉字体和图片之后 |
+| Heygo 应用代码 | 55,393 | `libmain.a` 去掉字体和图片之后 |
 
 <div class="callout"><b>结论：字体和图片占了一半。</b>字体和精灵图合计 845,873 字节，占 Flash 内容的 45.9%。其中 16 px 中文字体最大，因为它要显示手机发来的任意回答，所以带了 GB2312 一级字。Heygo 自己的应用代码只有约 54 KB。</div>
 
@@ -62,8 +62,8 @@ ESP32-C3 可用的内部 RAM 是 321,296 字节，没有 PSRAM。下图是静态
 |---|---|---|
 | IRAM 代码 | 96,852 | 中断、Flash 操作、FreeRTOS 等必须在 RAM 里跑的代码 |
 | `.bss` | 44,200 | 其中 LVGL 29,180（含 28 KiB 内存池），应用 9,156 |
-| `.data` | 10,532 | 有初值的全局变量 |
-| 留给运行时 | 169,712 | 堆：任务栈、蓝牙协议栈、LVGL 绘制缓冲、队列 |
+| `.data` | 10,524 | 有初值的全局变量 |
+| 留给运行时 | 169,720 | 堆：任务栈、蓝牙协议栈、LVGL 绘制缓冲、队列 |
 
 ### 运行时从堆里拿走的
 

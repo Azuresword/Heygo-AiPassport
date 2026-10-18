@@ -55,7 +55,7 @@
 <div class="cards">
 <div class="card"><span class="tag">D-31 · POPUP 0x66</span><h4>弹窗</h4><p>立即打断任何状态。先播语音，再倒计时 10 秒。任意键关闭，回到弹窗前的页面。新弹窗替换旧弹窗。</p></div>
 <div class="card"><span class="tag">D-32 · RUN_START 0x68</span><h4>开始滑行</h4><p>手机判定开始滑行，设备打开实时数据页。对话中或弹窗中，等结束后再打开。不取消任何操作。</p></div>
-<div class="card"><span class="tag">D-33</span><h4>页面导轨</h4><p>屏幕右侧一条导轨，显示自己在循环中的位置。荧光绿滑块是当前页，浅灰格是 UP、DOWN 会去的页面，不带箭头。滑块用 180 ms 滑到新格。</p></div>
+<div class="card"><span class="tag">D-33</span><h4>页面导轨</h4><p>屏幕右侧一条导轨，显示自己在循环中的位置。荧光绿滑块是当前页，四个格子同一种颜色，不标 UP、DOWN 的目标，也没有箭头。滑块用 180 ms 滑到新格。</p></div>
 <div class="card"><span class="tag">D-34</span><h4>每页显示链路状态</h4><p>五个屏幕共用一个状态栏：页面圆点、页面名、连接圆点和连接文字。连接文字是"已连接"、"未连接"或"无语音"。</p></div>
 </div>
 
