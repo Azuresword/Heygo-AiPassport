@@ -23,7 +23,7 @@
 | `tools/gen_sprite.py` | 生成小精灵图。 |
 | `brand/logo_*.png`、`brand/logo_parts.json` | Heygo LOGO 的 6 个白色部件及其位置，来自 Figma 文件"Logo"（D-35）。由 `tools/fetch_figma_logo.py` 导出。构建不需要 Figma。 |
 | `sprites/heygo_logo.c`、`sprites/heygo_logo.h` | 开机 LOGO，6 个 A8 部件，合起来 200 × 79 px，共 12,288 字节。由 `tools/gen_boot_logo.py` 从 `brand/` 生成。 |
-| `audio/heygo_boot_sound.c`、`audio/heygo_boot_sound.h`、`audio/boot_sound.wav` | 开机音效（D-36）：2.0 秒 16 kHz、16 位、单声道 PCM，64,000 字节。由 `tools/gen_boot_sound.py` 用代码合成。WAV 文件供试听和模拟器使用。 |
+| `audio/heygo_boot_sound.c`、`audio/heygo_boot_sound.h`、`audio/boot_sound*.wav` | 开机音效（D-36）：2.0 秒 16 kHz、16 位、单声道 PCM，64,000 字节。由 `tools/gen_boot_sound.py` 用代码合成三个方案。`boot_sound_a.wav` 至 `boot_sound_c.wav` 供模拟器试听，`boot_sound.wav` 和 C 文件是选中的方案。 |
 | `mockups/27-boot-*.png` 至 `mockups/29-boot-*.png`、`mockups/boot-anim.gif` | 开机屏在 0.3 秒、1.0 秒和 1.7 秒时的画面，以及完整动画。由主机渲染器绘制。 |
 | `mockups/` | 主机界面检查生成的屏幕图片。`compare-A-B.png` 是两个设计方案的对比，目前采用 B 版。 |
 | `sim/coach-flow.html` | Coach 流程的交互模拟器。 |
