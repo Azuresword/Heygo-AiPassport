@@ -546,20 +546,23 @@ function paintRail() {
   railIdx = idx;
 }
 function paint() {
-  // Bindings apply to screens[0] only, as in the generated C code.
+  // Each binding drives its widget on each screen in b.screens, or on screens[0] without it.
+  // The generated C code does the same (D-34).
   const s0 = F.screens[0].id;
   for (const b of F.bindings) {
-    const [wid, prop] = b.target.split(".");
-    const el = widgetEls[s0 + "." + wid];
+    const parts = b.target.split("."), prop = parts.pop(), wid = parts.pop();
     const v = subj[b.subject];
-    if (prop === "text") el.textContent = v;
-    else if (prop === "color") {
-      const tr = transform[b.transform];
-      const color = C[tr.map[String(v)] || tr.default];
-      if (el.dataset.type === "obj") el.style.background = color;
-      else el.style.color = color;
+    for (const sc of parts.length ? parts : (b.screens || [s0])) {
+      const el = widgetEls[sc + "." + wid];
+      if (prop === "text") el.textContent = v;
+      else if (prop === "color") {
+        const tr = transform[b.transform];
+        const color = C[tr.map[String(v)] || tr.default];
+        if (el.dataset.type === "obj") el.style.background = color;
+        else el.style.color = color;
+      }
+      else if (prop === "value" && el.dataset.type === "state_icon") setStateIcon(el, v);
     }
-    else if (prop === "value" && el.dataset.type === "state_icon") setStateIcon(el, v);
   }
   paintData();
   for (const d of document.querySelectorAll(".scr")) d.classList.toggle("on", d.dataset.id === screenOf[st]);
