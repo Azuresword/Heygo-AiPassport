@@ -76,8 +76,13 @@ def build(flow_path, selftest=False):
     # D-31: the popup icons, the same frames as the device (assets/tools/gen_popup_icons.py).
     sheet = REPO / "assets" / "sprites" / "heygo_popup_icons_sheet.png"
     icons = "data:image/png;base64," + base64.b64encode(sheet.read_bytes()).decode()
+    # D-35: the parts of the boot logo, the same files as the device (assets/tools/gen_boot_logo.py).
+    brand = REPO / "assets" / "brand"
+    logo = json.loads((brand / "logo_parts.json").read_text(encoding="utf-8"))
+    for name, part in logo["parts"].items():
+        part["src"] = "data:image/png;base64," + base64.b64encode((brand / f"logo_{name}.png").read_bytes()).decode()
     data = {"flow": flow, "strings": strings, "colors": colors, "hold_ms": HOLD_MS, "popup_icons": icons,
-            "static_issues": static_issues(flow)}
+            "logo": logo, "static_issues": static_issues(flow)}
     blob = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     rel = flow_path.resolve().relative_to(FW).as_posix()
     sha = hashlib.sha256(flow_path.read_bytes()).hexdigest()[:12]
