@@ -2,7 +2,7 @@
 
 # Scrum backlog and delivery plan
 
-Version: 0.14. Date: 2026-10-18. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. Increment 2 is in the backlog. The team closed no story.
+Version: 0.15. Date: 2026-10-18. Status: In progress. Sprint 0 ended. The Sprint 1 device code is in the repository. Device acceptance has not started. Increment 2 is in the backlog. The team closed no story.
 
 Related documents: [Requirements](01-product-requirements.md), [Architecture](02-architecture.md), [Validation and decisions](04-validation-and-decisions.md), [Decision amendments](05-decision-amendments.md), [Sprint 0 plan](06-sprint-0-plan.md), [BLE protocol draft](07-ble-protocol-draft.md), and [Four-hour Sprint roadmap](08-sprint-roadmap.md).
 
@@ -14,7 +14,7 @@ The skier keeps the phone in a pocket and the gloves on.
 Two increments move toward this goal:
 
 - **Increment 1, the Coach voice chain.** P0 stories US-01, US-06, US-07, US-08, US-15, US-17, and US-20.
-- **Increment 2, live data and reports.** P1 stories US-02, US-21, US-23, US-24, US-25, US-26, and US-03. D-22 lets the team develop it in parallel with the device acceptance of Increment 1.
+- **Increment 2, live data and reports.** P1 stories US-02, US-21, US-23, US-24, US-25, US-26, US-27, and US-03. D-22 lets the team develop it in parallel with the device acceptance of Increment 1.
 
 ## 2. Planning assumptions
 
@@ -57,6 +57,7 @@ The user made every scope decision so far, including D-17.
 | US-24 Page rail | REQ-24 | P1, Increment 2 (D-33) | 2–3 | Firmware and design | Sprint 16 simulator, firmware, and acceptance |
 | US-25 Link state on every page | REQ-25 | P1, Increment 2 (D-34) | 1–2 | Firmware and design | Sprint 17 code and acceptance |
 | US-26 Boot screen | REQ-26 | P1, Increment 2 (D-35) | 2–3 | Firmware and design | Sprint 18 code and acceptance |
+| US-27 Boot sound | REQ-27 | P1, Increment 2 (D-36) | 1–2 | Firmware and design | Sprint 19 code and acceptance |
 | US-03 Run report | REQ-03 | P1, Increment 2 | 3–5 | Firmware and design | Sprint 4 code, Sprint 7 acceptance |
 | US-05 Turn shape and replay | REQ-05 | P1, Increment 3 (D-30) | 5–8 | Phone, firmware, and design | Sprint 11 code, Sprint 12 acceptance |
 | US-22 Phone popups | REQ-22 | P1, Increment 4 (D-31) | 5–8 | Phone and firmware | Sprint 13 code, Sprint 14 acceptance |
@@ -248,6 +249,17 @@ As a skier, I want to see the Heygo logo when the device starts. Then I know tha
 - Dependency: US-17.
 - Verification: TC-26.
 
+### US-27: the boot sound
+
+As a skier, I want to hear the device start. Then I know that it works, also when the screen is in the sun.
+
+- Acceptance: a boot sound of 2.0 s plays with the boot animation, on the same time line (D-36).
+- Acceptance: the sound has no low tones that rattle the speaker, and its end makes no click.
+- Acceptance: a capture, an answer, or popup audio stops the sound first. A capture starts at most about 20 ms late.
+- Acceptance: the simulator plays the same sound file.
+- Dependency: US-26.
+- Verification: TC-27.
+
 ### US-03: run report
 
 As a skier, I want the problem of each run and one tip after the run. Then I know what to change on the next run.
@@ -319,6 +331,7 @@ Each Sprint lasts four hours. The [Four-hour Sprint roadmap](08-sprint-roadmap.m
 | 16 | The page rail (D-33): first the simulator, then the firmware. | Simulator and firmware done. The LVGL pool is 28 KiB for the rail. Host tests pass. Device test of TC-24 NOT RUN. |
 | 17 | The link state on every page (D-34): flow graph, generator, firmware, and simulator. | Code done. Host tests and the simulator self-test pass. Device test of TC-25 NOT RUN. |
 | 18 | The boot screen (D-35): the logo from Figma, the boot animation, and the key skip. | Code done. Host tests and the simulator self-test pass. Device test of TC-26 NOT RUN. |
+| 19 | The boot sound (D-36): the sound from code, the cue mode of the voice task, and the simulator. | Code done. Host tests and the simulator self-test pass. Device test of TC-27 NOT RUN. |
 
 ## 9. Definition of Done
 
