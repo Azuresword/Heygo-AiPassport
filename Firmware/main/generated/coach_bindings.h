@@ -11,6 +11,7 @@ extern "C" {
 #endif
 
 void coach_bindings_init(void);
+// Each attach binds the widgets of one screen. Only one screen has bindings at a time.
 void coach_bindings_attach(const coach_screen_coach_t *screen);
 // Unbind while the widgets are still alive. Call before destroying the screen.
 void coach_bindings_detach(void);
