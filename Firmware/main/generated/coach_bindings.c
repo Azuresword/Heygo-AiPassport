@@ -185,6 +185,50 @@ void coach_bindings_attach(const coach_screen_coach_t *screen) {
     s_bound[s_n_bound++] = screen->tag;
 }
 
+void coach_bindings_attach_ski(const coach_screen_ski_t *screen) {
+    if (!screen) return;
+    coach_bindings_init();
+    coach_bindings_detach();
+    (void)lv_subject_add_observer_obj(&s_subject_status_text, observer_0, screen->status, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_link_state, observer_7, screen->status, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_link_state, observer_8, screen->link_dot, NULL);
+    s_bound[s_n_bound++] = screen->link_dot;
+    s_bound[s_n_bound++] = screen->status;
+}
+
+void coach_bindings_attach_report(const coach_screen_report_t *screen) {
+    if (!screen) return;
+    coach_bindings_init();
+    coach_bindings_detach();
+    (void)lv_subject_add_observer_obj(&s_subject_status_text, observer_0, screen->status, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_link_state, observer_7, screen->status, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_link_state, observer_8, screen->link_dot, NULL);
+    s_bound[s_n_bound++] = screen->link_dot;
+    s_bound[s_n_bound++] = screen->status;
+}
+
+void coach_bindings_attach_turns(const coach_screen_turns_t *screen) {
+    if (!screen) return;
+    coach_bindings_init();
+    coach_bindings_detach();
+    (void)lv_subject_add_observer_obj(&s_subject_status_text, observer_0, screen->status, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_link_state, observer_7, screen->status, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_link_state, observer_8, screen->link_dot, NULL);
+    s_bound[s_n_bound++] = screen->link_dot;
+    s_bound[s_n_bound++] = screen->status;
+}
+
+void coach_bindings_attach_popup(const coach_screen_popup_t *screen) {
+    if (!screen) return;
+    coach_bindings_init();
+    coach_bindings_detach();
+    (void)lv_subject_add_observer_obj(&s_subject_status_text, observer_0, screen->status, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_link_state, observer_7, screen->status, NULL);
+    (void)lv_subject_add_observer_obj(&s_subject_link_state, observer_8, screen->link_dot, NULL);
+    s_bound[s_n_bound++] = screen->link_dot;
+    s_bound[s_n_bound++] = screen->status;
+}
+
 void coach_bindings_detach(void) {
     for (size_t i = 0; i < s_n_bound; i++) {
         if (s_bound[i]) lv_obj_remove_from_subject(s_bound[i], NULL);
@@ -196,6 +240,26 @@ void coach_bindings_detach(void) {
 void coach_teardown(coach_screen_coach_t *screen) {
     coach_bindings_detach();
     coach_screen_coach_destroy(screen);
+}
+
+void coach_teardown_ski(coach_screen_ski_t *screen) {
+    coach_bindings_detach();
+    coach_screen_ski_destroy(screen);
+}
+
+void coach_teardown_report(coach_screen_report_t *screen) {
+    coach_bindings_detach();
+    coach_screen_report_destroy(screen);
+}
+
+void coach_teardown_turns(coach_screen_turns_t *screen) {
+    coach_bindings_detach();
+    coach_screen_turns_destroy(screen);
+}
+
+void coach_teardown_popup(coach_screen_popup_t *screen) {
+    coach_bindings_detach();
+    coach_screen_popup_destroy(screen);
 }
 
 void coach_set_status_text(const char *value) {
