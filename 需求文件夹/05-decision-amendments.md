@@ -1,10 +1,10 @@
 [简体中文](05-decision-amendments.zh_CN.md) · **English**
 
-# Decision amendments: D-08 to D-32
+# Decision amendments: D-08 to D-33
 
-Version: 0.11. Date: 2026-10-17. Status: D-08 to D-15 and D-17 to D-32 accepted by the user. The phone application team accepted D-16. It must accept D-29, the three turn messages of D-30, the two popup messages of D-31, and the run start message of D-32.
+Version: 0.12. Date: 2026-10-18. Status: D-08 to D-15 and D-17 to D-32 accepted by the user. The phone application team accepted D-16. It must accept D-29, the three turn messages of D-30, the two popup messages of D-31, and the run start message of D-32. The user asked for D-33 and must review its look.
 
-This document gives the reasons behind D-08 to D-32.
+This document gives the reasons behind D-08 to D-33.
 [Validation and decisions](04-validation-and-decisions.md) holds the short log.
 Requirement numbers stay stable. This document deletes no requirement.
 
@@ -456,7 +456,35 @@ The user made three choices on 2026-10-17:
 
 **Status.** The user accepted the run start and the three choices on 2026-10-17. The phone application team must accept RUN_START. Host tests pass. Device tests are NOT RUN.
 
-## 27. Related documents
+## 27. D-33: a page rail on the right edge
+
+**Decision.** A rail on the right edge of the four pages shows the page loop. REQ-24 belongs to Increment 2.
+
+- The rail has four stops from top to bottom: live data, report, turns, and coach. This is the order of the short DOWN press.
+- The stop of the current page is a lime thumb with a small glow.
+- The stop that a short UP press opens is light gray, with ▲ above it. The stop that a short DOWN press opens is light gray, with ▼ below it.
+- The thumb uses 180 ms to slide to the new stop.
+- Two page changes wrap: UP from live data to coach, and DOWN from coach to live data. In a wrap, the thumb slides out at one end and in at the other end.
+- The rail reads the targets from the flow graph. It keeps no second copy of the page order.
+- The popup page hides the rail. The rail changes no key.
+
+**Reason.**
+
+- Four pages form a loop, and the screen shows one page at a time. The user cannot see how many pages there are, or which page comes next.
+- Before D-33, the user had to press a key to find out where it goes. With gloves on the slope, each extra press costs time.
+- The ▲ and ▼ marks answer the question "where does this key go" before the press. The thumb movement shows the result of the press after it.
+- The wrap movement shows that the last page and the first page touch. A rail without it looks like a list with two ends.
+- The targets come from the flow graph, so the rail and the keys cannot disagree. A change of the loop changes the rail also.
+
+**Cost.**
+
+- The rail uses 8 px of width at the right edge. The text, the boxes, and the key hints already stay at `x≤230`. Only the decorative ridge line goes under the rail.
+- The ▲ and ▼ marks sit in 4 px gaps. On the device, check that each mark looks attached to its stop and not to the next stop.
+- The firmware must put the rail on the top layer of LVGL, because only one screen exists at a time. The rail adds at most 7 LVGL objects. The pool use is not measured.
+
+**Status.** The user asked for the rail on 2026-10-18. The simulator shows it, and its self-test passes. The user must review the look in the simulator. Firmware work has not started. Device tests are NOT RUN.
+
+## 28. Related documents
 
 - [Product requirements](01-product-requirements.md).
 - [System architecture](02-architecture.md).
